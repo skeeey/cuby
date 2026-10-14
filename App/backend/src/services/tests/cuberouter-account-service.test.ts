@@ -664,7 +664,7 @@ describe("cuberouter account service", () => {
   it("reuses an existing personal key on login instead of creating a second", async () => {
     const client = fakeClient({
       listOrganizations: vi.fn(async () => []),
-      searchPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice" }]),
+      searchPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice", status: 1 }]),
       getPersonalTokenKey: vi.fn(async () => "sk-personal")
     });
     const service = singleNodeService(client, fakeRepository().repository);
@@ -673,6 +673,30 @@ describe("cuberouter account service", () => {
 
     expect(client.createPersonalToken).not.toHaveBeenCalled();
     expect(result.provisioning.apiKey).toBe("sk-personal");
+  });
+
+  it("does not reuse a personal key the instance reports as disabled", async () => {
+    // The organization path filters by status on the server; the personal search cannot, so the
+    // state travels with the row and the reuse rule lives here. Reusing a disabled key would
+    // write it into the model config and pin every request to a failure with no way back.
+    let created = false;
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => []),
+      createPersonalToken: vi.fn(async () => {
+        created = true;
+      }),
+      searchPersonalTokens: vi.fn(async (_token: string, name: string) =>
+        created ? [{ id: 42, name, status: 1 }] : [{ id: 41, name, status: 2 }]
+      ),
+      getPersonalTokenKey: vi.fn(async (_token: string, id: number) => `sk-${id}`)
+    });
+    const service = singleNodeService(client, fakeRepository().repository);
+
+    const result = await service.login({ username: "alice", password: "Passw0rd1" });
+
+    expect(client.createPersonalToken).toHaveBeenCalledWith("jwt-1", { name: "cuby-desktop-alice" });
+    expect(client.getPersonalTokenKey).toHaveBeenCalledWith("jwt-1", 42);
+    expect(result.provisioning.apiKey).toBe("sk-42");
   });
 
   it("creates the personal key on registration without looking for one first", async () => {

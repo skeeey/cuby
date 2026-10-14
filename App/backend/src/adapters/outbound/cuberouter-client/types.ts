@@ -44,6 +44,8 @@ export interface CuberouterOrganizationToken {
 export interface CuberouterPersonalToken {
   id: number;
   name: string;
+  /** The instance's key state (1 enabled, 2 disabled, 3 expired, 4 exhausted). */
+  status?: number;
 }
 
 /** Default prefix of the per-account organization token names the desktop provisions from. */

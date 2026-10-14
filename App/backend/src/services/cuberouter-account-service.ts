@@ -308,14 +308,21 @@ export function createCuberouterAccountService(
     }
   }
 
-  /** Finds one personal token by exact name; the server's filter is a LIKE pattern, so compare again. */
+  /** Finds one reusable personal token by exact name; the server's filter is a LIKE pattern, so compare again. */
   async function findPersonalToken(
     client: CuberouterClient,
     accessToken: string,
     tokenName: string
   ): Promise<CuberouterPersonalToken | null> {
     const tokens = await client.searchPersonalTokens(accessToken, tokenName);
-    return tokens.find((token) => token.name === tokenName) ?? null;
+    // Only an enabled key is worth provisioning: the personal search cannot filter by status on
+    // the server (the organization path can), and a disabled or exhausted one would be written
+    // into the model config and every request would fail. An instance that does not report the
+    // field reads as enabled; creating a second key under the same name is allowed, so a miss
+    // self-heals on the next line below.
+    return tokens.find(
+      (token) => token.name === tokenName && (token.status === undefined || token.status === 1)
+    ) ?? null;
   }
 
   return {

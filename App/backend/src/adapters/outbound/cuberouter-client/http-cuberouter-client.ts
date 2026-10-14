@@ -270,13 +270,19 @@ function toOrganizations(items: unknown[]): CuberouterOrganization[] {
   });
 }
 
-/** Maps a personal-token page onto id/name pairs; the masked key is not part of the contract. */
+/** Maps a personal-token page onto id/name/status triples; the masked key is not part of the contract. */
 function toPersonalTokens(items: unknown[]): CuberouterPersonalToken[] {
   return items.flatMap((item) => {
     const row = asRecord(item);
     const id = readCount(row.id);
     const name = readString(row.name);
-    return id === null || !name ? [] : [{ id, name }];
+    if (id === null || !name) {
+      return [];
+    }
+    // The key's state travels with the row: a disabled or expired key must not be reused, and
+    // that decision belongs to the caller — this mapper only reports what the instance said.
+    const status = readCount(row.status);
+    return [{ id, name, ...(status === null ? {} : { status }) }];
   });
 }
 

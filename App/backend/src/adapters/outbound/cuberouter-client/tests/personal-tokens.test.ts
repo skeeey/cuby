@@ -18,13 +18,13 @@ function clientWith(fetchImpl: typeof fetch) {
 }
 
 describe("cuberouter personal tokens", () => {
-  it("searches by exact name and maps id/name, never the masked key", async () => {
+  it("searches by exact name and maps id/name/status, never the masked key", async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse({
         success: true,
         message: "",
         data: {
-          items: [{ id: 41, name: "cuby-desktop-alice", key: "sk-abcd**********wxyz" }],
+          items: [{ id: 41, name: "cuby-desktop-alice", key: "sk-abcd**********wxyz", status: 1 }],
           total: 1,
           page_size: 100
         }
@@ -33,7 +33,7 @@ describe("cuberouter personal tokens", () => {
 
     await expect(
       clientWith(fetchImpl as unknown as typeof fetch).searchPersonalTokens("jwt-1", "cuby-desktop-alice")
-    ).resolves.toEqual([{ id: 41, name: "cuby-desktop-alice" }]);
+    ).resolves.toEqual([{ id: 41, name: "cuby-desktop-alice", status: 1 }]);
 
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://127.0.0.1:3000/api/token/search?keyword=cuby-desktop-alice&page_size=100");
