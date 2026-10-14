@@ -9,6 +9,7 @@ import { Banner } from "../components/banner.js";
 import { ConnectChannelModal } from "../components/connect-channel-modal.js";
 import { ConnectIntegrationModal } from "../components/connect-integration-modal.js";
 import { IntegrationCard } from "../components/integration-card.js";
+import { McpToolsSection, type McpPresetsClient } from "../components/mcp-tools-section.js";
 import { Memmy } from "../components/mascot/memmy.js";
 import { CATEGORY_TABS, getAllIntegrationMeta, type IntegrationCategoryTab, type IntegrationMeta } from "../integrations/integration-meta.js";
 import { useTranslation } from "../i18n/use-translation.js";
@@ -25,6 +26,8 @@ export interface ToolsPageViewProps {
   tools: ToolsState;
   client?: IntegrationsClient;
   channelsClient?: ChannelsClient;
+  mcpClient?: McpPresetsClient | null;
+  integrationsEnabled?: boolean;
   search?: string;
   activeCategory?: IntegrationCategoryTab;
   onSearchChange: (value: string) => void;
@@ -41,7 +44,7 @@ export function ToolsPage() {
   const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<IntegrationCategoryTab>("All");
-  const cloudFeaturesEnabled = canUseCloudFeatures(state);
+  const integrationsEnabled = canUseCloudFeatures(state);
 
   useEffect(() => {
     if (!clients || state.account.identityProvider === "cuberouter" || !shouldLoadConnectionsForPage(state.tools.status)) {
@@ -82,23 +85,13 @@ export function ToolsPage() {
     void toolsActions.refreshConnections(clients.integrations, clients.channels, dispatch);
   }, [clients, dispatch]);
 
-  if (!cloudFeaturesEnabled) {
-    return (
-      <AppFrame title={t("tools.title")}>
-        <div className="app-frame-page-content h-full overflow-y-auto py-6">
-          <p className="rounded-card border-content-panel bg-background-paper p-4 text-sm text-text-ink/55">
-            {t("tools.cloudUnavailable")}
-          </p>
-        </div>
-      </AppFrame>
-    );
-  }
-
   return (
     <ToolsPageView
       tools={state.tools}
       client={clients?.integrations}
       channelsClient={clients?.channels}
+      mcpClient={clients?.memmyAgent ?? null}
+      integrationsEnabled={integrationsEnabled}
       search={search}
       activeCategory={activeCategory}
       onSearchChange={setSearch}
@@ -176,6 +169,9 @@ export function ToolsPageView(props: ToolsPageViewProps) {
             </div>
           </section>
 
+          <McpToolsSection client={props.mcpClient ?? null} />
+
+          {props.integrationsEnabled !== false && (
           <section>
             <div className="mb-4 flex items-center gap-2.5">
               <span className="text-base font-semibold text-text-ink">{t("tools.integrations")}</span>
@@ -224,6 +220,7 @@ export function ToolsPageView(props: ToolsPageViewProps) {
               ))}
             </div>
           </section>
+          )}
         </div>
       </div>
 

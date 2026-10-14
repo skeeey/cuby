@@ -25,17 +25,19 @@ beforeEach(() => {
 });
 
 describe("cloud feature gate", () => {
-  it("hides the tools page from a cuberouter identity and keeps it for a memmy cloud one", () => {
+  it("hides the composio integrations from a cuberouter identity but keeps channels and MCP", () => {
     mocks.state = createStateWithIdentity("cuberouter");
     const cuberouterHtml = renderToolsPage();
 
-    expect(cuberouterHtml).toContain(toolsUnavailableText);
-    expect(cuberouterHtml).not.toContain("tools-icon-grid");
+    expect(cuberouterHtml).toContain("渠道");
+    expect(cuberouterHtml).toContain("MCP 服务器");
+    expect(cuberouterHtml).not.toContain("Tools &amp; Automation");
+    expect(cuberouterHtml).not.toContain(toolsUnavailableText);
 
     mocks.state = createStateWithIdentity("memmy_cloud");
     const cloudHtml = renderToolsPage();
 
-    expect(cloudHtml).toContain("tools-icon-grid");
+    expect(cloudHtml).toContain("Tools &amp; Automation");
     expect(cloudHtml).not.toContain(toolsUnavailableText);
   });
 

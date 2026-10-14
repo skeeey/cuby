@@ -3,6 +3,7 @@ import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import type { ChannelsClient } from "../../api/channels-client.js";
 import type { IntegrationsClient } from "../../api/integrations-client.js";
+import type { McpPresetsClient } from "../../components/mcp-tools-section.js";
 import { AppProviders } from "../../app/providers.js";
 import type { IntegrationConnection } from "../../integrations/connection-state.js";
 import { getAllIntegrationMeta } from "../../integrations/integration-meta.js";
@@ -184,11 +185,34 @@ describe("ToolsPageView", () => {
 
     expect(html).not.toContain("border-sky-200 bg-sky-50");
   });
+
+  it("integrationsEnabled=false 时只渲染渠道和 MCP 分区", () => {
+    const html = renderView(initialToolsState, { integrationsEnabled: false });
+
+    expect(html).toContain("Channels");
+    expect(html).toContain("MCP servers");
+    expect(html).not.toContain("Integrations");
+    expect(html).not.toContain("Tools &amp; Automation");
+  });
+
+  it("默认渲染三个分区", () => {
+    const html = renderView(initialToolsState);
+
+    expect(html).toContain("Channels");
+    expect(html).toContain("MCP servers");
+    expect(html).toContain("Integrations");
+  });
 });
 
 function renderView(
   tools: ReturnType<typeof toolsReducer>,
-  options: { search?: string; client?: IntegrationsClient | null; channelsClient?: ChannelsClient | null } = {}
+  options: {
+    search?: string;
+    client?: IntegrationsClient | null;
+    channelsClient?: ChannelsClient | null;
+    mcpClient?: McpPresetsClient | null;
+    integrationsEnabled?: boolean;
+  } = {}
 ): string {
   return renderToString(
     <TaskBusProvider>
@@ -198,6 +222,8 @@ function renderView(
             tools={tools}
             client={options.client === undefined ? createClient([]) : (options.client ?? undefined)}
             channelsClient={options.channelsClient === undefined ? createChannelsClient([]) : (options.channelsClient ?? undefined)}
+            mcpClient={options.mcpClient ?? null}
+            integrationsEnabled={options.integrationsEnabled}
             search={options.search}
             onSearchChange={() => undefined}
             onCategoryChange={() => undefined}
