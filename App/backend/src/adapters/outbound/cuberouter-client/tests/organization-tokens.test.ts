@@ -144,19 +144,19 @@ describe("cuberouter organization tokens", () => {
       jsonResponse({
         success: true,
         message: "",
-        data: { id: 12, name: "memmy-desktop-alice", key: "sk-org-new", key_preview: "sk-o**********new" }
+        data: { id: 12, name: "cuby-desktop-alice", key: "sk-org-new", key_preview: "sk-o**********new" }
       })
     );
 
     const created = await clientWith(fetchImpl as unknown as typeof fetch)
-      .createOrganizationToken("jwt-1", "7", { name: "memmy-desktop-alice", unlimitedQuota: true });
+      .createOrganizationToken("jwt-1", "7", { name: "cuby-desktop-alice", unlimitedQuota: true });
 
-    expect(created).toEqual({ id: 12, name: "memmy-desktop-alice", key: "sk-org-new" });
+    expect(created).toEqual({ id: 12, name: "cuby-desktop-alice", key: "sk-org-new" });
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://127.0.0.1:3000/api/organizations/7/tokens");
     expect(init.method).toBe("POST");
     expect(JSON.parse(String(init.body))).toEqual({
-      name: "memmy-desktop-alice",
+      name: "cuby-desktop-alice",
       visibility: "private",
       unlimited_quota: true
     });
@@ -179,7 +179,7 @@ describe("cuberouter organization tokens", () => {
 
     await expect(
       clientWith(fetchImpl as unknown as typeof fetch)
-        .createOrganizationToken("jwt-1", "7", { name: "memmy-desktop-alice", unlimitedQuota: true })
+        .createOrganizationToken("jwt-1", "7", { name: "cuby-desktop-alice", unlimitedQuota: true })
     ).rejects.toMatchObject({ code: "rejected", message: "permission denied" });
   });
 
@@ -187,12 +187,12 @@ describe("cuberouter organization tokens", () => {
     // Provisioning would write an empty key into the model config and look like a working
     // setup, so a response without the secret is an error rather than an empty token.
     const fetchImpl = vi.fn(async () =>
-      jsonResponse({ success: true, message: "", data: { id: 12, name: "memmy-desktop-alice" } })
+      jsonResponse({ success: true, message: "", data: { id: 12, name: "cuby-desktop-alice" } })
     );
 
     await expect(
       clientWith(fetchImpl as unknown as typeof fetch)
-        .createOrganizationToken("jwt-1", "7", { name: "memmy-desktop-alice", unlimitedQuota: true })
+        .createOrganizationToken("jwt-1", "7", { name: "cuby-desktop-alice", unlimitedQuota: true })
     ).rejects.toMatchObject({ code: "rejected" });
   });
 });
