@@ -1237,7 +1237,11 @@ export const AccountProfileViewSchema = z.object({
     hasFinishedGuide: z.boolean().nullable(),
     region: z.string().nullable(),
     registeredAt: z.string().datetime().nullable(),
-    identityProvider: z.enum(["memmy_cloud", "cuberouter"]).default("memmy_cloud")
+    identityProvider: z.enum(["memmy_cloud", "cuberouter"]).default("memmy_cloud"),
+    /** cuberouter 登录用户名（这两个实例上就是邮箱）；其它身份为 null。 */
+    username: z.string().nullable().optional(),
+    /** 用户所属组织名（单组织假设）；无组织或非 cuberouter 为 null。 */
+    organizationName: z.string().nullable().optional()
 });
 export type AccountProfileView = z.infer<typeof AccountProfileViewSchema>;
 

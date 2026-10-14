@@ -223,7 +223,9 @@ export function createAccountSessionRepository(db: DatabaseSync, secretStore: Se
           hasFinishedGuide: input.profile.hasFinishedGuide,
           region: input.profile.region,
           registeredAt,
-          identityProvider: input.profile.identityProvider
+          identityProvider: input.profile.identityProvider,
+          username: input.profile.username ?? null,
+          organizationName: input.profile.organizationName ?? null
         })
       });
     },
@@ -449,6 +451,10 @@ function readRawProfileString(value: unknown): string | null {
  * @returns an account profile view without the cloud uuid.
  */
 function toProfileView(row: AccountSessionRow): AccountProfileView {
+  const isCuberouter = resolveAccountAuthChannel(row) === "cuberouter";
+  // The cuberouter identity's login name and organization live next to its auth channel in the
+  // raw profile; they are what the sidebar renders after a restart.
+  const rawProfile = isCuberouter && row.raw_profile_json ? parseRawProfile(row.raw_profile_json) : null;
   return AccountProfileViewSchema.parse({
     userId: row.user_id,
     email: row.email,
@@ -459,7 +465,9 @@ function toProfileView(row: AccountSessionRow): AccountProfileView {
     hasFinishedGuide: row.has_finished_guide === null ? null : row.has_finished_guide === 1,
     region: row.region,
     registeredAt: row.registered_at,
-    identityProvider: resolveAccountAuthChannel(row) === "cuberouter" ? "cuberouter" : "memmy_cloud"
+    identityProvider: isCuberouter ? "cuberouter" : "memmy_cloud",
+    username: rawProfile ? readRawProfileString(rawProfile.username) : null,
+    organizationName: rawProfile ? readRawProfileString(rawProfile.organizationName) : null
   });
 }
 
