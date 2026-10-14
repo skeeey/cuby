@@ -41,6 +41,16 @@ describe("cloud feature gate", () => {
     expect(cloudHtml).not.toContain(toolsUnavailableText);
   });
 
+  it("hides the knowledge entry from a cuberouter identity and keeps it for a memmy cloud one", () => {
+    mocks.state = createStateWithIdentity("cuberouter");
+    const cuberouterHtml = renderToolsPage();
+
+    expect(cuberouterHtml).not.toContain("知识库");
+
+    mocks.state = createStateWithIdentity("memmy_cloud");
+    expect(renderToolsPage()).toContain("知识库");
+  });
+
   it("hides the home page voice input from a cuberouter identity and keeps it for a memmy cloud one", () => {
     mocks.state = createStateWithIdentity("cuberouter");
     const cuberouterHtml = renderHomePage();

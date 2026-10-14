@@ -29,6 +29,7 @@ import { useTaskBus } from "../lib/task-bus.js";
 import { agentActions, appActions, createAgentOperationError } from "../state/app-actions.js";
 import type { AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
+import { canUseCloudFeatures } from "../state/app-reducer.js";
 import { agentChatScopeKey } from "../state/agent-composer-state.js";
 import type { AgentTaskView } from "../state/agent-chat-slice.js";
 import { decideTaskDoneNotification } from "../state/task-done-notification.js";
@@ -273,6 +274,11 @@ export function resolveSelectedSidebarProjectId(
 
 export function AppFrame(props: AppFrameProps) {
   const { state, dispatch } = useAppState();
+  // A cuberouter account has no memmy cloud backing, so cloud-only entries stay
+  // out of the rail instead of leading to an unavailable page.
+  const visibleNavItems = canUseCloudFeatures(state)
+    ? navItems
+    : navItems.filter((item) => item.path !== "/knowledge");
   const { clients } = useOptionalApiClients();
   const { t, language } = useTranslation();
   const update = useOptionalUpdateCoordinator();
@@ -1100,7 +1106,7 @@ export function AppFrame(props: AppFrameProps) {
           </>
         ) : (
         <nav className="space-y-1.5">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const key = item.path ?? item.action ?? "unknown";
             const active = item.path
               ? state.navigation.currentPath === item.path && (item.path !== "/main" || !state.agent.currentSessionKey)
