@@ -106,3 +106,16 @@
 | AWS Documentation | 搜 AWS 文档 | stdio（uvx） | 无（需要 uvx） |
 
 来源：`App/memmy-agent/src/entrypoints/frontend-bridge/mcp-presets-api.ts:67`
+
+## 已知遗留（复审 deferred minors，2026-10-14）
+
+整分支复审（3eb7db96..a280dd5f）判为 Minor、未在本轮修复的项：
+
+1. **管理弹窗错误重复**：测试连接失败时 `modalError` 与 `testResult.message` 会渲染同一句话（`mcp-tools-section.tsx` 的 runAction 与 `mcp-server-modal.tsx` 的 manage 分支），保留一处即可；该失败分支也还没有交互测试覆盖。
+2. **自定义按钮状态**：loading/error 态下「添加自定义服务器」仍可点击，client 为 null 时点保存静默无操作；应禁用或提示。
+3. **凭据不可更新**：管理弹窗只有测试与移除（本设计如此），轮换 key 需移除重装，且重装会清掉托管 runtime 目录。
+4. **错误体透出无上限**：`parseRequestError` 会把任意非 JSON body 原样显示，没有长度上限、不识别 HTML 错误页；上传路径的 `errorMessage()` 仍是 JSON-only，两条路径行为不一致。
+5. **64KB 校验不可达**：agent 侧 `MCP_VALUES_HEADER_MAX_BYTES` 在 Node 默认 16KB header 上限之后，超限实际返回 bodyless 431，而不是预期的 400 文案。
+6. **测试小项**：未断言凭据不出现在 `url.search`；自定义条目落进主网格无测试；bundled `open_computer_use` 仍以原样名字出现在网格里（仅加了移除确认；agent 侧 `source: "builtin"` + 改名/分组的方案未做）。
+
+复审 "Declined to judge" 的 8 项（导览步、enabled_tools 白名单编辑、Cursor/配置导入、安装不验证连通、Composio 轮询门控、OCU 红测试、`common.cancel` 文案、未用字段与文档缺口）属本设计明示的不做范围，不在此列。
