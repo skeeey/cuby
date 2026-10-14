@@ -40,6 +40,12 @@ export interface CuberouterOrganizationToken {
   key: string;
 }
 
+/** One of the member's own (personal) tokens. The list masks the key, so only id/name are usable. */
+export interface CuberouterPersonalToken {
+  id: number;
+  name: string;
+}
+
 /** Default prefix of the per-account organization token names the desktop provisions from. */
 export const DESKTOP_TOKEN_NAME = "memmy-desktop";
 
@@ -82,4 +88,17 @@ export interface CuberouterClient {
     organizationId: string,
     input: { name: string; unlimitedQuota: boolean }
   ): Promise<CuberouterOrganizationToken>;
+  /**
+   * Lists the member's personal tokens whose name matches. The instance's keyword filter is an
+   * exact full match unless it contains `%`, and it is a LIKE pattern either way — the caller
+   * still compares the returned names exactly.
+   */
+  searchPersonalTokens(accessToken: string, tokenName: string): Promise<CuberouterPersonalToken[]>;
+  /**
+   * Creates a personal token. The instance answers a create with `{success:true}` and nothing
+   * else, so the caller finds the new row through `searchPersonalTokens`.
+   */
+  createPersonalToken(accessToken: string, input: { name: string }): Promise<void>;
+  /** Reads one personal token's plaintext key, which the list endpoint never returns. */
+  getPersonalTokenKey(accessToken: string, tokenId: number): Promise<string>;
 }

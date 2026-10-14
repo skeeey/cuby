@@ -27,6 +27,9 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
       name: input.name,
       key: "sk-org-created"
     })),
+    searchPersonalTokens: vi.fn(async () => []),
+    createPersonalToken: vi.fn(async () => undefined),
+    getPersonalTokenKey: vi.fn(async () => "sk-personal"),
     getSelf: vi.fn(async () => ({ userId: "7", username: "alice", displayName: "Alice", quota: 0 })),
     ...overrides
   };
@@ -126,6 +129,9 @@ function createTestService(input: {
         name: createInput.name,
         key: "sk-org-created"
       }),
+      searchPersonalTokens: async () => [],
+      createPersonalToken: async () => undefined,
+      getPersonalTokenKey: async () => "sk-personal",
       getSelf: async () => ({ userId: "7", username: "alice", displayName: "Alice", quota: 0 })
     } satisfies CuberouterClient);
 

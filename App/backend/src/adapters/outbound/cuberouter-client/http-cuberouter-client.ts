@@ -4,7 +4,8 @@ import type {
   CuberouterErrorCode,
   CuberouterSession,
   CuberouterOrganizationToken,
-  CuberouterOrganization
+  CuberouterOrganization,
+  CuberouterPersonalToken
 } from "./types.js";
 
 export interface CreateHttpCuberouterClientOptions {
@@ -139,6 +140,47 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
         }
       );
       return toOrganizationToken(data);
+    },
+
+    async searchPersonalTokens(accessToken, tokenName) {
+      const query = new URLSearchParams({ keyword: tokenName, page_size: "100" }).toString();
+      const response = await request<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        `/api/token/search?${query}`,
+        { method: "GET", accessToken }
+      );
+      return toPersonalTokens(Array.isArray(response.items) ? response.items : []);
+    },
+
+    async createPersonalToken(accessToken, input) {
+      await request(fetchImpl, baseUrl, options.timeoutMs, "/api/token/", {
+        method: "POST",
+        accessToken,
+        body: {
+          name: input.name,
+          unlimited_quota: true,
+          // Explicit -1: the instance stores this field verbatim, and only -1 counts as "never
+          // expires" — a stored 0 is an already-expired key (cuberouter model/token.go:333).
+          expired_time: -1
+        }
+      });
+    },
+
+    async getPersonalTokenKey(accessToken, tokenId) {
+      const data = await request<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        `/api/token/${encodeURIComponent(String(tokenId))}/key`,
+        { method: "POST", accessToken }
+      );
+      const key = readString(data.key);
+      if (!key) {
+        throw cuberouterError("rejected", "cuberouter 未返回个人密钥的明文");
+      }
+      return key;
     }
   };
 }
@@ -225,6 +267,16 @@ function toOrganizations(items: unknown[]): CuberouterOrganization[] {
     const id = readString(row.id);
     const name = readString(row.name);
     return id && name ? [{ id, name }] : [];
+  });
+}
+
+/** Maps a personal-token page onto id/name pairs; the masked key is not part of the contract. */
+function toPersonalTokens(items: unknown[]): CuberouterPersonalToken[] {
+  return items.flatMap((item) => {
+    const row = asRecord(item);
+    const id = readCount(row.id);
+    const name = readString(row.name);
+    return id === null || !name ? [] : [{ id, name }];
   });
 }
 
