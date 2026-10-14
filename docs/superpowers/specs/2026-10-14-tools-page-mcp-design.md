@@ -34,7 +34,7 @@
 
 ### 2.2 MCP 分区（新增）
 
-- **Preset 安装器**：11 个精选 preset 卡片（名称/描述/已装状态），安装弹窗按字段声明动态渲染（如 GitHub 的 PAT、Supabase 的 token；免 key 的直接装）；
+- **Preset 安装器**：通用区展示 Brave Search、Exa 卡片，「开发者工具」折叠组（默认收起）收纳 Figma、Firecrawl；安装弹窗按字段声明动态渲染（如 Brave 的 API key、Exa 免 key 直接装）；
 - **管理弹窗**（已安装）：连接测试（显示握手结果与工具数）、停用、卸载；
 - **自定义 server 表单**：name / transport / command / args / env / cwd / url / headers / toolTimeout，字段与校验对齐 agent 端 `customServerFromQuery`；
 - **数据通路**：桌面端直连 memmy-agent（沿用 `memmy-agent-client.ts` 的 bootstrap token 机制），调用现成的 `/api/settings/mcp-presets` 系列；enable/remove/custom 之后 agent 侧会附带回热重载结果。
@@ -58,8 +58,8 @@
 |---|---|---|---|
 | Brave Search | 网页/新闻/图片搜索 | 通用 | **保留** |
 | Exa | 网页搜索 + 正文抓取（免 key） | 通用 | **保留** |
-| Figma | 读设计稿（官方 Dev Mode） | 设计/开发 | 待定（倾向折叠） |
-| Firecrawl | 抓取/爬取/抽取 | 数据/开发 | 待定（倾向折叠） |
+| Figma | 读设计稿（官方 Dev Mode） | 设计/开发 | 折叠（「开发者工具」组） |
+| Firecrawl | 抓取/爬取/抽取 | 数据/开发 | 折叠（「开发者工具」组） |
 | Browserbase | 云浏览器自动化 | 开发 | 建议去掉（内置 browser 已覆盖） |
 | GitHub | 仓库 / issue / PR | 开发 | 建议去掉 |
 | Supabase | 数据库管理 | 开发 | 建议去掉 |
@@ -68,11 +68,12 @@
 | Microsoft Learn | 微软官方文档 | 开发/IT | 建议去掉 |
 | AWS Documentation | AWS 文档 | 开发 | 建议去掉 |
 
-推荐：preset 列表收敛到 **Brave Search、Exa** 两个通用类，其余 9 个全部移除；若想给设计/数据人群留口子，可把 Figma、Firecrawl 折叠成「开发者工具」分组（默认收起）而不是删除。删除的能力损失由自定义 server 表单兜底。
+推荐（已定）：preset 列表保留 **Brave Search、Exa** 两个通用类；**7 个直接删除**（表中「建议去掉」）；**Figma、Firecrawl 折叠进默认收起的「开发者工具」分组**。删除的能力损失由自定义 server 表单兜底。
 
+- 折叠分组的归属用 preset 元数据上的显式标记（agent 侧加字段），不复用现有 `category`——Exa/Brave/Firecrawl 同属 "web" 类，无法靠它区分；
 - 删除的代价：开发者用户少一条开箱路径（自定义表单兜底）；
 - 删除的收益：面向普通用户的列表更干净，符合产品定位；
-- 实现影响：改 agent 侧 `MCP_PRESETS` 数组及少量 i18n/文档引用；已安装过的用户不受影响（配置里已有 `mcpServers` 条目，卡片消失而已）。
+- 实现影响：改 agent 侧 `MCP_PRESETS` 数组（删 7 个、给 2 个加折叠标记）及少量 i18n/文档引用；已安装过的用户不受影响（配置里已有 `mcpServers` 条目，卡片消失而已）。
 
 ## 附录 A：Composio 118 个集成（按工具页现有分类）
 
