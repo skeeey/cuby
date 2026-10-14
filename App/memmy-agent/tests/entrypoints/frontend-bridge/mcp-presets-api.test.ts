@@ -22,9 +22,6 @@ const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
 const oldPresetEnv = {
   FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
   BRAVE_API_KEY: process.env.BRAVE_API_KEY,
-  GITHUB_PERSONAL_ACCESS_TOKEN: process.env.GITHUB_PERSONAL_ACCESS_TOKEN,
-  POSTMAN_API_KEY: process.env.POSTMAN_API_KEY,
-  SUPABASE_ACCESS_TOKEN: process.env.SUPABASE_ACCESS_TOKEN,
 };
 
 function useConfig(): string {
@@ -68,56 +65,63 @@ describe("mcp presets api", () => {
     const payload = mcpPresetsPayload();
     const names = new Set(payload.presets.map((preset: any) => preset.name));
 
-    for (const name of [
-      "browserbase",
-      "github",
-      "figma",
-      "context7",
-      "firecrawl",
-      "exa",
-      "microsoft-learn",
-      "aws-docs",
-      "brave-search",
-      "postman",
-      "supabase",
-    ]) {
+    for (const name of ["firecrawl", "exa", "brave-search", "figma"]) {
       expect(names.has(name)).toBe(true);
     }
-    const browserbase = payload.presets.find((preset: any) => preset.name === "browserbase");
-    expect(browserbase.installed).toBe(false);
-    expect(browserbase.install_supported).toBe(true);
-    expect(browserbase.required_fields[0].configured).toBe(false);
-    expect(browserbase.connection_summary).not.toContain("browserbaseApiKey");
-    expect(browserbase.manifest).toMatchObject({
+    const brave = payload.presets.find((preset: any) => preset.name === "brave-search");
+    expect(brave.installed).toBe(false);
+    expect(brave.install_supported).toBe(true);
+    expect(brave.required_fields[0].configured).toBe(false);
+    expect(brave.connection_summary).not.toContain("BRAVE_API_KEY");
+    expect(brave.manifest).toMatchObject({
       schema: "agent-app.v1",
-      id: "browserbase",
+      id: "brave-search",
       source: "mcp-preset",
-      display_name: "Browserbase",
-      category: "browser",
-      capabilities: [{ type: "mcp", transport: "streamableHttp" }],
+      display_name: "Brave Search",
+      category: "web",
+      capabilities: [{ type: "mcp", transport: "stdio" }],
       install: { strategy: "config", verification: ["config_present", "dependency_available"] },
-      remove: { verification: ["config_absent"] },
+      remove: { verification: ["config_absent", "managed_paths_absent"] },
       trust: { registry: "mcp-presets", level: "builtin", review_status: "builtin_preset" },
     });
   });
 
-  it("enables browserbase and scrubs the returned payload", () => {
+  it("serves only the four office-facing presets and marks the developer pair", () => {
+    useConfig();
+
+    const payload = mcpPresetsPayload();
+    const presets = payload.presets as Array<Record<string, any>>;
+
+    expect(presets.map((preset) => preset.name)).toEqual([
+      "firecrawl",
+      "exa",
+      "brave-search",
+      "figma",
+      "open_computer_use",
+    ]);
+    expect(presets.find((preset) => preset.name === "figma")?.group).toBe("dev");
+    expect(presets.find((preset) => preset.name === "firecrawl")?.group).toBe("dev");
+    expect(presets.find((preset) => preset.name === "exa")?.group).toBe("");
+    expect(presets.find((preset) => preset.name === "brave-search")?.group).toBe("");
+  });
+
+  it("enables brave-search and scrubs the returned payload", () => {
     useConfig();
 
     const payload = mcpPresetsAction("enable", {
-      name: ["browserbase"],
-      browserbase_api_key: ["bb_live_secret"],
+      name: ["brave-search"],
+      brave_api_key: ["BSA_test"],
     });
 
     expect(payload.requires_restart).toBe(true);
     expect(payload.last_action.ok).toBe(true);
     expect(payload.last_action.installed).toBe(true);
     expect(payload.last_action.verification).toEqual(["config_present"]);
-    const preset = payload.presets.find((row: any) => row.name === "browserbase");
+    const preset = payload.presets.find((row: any) => row.name === "brave-search");
     expect(preset.installed).toBe(true);
     expect(preset.configured).toBe(true);
-    expect(JSON.stringify(payload)).not.toContain("bb_live_secret");
-    expect(loadConfig().tools.mcpServers.browserbase.url).toContain("browserbaseApiKey=bb_live_secret");
+    expect(JSON.stringify(payload)).not.toContain("BSA_test");
+    expect(loadConfig().tools.mcpServers["brave-search"].env.BRAVE_API_KEY).toBe("BSA_test");
   });
 
   it("preserves current image catalog and unknown nested fields when enabling a preset", () => {
@@ -161,8 +165,8 @@ describe("mcp presets api", () => {
     }));
 
     mcpPresetsAction("enable", {
-      name: ["browserbase"],
-      browserbase_api_key: ["bb_live_secret"],
+      name: ["brave-search"],
+      brave_api_key: ["BSA_test"],
     });
 
     const saved = loadConfig();
@@ -190,8 +194,8 @@ describe("mcp presets api", () => {
     }));
 
     mcpPresetsAction("enable", {
-      name: ["browserbase"],
-      browserbase_api_key: ["bb_live_secret"],
+      name: ["brave-search"],
+      brave_api_key: ["BSA_test"],
     });
 
     const saved = loadConfig();
@@ -205,11 +209,11 @@ describe("mcp presets api", () => {
     useConfig();
 
     mcpPresetsAction("enable", {
-      name: ["browserbase"],
-      browserbase_api_key: ["bb_live_secret"],
+      name: ["brave-search"],
+      brave_api_key: ["BSA_test"],
     });
-    mcpPresetsAction("enable", { name: ["browserbase"] });
-    expect(loadConfig().tools.mcpServers.browserbase.url).toContain("browserbaseApiKey=bb_live_secret");
+    mcpPresetsAction("enable", { name: ["brave-search"] });
+    expect(loadConfig().tools.mcpServers["brave-search"].env.BRAVE_API_KEY).toBe("BSA_test");
 
     process.env.FIRECRAWL_API_KEY = "fc-from-env";
     try {
@@ -225,31 +229,13 @@ describe("mcp presets api", () => {
   it("requires missing preset secrets", () => {
     useConfig();
 
-    expect(() => mcpPresetsAction("enable", { name: ["browserbase"] })).toThrow(McpPresetError);
+    expect(() => mcpPresetsAction("enable", { name: ["brave-search"] })).toThrow(McpPresetError);
     try {
-      mcpPresetsAction("enable", { name: ["browserbase"] });
+      mcpPresetsAction("enable", { name: ["brave-search"] });
     } catch (error) {
       expect((error as McpPresetError).status).toBe(400);
-      expect((error as McpPresetError).message).toContain("Browserbase API key");
+      expect((error as McpPresetError).message).toContain("Brave Search API key");
     }
-  });
-
-  it("appends the optional context7 API key arg", () => {
-    useConfig();
-
-    const payload = mcpPresetsAction("enable", {
-      name: ["context7"],
-      context7_api_key: ["ctx7_secret"],
-    });
-
-    expect(JSON.stringify(payload)).not.toContain("ctx7_secret");
-    expect(payload.presets.find((row: any) => row.name === "context7").configured).toBe(true);
-    expect(loadConfig().tools.mcpServers.context7.args).toEqual([
-      "-y",
-      "@upstash/context7-mcp@latest",
-      "--api-key",
-      "ctx7_secret",
-    ]);
   });
 
   it("uses the runtime data directory for managed stdio preset cwd", () => {
@@ -257,44 +243,31 @@ describe("mcp presets api", () => {
     const dataDir = path.join(root, "data");
     process.env.MEMMY_AGENT_DATA_DIR = dataDir;
 
-    mcpPresetsAction("enable", { name: ["context7"] });
+    mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
 
-    const cwd = (loadConfig().tools.mcpServers.context7 as any).cwd;
-    expect(cwd).toBe(path.join(dataDir, "mcp", "context7"));
-    expect(fs.statSync(path.join(dataDir, "mcp", "context7")).isDirectory()).toBe(true);
+    const cwd = (loadConfig().tools.mcpServers["brave-search"] as any).cwd;
+    expect(cwd).toBe(path.join(dataDir, "mcp", "brave-search"));
+    expect(fs.statSync(path.join(dataDir, "mcp", "brave-search")).isDirectory()).toBe(true);
   });
 
   it("writes URLs for no-auth remote presets", () => {
     useConfig();
 
-    mcpPresetsAction("enable", { name: ["microsoft-learn"] });
+    mcpPresetsAction("enable", { name: ["figma"] });
     mcpPresetsAction("enable", { name: ["exa"] });
 
     const config = loadConfig();
-    expect(config.tools.mcpServers["microsoft-learn"].url).toBe("https://learn.microsoft.com/api/mcp");
+    expect(config.tools.mcpServers.figma.url).toBe("http://127.0.0.1:3845/mcp");
     expect(config.tools.mcpServers.exa.url).toBe("https://mcp.exa.ai/mcp");
   });
 
-  it("writes nanobot-aligned builtin server configs for GitHub, Figma, Brave, Postman, and Supabase", () => {
+  it("writes builtin server configs for Figma and Brave", () => {
     useConfig();
 
-    mcpPresetsAction("enable", { name: ["github"], github_token: ["ghp_secret"] });
     mcpPresetsAction("enable", { name: ["figma"] });
     mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA-secret"] });
-    mcpPresetsAction("enable", { name: ["postman"], postman_api_key: ["PMAK-secret"] });
-    mcpPresetsAction("enable", { name: ["supabase"], supabase_access_token: ["sbp_secret"] });
 
     const config = loadConfig();
-    expect(config.tools.mcpServers.github.command).toBe("docker");
-    expect(config.tools.mcpServers.github.args).toEqual([
-      "run",
-      "-i",
-      "--rm",
-      "-e",
-      "GITHUB_PERSONAL_ACCESS_TOKEN",
-      "ghcr.io/github/github-mcp-server",
-    ]);
-    expect(config.tools.mcpServers.github.env.GITHUB_PERSONAL_ACCESS_TOKEN).toBe("ghp_secret");
     expect(config.tools.mcpServers.figma.url).toBe("http://127.0.0.1:3845/mcp");
     expect(config.tools.mcpServers["brave-search"].args).toEqual([
       "-y",
@@ -302,8 +275,7 @@ describe("mcp presets api", () => {
       "--transport",
       "stdio",
     ]);
-    expect(config.tools.mcpServers.postman.args).toEqual(["-y", "@postman/postman-mcp-server@latest", "--full"]);
-    expect(config.tools.mcpServers.supabase.args).toEqual(["-y", "@supabase/mcp-server-supabase@latest", "--read-only"]);
+    expect(config.tools.mcpServers["brave-search"].env.BRAVE_API_KEY).toBe("BSA-secret");
   });
 
   it("writes scrubbed firecrawl env configuration", () => {
@@ -320,18 +292,18 @@ describe("mcp presets api", () => {
 
   it("removes a managed MCP preset and its managed cwd", () => {
     const root = useConfig();
-    mcpPresetsAction("enable", { name: ["context7"] });
-    const managedCwd = path.join(root, "mcp", "context7");
+    mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
+    const managedCwd = path.join(root, "mcp", "brave-search");
     fs.writeFileSync(path.join(managedCwd, "cache.txt"), "managed runtime data", "utf8");
 
-    const payload = mcpPresetsAction("remove", { name: ["context7"] });
+    const payload = mcpPresetsAction("remove", { name: ["brave-search"] });
 
     expect(payload.requires_restart).toBe(true);
     expect(payload.last_action.ok).toBe(true);
     expect(payload.last_action.removed).toBe(true);
-    expect(payload.last_action.managed_paths_removed).toEqual(["runtime:mcp/context7"]);
+    expect(payload.last_action.managed_paths_removed).toEqual(["runtime:mcp/brave-search"]);
     expect(fs.existsSync(managedCwd)).toBe(false);
-    expect(loadConfig().tools.mcpServers).not.toHaveProperty("context7");
+    expect(loadConfig().tools.mcpServers).not.toHaveProperty("brave-search");
   });
 
   it("preserves user cwd when removing a custom MCP server", () => {
@@ -355,10 +327,10 @@ describe("mcp presets api", () => {
 
   it("reports missing test dependencies", async () => {
     useConfig();
-    mcpPresetsAction("enable", { name: ["context7"] });
+    mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
     process.env.PATH = "";
 
-    const payload = await mcpPresetsTestAction({ name: ["context7"] });
+    const payload = await mcpPresetsTestAction({ name: ["brave-search"] });
 
     expect(payload.last_action.ok).toBe(false);
     expect(payload.last_action.message).toContain("npx");
@@ -366,24 +338,24 @@ describe("mcp presets api", () => {
 
   it("connects to a preset and reports tools", async () => {
     useConfig();
-    mcpPresetsAction("enable", { name: ["context7"] });
+    mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
     const config = loadConfig();
-    config.tools.mcpServers.context7.command = process.execPath;
+    config.tools.mcpServers["brave-search"].command = process.execPath;
     saveConfig(config);
     vi.spyOn(mcpTools, "connectMcpServers").mockImplementation(async (servers, registry) => {
-      expect(Object.keys(servers)).toEqual(["context7"]);
+      expect(Object.keys(servers)).toEqual(["brave-search"]);
       registry.register({
-        name: "mcp_context7_resolve_library",
-        toSchema: () => ({ name: "mcp_context7_resolve_library", description: "", parameters: {} }),
+        name: "mcp_brave-search_search",
+        toSchema: () => ({ name: "mcp_brave-search_search", description: "", parameters: {} }),
       } as any);
-      return { context7: { aclose: async () => undefined } };
+      return { "brave-search": { aclose: async () => undefined } };
     });
 
-    const payload = await mcpPresetsTestAction({ name: ["context7"] });
+    const payload = await mcpPresetsTestAction({ name: ["brave-search"] });
 
     expect(payload.last_action.ok).toBe(true);
     expect(payload.last_action.tool_count).toBe(1);
-    expect(payload.last_action.tool_names).toEqual(["mcp_context7_resolve_library"]);
+    expect(payload.last_action.tool_names).toEqual(["mcp_brave-search_search"]);
   });
 
   it("resolves environment placeholders before testing MCP presets", async () => {
@@ -410,21 +382,21 @@ describe("mcp presets api", () => {
 
   it("times out slow MCP preset test connections", async () => {
     useConfig();
-    mcpPresetsAction("enable", { name: ["context7"] });
+    mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
     const config = loadConfig();
-    config.tools.mcpServers.context7.command = process.execPath;
-    (config.tools.mcpServers.context7 as any).tool_timeout = 60;
+    config.tools.mcpServers["brave-search"].command = process.execPath;
+    (config.tools.mcpServers["brave-search"] as any).tool_timeout = 60;
     saveConfig(config);
     vi.spyOn(mcpTools, "connectMcpServers").mockReturnValue(new Promise(() => undefined) as any);
     vi.useFakeTimers();
 
-    const pending = mcpPresetsTestAction({ name: ["context7"] });
+    const pending = mcpPresetsTestAction({ name: ["brave-search"] });
     await vi.advanceTimersByTimeAsync(20_000);
     const payload = await pending;
 
     expect(payload.last_action.ok).toBe(false);
     expect(payload.last_action.error).toBe("timeout");
-    expect(payload.last_action.message).toBe("Context7 test timed out.");
+    expect(payload.last_action.message).toBe("Brave Search test timed out.");
   });
 
   it("keeps hyphenated MCP server names in test tool prefixes", async () => {
@@ -449,18 +421,15 @@ describe("mcp presets api", () => {
 
   it("scrubs connection errors", async () => {
     useConfig();
-    mcpPresetsAction("enable", {
-      name: ["browserbase"],
-      browserbase_api_key: ["bb_live_secret"],
-    });
+    mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
     vi.spyOn(mcpTools, "connectMcpServers").mockRejectedValue(
-      new Error("failed https://mcp.browserbase.com/mcp?browserbaseApiKey=bb_live_secret"),
+      new Error("failed to connect: BRAVE_API_KEY=BSA_test"),
     );
 
-    const payload = await mcpPresetsTestAction({ name: ["browserbase"] });
+    const payload = await mcpPresetsTestAction({ name: ["brave-search"] });
 
     expect(payload.last_action.ok).toBe(false);
-    expect(JSON.stringify(payload)).not.toContain("bb_live_secret");
+    expect(JSON.stringify(payload)).not.toContain("BSA_test");
     expect(payload.last_action.error).toContain("<redacted>");
   });
 
@@ -480,19 +449,20 @@ describe("mcp presets api", () => {
 
     expect(normalizeMcpPresetMentions([
       {
-        name: "browserbase",
-        display_name: "Browserbase",
-        transport: "streamableHttp",
+        name: "brave-search",
+        display_name: "Brave Search",
+        transport: "stdio",
         configured: true,
         logo_url: "https://example.invalid/logo.svg",
       },
+      { name: "github" },
       { name: "totally-unknown" },
       "bad",
     ])).toEqual([
       {
-        name: "browserbase",
-        display_name: "Browserbase",
-        transport: "streamableHttp",
+        name: "brave-search",
+        display_name: "Brave Search",
+        transport: "stdio",
         configured: true,
         logo_url: "https://example.invalid/logo.svg",
       },
