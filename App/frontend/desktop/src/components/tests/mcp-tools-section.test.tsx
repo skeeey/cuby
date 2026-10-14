@@ -71,6 +71,12 @@ describe("McpToolsSectionView", () => {
     expect(html).not.toContain("Brave Search");
   });
 
+  it("renders the restart notice when a reload was skipped", () => {
+    const html = renderView({ notice: "Enabled MCP preset for Brave Search. MCP hot reload was skipped while agent turns were active. Restart memmy to pick up changes." });
+
+    expect(html).toContain("MCP hot reload was skipped while agent turns were active.");
+  });
+
   it("renders the install modal with declared fields", () => {
     const html = renderView({
       modal: {

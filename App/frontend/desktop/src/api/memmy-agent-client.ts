@@ -218,6 +218,25 @@ const AgentSettingsSchema = z.object({
 
 const MCP_VALUES_HEADER = "x-memmy-agent-mcp-values";
 
+/**
+ * Serialize MCP settings values for the values header.
+ *
+ * Header values must be single-byte (ByteString), and JSON.stringify leaves
+ * non-ASCII characters raw — a CJK path in the custom-server form would make
+ * the request throw before it is sent. Escaping to \uXXXX keeps the header
+ * ASCII while JSON.parse restores the exact characters agent-side.
+ *
+ * @param values The values to serialize.
+ * @returns A header map carrying the ASCII-escaped JSON payload.
+ */
+function mcpValuesHeader(values: unknown): Record<string, string> {
+  const json = JSON.stringify(values).replace(
+    /[^\x20-\x7e]/g,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`
+  );
+  return { [MCP_VALUES_HEADER]: json };
+}
+
 export const McpPresetFieldSchema = z.object({
   name: z.string(),
   label: z.string(),
@@ -1147,28 +1166,28 @@ class HttpMemmyAgentClient implements MemmyAgentClient {
   async enableMcpPreset(name: string, values: Record<string, string> = {}): Promise<McpPresetsPayload> {
     return this.request("/api/settings/mcp-presets/enable", McpPresetsPayloadSchema, {
       method: "POST",
-      headers: { [MCP_VALUES_HEADER]: JSON.stringify({ name, ...values }) }
+      headers: mcpValuesHeader({ name, ...values })
     });
   }
 
   async removeMcpServer(name: string): Promise<McpPresetsPayload> {
     return this.request("/api/settings/mcp-presets/remove", McpPresetsPayloadSchema, {
       method: "POST",
-      headers: { [MCP_VALUES_HEADER]: JSON.stringify({ name }) }
+      headers: mcpValuesHeader({ name })
     });
   }
 
   async testMcpServer(name: string): Promise<McpPresetsPayload> {
     return this.request("/api/settings/mcp-presets/test", McpPresetsPayloadSchema, {
       method: "POST",
-      headers: { [MCP_VALUES_HEADER]: JSON.stringify({ name }) }
+      headers: mcpValuesHeader({ name })
     });
   }
 
   async addCustomMcpServer(input: McpCustomServerInput): Promise<McpPresetsPayload> {
     return this.request("/api/settings/mcp-presets/custom", McpPresetsPayloadSchema, {
       method: "POST",
-      headers: { [MCP_VALUES_HEADER]: JSON.stringify(input) }
+      headers: mcpValuesHeader(input)
     });
   }
 

@@ -92,6 +92,24 @@ describe("McpToolsSection", () => {
     expect(container.textContent).toContain("Brave Search connected with 2 tools.");
   });
 
+  it("requires confirmation before removing a server", async () => {
+    const client = createClient({
+      listMcpPresets: vi.fn(async () => ({ presets: [{ ...basePreset, status: "configured", installed: true }], installed_count: 1 }))
+    });
+    await render(client);
+
+    await act(async () => container.querySelector<HTMLButtonElement>(".integration-card")?.click());
+    const remove = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Remove");
+    await act(async () => remove?.click());
+
+    expect(client.removeMcpServer).not.toHaveBeenCalled();
+    expect(container.textContent).toContain("Remove Brave Search? You will need to configure it again to restore it.");
+
+    const confirm = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Confirm");
+    await act(async () => confirm?.click());
+    expect(client.removeMcpServer).toHaveBeenCalledWith("brave-search");
+  });
+
   it("surfaces a failed action's message inside the modal", async () => {
     const client = createClient({
       enableMcpPreset: vi.fn(async () => {
@@ -105,6 +123,28 @@ describe("McpToolsSection", () => {
     await act(async () => install?.click());
 
     expect(container.textContent).toContain("MCP settings payload is too large");
+  });
+
+  it("shows the restart notice when the hot reload was skipped", async () => {
+    const client = createClient({
+      enableMcpPreset: vi.fn(async () => ({
+        presets: [{ ...basePreset, status: "configured", installed: true }],
+        installed_count: 1,
+        requires_restart: true,
+        last_action: {
+          ok: true,
+          message: "Enabled MCP preset for Brave Search. MCP hot reload was skipped while agent turns were active. Restart memmy to pick up changes."
+        }
+      }))
+    });
+    await render(client);
+
+    await act(async () => container.querySelector<HTMLButtonElement>(".integration-card")?.click());
+    const install = Array.from(container.querySelectorAll("button")).find((button) => button.textContent === "Install");
+    await act(async () => install?.click());
+
+    expect(container.textContent).toContain("MCP hot reload was skipped while agent turns were active.");
+    expect(container.textContent).toContain("Configured");
   });
 
   it("shows a section-level error when the listing fails, and loading without a client", async () => {

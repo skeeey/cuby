@@ -2243,6 +2243,22 @@ describe("memmy-agent client", () => {
       ).resolves.toEqual(emptyPayload);
     });
 
+    it("escapes non-ASCII values so the header stays a valid ByteString", async () => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        const raw = String(new Headers(init?.headers).get("x-memmy-agent-mcp-values"));
+        expect(raw).toMatch(/^[\x20-\x7e]*$/);
+        expect(JSON.parse(raw)).toEqual({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" });
+        return json(emptyPayload);
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(
+        client.addCustomMcpServer({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" })
+      ).resolves.toEqual(emptyPayload);
+    });
+
     it.each([
       ["removeMcpServer", "/api/settings/mcp-presets/remove"],
       ["testMcpServer", "/api/settings/mcp-presets/test"]

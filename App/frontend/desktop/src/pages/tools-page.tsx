@@ -47,15 +47,19 @@ export function ToolsPage() {
   const integrationsEnabled = canUseCloudFeatures(state);
 
   useEffect(() => {
-    if (!clients || state.account.identityProvider === "cuberouter" || !shouldLoadConnectionsForPage(state.tools.status)) {
+    if (!clients || !shouldLoadConnectionsForPage(state.tools.status)) {
       return;
     }
 
-    void toolsActions.loadConnections(clients.integrations, clients.channels, dispatch);
-  }, [clients, dispatch, state.tools.status, state.account.identityProvider]);
+    if (integrationsEnabled) {
+      void toolsActions.loadConnections(clients.integrations, clients.channels, dispatch);
+    } else {
+      void toolsActions.loadChannelConnections(clients.channels, dispatch);
+    }
+  }, [clients, dispatch, state.tools.status, integrationsEnabled]);
 
   useEffect(() => {
-    if (!clients || state.tools.status !== "ready") {
+    if (!clients || state.tools.status !== "ready" || !integrationsEnabled) {
       return undefined;
     }
 
@@ -64,7 +68,7 @@ export function ToolsPage() {
     }, CONNECTION_REFRESH_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [clients, dispatch, state.tools.status]);
+  }, [clients, dispatch, state.tools.status, integrationsEnabled]);
 
   const openIntegration = useCallback(
     (integration: IntegrationMeta) => {
@@ -82,8 +86,12 @@ export function ToolsPage() {
       return;
     }
 
-    void toolsActions.refreshConnections(clients.integrations, clients.channels, dispatch);
-  }, [clients, dispatch]);
+    if (integrationsEnabled) {
+      void toolsActions.refreshConnections(clients.integrations, clients.channels, dispatch);
+    } else {
+      void toolsActions.refreshChannelConnections(clients.channels, dispatch);
+    }
+  }, [clients, dispatch, integrationsEnabled]);
 
   return (
     <ToolsPageView

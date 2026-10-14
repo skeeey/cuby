@@ -20,6 +20,7 @@ export interface McpServerModalProps {
 export function McpServerModal(props: McpServerModalProps) {
   const { t } = useTranslation();
   const [values, setValues] = useState<Record<string, string>>({});
+  const [confirmingRemove, setConfirmingRemove] = useState(false);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-text-ink/30 backdrop-blur-sm" role="presentation" onClick={(event) => event.target === event.currentTarget && props.onClose()}>
@@ -70,15 +71,42 @@ export function McpServerModal(props: McpServerModalProps) {
                 >
                   {t("tools.mcp.modal.test")}
                 </button>
-                <button
-                  type="button"
-                  disabled={props.busy}
-                  onClick={() => props.onRemove(props.preset.name)}
-                  className="rounded-btn border border-status-error/30 bg-status-error/10 px-3 py-1.5 text-xs text-status-error hover:bg-status-error/20 disabled:opacity-50"
-                >
-                  {t("tools.mcp.modal.remove")}
-                </button>
+                {!confirmingRemove && (
+                  <button
+                    type="button"
+                    disabled={props.busy}
+                    onClick={() => setConfirmingRemove(true)}
+                    className="rounded-btn border border-status-error/30 bg-status-error/10 px-3 py-1.5 text-xs text-status-error hover:bg-status-error/20 disabled:opacity-50"
+                  >
+                    {t("tools.mcp.modal.remove")}
+                  </button>
+                )}
               </div>
+              {confirmingRemove && (
+                <div className="space-y-2 rounded-card border border-status-error/30 bg-status-error/5 px-3 py-2">
+                  <p className="text-xs text-text-ink/75">
+                    {t("tools.mcp.modal.removeConfirm", { name: props.preset.display_name })}
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      disabled={props.busy}
+                      onClick={() => props.onRemove(props.preset.name)}
+                      className="rounded-btn bg-status-error px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                    >
+                      {t("common.confirm")}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={props.busy}
+                      onClick={() => setConfirmingRemove(false)}
+                      className="rounded-btn border border-content-panel bg-background-paper px-3 py-1.5 text-xs text-text-ink/70 hover:bg-canvas-oat/40 disabled:opacity-50"
+                    >
+                      {t("common.cancel")}
+                    </button>
+                  </div>
+                </div>
+              )}
               {props.testResult?.message && (
                 <p className={`text-xs ${props.testResult.ok === false ? "text-status-error" : "text-status-success"}`}>
                   {props.testResult.message}

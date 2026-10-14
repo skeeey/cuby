@@ -202,6 +202,17 @@ describe("ToolsPageView", () => {
     expect(html).toContain("MCP servers");
     expect(html).toContain("Integrations");
   });
+
+  it("integrationsEnabled=false 时渠道卡片仍显示已连接状态", () => {
+    const state = toolsReducer(initialToolsState, {
+      type: "tools/loadSuccess",
+      connections: [{ id: "channel-wechat-local", toolkit: "wechat", status: "connected", surface: "channel", lastError: null }]
+    });
+    const html = renderView(state, { integrationsEnabled: false });
+
+    expect(html).toContain("WeChat");
+    expect(html).toContain("Connected");
+  });
 });
 
 function renderView(

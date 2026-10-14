@@ -557,6 +557,19 @@ export const toolsActions = {
 
       dispatch({ type: "tools/connectionFailure", message: toErrorMessage(error) });
     }
+  },
+
+  /** Loads only the local message-channel connections, for identities without a memmy cloud account. */
+  async loadChannelConnections(channelsClient: ChannelsClient, dispatch: (action: ToolsAction) => void): Promise<void> {
+    dispatch({ type: "tools/loadStart" });
+    const connections = await listChannelConnections(channelsClient);
+    dispatch({ type: "tools/loadSuccess", connections });
+  },
+
+  /** Refreshes only the local message-channel connections. */
+  async refreshChannelConnections(channelsClient: ChannelsClient, dispatch: (action: ToolsAction) => void): Promise<void> {
+    const connections = await listChannelConnections(channelsClient);
+    dispatch({ type: "tools/connectionsUpdated", connections });
   }
 };
 

@@ -66,6 +66,51 @@ describe("toolsActions", () => {
       connections: [{ id: "conn-github", toolkit: "github", status: "ACTIVE", surface: "integration" }]
     });
   });
+
+  it("渠道单独加载：只读渠道连接并派发 loadStart/loadSuccess", async () => {
+    const dispatch = vi.fn<(action: ToolsAction) => void>();
+    const channels = createChannelsClient([
+      {
+        id: "channel-wechat-local",
+        provider: "wechat",
+        runtimeChannel: "weixin",
+        status: "connected",
+        running: true,
+        displayName: "WeChat"
+      }
+    ]);
+
+    await toolsActions.loadChannelConnections(channels, dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({ type: "tools/loadStart" });
+    expect(dispatch).toHaveBeenCalledWith({
+      type: "tools/loadSuccess",
+      connections: [{ id: "channel-wechat-local", toolkit: "wechat", status: "connected", surface: "channel", lastError: null }]
+    });
+  });
+
+  it("渠道单独刷新：派发 connectionsUpdated 而不是 loadStart", async () => {
+    const dispatch = vi.fn<(action: ToolsAction) => void>();
+
+    await toolsActions.refreshChannelConnections(createChannelsClient([]), dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({ type: "tools/connectionsUpdated", connections: [] });
+    expect(dispatch).not.toHaveBeenCalledWith({ type: "tools/loadStart" });
+  });
+
+  it("渠道加载失败时静默为空列表，不派发失败态", async () => {
+    const dispatch = vi.fn<(action: ToolsAction) => void>();
+    vi.spyOn(console, "warn").mockImplementation(() => undefined);
+    const channels = createChannelsClient([]);
+    channels.listConnections = vi.fn(async () => {
+      throw new Error("agent down");
+    });
+
+    await toolsActions.loadChannelConnections(channels, dispatch);
+
+    expect(dispatch).toHaveBeenCalledWith({ type: "tools/loadSuccess", connections: [] });
+    expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "tools/loadFailure" }));
+  });
 });
 
 /** Creates create failing integrations client. */

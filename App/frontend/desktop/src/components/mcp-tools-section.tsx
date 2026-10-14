@@ -30,6 +30,7 @@ export interface McpToolsSectionViewProps {
   busy: boolean;
   modalError: string;
   testResult: McpPresetsPayload["last_action"] | null;
+  notice?: string | null;
   onOpenInstall: (preset: McpPresetPayload) => void;
   onOpenManage: (preset: McpPresetPayload) => void;
   onOpenCustom: () => void;
@@ -60,6 +61,12 @@ export function McpToolsSectionView(props: McpToolsSectionViewProps) {
           {t("tools.mcp.customAdd")}
         </button>
       </div>
+
+      {props.notice && (
+        <p className="mb-3 rounded-card border border-amber-300/40 bg-amber-50/60 px-3 py-2 text-xs text-amber-700">
+          {props.notice}
+        </p>
+      )}
 
       {props.status === "loading" && <p className="text-sm text-text-ink/55">{t("common.loading")}</p>}
       {props.status === "error" && (
@@ -197,6 +204,7 @@ export function McpToolsSection(props: { client: McpPresetsClient | null }) {
   const [busy, setBusy] = useState(false);
   const [modalError, setModalError] = useState("");
   const [testResult, setTestResult] = useState<McpPresetsPayload["last_action"] | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!props.client) {
@@ -227,6 +235,12 @@ export function McpToolsSection(props: { client: McpPresetsClient | null }) {
           setModalError(payload.last_action.message ?? "");
         }
         if (!options.keepModal) {
+          // Install/remove/custom responses can report a skipped or timed-out hot
+          // reload through requires_restart; the merged message must stay visible
+          // instead of closing the modal on a silent "success".
+          setNotice(
+            payload.requires_restart && payload.last_action?.message ? payload.last_action.message : null
+          );
           setModal({ kind: "closed" });
         }
       } catch (error) {
@@ -247,6 +261,7 @@ export function McpToolsSection(props: { client: McpPresetsClient | null }) {
       busy={busy}
       modalError={modalError}
       testResult={testResult}
+      notice={notice}
       onOpenInstall={(preset) => {
         setModalError("");
         setTestResult(null);
