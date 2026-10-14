@@ -47,7 +47,7 @@ export interface CuberouterPersonalToken {
 }
 
 /** Default prefix of the per-account organization token names the desktop provisions from. */
-export const DESKTOP_TOKEN_NAME = "memmy-desktop";
+export const DESKTOP_TOKEN_NAME = "cuby-desktop";
 
 export interface CuberouterClient {
   register(input: {

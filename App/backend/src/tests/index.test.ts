@@ -250,7 +250,7 @@ describe("local api", () => {
     expect(response.status).toBe(200);
     await expect(response.json()).resolves.toMatchObject({
       session: { authenticated: true, profile: { identityProvider: "cuberouter" } },
-      provisioning: { apiKey: "sk-cuberouter", model: "deepseek-flash" }
+      provisioning: { apiKey: "sk-cuberouter", model: "deepseek-v4.1-flash" }
     });
   });
 
@@ -1218,15 +1218,25 @@ async function startMockCuberouterServer(): Promise<string> {
       return;
     }
 
+    if (request.method === "GET" && request.url === "/api/organizations") {
+      // The member's memberships, newest first; the desktop provisions from the first one.
+      sendJson(response, {
+        success: true,
+        message: "ok",
+        data: [{ id: 7, name: "yeebo", role: "member" }]
+      });
+      return;
+    }
+
     if (
       request.method === "GET"
-      && request.url === "/api/organizations/7/tokens?keyword=memmy-desktop-alice&status=1&page_size=100"
+      && request.url === "/api/organizations/7/tokens?keyword=cuby-desktop-alice&status=1&page_size=100"
     ) {
       // Organizations hand members the full secret, which is what the desktop provisions from.
       sendJson(response, {
         success: true,
         message: "ok",
-        data: { items: [{ id: 11, name: "memmy-desktop-alice", key: "sk-cuberouter" }], total: 1, page_size: 100 }
+        data: { items: [{ id: 11, name: "cuby-desktop-alice", key: "sk-cuberouter" }], total: 1, page_size: 100 }
       });
       return;
     }

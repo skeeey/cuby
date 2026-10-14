@@ -18,6 +18,7 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
       serverAddress: "http://127.0.0.1:3000"
     })),
     sendEmailVerificationCode: vi.fn(async () => undefined),
+    listOrganizations: vi.fn(async () => [{ id: "7", name: "yeebo" }]),
     // Echoes the name asked for: the service provisions the per-account token it looked up.
     listOrganizationTokens: vi.fn(async (_token: string, _organizationId: string, tokenName: string) => [
       { id: 11, name: tokenName, key: "sk-org" }
@@ -88,8 +89,7 @@ function createTestService(input: {
   onRequirements?: (url: string) => void;
   onRemember?: (username: string, nodeId: string) => void;
   onProbe?: () => void;
-  organizationId?: string | null;
-  organizationTokenNamePrefix?: string | null;
+  log?: (message: string) => void;
   onOrganizationTokenLookup?: (tokenName: string, organizationId: string) => void;
   organizations?: Array<{ id: string; name: string }>;
   onOrganizationList?: () => void;
@@ -118,7 +118,7 @@ function createTestService(input: {
       sendEmailVerificationCode: async () => undefined,
       listOrganizations: async () => {
         input.onOrganizationList?.();
-        return input.organizations ?? [];
+        return input.organizations ?? [{ id: "7", name: "yeebo" }];
       },
       listOrganizationTokens: async (_token: string, organizationId: string, tokenName: string) => {
         input.onOrganizationTokenLookup?.(tokenName, organizationId);
@@ -159,11 +159,7 @@ function createTestService(input: {
       }
     },
     model: "deepseek-flash",
-    organizationId: input.organizationId === undefined ? "7" : input.organizationId,
-    organizationTokenNamePrefix: input.organizationTokenNamePrefix === undefined
-      ? null
-      : input.organizationTokenNamePrefix,
-    log: () => undefined
+    log: input.log ?? (() => undefined)
   });
   return Object.assign(service, { repository });
 }
@@ -177,7 +173,7 @@ describe("cuberouter account service", () => {
     const result = await service.register({ username: "alice", password: "Passw0rd1" });
 
     expect(client.register).toHaveBeenCalledWith({ username: "alice", password: "Passw0rd1" });
-    expect(client.listOrganizationTokens).toHaveBeenCalledWith("jwt-1", "7", "memmy-desktop-alice");
+    expect(client.listOrganizationTokens).toHaveBeenCalledWith("jwt-1", "7", "cuby-desktop-alice");
     expect(result.provisioning).toEqual({
       apiKey: "sk-org",
       apiBase: "http://127.0.0.1:3000/v1",
@@ -441,7 +437,7 @@ describe("cuberouter account service", () => {
 
     await expect(service.login({ username: "alice", password: "Passw0rd1" })).rejects.toMatchObject({
       code: "cuberouter_key_unavailable",
-      message: "创建组织 API Key（memmy-desktop-alice）失败：permission denied"
+      message: "创建组织 API Key（cuby-desktop-alice）失败：permission denied"
     });
   });
 
@@ -488,7 +484,7 @@ describe("cuberouter account service", () => {
       sendEmailVerificationCode: async () => {
         asked.push(node.url);
       },
-      listOrganizationTokens: async () => [{ id: 11, name: "memmy-desktop", key: "sk-org" }],
+      listOrganizationTokens: async () => [{ id: 11, name: "cuby-desktop", key: "sk-org" }],
       getSelf: async () => ({ userId: "7", username: "alice", displayName: "Alice", quota: 0 })
     }])) as never;
     // The machine's current line is cn; the user picks hk for the new account.
@@ -558,22 +554,16 @@ describe("cuberouter account service", () => {
     expect(returningUpsert.isNewUser).toBe(false);
   });
 
-  it("names the account's token from the build's prefix, and from the shipped one otherwise", async () => {
+  it("names the account's key with the shipped cuby-desktop prefix", async () => {
     const looked: string[] = [];
-    const configured = createTestService({
-      nodes: [{ id: "default", url: "http://127.0.0.1:3000" }],
-      organizationTokenNamePrefix: "team-desktop",
-      onOrganizationTokenLookup: (name) => looked.push(name)
-    });
-    await configured.login({ username: "alice", password: "Passw0rd1" });
-
-    const byDefault = createTestService({
+    const service = createTestService({
       nodes: [{ id: "default", url: "http://127.0.0.1:3000" }],
       onOrganizationTokenLookup: (name) => looked.push(name)
     });
-    await byDefault.login({ username: "alice", password: "Passw0rd1" });
 
-    expect(looked).toEqual(["team-desktop-alice", "memmy-desktop-alice"]);
+    await service.login({ username: "alice", password: "Passw0rd1" });
+
+    expect(looked).toEqual(["cuby-desktop-alice"]);
   });
 
   it("names the token after the account the instance reports, not the string that was typed", async () => {
@@ -593,7 +583,7 @@ describe("cuberouter account service", () => {
             serverAddress: "http://127.0.0.1:3000"
           }),
           sendEmailVerificationCode: async () => undefined,
-          listOrganizations: async () => [],
+          listOrganizations: async () => [{ id: "7", name: "yeebo" }],
           listOrganizationTokens: async (_token: string, _organizationId: string, tokenName: string) => {
             looked.push(tokenName);
             return [{ id: 11, name: tokenName, key: "sk-org" }];
@@ -604,49 +594,115 @@ describe("cuberouter account service", () => {
 
     await service.login({ username: "LiangYT@yeebo.com.cn", password: "Passw0rd1" });
 
-    expect(looked).toEqual(["memmy-desktop-liangyt"]);
+    expect(looked).toEqual(["cuby-desktop-liangyt"]);
   });
 
-  it("treats an all-digit organization setting as that instance's id", async () => {
+  it("reads the member's own organization from the instance, with no configured name", async () => {
     const looked: string[] = [];
     let listed = 0;
     const service = createTestService({
       nodes: [{ id: "default", url: "http://127.0.0.1:3000" }],
+      organizations: [{ id: "42", name: "yeebo" }],
       onOrganizationTokenLookup: (_name, organizationId) => looked.push(organizationId),
-      onOrganizationList: () => listed += 1
+      onOrganizationList: () => (listed += 1)
     });
 
     await service.login({ username: "alice", password: "Passw0rd1" });
 
-    expect(looked).toEqual(["7"]);
-    expect(listed).toBe(0);
+    expect(listed).toBe(1);
+    expect(looked).toEqual(["42"]);
   });
 
-  it("resolves an organization name to whatever id the instance gives it", async () => {
-    // The point of naming it: the two deployments number the same organization differently.
-    const looked: string[] = [];
+  it("uses the first organization the instance lists when the account is in several", async () => {
+    const seen: string[] = [];
     const service = createTestService({
       nodes: [{ id: "default", url: "http://127.0.0.1:3000" }],
-      organizationId: "MemTensor",
-      organizations: [{ id: "42", name: "Other" }, { id: "9", name: "MemTensor" }],
-      onOrganizationTokenLookup: (_name, organizationId) => looked.push(organizationId)
+      organizations: [{ id: "9", name: "newer" }, { id: "3", name: "older" }],
+      log: (message) => seen.push(message),
+      onOrganizationTokenLookup: (_name, organizationId) => seen.push(organizationId)
     });
 
     await service.login({ username: "alice", password: "Passw0rd1" });
 
-    expect(looked).toEqual(["9"]);
+    expect(seen[0]).toContain("2 organizations");
+    expect(seen[1]).toBe("9");
   });
 
-  it("names the organization when this line does not have it", async () => {
-    const service = createTestService({
-      nodes: [{ id: "default", url: "http://127.0.0.1:3000" }],
-      organizationId: "MemTensor",
-      organizations: [{ id: "3", name: "Other" }]
+  it("reports the instance's username and the organization on the session profile", async () => {
+    const service = singleNodeService(fakeClient(), fakeRepository().repository);
+
+    const result = await service.login({ username: "alice", password: "Passw0rd1" });
+
+    expect(result.session.profile).toMatchObject({ username: "alice", organizationName: "yeebo" });
+  });
+
+  it("provisions a personal key when the account belongs to no organization", async () => {
+    let created = false;
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => []),
+      createPersonalToken: vi.fn(async () => {
+        created = true;
+      }),
+      searchPersonalTokens: vi.fn(async (_token: string, name: string) =>
+        created ? [{ id: 41, name }] : []
+      ),
+      getPersonalTokenKey: vi.fn(async () => "sk-personal")
     });
+    const service = singleNodeService(client, fakeRepository().repository);
+
+    const result = await service.login({ username: "alice", password: "Passw0rd1" });
+
+    expect(client.createPersonalToken).toHaveBeenCalledWith("jwt-1", { name: "cuby-desktop-alice" });
+    expect(client.getPersonalTokenKey).toHaveBeenCalledWith("jwt-1", 41);
+    expect(result.provisioning).toEqual({
+      apiKey: "sk-personal",
+      apiBase: "http://127.0.0.1:3000/v1",
+      model: "deepseek-flash"
+    });
+  });
+
+  it("reuses an existing personal key on login instead of creating a second", async () => {
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => []),
+      searchPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice" }]),
+      getPersonalTokenKey: vi.fn(async () => "sk-personal")
+    });
+    const service = singleNodeService(client, fakeRepository().repository);
+
+    const result = await service.login({ username: "alice", password: "Passw0rd1" });
+
+    expect(client.createPersonalToken).not.toHaveBeenCalled();
+    expect(result.provisioning.apiKey).toBe("sk-personal");
+  });
+
+  it("creates the personal key on registration without looking for one first", async () => {
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => []),
+      searchPersonalTokens: vi.fn(async (_token: string, name: string) => [{ id: 41, name }]),
+      getPersonalTokenKey: vi.fn(async () => "sk-personal")
+    });
+    const service = singleNodeService(client, fakeRepository().repository);
+
+    await service.register({ username: "alice", password: "Passw0rd1" });
+
+    expect(client.createPersonalToken).toHaveBeenCalledWith("jwt-1", { name: "cuby-desktop-alice" });
+    // Only the look that finds the row the create just made.
+    expect(client.searchPersonalTokens).toHaveBeenCalledTimes(1);
+  });
+
+  it("says what it was doing when the instance refuses the personal key", async () => {
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => []),
+      searchPersonalTokens: vi.fn(async () => []),
+      createPersonalToken: vi.fn(async () => {
+        throw Object.assign(new Error("已达到最大令牌数量限制 (10)"), { code: "rejected" });
+      })
+    });
+    const service = singleNodeService(client, fakeRepository().repository);
 
     await expect(service.login({ username: "alice", password: "Passw0rd1" })).rejects.toMatchObject({
       code: "cuberouter_key_unavailable",
-      message: expect.stringContaining("MemTensor")
+      message: "创建个人 API Key（cuby-desktop-alice）失败：已达到最大令牌数量限制 (10)"
     });
   });
 
@@ -664,7 +720,7 @@ describe("cuberouter account service", () => {
 
     await expect(service.login({ username: "alice", password: "Passw0rd1" })).rejects.toMatchObject({
       code: "cuberouter_key_unavailable",
-      message: "创建组织 API Key（memmy-desktop-alice）失败：permission denied"
+      message: "创建组织 API Key（cuby-desktop-alice）失败：permission denied"
     });
   });
 
@@ -682,7 +738,7 @@ describe("cuberouter account service", () => {
     const result = await service.login({ username: "alice", password: "Passw0rd1" });
 
     expect(createOrganizationToken).toHaveBeenCalledWith("jwt-1", "7", {
-      name: "memmy-desktop-alice",
+      name: "cuby-desktop-alice",
       unlimitedQuota: true
     });
     expect(result.provisioning).toEqual({
@@ -698,7 +754,7 @@ describe("cuberouter account service", () => {
     const createOrganizationToken = createdKey();
     const client = fakeClient({
       listOrganizationTokens: vi.fn(async () => [
-        { id: 3, name: "memmy-desktop-alice-2", key: "sk-almost" }
+        { id: 3, name: "cuby-desktop-alice-2", key: "sk-almost" }
       ]),
       createOrganizationToken
     });
@@ -722,23 +778,6 @@ describe("cuberouter account service", () => {
     expect(result.provisioning.apiKey).toBe("sk-org");
   });
 
-  it("names the missing build setting when no organization is configured", async () => {
-    const client = fakeClient();
-    const { repository } = fakeRepository();
-    const service = createTestService({
-      nodes: [{ id: "default", url: "http://127.0.0.1:3000" }],
-      client,
-      repository,
-      organizationId: null
-    });
-
-    await expect(service.login({ username: "alice", password: "Passw0rd1" })).rejects.toMatchObject({
-      code: "cuberouter_key_unavailable",
-      message: expect.stringContaining("MEMMY_CUBEROUTER_ORG")
-    });
-    expect(client.listOrganizationTokens).not.toHaveBeenCalled();
-  });
-
   it("still measures the lines when nothing is known about the account", async () => {
     const probes: number[] = [];
     const service = createTestService({
@@ -755,17 +794,17 @@ describe("cuberouter account service", () => {
 
 describe("desktop token name", () => {
   it("names the organization token after the account, dropping the email domain", () => {
-    expect(toDesktopTokenName("liangyt@yeebo.com.cn")).toBe("memmy-desktop-liangyt");
+    expect(toDesktopTokenName("liangyt@yeebo.com.cn")).toBe("cuby-desktop-liangyt");
   });
 
   it("takes the whole username when it carries no domain", () => {
-    expect(toDesktopTokenName("liangyt")).toBe("memmy-desktop-liangyt");
+    expect(toDesktopTokenName("liangyt")).toBe("cuby-desktop-liangyt");
   });
 
   it("keeps the case and punctuation the instance stores", () => {
     // cuberouter usernames are case-sensitive, so folding case would name a key the
     // administrator cannot find in their console.
-    expect(toDesktopTokenName("Liang.YT@yeebo.com.cn")).toBe("memmy-desktop-Liang.YT");
+    expect(toDesktopTokenName("Liang.YT@yeebo.com.cn")).toBe("cuby-desktop-Liang.YT");
   });
 
   it("takes the build's prefix in place of the shipped one", () => {
@@ -773,10 +812,10 @@ describe("desktop token name", () => {
   });
 
   it("never leaves the prefix bare when there is nothing before the separator", () => {
-    expect(toDesktopTokenName("@yeebo.com.cn")).toBe("memmy-desktop-@yeebo.com.cn");
+    expect(toDesktopTokenName("@yeebo.com.cn")).toBe("cuby-desktop-@yeebo.com.cn");
   });
 
   it("ignores surrounding whitespace", () => {
-    expect(toDesktopTokenName("  liangyt@yeebo.com.cn  ")).toBe("memmy-desktop-liangyt");
+    expect(toDesktopTokenName("  liangyt@yeebo.com.cn  ")).toBe("cuby-desktop-liangyt");
   });
 });

@@ -7,6 +7,8 @@ import {
   DESKTOP_TOKEN_NAME,
   type CuberouterClient,
   type CuberouterErrorCode,
+  type CuberouterOrganization,
+  type CuberouterPersonalToken,
   type CuberouterRegistrationRequirements
 } from "../adapters/outbound/cuberouter-client/index.js";
 import type { AccountSessionRepository } from "../infrastructure/app-state-store/repositories/account-session-repo.js";
@@ -76,10 +78,6 @@ export interface CreateCuberouterAccountServiceOptions {
   nodeRouter: CuberouterNodeRouter;
   /** Fixed model provisioned for the desktop. */
   model: string;
-  /** Organization whose token supplies the API key; null when unconfigured. */
-  organizationId: string | null;
-  /** Prefix of the per-account token name; null means the built-in default. */
-  organizationTokenNamePrefix: string | null;
   log?: (message: string) => void;
 }
 
@@ -177,41 +175,28 @@ export function createCuberouterAccountService(
       .slice(0, 2);
   }
 
-  /**
-   * Resolves the configured organization to the id this instance uses for it. A build names the
-   * organization because the two deployments number it independently, so the id is looked up per
-   * line; an all-digit setting is taken as the id itself (local development, single-instance setups).
-   */
-  async function resolveOrganizationId(
-    client: CuberouterClient,
-    accessToken: string,
-    configured: string
-  ): Promise<string> {
-    if (/^\d+$/.test(configured)) {
-      return configured;
-    }
-
-    const organizations = await client.listOrganizations(accessToken);
-    const match = organizations.find((organization) => organization.name === configured);
-    if (!match) {
-      throw Object.assign(new Error(`未找到组织「${configured}」，请联系管理员确认`), {
-        code: "organization_token_unavailable" as const
-      });
-    }
-    return match.id;
-  }
-
   /** Runs one login against one node and records it as the account's line. */
   async function loginOnNode(
     nodeId: string,
     username: string,
-    password: string
+    password: string,
+    createDirectly: boolean
   ): Promise<CuberouterAuthResult> {
     const { client, url } = clientForNode(nodeId);
     const session = await client.login({ username, password });
+    // The organization comes from the membership list, never from a build setting: the same
+    // organization has a different id on each deployment, and the list is already per instance.
+    const organizations = await client.listOrganizations(session.accessToken);
+    if (organizations.length > 1) {
+      log(`[cuberouter] ${session.username} belongs to ${organizations.length} organizations, using ${organizations[0]!.name}`);
+    }
+    const organization = organizations[0] ?? null;
     // The name comes from what the instance reports, never from the typed string: an alias would
     // name a key nobody created.
-    const apiKey = await ensureOrganizationKey(client, session.accessToken, session.username);
+    const tokenName = toDesktopTokenName(session.username);
+    const apiKey = organization
+      ? await ensureOrganizationKey(client, session.accessToken, organization.id, tokenName)
+      : await ensurePersonalKey(client, session.accessToken, tokenName, createDirectly);
     // "New" is a question about this machine, and the account row is the wrong place to ask it:
     // a row whose uuid was written under a different spelling re-appears as new, and "new"
     // resets the guidance. The line memory is per username, survives a logout, and is written
@@ -233,9 +218,14 @@ export function createCuberouterAccountService(
         region: null,
         registeredAt: null,
         identityProvider: "cuberouter",
+        // What the sidebar renders for this identity, and what survives restarts in the raw
+        // profile below.
+        username: session.username,
+        organizationName: organization?.name ?? null,
         rawProfile: {
           username: session.username,
-          displayName: session.displayName
+          displayName: session.displayName,
+          ...(organization ? { organizationName: organization.name } : {})
         }
       }
     });
@@ -250,32 +240,16 @@ export function createCuberouterAccountService(
   }
 
   /**
-   * The account's API key inside the organization, read back when it exists and created when it
+   * The account's key inside one organization, read back when it exists and created when it
    * does not. The name is the account's (see `toDesktopTokenName`), so an administrator's
-   * hand-provisioned key and this account's own key are the same key: the read comes first and a
-   * returning account reuses what it — or the operator — already made. Only a miss creates.
-   *
-   * A created key takes the shape the console's own create form defaults to: held by this
-   * account, private to it, and unlimited — the organization's pool is the budget, and a
-   * per-key quota would strand the key the moment it ran out.
+   * hand-provisioned key and this account's own key are the same key.
    */
   async function ensureOrganizationKey(
     client: CuberouterClient,
     accessToken: string,
-    username: string
+    organizationId: string,
+    tokenName: string
   ): Promise<string> {
-    if (!options.organizationId) {
-      throw Object.assign(
-        new Error("未配置组织（MEMMY_CUBEROUTER_ORG），无法获取 API Key"),
-        { code: "organization_token_unavailable" as const }
-      );
-    }
-
-    const tokenName = toDesktopTokenName(
-      username,
-      options.organizationTokenNamePrefix ?? DESKTOP_TOKEN_NAME
-    );
-    const organizationId = await resolveOrganizationId(client, accessToken, options.organizationId);
     const tokens = await client.listOrganizationTokens(accessToken, organizationId, tokenName);
     // Exact match after the server's name filter: the filter is a substring match, so a longer
     // name that merely starts with this account's (a second key, say) is not ours.
@@ -289,20 +263,59 @@ export function createCuberouterAccountService(
         name: tokenName,
         unlimitedQuota: true
       });
-      log(`[cuberouter] created organization key ${tokenName} for ${username}`);
+      log(`[cuberouter] created organization key ${tokenName}`);
       return created.key;
     } catch (error) {
       // Say what the desktop was doing, and keep the instance's own sentence: the same refusal
       // ("permission denied") means something different at login than at creation, and the
       // reason — not a membership, a name too long, the key limit reached — lives in that text.
-      //
-      // Never the raw code: `rejected` is how the login loop recognises wrong credentials, and
-      // this account has just authenticated. What failed is the key, not the password.
       const message = error instanceof Error ? error.message : String(error);
       throw Object.assign(new Error(`创建组织 API Key（${tokenName}）失败：${message}`), {
         code: "organization_token_unavailable" as const
       });
     }
+  }
+
+  /**
+   * The account's personal key, for a member of no organization. The list endpoint masks keys,
+   * so the plaintext is read per row; a create answers without an id, so the row is found by
+   * name afterwards either way.
+   */
+  async function ensurePersonalKey(
+    client: CuberouterClient,
+    accessToken: string,
+    tokenName: string,
+    createDirectly: boolean
+  ): Promise<string> {
+    try {
+      // A fresh registration cannot have a key yet, so it skips the first look; a returning
+      // account looks first and reuses whatever it — or an operator — left behind.
+      let provisioned = createDirectly ? null : await findPersonalToken(client, accessToken, tokenName);
+      if (!provisioned) {
+        await client.createPersonalToken(accessToken, { name: tokenName });
+        log(`[cuberouter] created personal key ${tokenName}`);
+        provisioned = await findPersonalToken(client, accessToken, tokenName);
+      }
+      if (!provisioned) {
+        throw new Error("创建后未能按名字找到这把密钥");
+      }
+      return await client.getPersonalTokenKey(accessToken, provisioned.id);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      throw Object.assign(new Error(`创建个人 API Key（${tokenName}）失败：${message}`), {
+        code: "organization_token_unavailable" as const
+      });
+    }
+  }
+
+  /** Finds one personal token by exact name; the server's filter is a LIKE pattern, so compare again. */
+  async function findPersonalToken(
+    client: CuberouterClient,
+    accessToken: string,
+    tokenName: string
+  ): Promise<CuberouterPersonalToken | null> {
+    const tokens = await client.searchPersonalTokens(accessToken, tokenName);
+    return tokens.find((token) => token.name === tokenName) ?? null;
   }
 
   return {
@@ -320,7 +333,7 @@ export function createCuberouterAccountService(
           ...(input.email ? { email: input.email } : {}),
           ...(input.verificationCode ? { verificationCode: input.verificationCode } : {})
         });
-        return await loginOnNode(nodeId, input.username, input.password);
+        return await loginOnNode(nodeId, input.username, input.password, true);
       } catch (error) {
         log(`[cuberouter] register/login on ${url} failed: ${error instanceof Error ? error.message : String(error)}`);
         throw toApiError(error);
@@ -374,7 +387,7 @@ export function createCuberouterAccountService(
       let rejection: Error | null = null;
       for (const nodeId of order) {
         try {
-          return await loginOnNode(nodeId, input.username, input.password);
+          return await loginOnNode(nodeId, input.username, input.password, false);
         } catch (error) {
           const apiError = toApiError(error);
           // A rejection only means "wrong credentials" when nothing else went wrong. The lines
