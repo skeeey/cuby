@@ -35,7 +35,7 @@
 ### 2.2 MCP 分区（新增）
 
 - **Preset 安装器**：通用区展示 Brave Search、Exa 卡片，「开发者工具」折叠组（默认收起）收纳 Figma、Firecrawl；安装弹窗按字段声明动态渲染（如 Brave 的 API key、Exa 免 key 直接装）；
-- **管理弹窗**（已安装）：连接测试（显示握手结果与工具数）、停用、卸载；
+- **管理弹窗**（已安装的）：连接测试（显示握手结果与工具数）、移除（`MCPServerConfig` 没有 enabled 开关，从 `mcpServers` 删除即停用）；
 - **自定义 server 表单**：name / transport / command / args / env / cwd / url / headers / toolTimeout，字段与校验对齐 agent 端 `customServerFromQuery`；
 - **数据通路**：桌面端直连 memmy-agent（沿用 `memmy-agent-client.ts` 的 bootstrap token 机制），调用现成的 `/api/settings/mcp-presets` 系列；enable/remove/custom 之后 agent 侧会附带回热重载结果。
 
