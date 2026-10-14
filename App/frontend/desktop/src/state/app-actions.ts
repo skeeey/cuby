@@ -108,6 +108,8 @@ export type AppAction =
       nickname?: string;
       registeredAt?: string | null;
       identityProvider?: "memmy_cloud" | "cuberouter";
+      username?: string | null;
+      organizationName?: string | null;
     }
   | { type: "account/cleared" }
   | { type: "modelConfig/updated"; config: Partial<ModelProviderConfig> }
@@ -225,6 +227,8 @@ export const appActions = {
     nickname?: string;
     registeredAt?: string | null;
     identityProvider?: "memmy_cloud" | "cuberouter";
+    username?: string | null;
+    organizationName?: string | null;
   }): AppAction {
     return { type: "account/updated", ...input };
   },

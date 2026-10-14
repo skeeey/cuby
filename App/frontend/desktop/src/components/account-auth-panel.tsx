@@ -186,7 +186,9 @@ export function AccountAuthPanel() {
       phoneNumber: session.profile.phoneNumber,
       nickname: session.profile.nickname,
       registeredAt: session.profile.registeredAt,
-      identityProvider: session.profile.identityProvider
+      identityProvider: session.profile.identityProvider,
+      username: session.profile.username ?? null,
+      organizationName: session.profile.organizationName ?? null
     }));
 
     if (!clients?.config) {

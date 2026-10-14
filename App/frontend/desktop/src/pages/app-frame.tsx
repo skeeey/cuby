@@ -167,6 +167,7 @@ type NewAgentDraftState = Pick<AppState["agent"], "blankDraftActive" | "newChatR
 export interface SidebarAccountLabels {
   brandName: string;
   byokLabel: string;
+  accountModeLabel: string;
   accountFallback: string;
   accountMetaFallback: string;
   unsetName: string;
@@ -313,6 +314,7 @@ export function AppFrame(props: AppFrameProps) {
   const accountSummary = resolveSidebarAccountSummary(state, {
     brandName: t("brand.name"),
     byokLabel: t("welcome.byok.title"),
+    accountModeLabel: t("appFrame.accountMode"),
     accountFallback: t("appFrame.accountFallback"),
     accountMetaFallback: t("appFrame.accountMetaFallback"),
     unsetName: t("appFrame.unsetName"),
@@ -3016,6 +3018,18 @@ export function resolveSidebarAccountSummary(state: AppState, labels: SidebarAcc
   const userMode = state.bootstrap?.app.userMode ?? "unset";
 
   if (userMode === "byok") {
+    // A cuberouter identity signs in with an account, so the corner names the account, not the
+    // key: username (organization). Pure-BYOK machines keep the key-mode label; a session that
+    // has not learned its username yet falls back to the old rendering below.
+    if (state.account.identityProvider === "cuberouter" && state.account.username) {
+      const organizationName = state.account.organizationName;
+      return {
+        name: organizationName
+          ? `${state.account.username} (${organizationName})`
+          : state.account.username,
+        meta: labels.accountModeLabel
+      };
+    }
     // The BYOK-set name is persisted in local localStorage and read back into state.account.nickname on startup; show it if present, otherwise fall back to the brand name.
     // meta is fixed to the mode label ("API Key mode").
     return {

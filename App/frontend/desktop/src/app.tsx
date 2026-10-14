@@ -279,7 +279,9 @@ function RuntimeApp() {
             phoneNumber: accountSession.profile.phoneNumber,
             nickname: accountSession.profile.nickname,
             registeredAt: accountSession.profile.registeredAt,
-            identityProvider: accountSession.profile.identityProvider
+            identityProvider: accountSession.profile.identityProvider,
+            username: accountSession.profile.username ?? null,
+            organizationName: accountSession.profile.organizationName ?? null
           }));
         } else if (effectiveBootstrap.app.userMode === "byok") {
           const localNickname = readLocalNickname(typeof window === "undefined" ? undefined : window.localStorage);

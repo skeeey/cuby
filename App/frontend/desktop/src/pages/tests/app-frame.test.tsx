@@ -1145,6 +1145,52 @@ describe("AppFrame", () => {
     });
   });
 
+  it("shows the cuberouter username and organization in place of the API key label", () => {
+    const state = appReducer(
+      appReducer(
+        createInitialAppState(),
+        appActions.bootstrapLoaded(
+          { ...mockBootstrap, app: { ...mockBootstrap.app, userMode: "byok" } },
+          "/settings"
+        )
+      ),
+      appActions.accountUpdated({
+        nickname: "Alice",
+        identityProvider: "cuberouter",
+        username: "alice@yeebo.com.cn",
+        organizationName: "yeebo"
+      })
+    );
+
+    expect(resolveSidebarAccountSummary(state, sidebarLabels())).toEqual({
+      name: "alice@yeebo.com.cn (yeebo)",
+      meta: "账号模式"
+    });
+  });
+
+  it("shows just the cuberouter username when the account belongs to no organization", () => {
+    const state = appReducer(
+      appReducer(
+        createInitialAppState(),
+        appActions.bootstrapLoaded(
+          { ...mockBootstrap, app: { ...mockBootstrap.app, userMode: "byok" } },
+          "/settings"
+        )
+      ),
+      appActions.accountUpdated({
+        nickname: "Alice",
+        identityProvider: "cuberouter",
+        username: "alice@yeebo.com.cn",
+        organizationName: null
+      })
+    );
+
+    expect(resolveSidebarAccountSummary(state, sidebarLabels())).toEqual({
+      name: "alice@yeebo.com.cn",
+      meta: "账号模式"
+    });
+  });
+
   it("shows phone or email in sidebar account mode", () => {
     const phoneState = appReducer(
       appReducer(createInitialAppState(), appActions.bootstrapLoaded({ ...mockBootstrap, app: { ...mockBootstrap.app, userMode: "account" } }, "/settings")),
@@ -1190,6 +1236,7 @@ function sidebarLabels() {
   return {
     brandName: "Memmy",
     byokLabel: "API Key 模式",
+    accountModeLabel: "账号模式",
     accountFallback: "未登录",
     accountMetaFallback: "未绑定手机号或邮箱",
     unsetName: "未选择模式",
