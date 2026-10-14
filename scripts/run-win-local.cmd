@@ -7,7 +7,7 @@ rem appear — and the shipped default model. Uncomment to override either.
 rem The exe path is relative to this script, so it works wherever the repo lives.
 
 rem The line table: id=url pairs; one entry means no line picker in the app.
-rem set MEMMY_CUBEROUTER_URLS=cn=https://test.cuberouter.cn
+rem set MEMMY_CUBEROUTER_URLS=cn=https://cuberouter.cn
 rem Must be a model that really exists on the instance the line points at (K4 in the tracking doc).
 rem set MEMMY_CUBEROUTER_MODEL=deepseek-v4.1-flash
 
