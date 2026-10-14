@@ -47,9 +47,7 @@ describe("resolveCuberouterClientConfig", () => {
   it("falls back to the shipped model and timeout", () => {
     expect(resolveCuberouterClientConfig({})).toMatchObject({
       model: "deepseek-v4.1-flash",
-      timeoutMs: 10_000,
-      organizationId: "yeebo",
-      organizationTokenNamePrefix: null
+      timeoutMs: 10_000
     });
   });
 
@@ -67,20 +65,5 @@ describe("resolveCuberouterClientConfig", () => {
       { MEMMY_CUBEROUTER_MODEL: "from-env" },
       { model: "from-file", timeoutMs: 20_000 }
     )).toMatchObject({ model: "from-env", timeoutMs: 20_000 });
-  });
-
-  it("reads the organization token name prefix the build asked for", () => {
-    expect(resolveCuberouterClientConfig({ MEMMY_CUBEROUTER_ORG_TOKEN_NAME: " team-desktop " })
-      .organizationTokenNamePrefix).toBe("team-desktop");
-    // Unset means the desktop keeps prefixing the per-account keys with the name it always has.
-    expect(resolveCuberouterClientConfig({}).organizationTokenNamePrefix).toBeNull();
-  });
-
-  it("reads the organization whose token supplies the API key", () => {
-    expect(resolveCuberouterClientConfig({ MEMMY_CUBEROUTER_ORG: " 7 " }).organizationId).toBe("7");
-    // Unset means the shipped organization, so the packaged desktop reads its keys without
-    // anyone having to set a variable before launching it.
-    expect(resolveCuberouterClientConfig({}).organizationId).toBe("yeebo");
-    expect(resolveCuberouterClientConfig({ MEMMY_CUBEROUTER_ORG: "  " }).organizationId).toBe("yeebo");
   });
 });

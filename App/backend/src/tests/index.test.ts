@@ -18,7 +18,6 @@ let backend: LocalBackend | undefined;
 let integrationServer: ReturnType<typeof createServer> | undefined;
 let cuberouterServer: ReturnType<typeof createServer> | undefined;
 let previousCuberouterUrls: string | undefined;
-let previousCuberouterOrg: string | undefined;
 let cuberouterUrlWasSet = false;
 
 afterEach(async () => {
@@ -30,7 +29,6 @@ afterEach(async () => {
   cuberouterServer = undefined;
   if (cuberouterUrlWasSet) {
     restoreOptionalEnv("MEMMY_CUBEROUTER_URLS", previousCuberouterUrls);
-    restoreOptionalEnv("MEMMY_CUBEROUTER_ORG", previousCuberouterOrg);
     cuberouterUrlWasSet = false;
   }
 
@@ -1252,8 +1250,6 @@ async function startMockCuberouterServer(): Promise<string> {
 
   previousCuberouterUrls = process.env.MEMMY_CUBEROUTER_URLS;
   cuberouterUrlWasSet = true;
-  previousCuberouterOrg = process.env.MEMMY_CUBEROUTER_ORG;
-  process.env.MEMMY_CUBEROUTER_ORG = "7";
   const baseUrl = `http://127.0.0.1:${address.port}`;
   // One line, so the build under test never probes the shipped table.
   process.env.MEMMY_CUBEROUTER_URLS = `cn=${baseUrl}`;
