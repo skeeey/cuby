@@ -109,6 +109,7 @@ Linux CLI 的完整改名（含上面的功能接线）作为后续单独一轮�
 | :--- | :--- | :--- |
 | 主目录默认值 | `~/.memmy`（`Memory/src/cli/config.ts:51`、`setup.ts:149,237`、`App/shell/desktop/src/main/main.ts:5647` 等） | `~/.cuby` |
 | 派生产物 | `.memmy-knowledge`、`.memmy-upgrade-backup`、`.memmy-bridge-source-hash`、`~/.memmy/{workspace,computer-history,memory-service,analytics-client-id,runtime.json}` | 同名换前缀 |
+| Windows 本地目录 | `%LOCALAPPDATA%\Memmy\{launcher\MemmyLauncher.vbs, data-migration\state.json, data-layout\last-install.json}`（`windows-launch-at-login.ts:54`、`windows-data-layout.ts:58-59`） | `%LOCALAPPDATA%\Cuby\…`、`CubyLauncher.vbs`——与老安装同名会互相覆盖 |
 | 环境变量 | `MEMMY_HOME`(39)、`MEMMY_CONFIG`(100)、`MEMMY_AGENT_DATA_DIR`(134)、`MEMMY_AGENT_SESSION_DAG_DIR`(54)、`MEMMY_CLOUD_SERVICE`(44)、`MEMMY_AGENT_WORKSPACE`(30) 等（含 `MEMMY_CUBEROUTER_*`） | `CUBY_*`，逐名替换 |
 | 注入点 | `App/shell/desktop/src/main/main.ts:498,506` 向子进程写 `process.env.MEMMY_HOME` | 写 `CUBY_HOME` |
 
@@ -127,6 +128,7 @@ Linux CLI 的完整改名（含上面的功能接线）作为后续单独一轮�
 | 技能目录 | `skills/memmy-memory/`、`skills/memmy-resume/`（`skill-writer/templates/memmy-skill-directory.ts:3-4`，Memory 侧同名副本） | → `cuby-memory`、`cuby-resume` |
 | Claude Code 产物 | `hooks/memmy-resume-hook.mjs`、`commands/memmy-resume.md`、`settings.json` 中的 hook 注册 | 同上前缀 |
 | 标记块 | CLAUDE.md/AGENTS.md 的 `<!-- memmy:start v=1 -->`、shell profile 的 `# Memmy CLI PATH`（`main.ts:718`） | 两处标记必须改名，否则与 Memmy 争同一区块 |
+| CLI 命令软链 | `~/.local/bin/memmy`、`~/.local/bin/memmy-memory`（`main.ts:570-571,615,622`、`App/backend/src/infrastructure/cli-binary/index.ts:15`）；Windows 的 `memmy.cmd`/`memmy-memory.cmd`（`windows-cli-path.ts:54-55`） | → `cuby`、`cuby-memory`——同名软链会与老安装互相覆盖 |
 | 其余 agent | cursor、codex、opencode、deepseek-harness、hermes、pi、qwenwork、workbuddy 的对应产物 | 同上 |
 
 ### 4.6 端口

@@ -1,0 +1,1071 @@
+# memmy → cuby 改名实施计划
+
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+
+**Goal:** 把产品身份从 memmy 改成 cuby——打包身份、磁盘与环境变量、写进用户机器的产物、端口、吉祥物素材、页面文案——同时保留 npm 包名与内部代码标识符不变。
+
+**Architecture:** 分层推进，每层独立提交、独立验证。改的是"值"而不是"结构"：绝大多数步骤是按 token 精确替换（不是全仓字符串替换），每层配一条 grep 验证命令，要求返回空。三个面明确不动：`scripts/install.sh`（Linux CLI 安装面）、`README*` 与 `docs/`（文档面）、`@memmy/*` 与 `@memtensor/memmy-memory-*` 包名。
+
+**Tech Stack:** TypeScript、Electron（electron-builder）、Fastify、React、Vitest、npm workspaces、PNG 素材（从 `cuby.html` 提取）。
+
+**Spec:** `docs/superpowers/specs/2026-10-15-memmy-to-cuby-rename-design.md`
+
+## Global Constraints
+
+- **命名规则（素材）**：`cuby-<姿态名>.png`，全小写、短横线连接，放进 `App/frontend/desktop/src/assets/mascot/`。姿态名用 `MemmyPose`（改名后 `CubyPose`）里的英文 id。
+- **端口映射（5 个，逐字照抄）**：18960→28960（memory 服务）、18970→28970（agent gateway health）、18980→28980（agent websocket）、18990→28990（agent local API）、19100→29100（packaged renderer）。开发端口 19000 / 19001 / 18961 **不改**。
+- **环境变量**：`MEMMY_<NAME>` → `CUBY_<NAME>`，名字其余部分逐字不变（例：`MEMMY_AGENT_DATA_DIR` → `CUBY_AGENT_DATA_DIR`）。
+- **协议头**：`x-memmy-<name>` → `x-cuby-<name>`，17 个，逐字对应。
+- **绝不动**：`scripts/install.sh`、`scripts/internal/linux/**`、`README.md`、`README.zh-CN.md`、`docs/**`、`package.json` 的 `name` 字段与所有 `@memmy/*` / `@memtensor/memmy-memory-*` 包名、`App/memmy-agent/` 目录名、`App/memmy-agent/src/memmy-memory/` 模块目录名、`memmy.cn` / `memmy.bot` 域名、config schema 键（`memmyAgent` / `memmyMemory`）、内部标识符（`MemmyAgentClient`、`memmyConfigPath` 等）。
+- **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
+- **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
+
+## Review Focus
+
+以下五类是 spec 没有逐条规定、但最可能伤到真实使用者的输入/情形。每一条都已在对应 Task 里配了测试：
+
+1. **老 Memmy 与新 Cuby 同时安装**：`~/.local/bin` 下的软链、`~/.claude` 下的技能目录与 hook、shell profile 里的标记块——任何一处同名都会让两个 App 互相覆盖对方产物（Task 6）。
+2. **老 App 正在运行时启动新 App**：5 个固定端口被占用会直接启动失败（Task 7）。
+3. **机器上 `~/.cuby` 尚不存在**：首次启动必须自建目录并落到新路径，而不是回退读 `~/.memmy`（Task 3）。
+4. **升级路径**：已装 Memmy 的用户拉到新版本包名（`Cuby-*.dmg` / `Cuby-*.exe`）时的行为——不会自动覆盖旧安装（Task 1 Step 1 的 artifactName 断言 + Task 14 Step 2 的 `test:release-workflow` + Task 15 Step 4 的本地打包冒烟）。
+5. **素材切换时的视觉跳动**：5 个预留姿态回落到 neutral 后，宠物窗与首页空状态之间切换时头顶基准与脚底位置必须不跳（Task 8 Step 2 的尺寸表逐张比对 + Task 11 Step 1 的回落断言）。
+
+---
+
+### Task 1: 打包身份
+
+**Files:**
+- Modify: `App/shell/desktop/electron-builder.yml:1-3,70-71,84`
+- Modify: `App/shell/desktop/electron-builder.win.yml:1-3,81`
+- Modify: `App/shell/desktop/electron-builder.unsigned.yml:1-3,70-71,81`
+- Modify: `App/shell/desktop/electron-builder.win.unsigned.yml:1-3,81`
+- Modify: `App/shell/desktop/src/main/main.ts:492`
+- Modify: `scripts/package-win-local.sh:139,143,157`
+- Modify: `scripts/internal/mac/install-dev-computer-use.mjs:52`
+- Test: `App/shell/desktop/tests/windows-installer-nsis-compile.test.ts:37,41,57`
+- Test: `tests/ocu-dev-install.test.mjs`
+- Test: `App/shell/desktop/tests/computer-use-permission-panel.test.ts:33`
+
+**Interfaces:**
+- Consumes: 无（首个 Task）。
+- Produces: `productName = Cuby`、`appId = cn.memtensor.cuby`、`artifactName = Cuby-${version}-${arch}.${ext}`、`app.setName("Cuby")`、开发安装目录 `~/Applications/Cuby Development`。后续 Task 14（文案）、Task 15（发布）依赖这些名字。
+
+- [ ] **Step 1: 先改测试里的期望值（会失败）**
+
+`App/shell/desktop/tests/windows-installer-nsis-compile.test.ts`：把三处 `Memmy` 改成 `Cuby`（第 37 行 artifact、第 41 行 `Memmy.exe`、第 57 行 `--config.artifactName`）。
+
+`tests/ocu-dev-install.test.mjs` 与 `App/shell/desktop/tests/computer-use-permission-panel.test.ts:33`：把 fixture 路径里的 `Memmy Development` 改成 `Cuby Development`（注意 `App/memmy-agent/tests/tools/computer-use/native-agent-lifecycle.test.ts:41` 是真实 macOS 路径 fixture，同样改）。
+
+- [ ] **Step 2: 运行测试确认失败**
+
+Run: `npm --prefix App/shell/desktop test -- tests/windows-installer-nsis-compile.test.ts`
+Expected: FAIL —— 断言 `Cuby-nsis-compile-check.exe`，但配置里仍是 `Memmy`。
+
+- [ ] **Step 3: 改四份 electron-builder 配置**
+
+四份文件的第 1-3 行统一改为：
+
+```yaml
+appId: cn.memtensor.cuby
+productName: Cuby
+artifactName: Cuby-${version}-${arch}.${ext}
+```
+
+（两个 unsigned 变体的 `artifactName` 保留各自的 `-unsigned` 后缀。）
+
+同文件其余位置：
+- `electron-builder.yml:70-71` 与 `electron-builder.unsigned.yml:70-71`：`NSMicrophoneUsageDescription` / `NSAppleEventsUsageDescription` 文案里 `Memmy` → `Cuby`。
+- `electron-builder.yml:84` 与 `electron-builder.unsigned.yml:81`：`dmg.title: Cuby Installer`。
+- `electron-builder.win.yml:81` 与 `electron-builder.win.unsigned.yml:81`：`shortcutName: Cuby`。
+
+- [ ] **Step 4: 改进程内应用名与两个脚本**
+
+`App/shell/desktop/src/main/main.ts:492`：
+
+```ts
+  app.setName("Cuby");
+```
+
+`scripts/package-win-local.sh`：第 139、143、157 行的 `Memmy` → `Cuby`（`Get-Process Cuby`、提示语）。
+
+`scripts/internal/mac/install-dev-computer-use.mjs:52`：`'Memmy Development'` → `'Cuby Development'`。
+
+- [ ] **Step 5: 运行打包守卫与相关测试**
+
+Run: `npm run test:packaging-guards && npm --prefix App/shell/desktop test`
+Expected: 全部 PASS。
+
+- [ ] **Step 6: 提交**
+
+```bash
+git add App/shell/desktop/electron-builder*.yml App/shell/desktop/src/main/main.ts scripts/package-win-local.sh scripts/internal/mac/install-dev-computer-use.mjs App/shell/desktop/tests tests/ocu-dev-install.test.mjs App/memmy-agent/tests
+git commit -m "feat(desktop): rename the packaged app identity to Cuby"
+```
+
+---
+
+### Task 2: Windows 本地目录
+
+**Files:**
+- Modify: `App/shell/desktop/src/main/windows-launch-at-login.ts:54`
+- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:58-59`
+- Test: `App/shell/desktop/tests/windows-launch-at-login.test.ts`
+- Test: `App/shell/desktop/tests/windows-data-layout.test.ts`
+
+**Interfaces:**
+- Consumes: Task 1 的 `productName = Cuby`（目录名与产品名保持一致）。
+- Produces: `%LOCALAPPDATA%\Cuby\launcher\CubyLauncher.vbs`、`%LOCALAPPDATA%\Cuby\data-migration\state.json`、`%LOCALAPPDATA%\Cuby\data-layout\last-install.json`。
+
+- [ ] **Step 1: 先改测试里的断言（会失败）**
+
+`App/shell/desktop/tests/windows-launch-at-login.test.ts` 与 `windows-data-layout.test.ts`：把 fixture 与断言里的 `Memmy` 路径段改成 `Cuby`，`MemmyLauncher.vbs` 改成 `CubyLauncher.vbs`。
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm --prefix App/shell/desktop test -- tests/windows-launch-at-login.test.ts tests/windows-data-layout.test.ts`
+Expected: FAIL。
+
+- [ ] **Step 3: 改源码**
+
+`windows-launch-at-login.ts:54`：
+
+```ts
+  const launcherPath = windowsPath.join(localAppDataPath, "Cuby", "launcher", "CubyLauncher.vbs");
+```
+
+`windows-data-layout.ts:58-59`：
+
+```ts
+    migrationStatePath: win32.join(localAppDataPath, "Cuby", "data-migration", "state.json"),
+    installationRecordPath: win32.join(localAppDataPath, "Cuby", "data-layout", "last-install.json"),
+```
+
+- [ ] **Step 4: 运行测试**
+
+Run: `npm --prefix App/shell/desktop test`
+Expected: PASS。
+
+- [ ] **Step 5: 提交**
+
+```bash
+git add App/shell/desktop/src/main/windows-launch-at-login.ts App/shell/desktop/src/main/windows-data-layout.ts App/shell/desktop/tests
+git commit -m "feat(desktop): move the Windows launcher and data layout under Cuby"
+```
+
+---
+
+### Task 3: 磁盘家目录 `~/.memmy` → `~/.cuby`
+
+**Files:**
+- Modify: 源码里 78 个含 `.memmy` 路径的 `.ts`/`.tsx`/`.mjs` 文件（`Memory/src/cli/`、`App/memmy-agent/src/`、`App/backend/src/`、`App/shell/desktop/src/`、`App/frontend/desktop/src/`）
+- Modify: 89 个相关测试文件
+- Test（新增）: `Memory/tests/home-directory.test.ts`
+
+**Interfaces:**
+- Consumes: 无。
+- Produces: 默认家目录常量 `~/.cuby`；派生目录 `.cuby-knowledge`、`.cuby-upgrade-backup`、`.cuby-bridge-source-hash`、`~/.cuby/{workspace,computer-history,memory-service,analytics-client-id,runtime.json}`。Task 4/6 依赖同一份路径常量。
+
+- [ ] **Step 1: 写失败测试（新增守卫）**
+
+新增 `Memory/tests/home-directory.test.ts`：
+
+```ts
+import { afterEach, describe, expect, it } from "vitest";
+import { homedir } from "node:os";
+import { join } from "node:path";
+import { defaultConfigPaths } from "../src/cli/config.js";
+
+describe("default config paths", () => {
+  afterEach(() => {
+    delete process.env.CUBY_CONFIG;
+    delete process.env.MEMMY_CONFIG;
+  });
+
+  it("falls back to ~/.cuby/config.yaml", () => {
+    expect(defaultConfigPaths()).toEqual([join(homedir(), ".cuby", "config.yaml")]);
+  });
+
+  it("never references the Memmy era path", () => {
+    expect(defaultConfigPaths().join("\n")).not.toContain(".memmy");
+  });
+});
+```
+
+> `Memory/src/cli/config.ts:48` 的 `defaultConfigPaths()` 当前返回 `join(homedir(), ".memmy", "config.yaml")`；本 Task 只改路径分支，环境变量分支由 Task 4 处理。
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run memory:test -- tests/home-directory.test.ts`
+Expected: FAIL —— 实际返回 `~/.memmy/config.yaml`。
+
+- [ ] **Step 3: 生成待改文件清单并审阅**
+
+```bash
+grep -rl '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  | grep -v '^\./scripts/install.sh$' \
+  | grep -v '^\./scripts/internal/linux/' \
+  | grep -v '^\./tests/linux-cli-packaging.test.mjs$' \
+  | grep -v '^\./docs/' \
+  | grep -v '^\./README' \
+  > /tmp/cuby-home-files.txt
+wc -l /tmp/cuby-home-files.txt
+grep -n 'memmyMemory\|memmyConfigPath\|memmyAgent' /tmp/cuby-home-files.txt | head
+```
+
+Expected: 清单里**不应**出现 `docs/`、`README*`、`scripts/install.sh`、`scripts/internal/linux/*`、`tests/linux-cli-packaging.test.mjs`。
+
+- [ ] **Step 4: 精确替换并复核 diff**
+
+```bash
+xargs -a /tmp/cuby-home-files.txt perl -pi -e 's/\.memmy\b/.cuby/g; s/\.memmy-/.cuby-/g'
+git diff --stat
+git diff | grep '^[-+].*cuby' | grep -v 'cuby-bob\|cuby-account' | head -40
+```
+
+Expected: `.memmy` → `.cuby`（`\.memmy\b` 不会命中 `.memmyMemory` / `.memmyConfigPath` 这类驼峰标识符，它们前后都不是词边界）。逐条扫一遍 diff 确认没有把标识符改名。
+
+- [ ] **Step 5: 全仓验证没有漏网**
+
+```bash
+grep -rn '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
+```
+
+Expected: 无输出。
+
+- [ ] **Step 6: 跑测试**
+
+Run: `npm run memory:test && npm run workspace:test && npm --prefix App/memmy-agent test`
+Expected: PASS（若个别测试断言旧路径，改断言为新路径后重跑）。
+
+- [ ] **Step 7: 提交**
+
+```bash
+git add -A
+git commit -m "refactor: move the on-disk home from ~/.memmy to ~/.cuby"
+```
+
+---
+
+### Task 4: 环境变量 `MEMMY_*` → `CUBY_*`
+
+**Files:**
+- Modify: 156 个含 `MEMMY_` 的测试文件 + 所有读取这些变量的源码文件
+- Modify: `.env.example`
+- Test: 复用 Task 3 新增的 `Memory/tests/home-directory.test.ts`（`CUBY_HOME` 用例）
+
+**Interfaces:**
+- Consumes: Task 3 的 `.cuby` 路径。
+- Produces: 全部 `CUBY_*` 变量名。Task 6（生成到用户机器的模板里也引用这些变量）与 Task 7（端口相关的 `CUBY_CUBEROUTER_*`）依赖它。
+
+- [ ] **Step 1: 补环境变量用例（会失败）**
+
+在 `Memory/tests/home-directory.test.ts` 追加：
+
+```ts
+  it("honours CUBY_CONFIG", () => {
+    process.env.CUBY_CONFIG = "/tmp/cuby-config.yaml";
+    expect(defaultConfigPaths()[0]).toBe("/tmp/cuby-config.yaml");
+  });
+
+  it("no longer reads MEMMY_CONFIG", () => {
+    process.env.MEMMY_CONFIG = "/tmp/memmy-config.yaml";
+    expect(defaultConfigPaths().join("\n")).not.toContain("memmy-config.yaml");
+  });
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run memory:test -- tests/home-directory.test.ts`
+Expected: FAIL —— `defaultConfigPaths()` 仍读 `MEMMY_CONFIG`，对 `CUBY_CONFIG` 无反应。
+
+- [ ] **Step 3: 生成清单并替换**
+
+```bash
+grep -rl 'MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  | grep -v '^\./scripts/install.sh$' \
+  | grep -v '^\./scripts/internal/linux/' \
+  | grep -v '^\./tests/linux-cli-packaging.test.mjs$' \
+  | grep -v '^\./docs/' \
+  | grep -v '^\./README' \
+  > /tmp/cuby-env-files.txt
+wc -l /tmp/cuby-env-files.txt
+xargs -a /tmp/cuby-env-files.txt perl -pi -e 's/\bMEMMY_/CUBY_/g'
+```
+
+- [ ] **Step 4: 验证**
+
+```bash
+grep -rn '\bMEMMY_\|process\.env\.MEMMY_\|env\.MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
+```
+
+Expected: 无输出。
+
+- [ ] **Step 5: 确认 `.env.example` 已改且语义正确**
+
+Run: `grep -n 'CUBY_' .env.example`
+Expected: 列出 `CUBY_LEGAL_CN_BASE_URL`、`CUBY_LEGAL_INTL_BASE_URL`、`CUBY_CUBEROUTER_*` 等，且注释里的 `cuby-desktop-<用户名>` key 命名保持原样。
+
+- [ ] **Step 6: 跑测试**
+
+Run: `npm run memory:test && npm run workspace:test && npm --prefix App/memmy-agent test`
+Expected: PASS。
+
+- [ ] **Step 7: 提交**
+
+```bash
+git add -A
+git commit -m "refactor: rename MEMMY_* environment variables to CUBY_*"
+```
+
+---
+
+### Task 5: 协议头 `x-memmy-*` → `x-cuby-*`
+
+**Files:**
+- Modify: 40 个含 `x-memmy` 的测试文件 + 发送/解析这些头的源码（`App/backend/src/adapters/outbound/skill-writer/workspace-bridge/runtime.ts:587-590`、`App/shell/desktop/src/main/`、`App/backend/src/adapters/inbound/local-api/`）
+
+**Interfaces:**
+- Consumes: 无。
+- Produces: 17 个 `x-cuby-*` 头名，逐一对应：`x-cuby-agent-auth`、`x-cuby-agent-kind`、`x-cuby-agent-mcp-values`、`x-cuby-composio-token`、`x-cuby-device-id`、`x-cuby-local-token`、`x-cuby-mcp-token`、`x-cuby-profile-id`、`x-cuby-profile-label`、`x-cuby-project-id`、`x-cuby-session-key`、`x-cuby-tenant-id`、`x-cuby-time-zone`、`x-cuby-user-id`、`x-cuby-viewer`、`x-cuby-workspace-id`、`x-cuby-workspace-path`。
+
+- [ ] **Step 1: 替换**
+
+```bash
+grep -rl 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  | grep -v '^\./docs/' | grep -v '^\./README' \
+  > /tmp/cuby-header-files.txt
+xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/g'
+```
+
+- [ ] **Step 2: 验证头名齐全且无漏网**
+
+```bash
+grep -rho 'x-cuby-[a-z-]*' --exclude-dir=node_modules --exclude-dir=dist . | sort -u | wc -l   # 期望 17
+grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist . | grep -vE '^\./(docs/|README)'
+```
+
+Expected: 17，且第二条无输出。
+
+- [ ] **Step 3: 跑测试**
+
+Run: `npm run workspace:test && npm --prefix App/memmy-agent test`
+Expected: PASS。
+
+- [ ] **Step 4: 提交**
+
+```bash
+git add -A
+git commit -m "refactor: rename the x-memmy-* protocol headers to x-cuby-*"
+```
+
+---
+
+### Task 6: 写进用户机器的产物
+
+**Files:**
+- Modify: `App/backend/src/adapters/outbound/skill-writer/templates/memmy-skill-directory.ts:3-4,18`
+- Modify: `Memory/src/agent-source/integration/templates/memmy-skill-directory.ts:3-4`
+- Modify: `App/backend/src/adapters/outbound/skill-writer/claude-code/target.ts`（hook 文件名、命令文件名、CLAUDE.md 标记）
+- Modify: `App/backend/src/adapters/outbound/skill-writer/**/target.ts`（cursor、codex、opencode、deepseek-harness、hermes、pi、qwenwork、workbuddy）
+- Modify: `App/shell/desktop/src/main/main.ts:570-571,601,611-623`
+- Modify: `App/shell/desktop/src/main/windows-cli-path.ts:54-55`
+- Modify: `App/backend/src/infrastructure/cli-binary/index.ts:15`
+- Modify: `Memory/src/cli/skills/memmy-memory/SKILL.md`（`name:` 字段与正文里的命令名）
+- Rename: `Memory/src/cli/skills/memmy-memory/` → `Memory/src/cli/skills/cuby-memory/`
+- Test: `App/backend/src/adapters/outbound/skill-writer/claude-code/tests/target.test.ts`
+- Test: `App/shell/desktop/tests/windows-cli-path.test.ts`
+
+**Interfaces:**
+- Consumes: Task 4 的 `CUBY_*` 变量名。
+- Produces: 安装态名 `cuby-memory` / `cuby-resume`；hook 文件 `cuby-resume-hook.mjs`；命令文件 `cuby-resume.md`；标记 `<!-- cuby:start v=1 -->` 与 `# Cuby CLI PATH`；PATH 软链 `cuby`、`cuby-memory`（Windows 为 `cuby.cmd`、`cuby-memory.cmd`）。
+
+- [ ] **Step 1: 先改测试期望（会失败）**
+
+```bash
+grep -rl '"memmy-memory"\|skills/memmy-memory\|memmy-resume-hook\|memmy:start\|Memmy CLI PATH\|memmy-memory-resume-hook\|memmy-memory-config' \
+  --include='*.test.ts' --include='*.test.tsx' --include='*.test.mjs' --exclude-dir=node_modules . \
+  > /tmp/cuby-artifact-tests.txt
+xargs -a /tmp/cuby-artifact-tests.txt perl -pi -e '
+  s/"memmy-memory"/"cuby-memory"/g;
+  s/"memmy-resume"/"cuby-resume"/g;
+  s{skills/memmy-memory}{skills/cuby-memory}g;
+  s{skills/memmy-resume}{skills/cuby-resume}g;
+  s/memmy-resume-hook/cuby-resume-hook/g;
+  s/memmy-resume\.md/cuby-resume.md/g;
+  s/<!-- memmy:start v=1 -->/<!-- cuby:start v=1 -->/g;
+  s/<!-- memmy:end v=1 -->/<!-- cuby:end v=1 -->/g;
+  s/# Memmy CLI PATH/# Cuby CLI PATH/g;
+'
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run test -w @memmy/backend`
+Expected: FAIL —— 期望 `skills/cuby-memory/SKILL.md`，实际写出 `skills/memmy-memory/`。
+
+- [ ] **Step 3: 改源码常量与模板**
+
+`templates/memmy-skill-directory.ts`：
+
+```ts
+export const MEMMY_SKILL_DIRECTORY_NAME = "cuby-memory";
+export const MEMMY_RESUME_SKILL_DIRECTORY_NAME = "cuby-resume";
+```
+
+同文件 `renderMemmySkillDirectoryFiles` 里渲染的 `SKILL.md` frontmatter：`name: cuby-memory`、`description: Use shared Cuby memory when prior context may be relevant.`。
+
+`Memory/src/agent-source/integration/templates/memmy-skill-directory.ts` 同步。
+
+各 `target.ts`：hook 脚本文件名 `memmy-resume-hook.mjs` → `cuby-resume-hook.mjs`（保留 `LEGACY_HOOK_SCRIPT_FILE_NAME = "memmy-memory-resume-hook.mjs"` 不动——它用于清理更老的版本，且属于旧品牌清理逻辑，见下）、命令文件 `memmy-resume.md` → `cuby-resume.md`、标记 `<-- memmy:start v=1 -->` → `<!-- cuby:start v=1 -->`（`START_MARKER` / `END_MARKER` 常量）。
+
+`main.ts:570-571`：
+
+```ts
+    await installSymlink(memoryCli, join(binDirectory, "cuby-memory"));
+    await installSymlink(cubyCli, join(binDirectory, "cuby"));
+```
+
+（同时把局部变量 `memmyCli` 重命名为 `cubyCli`；`resolveCliToolEntries()` 的两处 `{ name: "memmy-memory", … }` 改为 `"cuby-memory"`。）
+
+`main.ts:601`：marker 参数 `"# Cuby CLI PATH"`。
+
+`windows-cli-path.ts:54-55`：
+
+```ts
+    { name: "cuby-memory", source: win32.join(binDirectory, "cuby-memory.cmd") },
+    { name: "cuby", source: win32.join(binDirectory, "cuby.cmd") }
+```
+
+`App/backend/src/infrastructure/cli-binary/index.ts:15`：`join(homedir(), ".local", "bin", "cuby")`。
+
+- [ ] **Step 4: 重命名技能源目录并改 SKILL.md**
+
+```bash
+git mv Memory/src/cli/skills/memmy-memory Memory/src/cli/skills/cuby-memory
+```
+
+`Memory/src/cli/skills/cuby-memory/SKILL.md`：frontmatter `name: cuby-memory`；正文里的 `memmy-memory` 命令名 → `cuby-memory`；标题 `# Memmy Memory CLI` → `# Cuby Memory CLI`。同时更新所有引用该目录的路径（`skill-only-target.ts:45`、打包脚本、`Memory/package.json` 的 files 字段）。
+
+- [ ] **Step 5: 运行测试**
+
+Run: `npm run test -w @memmy/backend && npm --prefix App/shell/desktop test && npm run memory:test`
+Expected: PASS。
+
+- [ ] **Step 6: 提交**
+
+```bash
+git add -A
+git commit -m "feat: install the Cuby skill, hooks, PATH markers and CLI symlinks"
+```
+
+---
+
+### Task 7: 端口
+
+**Files:**
+- Modify: `App/shell/desktop/src/main/runtime-services.ts:16,18-19`
+- Modify: `App/shell/desktop/src/main/window-mode.ts:4`
+- Modify: `Memory/src/cli/config.ts:6`（`DEFAULT_MEMORY_URL`）
+- Modify: `App/memmy-agent/src/config/schema.ts:1030,1055`
+- Modify: `App/memmy-agent/src/memmy-memory/discovery.ts:7`
+- Modify: `App/memmy-agent/src/integrations/channels/websocket.ts:574`
+- Modify: `App/memmy-agent/src/entrypoints/cli/linux-systemd-gateway.ts:168,290,303`
+- Modify: `App/backend/src/adapters/outbound/memmy-agent-admin-client/http-memmy-agent-admin-client.ts:10`
+- Modify: `App/backend/src/adapters/outbound/skill-writer/workspace-bridge/runtime.ts:37`
+- Modify: `App/backend/src/adapters/outbound/skill-writer/{templates/memmy-resume-hook.ts,templates/memmy-opencode-plugin.ts,templates/memmy-deepseek-harness-plugin.ts,openclaw/target.ts,hermes/target.ts,memmy-runtime-config.ts}`
+- Modify: `App/frontend/desktop/src/api/memmy-agent-client.ts:145`、`App/frontend/desktop/vite.config.ts:9`
+- Test（新增）: `App/shell/desktop/tests/fixed-ports.test.ts`
+
+**Interfaces:**
+- Consumes: 无。
+- Produces: 5 个新端口常量；`DEFAULT_MEMORY_URL = "http://127.0.0.1:28960"`；`DEFAULT_AGENT_WEBSOCKET_PORT = 28980`；`DEFAULT_AGENT_GATEWAY_HEALTH_PORT = 28970`；`PACKAGED_RENDERER_DEFAULT_PORT = 29100`。Task 6 生成到用户机器的模板引用 28960。
+
+- [ ] **Step 1: 写失败守卫测试**
+
+新增 `App/shell/desktop/tests/fixed-ports.test.ts`：
+
+```ts
+import { describe, expect, it } from "vitest";
+import { PACKAGED_RENDERER_DEFAULT_PORT } from "../src/main/window-mode.js";
+
+describe("fixed ports never revert to the Memmy era", () => {
+  it("packaged renderer uses 29100", () => {
+    expect(PACKAGED_RENDERER_DEFAULT_PORT).toBe(29100);
+  });
+
+  it("no source file still hardcodes a 1896x/1897x/1898x/1899x/191xx port", () => {
+    // 见 Step 4 的 grep 验证；此用例断言常量侧
+  });
+});
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm --prefix App/shell/desktop test -- tests/fixed-ports.test.ts`
+Expected: FAIL —— 实际为 19100。
+
+- [ ] **Step 3: 替换端口值**
+
+```bash
+grep -rl '18960\|18970\|18980\|18990\|19100' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.css' \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  | grep -v '^\./scripts/install.sh$' \
+  | grep -v '^\./scripts/internal/linux/' \
+  | grep -v '^\./docs/' | grep -v '^\./README' \
+  > /tmp/cuby-port-files.txt
+xargs -a /tmp/cuby-port-files.txt perl -pi -e '
+  s/\b18960\b/28960/g;
+  s/\b18970\b/28970/g;
+  s/\b18980\b/28980/g;
+  s/\b18990\b/28990/g;
+  s/\b19100\b/29100/g;
+'
+```
+
+> 注意：不要把 19000 / 19001 / 18961 一起替换——它们是开发端口，不在改名列内（`\b` 边界不会让 `19000` 命中 `19100`，但**不要**扩大正则范围）。
+
+- [ ] **Step 4: 验证**
+
+```bash
+grep -rn '\b18960\b\|\b18970\b\|\b18980\b\|\b18990\b\|\b19100\b' --exclude-dir=node_modules --exclude-dir=dist . \
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
+grep -rn '\b28960\b' --exclude-dir=node_modules --exclude-dir=dist . | wc -l   # 期望 ≈35
+```
+
+Expected: 第一条无输出。
+
+- [ ] **Step 5: 跑测试**
+
+Run: `npm --prefix App/shell/desktop test && npm --prefix App/memmy-agent test && npm run workspace:test`
+Expected: PASS。
+
+- [ ] **Step 6: 提交**
+
+```bash
+git add -A
+git commit -m "feat: move the five fixed service ports off the Memmy range"
+```
+
+---
+
+### Task 8: 从 `cuby.html` 提取 14 个姿态素材
+
+**Files:**
+- Create: `App/frontend/desktop/src/assets/mascot/cuby-{neutral,chat,think,celebrate,sleep,wave,read,shield,brain,connect,hum,blush,sad,plead}.png`
+- Create: `docs/brand/cuby-mascot-spec.html`（归档，来自仓库根 `cuby.html`）
+- Create: `docs/brand/cuby.jpg`（归档，来自仓库根 `cuby.jpg`）
+- Test: 复用 Task 11 的尺寸断言（见该 Task）
+
+**Interfaces:**
+- Consumes: 无。
+- Produces: 14 个 `cuby-<pose>.png`，尺寸分别为 neutral 512×354、chat 512×323、think 512×414、celebrate 512×282、sleep 512×331、wave 512×327、read 512×403、shield 512×417、brain 512×330、connect 512×342、hum 512×335、blush 512×470、sad 512×403、plead 512×350。Task 9/11 依赖这些文件名。
+
+- [ ] **Step 1: 提取（顺序即姿态顺序）**
+
+`cuby.html` 内嵌 23 张 base64 PNG：第 1-4 张是同一张 neutral 的尺寸演示，第 5-18 张依次是 14 个必做姿态（尺寸与规范表逐条对应），第 19-23 张是 5 个预留位的旧形象缩略图（**不要提取**）。
+
+```bash
+python3 - <<'PY'
+import re, base64, os
+POSE = ["neutral","chat","think","celebrate","sleep","wave","read","shield",
+        "brain","connect","hum","blush","sad","plead"]
+src = open('cuby.html', encoding='utf-8').read()
+imgs = re.findall(r'<img[^>]*src="data:image/png;base64,([^"]+)"', src, re.S)
+out = 'App/frontend/desktop/src/assets/mascot'
+assert len(imgs) == 23, f"expected 23 embedded PNGs, got {len(imgs)}"
+for pose, b64 in zip(POSE, imgs[4:18]):
+    path = os.path.join(out, f'cuby-{pose}.png')
+    open(path, 'wb').write(base64.b64decode(b64))
+    print('wrote', path)
+PY
+```
+
+- [ ] **Step 2: 逐张核对尺寸与透明底**
+
+```bash
+python3 - <<'PY'
+from PIL import Image
+import os
+EXPECT = {"neutral":(512,354),"chat":(512,323),"think":(512,414),"celebrate":(512,282),
+          "sleep":(512,331),"wave":(512,327),"read":(512,403),"shield":(512,417),
+          "brain":(512,330),"connect":(512,342),"hum":(512,335),"blush":(512,470),
+          "sad":(512,403),"plead":(512,350)}
+ok = True
+for pose,(w,h) in EXPECT.items():
+    p = f"App/frontend/desktop/src/assets/mascot/cuby-{pose}.png"
+    im = Image.open(p)
+    mode_ok = im.mode in ("RGBA","P")
+    if im.size != (w,h) or not mode_ok:
+        ok = False; print("MISMATCH", pose, im.size, im.mode)
+print("all 14 poses match the spec table" if ok else "FIX BEFORE CONTINUING")
+PY
+```
+
+Expected: `all 14 poses match the spec table`。
+
+- [ ] **Step 3: 归档源文件**
+
+`cuby.html` 与 `cuby.jpg` 当前是未跟踪文件，直接移动后 `git add`：
+
+```bash
+mkdir -p docs/brand
+mv cuby.html docs/brand/cuby-mascot-spec.html
+mv cuby.jpg docs/brand/cuby.jpg
+git add docs/brand/cuby-mascot-spec.html docs/brand/cuby.jpg
+```
+
+> `cuby-mascot-spec.html` 是 14 张素材的来源与验收依据，归档进仓库便于后续补 5 个预留姿态时对照。
+
+- [ ] **Step 4: 提交**
+
+```bash
+git add App/frontend/desktop/src/assets/mascot docs/brand
+git commit -m "feat(brand): add the 14 Cuby mascot poses and archive the asset spec"
+```
+
+---
+
+### Task 9: 吉祥物组件改名 `memmy.tsx` → `cuby.tsx`
+
+**Files:**
+- Rename: `App/frontend/desktop/src/components/mascot/memmy.tsx` → `cuby.tsx`
+- Modify: 31 个引用该组件的文件（`pages/home-page.tsx:27,2694`、`pages/pet-page.tsx`、`pages/agent-thread-messages.tsx:42,1267`、`pages/improvement-program-modal.tsx:2,21`、`components/search-palette.tsx` 等）
+- Test: 现有 mascot 相关测试 + `App/frontend/desktop/src/pages/tests/**`
+
+**Interfaces:**
+- Consumes: Task 8 的 `cuby-<pose>.png` 文件名。
+- Produces: 组件 `Cuby`、类型 `CubyPose`、`CubyProps`、`CubyAssetPreloadOptions`、函数 `preloadCubyAsset`；文件 `components/mascot/cuby.tsx`（规范点名）。Task 10/11 依赖这些名字。
+
+- [ ] **Step 1: 先改引用点（会类型报错）**
+
+```bash
+grep -rl 'mascot/memmy\|\bMemmy\b *pose=\|preloadMemmyAsset\|MemmyPose\|MemmyProps\|MemmyAssetPreloadOptions' \
+  --include='*.ts' --include='*.tsx' --exclude-dir=node_modules App/frontend/desktop/src > /tmp/cuby-mascot-files.txt
+xargs -a /tmp/cuby-mascot-files.txt perl -pi -e '
+  s{mascot/memmy\.js}{mascot/cuby.js}g;
+  s{components/mascot/memmy}{components/mascot/cuby}g;
+  s/\bpreloadMemmyAsset\b/preloadCubyAsset/g;
+  s/\bMemmyPose\b/CubyPose/g;
+  s/\bMemmyProps\b/CubyProps/g;
+  s/\bMemmyAssetPreloadOptions\b/CubyAssetPreloadOptions/g;
+'
+```
+
+> `\bMemmy\b` 单独处理：组件名 `<Memmy …>` 与 `import { Memmy }` 改成 `Cuby`，但**不要**动 `MemmyAgentClient` 这类内部标识符（词边界保证不命中）。执行：
+
+```bash
+xargs -a /tmp/cuby-mascot-files.txt perl -pi -e 's/\bMemmy\b(?!Agent|Memory|Request|Goal|Message|WebSocket|Slash|Project|Session|Ui)/Cuby/g'
+```
+
+- [ ] **Step 2: 运行类型检查确认报错**
+
+Run: `npm run typecheck`
+Expected: FAIL —— `Cannot find module '../components/mascot/cuby.js'`。
+
+- [ ] **Step 3: 重命名组件文件并改内部命名**
+
+```bash
+git mv App/frontend/desktop/src/components/mascot/memmy.tsx App/frontend/desktop/src/components/mascot/cuby.tsx
+```
+
+文件内：`export type MemmyPose` → `CubyPose`、`interface MemmyProps` → `CubyProps`、`function Memmy(` → `function Cuby(`、`preloadMemmyAsset` → `preloadCubyAsset`、`MemmyAssetPreloadOptions` → `CubyAssetPreloadOptions`、`const poseToAsset` → **`export const poseToAsset`**（Task 11 的测试要 import 它），`poseToAsset` 的右侧资源引用改为 `cuby-<pose>.png`（`neutral: cubyNeutralUrl` 等），`memmyRiceUrl` 之类的 import 名与路径一并改为 `cuby-neutral.png` 等。
+
+> 本步只改引用名与路径；5 个预留姿态的资源指向在 Task 11 处理。
+
+- [ ] **Step 4: 运行类型检查与前端测试**
+
+Run: `npm run typecheck && npm run test -w @memmy/frontend-desktop`
+Expected: PASS。
+
+- [ ] **Step 5: 提交**
+
+```bash
+git add -A
+git commit -m "refactor(desktop): rename the mascot component to Cuby"
+```
+
+---
+
+### Task 10: CSS 类 `memmy-*` → `cuby-*`
+
+**Files:**
+- Modify: 183 处 `memmy-*` 类名，分布在 `App/frontend/desktop/src/**/*.css` 与 `*.tsx`
+- Test: `App/frontend/desktop/src/theme/tests/style-alignment.test.ts`
+
+**Interfaces:**
+- Consumes: Task 9 的组件改名。
+- Produces: 全部 `cuby-*` 类名（含 `cuby-bob`）。无后续 Task 依赖。
+
+- [ ] **Step 1: 替换并验证成对**
+
+```bash
+grep -rl 'memmy-' --include='*.css' --include='*.tsx' --include='*.ts' --exclude-dir=node_modules App/frontend/desktop/src \
+  > /tmp/cuby-css-files.txt
+xargs -a /tmp/cuby-css-files.txt perl -pi -e 's/\bmemmy-/cuby-/g'
+```
+
+- [ ] **Step 2: 验证每个新类名在 CSS 与 TSX 两侧都有定义/使用**
+
+```bash
+grep -rho 'cuby-[a-z-]*' App/frontend/desktop/src --include='*.css' | sort -u > /tmp/css-defined.txt
+grep -rho 'cuby-[a-z-]*' App/frontend/desktop/src --include='*.tsx' --include='*.ts' | sort -u > /tmp/tsx-used.txt
+comm -13 /tmp/css-defined.txt /tmp/tsx-used.txt | grep -v 'cuby-body\|cuby-rice\|cuby-paddle\|cuby-peek\|cuby-wrench\|cuby-box\|cuby-point\|cuby-work\|cuby-sad\|cuby-plead\|cuby-blush\|cuby-brain\|cuby-chat\|cuby-connect\|cuby-hum\|cuby-read\|cuby-shield\|cuby-sleep\|cuby-think\|cuby-wave\|cuby-neutral\|cuby-celebrate' | head
+```
+
+Expected: 无输出（剩余的差异应只有姿态资源名）。
+
+- [ ] **Step 3: 跑前端测试与样式对齐测试**
+
+Run: `npm run test -w @memmy/frontend-desktop`
+Expected: PASS（`style-alignment.test.ts:359` 里的 `memo-idle-alpha.webm` 断言在 Task 11 处理）。
+
+- [ ] **Step 4: 提交**
+
+```bash
+git add -A
+git commit -m "refactor(desktop): rename the memmy-* CSS classes to cuby-*"
+```
+
+---
+
+### Task 11: 姿态映射、旧素材清理与账号 logo
+
+**Files:**
+- Modify: `App/frontend/desktop/src/components/mascot/cuby.tsx`（`poseToAsset` 与 import 清理）
+- Modify: `App/frontend/desktop/src/pages/pet-page.tsx:16,2569-`（`resolveMemmyPose` → `resolveCubyPose`、删除 idle webm 引入）
+- Delete: `App/frontend/desktop/src/assets/mascot/{memo-idle-alpha.webm,pet-entrance.webp}`
+- Delete: `App/frontend/desktop/src/assets/mascot/{memmy-body-blush,memmy-paddle,memmy-rice-poc,memmy-rice-transparent,memmy-rice-white,memmy-rice}.png`
+- Delete: 18 张 `memmy-<pose>.png`（已被 `cuby-<pose>.png` 取代）
+- Rename: `App/frontend/desktop/src/assets/brand/memmy-cover.png` → `cuby-cover.png`
+- Rename: `App/frontend/desktop/src/assets/llm-provider-logo/memmy-account.png` → `cuby-account.png`
+- Modify: `App/frontend/desktop/src/components/model-provider-logo.tsx:1,16,43,91`
+- Modify: `App/frontend/desktop/src/pages/llm-provider-logo.tsx:6`
+- Test（新增）: `App/frontend/desktop/src/components/mascot/tests/pose-assets.test.ts`
+- Test: `App/frontend/desktop/src/theme/tests/style-alignment.test.ts:359`
+
+**Interfaces:**
+- Consumes: Task 8 的 14 张 `cuby-<pose>.png`；Task 9 的 `CubyPose`。
+- Produces: `poseToAsset` 覆盖全部 19 个姿态（14 个指向各自素材，5 个预留指向 `cubyNeutralUrl`）；`resolveCubyPose`。
+
+- [ ] **Step 1: 写失败测试（姿态覆盖 + 素材尺寸）**
+
+新增 `App/frontend/desktop/src/components/mascot/tests/pose-assets.test.ts`：
+
+```ts
+import { describe, expect, it } from "vitest";
+import { readFileSync, existsSync } from "node:fs";
+import { join } from "node:path";
+import { poseToAsset } from "../cuby.js";
+
+const POSES = ["wave","think","work","celebrate","shield","read","connect","sleep","neutral",
+  "point","box","brain","chat","wrench","blush","peek","hum","plead","sad"] as const;
+const RESERVED = ["work","point","box","wrench","peek"] as const;
+const ASSET_DIR = join(import.meta.dirname, "../../../assets/mascot");
+
+describe("mascot pose assets", () => {
+  it("maps every pose to an existing file", () => {
+    for (const pose of POSES) {
+      const url = poseToAsset[pose];
+      expect(url, `pose ${pose}`).toBeTruthy();
+    }
+  });
+
+  it("falls the five reserved poses back to neutral", () => {
+    for (const pose of RESERVED) {
+      expect(poseToAsset[pose], `pose ${pose}`).toBe(poseToAsset.neutral);
+    }
+  });
+
+  it("ships no Memmy-era artwork", () => {
+    for (const stale of ["memo-idle-alpha.webm", "pet-entrance.webp", "memmy-rice.png"]) {
+      expect(existsSync(join(ASSET_DIR, stale)), stale).toBe(false);
+    }
+  });
+});
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run test -w @memmy/frontend-desktop -- src/components/mascot/tests/pose-assets.test.ts`
+Expected: FAIL —— 预留姿态当前指向各自的旧素材。
+
+- [ ] **Step 3: 改映射、删旧素材**
+
+`cuby.tsx`：`poseToAsset` 里 `neutral`/`chat`/`think`/`celebrate`/`sleep`/`wave`/`read`/`shield`/`brain`/`connect`/`hum`/`blush`/`sad`/`plead` 指向各自的 `cuby-<pose>.png`；`work`/`point`/`box`/`wrench`/`peek` 一律指向 `cubyNeutralUrl`，并删除它们对应的 import。
+
+```bash
+git rm App/frontend/desktop/src/assets/mascot/memo-idle-alpha.webm \
+       App/frontend/desktop/src/assets/mascot/pet-entrance.webp \
+       App/frontend/desktop/src/assets/mascot/memmy-*.png
+```
+
+`pet-page.tsx`：删除 `import memoIdleUrl from "../assets/mascot/memo-idle-alpha.webm";`（`:16`）与 `pet-entrance.webp` 的引入；待机改为渲染 `pose="neutral"` 并保留现有 bob 效果类；`resolveMemmyPose` → `resolveCubyPose`（`:2569`），调用点同步。
+
+`style-alignment.test.ts:359`：从允许清单里移除 `memo-idle-alpha.webm`。
+
+- [ ] **Step 4: 账号 logo 改名**
+
+```bash
+git mv App/frontend/desktop/src/assets/brand/memmy-cover.png App/frontend/desktop/src/assets/brand/cuby-cover.png
+git mv App/frontend/desktop/src/assets/llm-provider-logo/memmy-account.png App/frontend/desktop/src/assets/llm-provider-logo/cuby-account.png
+```
+
+同步改 `model-provider-logo.tsx`（`memmyCoverLogoUrl` → `cubyCoverLogoUrl` 及引用）与 `llm-provider-logo.tsx:6`（`memmyAccountLogoUrl` → `cubyAccountLogoUrl`）。
+
+- [ ] **Step 5: 跑测试**
+
+Run: `npm run test -w @memmy/frontend-desktop`
+Expected: PASS。
+
+- [ ] **Step 6: 提交**
+
+```bash
+git add -A
+git commit -m "feat(brand): wire the Cuby poses and drop the Memmy-era artwork"
+```
+
+---
+
+### Task 12: 产品名字符串与契约字面量
+
+**Files:**
+- Modify: `App/backend/src/adapters/outbound/cloud-client/types.ts:40,74`
+- Modify: `App/backend/local-api-contracts/src/index.ts:1211,1380`
+- Modify: `App/frontend/desktop/src/pages/agent-source-logos.ts:28-29`
+- Modify: `App/backend/src/adapters/outbound/skill-writer/codex/hook-trust.ts:59`
+- Modify: `App/memmy-agent/src/integrations/channels/feishu-registration.ts:50`
+- Test: `App/backend/src/adapters/outbound/cloud-client/http-cloud-client.test.ts:40`
+- Test: `App/backend/src/tests/**`（contracts 相关）
+
+**Interfaces:**
+- Consumes: 无。
+- Produces: `loginSource: "Cuby"`（类型与 zod 字面量一致）、agent-source 显示名 `Cuby`/`Cuby Agent`、codex 信任提示标题 `Cuby`、飞书应用预设名 `Cuby`。
+
+- [ ] **Step 1: 先改测试期望（会失败）**
+
+`App/backend/src/adapters/outbound/cloud-client/http-cloud-client.test.ts:40`：`loginSource: "Memmy"` → `"Cuby"`。同时全仓找出断言 `loginSource` 的其它测试：
+
+```bash
+grep -rln 'loginSource' --include='*.test.ts' --exclude-dir=node_modules . \
+  | xargs perl -pi -e 's/loginSource: "Memmy"/loginSource: "Cuby"/g'
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run test -w @memmy/backend`
+Expected: FAIL —— zod 契约仍只接受 `"Memmy"`。
+
+- [ ] **Step 3: 改源码（三处必须同批改，否则契约校验失败）**
+
+```ts
+// App/backend/src/adapters/outbound/cloud-client/types.ts:40,74
+  loginSource: "Cuby";
+```
+
+```ts
+// App/backend/local-api-contracts/src/index.ts:1211,1380
+        loginSource: z.literal("Cuby"),
+```
+
+```ts
+// App/frontend/desktop/src/pages/agent-source-logos.ts:28-29
+  memmy: "Cuby",
+  memmy_agent: "Cuby",
+```
+
+```ts
+// App/backend/src/adapters/outbound/skill-writer/codex/hook-trust.ts:59
+        title: "Cuby",
+```
+
+```ts
+// App/memmy-agent/src/integrations/channels/feishu-registration.ts:50
+        appPreset: { name: "Cuby" },
+```
+
+> 键名（`memmy`、`memmy_agent`）保持不变——它们是内部标识符。
+
+- [ ] **Step 4: 跑测试**
+
+Run: `npm run test -w @memmy/backend && npm run test:contracts && npm --prefix App/memmy-agent test`
+Expected: PASS。
+
+- [ ] **Step 5: 提交**
+
+```bash
+git add -A
+git commit -m "feat: switch the user-visible product-name literals to Cuby"
+```
+
+---
+
+### Task 13: 页面文案（i18n 165 处）
+
+**Files:**
+- Modify: `App/frontend/desktop/src/i18n/messages.ts`（163 处）
+- Modify: `App/frontend/desktop/src/i18n/error-notice-messages.ts`（2 处）
+- Modify: `App/shell/desktop/src/main/startup-splash.ts:55,59,61`
+- Modify: `App/shell/desktop/src/main/main.ts:812`
+- Test: `App/frontend/desktop/src/i18n/tests/**`
+
+**Interfaces:**
+- Consumes: Task 1 的 `productName = Cuby`。
+- Produces: 用户可见文案里的产品名全部为 `Cuby`；`"brand.name": "Cuby"`（两处 locale）。
+
+- [ ] **Step 1: 先改测试期望（会失败）**
+
+```bash
+grep -rl '"Memmy\|Memmy 启动失败\|Memmy Starting' --include='*.test.ts' --include='*.test.tsx' --exclude-dir=node_modules App/frontend/desktop/src App/shell/desktop/tests \
+  > /tmp/cuby-copy-tests.txt
+xargs -a /tmp/cuby-copy-tests.txt perl -pi -e 's/\bMemmy\b/Cuby/g'
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run test -w @memmy/frontend-desktop`
+Expected: FAIL —— 文案仍是 `Memmy`。
+
+- [ ] **Step 3: 改文案源**
+
+```bash
+perl -pi -e 's/\bMemmy\b/Cuby/g' \
+  App/frontend/desktop/src/i18n/messages.ts \
+  App/frontend/desktop/src/i18n/error-notice-messages.ts \
+  App/shell/desktop/src/main/startup-splash.ts
+```
+
+`App/shell/desktop/src/main/main.ts:812`：`"Memmy 启动失败"` → `"Cuby 启动失败"`。
+
+> 只改文案字符串。`main.ts` 里的标识符（`MemmyAgentAdminClient` 等）不得受影响——上面只对 i18n 文件与 splash 做全词替换，`main.ts` 只改指定行。
+
+- [ ] **Step 4: 验证文案侧无残留**
+
+```bash
+grep -rn '\bMemmy\b' App/frontend/desktop/src/i18n App/shell/desktop/src/main/startup-splash.ts
+grep -n 'Memmy' App/shell/desktop/src/main/main.ts | grep -v 'MemmyAgent\|memmy'
+```
+
+Expected: 第一条无输出；第二条只剩 `main.ts` 里 Task 2/6 之外尚未处理的注释与日志（如果有，逐条判断是文案还是标识符）。
+
+- [ ] **Step 5: 跑测试**
+
+Run: `npm run test -w @memmy/frontend-desktop && npm --prefix App/shell/desktop test`
+Expected: PASS。
+
+- [ ] **Step 6: 提交**
+
+```bash
+git add -A
+git commit -m "feat(desktop): switch the user-facing copy to Cuby"
+```
+
+---
+
+### Task 14: 发布与 CI 产物名
+
+**Files:**
+- Modify: `scripts/auto-release-mac.sh:159,168`（另有 `:52` 的通知标题、`:20,189` 的本机路径）
+- Modify: `scripts/internal/win/build-nsis.sh:127-128`
+- Modify: `.github/workflows/build-desktop.yml:147`
+- Modify: `.github/workflows/memory-release.yml:100`
+- Test: `tests/release-workflow.test.ts`、`tests/package-version-guard.test.mjs`
+
+**Interfaces:**
+- Consumes: Task 1 的 `artifactName = Cuby-${version}-${arch}.${ext}`。
+- Produces: 产物名 `Cuby-<ver>-darwin-arm64-{cn,intl}-signed.dmg`、`Cuby-<ver>-win32-….exe`、`Cuby-<ver>-win32-x64-…-unpacked.zip`、release 名 `Cuby Memory <ver>`。
+
+- [ ] **Step 1: 先改测试期望（会失败）**
+
+```bash
+grep -rl 'Memmy-' --include='*.test.ts' --include='*.test.mjs' --exclude-dir=node_modules tests App/shell/desktop/tests \
+  | xargs perl -pi -e 's/\bMemmy-/Cuby-/g'
+```
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm run test:release-workflow`
+Expected: FAIL。
+
+- [ ] **Step 3: 改发布脚本与 workflow**
+
+```bash
+perl -pi -e 's/\bMemmy-/Cuby-/g' scripts/auto-release-mac.sh scripts/internal/win/build-nsis.sh
+perl -pi -e 's/\bMemmy-/Cuby-/g' .github/workflows/build-desktop.yml
+perl -pi -e 's/name: Memmy Memory/name: Cuby Memory/' .github/workflows/memory-release.yml
+```
+
+`build-nsis.sh:354` 的 `set "APP_EXEC=%APP_DIR%\Memmy.exe"` → `Cuby.exe`；`:358` 的报错文案同步。`auto-release-mac.sh:52` 的通知标题 `"Memmy Auto Release"` → `"Cuby Auto Release"`（`:20,189` 是本机 checkout 路径，属于个人环境，不改）。
+
+- [ ] **Step 4: 验证并跑测试**
+
+```bash
+grep -rn '\bMemmy-' scripts/ .github/ | grep -v 'memmy-agent\|memmy-memory'
+npm run test:release-workflow && npm run test:packaging-guards
+```
+
+Expected: 第一条只剩 Linux CLI 相关（`scripts/internal/linux/`、`install.sh`）；测试 PASS。
+
+- [ ] **Step 5: 提交**
+
+```bash
+git add -A
+git commit -m "build: publish the desktop artifacts under the Cuby name"
+```
+
+---
+
+### Task 15: 收尾验证
+
+**Files:**
+- Modify: 任何 Task 1-14 遗漏的注释与文档字符串（例如 `runtime-services.ts:2417`、`main.ts:2855,5189` 里提到 `Memmy.exe` 的注释）
+- Test: 全量
+
+**Interfaces:**
+- Consumes: Task 1-14 的全部产出。
+- Produces: 全仓白名单校验通过 + 一次本地打包冒烟。
+
+- [ ] **Step 1: 跑全量测试**
+
+Run: `npm test`
+Expected: PASS。
+
+- [ ] **Step 2: 白名单校验——确认"该改的都改了"**
+
+```bash
+grep -rni 'memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.codegraph . \
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs|docs/brand/)' \
+  | grep -viE '@memmy/|@memtensor/memmy-memory|memmy-agent|memmyMemory|memmyConfigPath|memmyConfigWriter|memmyAgent(Admin|Client|WebSocket|Project|Session|Ui|Slash|Goal|Message|Request|Unsubscribe)?|MemmyAgent|memmy-runtime-config|memmy-skill-directory|memmy-plugin|memmy-resume-hook|memmy-deepseek-harness|memmy-opencode|memmy-workspace-bridge|memmy-migrations|memmy-account|memmy-memory-cli|memmy_bridge|memmy-bridge|MemmyLauncher|memmy\.cn|memmy\.bot|memmy-memory|memmy-resume' \
+  > /tmp/cuby-leftovers.txt
+wc -l /tmp/cuby-leftovers.txt
+```
+
+逐条审阅 `/tmp/cuby-leftovers.txt`：每一条要么是**内部标识符/包名**（保留），要么是需要改的漏网（改掉）。改完重跑至清单只剩白名单项。
+
+- [ ] **Step 3: 更新仍描述旧名的注释**
+
+已知几处：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。同时把 `runtime-services.ts:2415` 那条注释里的端口号更新为新值。
+
+- [ ] **Step 4: 本地打包冒烟（Windows 与 macOS 各一次）**
+
+Run: `npm run package:win:x64:unsigned`（在 Windows 上）与 `npm run package:mac:arm64:cn:unsigned`（在 macOS 上）
+Expected: 产物名为 `Cuby-<version>-…`；安装后应用名、开始菜单快捷方式、dmg 卷标、`%LOCALAPPDATA%\Programs\Cuby`、`~/Applications/Cuby.app` 全部为 Cuby；启动后 `~/.cuby/` 被创建。
+
+- [ ] **Step 5: 提交**
+
+```bash
+git add -A
+git commit -m "docs: align the remaining comments with the Cuby rename"
+```
+
+---
+
+## 计划外的后续轮次（不在本计划范围）
+
+- **文档面**：README 与 `docs/` 站点 1104 处（spec §4.10 有三档规则底稿）。
+- **Linux CLI 安装面**：`scripts/install.sh` 的 env 与端口接线（spec §4.2）；在此之前该安装路径不可用。
+- **服务端更新清单**：让 `DEFAULT_UPDATE_MANIFEST_URL` 指向 `Cuby-*` 产物。
+- **素材补全**：5 个预留姿态、Cuby 版待机动画（`cuby-idle-alpha.webm`）、新 logo/字标、`cuby.jpg` 的落地位置。
