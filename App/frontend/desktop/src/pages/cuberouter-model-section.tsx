@@ -5,6 +5,7 @@ import type { CuberouterKeyOption, CuberouterModelChoicesView } from "@memmy/loc
 import type { AccountClient } from "../api/account-client.js";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
 import { Button } from "../components/button.js";
+import { ModelProviderLogo } from "../components/model-provider-logo.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import {
@@ -20,6 +21,7 @@ import {
   readCuberouterKeySelection,
   writeCuberouterKeySelection
 } from "../state/cuberouter-key-selection.js";
+import { ModelAssignmentSection } from "./model-assignment-section.js";
 
 const PROTOCOL = "openai-chat-completions" as const;
 
@@ -118,6 +120,22 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     // 见 Task 13。
   }
 
+  /** Applies one assignment change: draft first, then the panel's shared save path. */
+  function updateSelection(patch: Partial<CuberouterSelection>): void {
+    // Dropped, not queued: a change that arrives while a save runs would race that PUT.
+    if (!selection || savePending) return;
+    const next = { ...selection, ...patch };
+    setSelection(next);
+    void commit((current, apiBase) => applyCuberouterSelection(current, {
+      apiBase,
+      protocol: PROTOCOL,
+      selection: next
+    }));
+  }
+
+  const models = choices?.models ?? [];
+  const modelOptions = models.map((model) => ({ value: model, label: model }));
+
   if (choicesFailed) {
     return (
       <div className="model-workspace-layout">
@@ -181,9 +199,81 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       </section>
 
       {saveError && <p className="mt-3 text-xs text-text-ink/60">{saveError}</p>}
-      {/* Task 11 在其后渲染 <ModelAssignmentSection …/>；Task 12 再加「高级」折叠。 */}
+
+      {choices && models.length === 0 && (
+        <p className="mt-3 text-xs text-text-ink/60">{t("settings.cuberouterModel.noModels")}</p>
+      )}
+      {selection && (
+        <>
+          <ModelAssignmentSection
+            conversationGroups={models.length > 0 ? [{
+              key: "cuberouter",
+              title: t("settings.cuberouterModel.modelsGroup"),
+              icon: <ModelProviderLogo provider="openai" size={14} />,
+              candidates: models.map((model) => ({
+                id: model,
+                label: model,
+                detail: t("settings.cuberouterModel.modelsGroup")
+              }))
+            }] : []}
+            selectedCandidateIds={selection.agent.models}
+            defaultCandidateId={selection.agent.default ?? null}
+            onToggleCandidate={(model) => updateSelection({ agent: toggleAgentModel(selection.agent, model) })}
+            onChooseDefaultCandidate={(model) => updateSelection({ agent: { ...selection.agent, default: model } })}
+            rows={[
+              {
+                kind: "memorySummary",
+                label: t("settings.model.memorySummary"),
+                description: t("settings.model.memoryDesc"),
+                tip: t("apiKey.modelPage.memoryHint"),
+                value: selection.memorySummary,
+                options: modelOptions,
+                searchable: true,
+                preserveUnassigned: true
+              },
+              {
+                kind: "memoryEvolution",
+                label: t("settings.model.skillEvolution"),
+                description: t("settings.model.skillDesc"),
+                value: selection.memoryEvolution,
+                options: modelOptions,
+                searchable: true,
+                preserveUnassigned: true
+              }
+            ]}
+            onRowChange={(kind, value) => updateSelection(
+              kind === "memorySummary" ? { memorySummary: value } : { memoryEvolution: value }
+            )}
+            disabled={savePending}
+          />
+          {/* Read-only: the local embedding model stays memmy's built-in default. */}
+          <div className="flex items-center justify-between gap-4 px-3.5 py-2.5">
+            <span className="text-sm text-text-ink/80">{t("settings.model.embeddingSearch")}</span>
+            <span className="text-xs text-text-ink/50">{t("settings.cuberouterModel.embeddingBuiltin")}</span>
+          </div>
+        </>
+      )}
+      {/* Task 12 再加「高级」折叠。 */}
     </div>
   );
+}
+
+/** Toggles one conversation model, keeping at least one selected (the picker's own rule). */
+export function toggleAgentModel(
+  agent: CuberouterSelection["agent"],
+  model: string
+): CuberouterSelection["agent"] {
+  const models = agent.models.includes(model)
+    ? agent.models.filter((item) => item !== model)
+    : [...agent.models, model];
+  const next: CuberouterSelection["agent"] = {
+    models: models.length > 0 ? models : agent.models,
+    ...(agent.default ? { default: agent.default } : {})
+  };
+  if (next.default && !next.models.includes(next.default)) {
+    next.default = next.models[0];
+  }
+  return next;
 }
 
 /** The status badge message for one instance token state. */

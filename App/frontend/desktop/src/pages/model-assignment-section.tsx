@@ -1,5 +1,6 @@
 import { Check, ChevronDown, ChevronUp, Info, Wrench } from "lucide-react";
 import { Fragment, type ReactNode, useState } from "react";
+import { SearchableSelect } from "../components/searchable-select.js";
 import { Select, type SelectOption } from "../components/Select.js";
 import { Tooltip } from "../components/tooltip.js";
 import { useTranslation } from "../i18n/use-translation.js";
@@ -30,6 +31,8 @@ export interface ModelAssignmentRowSpec {
   value: string | undefined;
   options: SelectOption[];
   preserveUnassigned?: boolean;
+  /** Renders a searchable dropdown instead of the plain Select (long model lists). */
+  searchable?: boolean;
 }
 
 export interface ModelAssignmentSectionProps {
@@ -40,6 +43,8 @@ export interface ModelAssignmentSectionProps {
   onChooseDefaultCandidate(candidateId: string): void;
   rows: ModelAssignmentRowSpec[];
   onRowChange(kind: ModelAssignmentKind, value: string): void;
+  /** Disables the picker and every row control, for a caller with a save in flight. */
+  disabled?: boolean;
 }
 
 /** Conversation-model picker plus one row per assignable purpose. */
@@ -84,7 +89,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
           <button
             type="button"
             aria-expanded={taskPickerOpen}
-            disabled={!hasConversationCandidates}
+            disabled={props.disabled || !hasConversationCandidates}
             onClick={() => setTaskPickerOpen((open) => !open)}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-btn bg-action-sky/10 px-2.5 py-1 text-xs text-action-sky transition-colors hover:bg-action-sky/15 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -114,7 +119,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
                           type="button"
                           role="checkbox"
                           aria-checked={selected}
-                          disabled={lastSelected}
+                          disabled={props.disabled || lastSelected}
                           title={lastSelected ? t("settings.modelWorkspace.taskAtLeastOne") : undefined}
                           onClick={() => props.onToggleCandidate(candidate.id)}
                           className="task-model-picker__choice"
@@ -133,6 +138,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
                           <button
                             type="button"
                             aria-pressed={isDefault}
+                            disabled={props.disabled}
                             onClick={() => props.onChooseDefaultCandidate(candidate.id)}
                             className="task-model-picker__default-button shrink-0"
                           >
@@ -162,6 +168,8 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
               options={row.options}
               onChange={props.onRowChange}
               preserveUnassigned={row.preserveUnassigned}
+              searchable={row.searchable}
+              disabled={props.disabled}
             />
           </Fragment>
         ))}
@@ -181,6 +189,8 @@ function AssignmentRow(props: {
   options: SelectOption[];
   onChange: (kind: ModelAssignmentKind, value: string) => void;
   preserveUnassigned?: boolean;
+  searchable?: boolean;
+  disabled?: boolean;
 }) {
   const { t } = useTranslation();
   const optionExists = props.options.some((option) => option.value === props.value);
@@ -213,17 +223,31 @@ function AssignmentRow(props: {
         </div>
         <p className="mt-0.5 text-[11px] text-text-ink/45">{props.description}</p>
       </div>
-      <Select
-        label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
-        labelClassName="sr-only"
-        value={value}
-        placeholder={t("settings.modelWorkspace.notConfigured")}
-        options={props.options}
-        onValueChange={(next) => props.onChange(props.kind, next)}
-        disabled={props.options.length === 0}
-        className="select-control--compact select-control--subtle model-assignment-select"
-        menuClassName="model-assignment-select__menu"
-      />
+      {props.searchable ? (
+        <SearchableSelect
+          label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
+          value={value}
+          placeholder={t("settings.modelWorkspace.notConfigured")}
+          searchPlaceholder={t("settings.cuberouterModel.searchModels")}
+          options={props.options}
+          onValueChange={(next) => props.onChange(props.kind, next)}
+          disabled={props.disabled || props.options.length === 0}
+          className="select-control--compact select-control--subtle model-assignment-select"
+          menuClassName="model-assignment-select__menu"
+        />
+      ) : (
+        <Select
+          label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
+          labelClassName="sr-only"
+          value={value}
+          placeholder={t("settings.modelWorkspace.notConfigured")}
+          options={props.options}
+          onValueChange={(next) => props.onChange(props.kind, next)}
+          disabled={props.disabled || props.options.length === 0}
+          className="select-control--compact select-control--subtle model-assignment-select"
+          menuClassName="model-assignment-select__menu"
+        />
+      )}
     </div>
   );
 }
