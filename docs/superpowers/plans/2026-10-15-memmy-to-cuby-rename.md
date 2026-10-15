@@ -1303,7 +1303,7 @@ Expected: PASS，**除三个既有的环境失败**（改名前就已失败，�
 ```bash
 grep -rni 'memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.codegraph . \
   | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs|docs/brand/)' \
-  | grep -viE '@memmy/|@memtensor/memmy-memory|memmy-agent|memmyMemory|memmyConfigPath|memmyConfigWriter|memmyAgent(Admin|Client|WebSocket|Project|Session|Ui|Slash|Goal|Message|Request|Unsubscribe)?|MemmyAgent|memmy-runtime-config|memmy-skill-directory|memmy-plugin|memmy-resume-hook|memmy-deepseek-harness|memmy-opencode|memmy-workspace-bridge|memmy-migrations|memmy-account|memmy-memory-cli|memmy_bridge|memmy-bridge|MemmyLauncher|memmy\.cn|memmy\.bot|memmy-memory|memmy-resume' \
+  | grep -viE '@memmy/|@memtensor/memmy-memory|memmy-agent|memmyMemory|memmyConfigPath|memmyConfigWriter|memmyAgent(Admin|Client|WebSocket|Project|Session|Ui|Slash|Goal|Message|Request|Unsubscribe)?|MemmyAgent|memmy-runtime-config|memmy-skill-directory|memmy-plugin|memmy-resume-hook|memmy-deepseek-harness|memmy-opencode|memmy-migrations|memmy-account|memmy-memory-cli|memmy_bridge|memmy-bridge|MemmyLauncher|memmy\.cn|memmy\.bot|memmy-memory|memmy-resume' \
   > /tmp/cuby-leftovers.txt
 wc -l /tmp/cuby-leftovers.txt
 ```
