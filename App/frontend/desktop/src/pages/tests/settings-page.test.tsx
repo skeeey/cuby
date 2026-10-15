@@ -889,7 +889,7 @@ describe("SettingsPageView", () => {
     expect(source).toContain('role="alert"');
     expect(source).toContain("{saveError}");
     expect(source).toContain("mutationErrorText(result.error, t)");
-    expect(source.indexOf("{saveError}")).toBeLessThan(source.indexOf('t("settings.modelWorkspace.bindingTitle")'));
+    expect(source.indexOf("{saveError}")).toBeLessThan(source.indexOf("<ModelAssignmentSection"));
   });
 
   it("模型工作区用同步 busy gate 阻止快速连续 PUT，且迟到的初始 GET 不覆盖本地 mutation", () => {

@@ -1,4 +1,4 @@
-import { AlertTriangle, Check, CheckCircle2, ChevronDown, ChevronUp, Database, Info, KeyRound, Loader2, Pencil, Plus, Trash2, Wrench, X, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ChevronDown, ChevronUp, Database, KeyRound, Loader2, Pencil, Plus, Trash2, X, XCircle } from "lucide-react";
 import {
   BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID,
   MODEL_NAME_MAX_LENGTH,
@@ -11,7 +11,6 @@ import { ConfirmDialog } from "../components/confirm-dialog.js";
 import { Modal } from "../components/modal.js";
 import { ModelProviderLogo } from "../components/model-provider-logo.js";
 import { Select, type SelectOption } from "../components/Select.js";
-import { Tooltip } from "../components/tooltip.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import {
   deleteModelConnection,
@@ -31,6 +30,7 @@ import {
   type ModelWorkspaceMode,
   type ModelWorkspaceMutationError
 } from "../state/model-workspace.js";
+import { ModelAssignmentSection } from "./model-assignment-section.js";
 import {
   ConfigField,
   PasswordConfigField,
@@ -112,7 +112,6 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
   const { t } = useTranslation();
   const [workspace, setWorkspace] = useState(() => createModelWorkspace(props.seedConfig));
   const [modelsExpanded, setModelsExpanded] = useState(true);
-  const [taskPickerOpen, setTaskPickerOpen] = useState(false);
   const [editor, setEditor] = useState<ConnectionEditorState | null>(null);
   const [editorTest, setEditorTest] = useState<ConnectionTestState>({ status: "idle", message: null });
   const [showEditorApiKey, setShowEditorApiKey] = useState(false);
@@ -699,9 +698,6 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
     && editorHasUsableKey
     && (editor.models.length > 0 || (editor.addingModel && editor.modelDraft.trim()))
   );
-  const selectedTaskModelsText = taskCandidates.length > 0
-    ? taskCandidates.map((candidate) => candidate.model).join("、")
-    : t("settings.modelWorkspace.notConfigured");
 
   return (
     <div className="model-workspace-layout" aria-busy={savePending}>
@@ -860,155 +856,40 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
         </div>
       )}
 
-      <section className={saveError ? undefined : "mt-8"}>
-        <div className="mb-3 flex items-center gap-2">
-          <Wrench size={16} className="text-text-ink/60" aria-hidden="true" />
-          <h3 className="text-sm font-semibold text-text-ink">{t("settings.modelWorkspace.bindingTitle")}</h3>
-        </div>
-        <div className="bg-background-paper rounded-card-lg border-content-panel p-6">
-          <p className="text-xs leading-relaxed text-text-ink/45">
-            {t("settings.modelWorkspace.bindingHint")}
-          </p>
-          <div className="mt-2 space-y-1">
-          <div className="flex items-center justify-between gap-4 bg-action-sky/5 px-3.5 py-3">
-            <div className="min-w-0">
-              <p className="text-sm text-text-ink/80">{t("settings.modelWorkspace.conversationModels")}</p>
-              <p className="mt-0.5 text-[11px] text-text-ink/45">
-                {t("settings.modelWorkspace.taskSelectionHint")}
-              </p>
-              <p className="task-model-selection-summary" title={selectedTaskModelsText}>
-                {t("settings.modelWorkspace.taskSelectedModels", { models: selectedTaskModelsText })}
-              </p>
-            </div>
-            <button
-              type="button"
-              aria-expanded={taskPickerOpen}
-              disabled={textCandidates.length === 0}
-              onClick={() => setTaskPickerOpen((open) => !open)}
-              className="inline-flex shrink-0 items-center gap-1.5 rounded-btn bg-action-sky/10 px-2.5 py-1 text-xs text-action-sky transition-colors hover:bg-action-sky/15 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {t("settings.modelWorkspace.taskSelectedCount", { count: taskCandidates.length })}
-              {taskPickerOpen
-                ? <ChevronUp size={12} aria-hidden="true" />
-                : <ChevronDown size={12} aria-hidden="true" />}
-            </button>
-          </div>
-          {taskPickerOpen && (
-            <div className="task-model-picker">
-              {(["platform", "byok"] as const).map((source) => {
-                const candidates = textCandidates.filter((candidate) => candidate.source === source);
-                if (candidates.length === 0) return null;
-                return (
-                  <div key={source} className="task-model-picker__group">
-                    <div className="task-model-picker__group-title">
-                      {source === "platform"
-                        ? <ModelProviderLogo provider="memmy" size={14} />
-                        : <KeyRound size={12} aria-hidden="true" />}
-                      {t(
-                        source === "platform"
-                          ? "settings.modelWorkspace.platformModels"
-                          : "settings.modelWorkspace.byokConnections"
-                      )}
-                    </div>
-                    {candidates.map((candidate) => {
-                      const selected = taskCandidates.some((item) => item.id === candidate.id);
-                      const lastSelected = selected && taskCandidates.length === 1;
-                      const isDefault = space.defaultTaskCandidateId === candidate.id;
-                      return (
-                        <div key={candidate.id} className="task-model-picker__option">
-                          <button
-                            type="button"
-                            role="checkbox"
-                            aria-checked={selected}
-                            disabled={lastSelected}
-                            title={lastSelected ? t("settings.modelWorkspace.taskAtLeastOne") : undefined}
-                            onClick={() => toggleTaskCandidate(candidate.id)}
-                            className="task-model-picker__choice"
-                          >
-                          <span className={`task-model-picker__checkbox${selected ? " is-selected" : ""}`}>
-                            {selected && <Check size={11} strokeWidth={3} aria-hidden="true" />}
-                          </span>
-                          <span className="min-w-0 flex-1 truncate text-left">
-                            {candidate.model}
-                          </span>
-                          <span className="shrink-0 text-[10px] text-text-ink/40">
-                            {candidate.source === "platform"
-                              ? t("settings.modelWorkspace.platformName")
-                              : connectionProtocolLabel(candidate.provider, t)}
-                          </span>
-                          </button>
-                          {selected && (
-                            <button
-                              type="button"
-                              aria-pressed={isDefault}
-                              onClick={() => chooseDefaultTaskCandidate(candidate.id)}
-                              className="task-model-picker__default-button shrink-0"
-                            >
-                              {isDefault
-                                ? t("settings.modelWorkspace.defaultModel")
-                                : t("settings.modelWorkspace.setDefaultModel")}
-                            </button>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          <div className="h-px bg-border-stone/30" />
-          <AssignmentRow
-            kind="memorySummary"
-            label={t("settings.model.memorySummary")}
-            description={t("settings.model.memoryDesc")}
-            tip={t("apiKey.modelPage.memoryHint")}
-            value={space.assignments.memorySummary}
-            options={memorySummaryOptions}
-            onChange={updateAssignment}
-          />
-          <div className="h-px bg-border-stone/30" />
-          <AssignmentRow
-            kind="memoryEvolution"
-            label={t("settings.model.skillEvolution")}
-            description={t("settings.model.skillDesc")}
-            value={space.assignments.memoryEvolution}
-            options={memoryEvolutionOptions}
-            onChange={updateAssignment}
-          />
-          <div className="h-px bg-border-stone/30" />
-          <AssignmentRow
-            kind="embedding"
-            label={t("settings.model.embeddingSearch")}
-            description={t("settings.model.embeddingDesc")}
-            value={embeddingAssignment}
-            options={embeddingOptions}
-            onChange={updateAssignment}
-            preserveUnassigned={props.mode === "account"}
-          />
-          <div className="h-px bg-border-stone/30" />
-          <AssignmentRow
-            kind="asr"
-            label={t("settings.model.asr")}
-            description={t("settings.model.asrDesc")}
-            badge={t("settings.modelWorkspace.optional")}
-            value={space.assignments.asr}
-            options={asrOptions}
-            onChange={updateAssignment}
-          />
-          <div className="h-px bg-border-stone/30" />
-          <AssignmentRow
-            kind="image"
-            label={t("settings.model.imageGen")}
-            description={t("settings.model.imageGenDesc")}
-            badge={t("settings.modelWorkspace.optional")}
-            value={space.assignments.image}
-            options={imageOptions}
-            onChange={updateAssignment}
-          />
-          </div>
-        </div>
-      </section>
+      <ModelAssignmentSection
+        conversationGroups={[
+          ...(textCandidates.some((candidate) => candidate.source === "platform")
+            ? [{
+                key: "platform",
+                title: t("settings.modelWorkspace.platformModels"),
+                icon: <ModelProviderLogo provider="memmy" size={14} />,
+                candidates: textCandidates.filter((candidate) => candidate.source === "platform")
+                  .map((candidate) => ({ id: candidate.id, label: candidate.model, detail: t("settings.modelWorkspace.platformName") }))
+              }]
+            : []),
+          ...(textCandidates.some((candidate) => candidate.source === "byok")
+            ? [{
+                key: "byok",
+                title: t("settings.modelWorkspace.byokConnections"),
+                icon: <KeyRound size={12} aria-hidden="true" />,
+                candidates: textCandidates.filter((candidate) => candidate.source === "byok")
+                  .map((candidate) => ({ id: candidate.id, label: candidate.model, detail: connectionProtocolLabel(candidate.provider, t) }))
+              }]
+            : [])
+        ]}
+        selectedCandidateIds={taskCandidates.map((candidate) => candidate.id)}
+        defaultCandidateId={space.defaultTaskCandidateId}
+        onToggleCandidate={toggleTaskCandidate}
+        onChooseDefaultCandidate={chooseDefaultTaskCandidate}
+        rows={[
+          { kind: "memorySummary", label: t("settings.model.memorySummary"), description: t("settings.model.memoryDesc"), tip: t("apiKey.modelPage.memoryHint"), value: space.assignments.memorySummary, options: memorySummaryOptions },
+          { kind: "memoryEvolution", label: t("settings.model.skillEvolution"), description: t("settings.model.skillDesc"), value: space.assignments.memoryEvolution, options: memoryEvolutionOptions },
+          { kind: "embedding", label: t("settings.model.embeddingSearch"), description: t("settings.model.embeddingDesc"), value: embeddingAssignment, options: embeddingOptions, preserveUnassigned: props.mode === "account" },
+          { kind: "asr", label: t("settings.model.asr"), description: t("settings.model.asrDesc"), badge: t("settings.modelWorkspace.optional"), value: space.assignments.asr, options: asrOptions },
+          { kind: "image", label: t("settings.model.imageGen"), description: t("settings.model.imageGenDesc"), badge: t("settings.modelWorkspace.optional"), value: space.assignments.image, options: imageOptions }
+        ]}
+        onRowChange={updateAssignment}
+      />
       </div>
 
       {editor && (
@@ -1306,63 +1187,6 @@ function ProviderModelList(props: {
           </div>
         </div>
       ))}
-    </div>
-  );
-}
-
-function AssignmentRow(props: {
-  kind: ModelAssignmentKind;
-  label: string;
-  description: string;
-  tip?: string;
-  badge?: string;
-  value: string | undefined;
-  options: SelectOption[];
-  onChange: (kind: ModelAssignmentKind, value: string) => void;
-  preserveUnassigned?: boolean;
-}) {
-  const { t } = useTranslation();
-  const optionExists = props.options.some((option) => option.value === props.value);
-  const value = optionExists
-    ? props.value!
-    : props.preserveUnassigned
-      ? ""
-      : props.options[0]?.value ?? "";
-  return (
-    <div className="flex items-center justify-between gap-4 px-3.5 py-2.5">
-      <div className="min-w-0">
-        <div className="model-assignment-label-row">
-          <span className="model-assignment-label">{props.label}</span>
-          {props.tip ? (
-            <Tooltip content={props.tip}>
-              <button
-                type="button"
-                className="model-assignment-tip-icon"
-                aria-label={props.tip}
-              >
-                <Info size={12} strokeWidth={1.9} aria-hidden="true" />
-              </button>
-            </Tooltip>
-          ) : null}
-          {props.badge && (
-            <span className="rounded-tag bg-canvas-oat px-2 py-0.5 text-[10px] text-text-ink/50">
-              {props.badge}
-            </span>
-          )}
-        </div>
-        <p className="mt-0.5 text-[11px] text-text-ink/45">{props.description}</p>
-      </div>
-      <Select
-        label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
-        labelClassName="sr-only"
-        value={value}
-        placeholder={t("settings.modelWorkspace.notConfigured")}
-        options={props.options}
-        onValueChange={(next) => props.onChange(props.kind, next)}
-        disabled={props.options.length === 0}
-        className="select-control--compact select-control--subtle model-assignment-select"
-        menuClassName="model-assignment-select__menu"
-      />
     </div>
   );
 }
