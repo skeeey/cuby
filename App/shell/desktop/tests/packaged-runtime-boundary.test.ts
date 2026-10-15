@@ -487,7 +487,7 @@ describe("desktop packaged runtime boundaries", () => {
   it("keeps the desktop main process on the shared Memmy identity and config path", () => {
     const source = readFileSync(mainSourcePath, "utf8");
 
-    expect(source).toContain('app.setName("Memmy");');
+    expect(source).toContain('app.setName("Cuby");');
     expect(source).toContain("windowsDataLayout = resolveWindowsDataLayout({");
     expect(source).toContain("const userDataPath = windowsDataLayout?.userDataPath ?? resolveDesktopUserDataPath(edition);");
     expect(source).toContain("const memmyHome = windowsDataLayout?.runtimeHomePath ?? resolveDesktopRuntimeHomePath(edition);");

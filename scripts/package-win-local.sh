@@ -136,11 +136,11 @@ close_running_app() {
 
   local closed
   closed="$(powershell.exe -NoProfile -Command \
-    "(Get-Process Memmy -ErrorAction SilentlyContinue | Stop-Process -Force -PassThru | Measure-Object).Count" \
+    "(Get-Process Cuby -ErrorAction SilentlyContinue | Stop-Process -Force -PassThru | Measure-Object).Count" \
     2>/dev/null | tr -d '\r\n' || true)"
 
   if [ -n "${closed:-}" ] && [ "$closed" != "0" ]; then
-    echo "Closed $closed running Memmy process(es) holding the output directory." >&2
+    echo "Closed $closed running Cuby process(es) holding the output directory." >&2
   fi
 }
 
@@ -154,7 +154,7 @@ clean_stale_output() {
   echo "Removing the previous unpacked build at $unpacked" >&2
   if ! rm -rf "$unpacked"; then
     echo "Could not remove it: something still holds those files." >&2
-    echo "Close Memmy (including any tray process) and run this again." >&2
+    echo "Close Cuby (including any tray process) and run this again." >&2
     exit 1
   fi
 }

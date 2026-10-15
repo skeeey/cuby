@@ -30,7 +30,7 @@ import { ipcMain } from 'electron';
 import { showComputerUsePermissionPanel } from '../src/main/computer-use-permission-panel.js';
 
 const channel = 'memmy:computer-use-permission-panel';
-const helperApp = '/Users/test/Applications/Memmy Development/Open Computer Use.app';
+const helperApp = '/Users/test/Applications/Cuby Development/Open Computer Use.app';
 const icon = { isEmpty: () => false, toDataURL: () => 'data:image/png;base64,aWNvbg==' };
 const initial = (): PermissionPanelState => ({
   helperApp, busy: false, canContinue: true, message: '',
