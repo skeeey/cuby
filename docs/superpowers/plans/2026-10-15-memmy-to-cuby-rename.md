@@ -1311,13 +1311,17 @@ Expected: PASS，**除三个既有的环境失败**（改名前就已失败，�
 
 ```bash
 grep -rni 'memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.codegraph . \
-  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs|docs/brand/)' \
-  | grep -viE '@memmy/|@memtensor/memmy-memory|memmy-agent|memmyMemory|memmyConfigPath|memmyConfigWriter|memmyAgent(Admin|Client|WebSocket|Project|Session|Ui|Slash|Goal|Message|Request|Unsubscribe)?|MemmyAgent|memmy-runtime-config|memmy-skill-directory|memmy-plugin|memmy-resume-hook|memmy-deepseek-harness|memmy-opencode|memmy-migrations|memmy-account|memmy-memory-cli|memmy_bridge|memmy-bridge|MemmyLauncher|memmy\.cn|memmy\.bot|memmy-memory|memmy-resume' \
+  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/internal/linux/|Memory/installers/|tests/linux-cli-packaging\.test\.mjs|docs/brand/)' \
+  | perl -ne 'my ($p,$l,$c) = split(/:/, $_, 3); print unless defined $c && $c =~ m{@memmy/|@memtensor/memmy-memory|memmyMemory|memmyConfigPath|memmyConfigWriter|memmyAgent|MemmyAgent|memmy-runtime-config|memmy-skill-directory|memmy-plugin|memmy-resume-hook|memmy-deepseek-harness|memmy-opencode|memmy-migrations|memmy-account|memmy-memory-cli|memmy_bridge|memmy-bridge|MemmyLauncher|memmy\.cn|memmy\.bot|memmy-memory|memmy-resume|memmy-focus|memmy-live|memmy-default}' \
   > /tmp/cuby-leftovers.txt
 wc -l /tmp/cuby-leftovers.txt
 ```
 
-逐条审阅 `/tmp/cuby-leftovers.txt`：每一条要么是**内部标识符/包名**（保留），要么是需要改的漏网（改掉）。改完重跑至清单只剩白名单项。
+**关键：白名单必须只匹配"内容"字段，不能匹配 grep 输出的路径前缀。** grep 输出是 `路径:行号:内容`，若直接 `grep -viE 'memmy-agent'`，那么 `App/memmy-agent/...` 的**路径前缀本身**就命中了过滤 —— 结果是**整个 `App/memmy-agent/` 包在扫描里全部隐形**（该包里恰好有 CLI/TUI 文案、`memmy-memory` 模块、`x-memmy` 相关代码等大量需要审视的行）。上面用 `perl` 先按冒号切出第三个字段（内容）再过滤，正是为了避免这个陷阱。
+
+> 同理：`memmy-agent` 这条白名单项已**从内容过滤里去掉**——它作为**目录/包名**是允许保留的，但作为**内容里出现的字符串**（例如文案 "Memmy Agent"）是要改的。两者必须分开判断。
+
+逐条审阅 `/tmp/cuby-leftovers.txt`：每一条要么是**内部标识符/包名/键**（保留），要么是需要改的漏网（改掉）。改完重跑至清单只剩白名单项。
 
 - [ ] **Step 3: 更新仍描述旧名的注释与清理工具**
 
