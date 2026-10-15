@@ -51,7 +51,7 @@ export const resolveWindowsLoginItemCommand = (
     return { path: environment.executablePath, args: [] };
   }
 
-  const launcherPath = windowsPath.join(localAppDataPath, "Memmy", "launcher", "MemmyLauncher.vbs");
+  const launcherPath = windowsPath.join(localAppDataPath, "Cuby", "launcher", "CubyLauncher.vbs");
   if (!pathExists(launcherPath)) {
     return { path: environment.executablePath, args: [] };
   }

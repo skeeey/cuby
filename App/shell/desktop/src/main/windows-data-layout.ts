@@ -35,7 +35,7 @@ export const resolveWindowsDataLayout = (
     return null;
   }
 
-  const userDataPath = win32.join(options.appDataPath, "Memmy");
+  const userDataPath = win32.join(options.appDataPath, "Cuby");
   const legacyRuntimeHomePath = win32.join(options.homeDirectory, ".memmy");
   const installationRoot = win32.parse(options.executablePath).root;
   const useLegacyRuntimeHome = options.isWindowsStore
@@ -43,10 +43,10 @@ export const resolveWindowsDataLayout = (
     || sameWindowsRoot(installationRoot, "C:\\");
   const dataContainerPath = useLegacyRuntimeHome
     ? legacyRuntimeHomePath
-    : win32.join(installationRoot, "MemmyData");
+    : win32.join(installationRoot, "CubyData");
   const runtimeHomePath = useLegacyRuntimeHome
     ? legacyRuntimeHomePath
-    : win32.join(dataContainerPath, ".memmy");
+    : win32.join(dataContainerPath, ".cuby");
   const localAppDataPath = options.localAppDataPath
     || win32.join(options.homeDirectory, "AppData", "Local");
 
@@ -55,8 +55,8 @@ export const resolveWindowsDataLayout = (
     runtimeHomePath,
     updatesPath: win32.join(dataContainerPath, "updates"),
     pointerPath: win32.join(userDataPath, "data-root.txt"),
-    migrationStatePath: win32.join(localAppDataPath, "Memmy", "data-migration", "state.json"),
-    installationRecordPath: win32.join(localAppDataPath, "Memmy", "data-layout", "last-install.json"),
+    migrationStatePath: win32.join(localAppDataPath, "Cuby", "data-migration", "state.json"),
+    installationRecordPath: win32.join(localAppDataPath, "Cuby", "data-layout", "last-install.json"),
     legacyInstallDataPath: win32.join(win32.dirname(options.executablePath), "data")
   };
 };
@@ -332,7 +332,7 @@ const resolveValidatedRuntimeSourcesForCleanup = (
     if (!copiedRuntimeSources.has(candidateKey)) continue;
 
     const root = win32.parse(normalizedCandidate).root;
-    const canonicalDriveRuntimeHome = win32.join(root, "MemmyData", ".memmy");
+    const canonicalDriveRuntimeHome = win32.join(root, "CubyData", ".cuby");
     if (
       !sameWindowsPath(normalizedCandidate, canonicalDriveRuntimeHome)
       && !explicitlyTrustedSources.has(candidateKey)
@@ -394,7 +394,7 @@ const resolveValidatedCleanupLayout = (
     || !win32.isAbsolute(state.targetRuntimeHomePath)
   ) return null;
   const runtimePath = win32.normalize(state.targetRuntimeHomePath);
-  const canonicalRuntimePath = win32.join(win32.parse(runtimePath).root, "MemmyData", ".memmy");
+  const canonicalRuntimePath = win32.join(win32.parse(runtimePath).root, "CubyData", ".cuby");
   const runtimeIsTrusted = sameWindowsPath(runtimePath, layout.runtimeHomePath)
     || sameWindowsPath(runtimePath, canonicalRuntimePath)
     || trustedLegacyRuntimeHomePaths.some((candidate) => sameWindowsPath(candidate, runtimePath));

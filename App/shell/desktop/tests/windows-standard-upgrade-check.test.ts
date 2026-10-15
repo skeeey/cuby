@@ -55,7 +55,7 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
   it("blocks relocation when the selected drive already contains runtime data", () => {
     const fixture = createFixture();
     fixture.targetInstallDir = join(fixture.root, "other-drive", "Memmy");
-    fixture.targetRuntimeHomePath = join(fixture.root, "other-drive", "MemmyData", ".memmy");
+    fixture.targetRuntimeHomePath = join(fixture.root, "other-drive", "CubyData", ".cuby");
     writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "existing-runtime");
 
     const result = runCheck(fixture);

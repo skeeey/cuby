@@ -218,10 +218,10 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     const root = await mkdtemp(join(tmpdir(), "memmy-migration-state-"));
     temporaryDirectories.push(root);
     const layout: WindowsDataLayout = {
-      userDataPath: join(root, "AppData", "Roaming", "Memmy"),
+      userDataPath: join(root, "AppData", "Roaming", "Cuby"),
       runtimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
       updatesPath: join(root, "new-drive", "MemmyData", "updates"),
-      pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
+      pointerPath: join(root, "AppData", "Roaming", "Cuby", "data-root.txt"),
       migrationStatePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),
       installationRecordPath: join(root, "AppData", "Local", "Memmy", "data-layout", "last-install.json"),
       legacyInstallDataPath: join(root, "new-install", "data")
