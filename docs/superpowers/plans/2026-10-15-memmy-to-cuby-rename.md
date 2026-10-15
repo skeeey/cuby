@@ -18,6 +18,7 @@
 - **协议头**：`x-memmy-<name>` → `x-cuby-<name>`，17 个，逐字对应。
 - **机械替换的文件类型范围**：`--include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh'`。**别漏了 shell / PowerShell / NSIS / cmd** —— `scripts/package-win.sh`、`scripts/clear-data.sh`、`scripts/clear-all-windows.ps1`、`App/shell/desktop/build/installer-win-unsigned.nsh` 等文件里同样有路径、环境变量与产品名。
 - **绝不动**：`scripts/install.sh`、`scripts/internal/linux/**`、`Memory/installers/**`（独立的 Memory CLI 安装器，装到 `~/.memmy/cli` 与 `~/.memmy/bin`；与 Linux CLI 安装面同类，同样延后，见 Ruling 15）、`README.md`、`README.zh-CN.md`、`docs/**`、`package.json` 的 `name` 字段与所有 `@memmy/*` / `@memtensor/memmy-memory-*` 包名、`App/memmy-agent/` 目录名、`App/memmy-agent/src/memmy-memory/` 模块目录名、`memmy.cn` / `memmy.bot` 域名、config schema 键（`memmyAgent` / `memmyMemory`）、内部标识符（`MemmyAgentClient`、`memmyConfigPath` 等）。
+- **绝不动（密钥材料）**：`Migrations/src/migrations/v1.0.7/legacy-app-state-model-config-source.ts:7` 的 `DEFAULT_KEY_MATERIAL = "Memmy local SecretStore v1"`。它是**派生密钥的输入**，改一个字都会让老用户已加密的凭据解不开。对应测试 `Migrations/tests/0002-import-legacy-app-state-model-config.test.ts:31` 里同样的字面量也**不动**。任何 sweep 与"顺手改名"都不得碰它。
 - **排除模式必须用 `grep -vE`**：计划里的排除清单用扩展正则（`'^(\./)?…'`）。用基础正则的 `grep -v` 时 `(\./)?` 会被当作字面字符，整条模式匹配不到任何东西，排除静默失效——**执行时先按 Step 3 的 `wc -l` 与"是否仍含禁改项"两步自检**。
 - **清理工具要"加"不要"换"**：`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 的职责本就包括清掉**旧安装**的数据，整批改名会让它们再也清不了老 Memmy。这几个文件**排除在机械扫描之外**，由 Task 15 Step 3 单独处理成"同时覆盖 Cuby 与 Memmy"。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
@@ -1079,7 +1080,12 @@ git commit -m "feat: switch the user-visible product-name literals to Cuby"
 - Modify: `App/frontend/desktop/src/i18n/error-notice-messages.ts`（2 处）
 - Modify: `App/shell/desktop/src/main/startup-splash.ts:55,59,61`
 - Modify: `App/shell/desktop/src/main/main.ts:812`
+- Modify: `App/shell/desktop/src/main/window-mode.ts:57`（宠物窗 `title: "Memmy"`）
+- Modify: `App/backend/src/services/app-config-service.ts:81`（`displayName: "Memmy"`）
+- Modify: **`Memory/viewer/**`（10 个文件，本层新认领的一块用户可见 UI）**：`src/stores/i18n.ts:42,1076`（`header.brand`）、`src/components/{Header,AuthGate,App,AgentSourceSelect}.tsx`、`src/components/agent-source.ts:2-3`、`src/views/{LogsView,AnalyticsView}.tsx`、`src/api/client.ts`
+- Modify: **`Knowledge/**`（本层新认领）**：`src/ui/page.tsx:1315`（`{t("登录 Memmy", "Sign in to Memmy")}`）、`src/client.ts:47,144`（用户可见错误文案）
 - Test: `App/frontend/desktop/src/i18n/tests/**`
+- Test: `Knowledge/tests/page.test.tsx:323`、`Memory/viewer/src/**/tests/**`（若有）
 
 **Interfaces:**
 - Consumes: Task 1 的 `productName = Cuby`。
@@ -1110,6 +1116,20 @@ perl -pi -e 's/\bMemmy\b/Cuby/g' \
 ```
 
 `App/shell/desktop/src/main/main.ts:812`：`"Memmy 启动失败"` → `"Cuby 启动失败"`。
+
+本层新认领的三块（**必须一起改，否则同一产品在不同界面里叫两个名字**）：
+
+```bash
+# Memory viewer —— 独立前端，有自己的 i18n 与 Header 品牌
+perl -pi -e 's/\bMemmy\b/Cuby/g' $(grep -rl '\bMemmy\b' --include='*.ts' --include='*.tsx' Memory/viewer/src)
+# Knowledge 包里的用户可见文案（登录提示、错误消息）
+perl -pi -e 's/\bMemmy\b/Cuby/g' Knowledge/src/ui/page.tsx Knowledge/src/client.ts
+# 两处零散的产品名
+perl -pi -e 's/title: "Memmy"/title: "Cuby"/' App/shell/desktop/src/main/window-mode.ts
+perl -pi -e 's/displayName: "Memmy"/displayName: "Cuby"/' App/backend/src/services/app-config-service.ts
+```
+
+`Knowledge/tests/page.test.tsx:323`（断言 `"登录 Memmy"`）与 `Knowledge/tests/knowledge.test.ts:65`（用例标题）同步改。
 
 > 只改文案字符串。`main.ts` 里的标识符（`MemmyAgentAdminClient` 等）不得受影响——上面只对 i18n 文件与 splash 做全词替换，`main.ts` 只改指定行。
 
