@@ -4,7 +4,7 @@ let runtimeAssetPromise: Promise<string> | null = null;
 
 export function loadMemmyWorkspaceBridgeRuntimeAsset(): Promise<string> {
   runtimeAssetPromise ??= readFile(
-    new URL("./memmy-workspace-bridge.mjs", import.meta.url),
+    new URL("./cuby-workspace-bridge.mjs", import.meta.url),
     "utf8",
   ).then((content) => {
     if (!content.trim()) throw new Error("Memmy lifecycle sidecar asset is empty");

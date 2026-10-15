@@ -7,8 +7,8 @@ const sourceDirectory = dirname(fileURLToPath(import.meta.url));
 const memoryDirectory = resolve(sourceDirectory, "../../../..");
 const mode = process.argv.includes("--dist") ? "dist" : "source";
 const destination = mode === "dist"
-  ? join(memoryDirectory, "dist/src/agent-source/integration/workspace-bridge/memmy-workspace-bridge.mjs")
-  : join(sourceDirectory, "memmy-workspace-bridge.mjs");
+  ? join(memoryDirectory, "dist/src/agent-source/integration/workspace-bridge/cuby-workspace-bridge.mjs")
+  : join(sourceDirectory, "cuby-workspace-bridge.mjs");
 const temporary = `${destination}.${process.pid}.tmp`;
 
 await mkdir(dirname(destination), { recursive: true });

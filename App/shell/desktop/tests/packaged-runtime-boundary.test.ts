@@ -2007,7 +2007,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(asarGuardSource).toContain("dist/runtime/memmy-agent/package.json");
     expect(asarGuardSource).toContain("dist/runtime/memory/package-lock.json");
     expect(asarGuardSource).toContain(
-      "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/memmy-workspace-bridge.mjs",
+      "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/cuby-workspace-bridge.mjs",
     );
   });
 

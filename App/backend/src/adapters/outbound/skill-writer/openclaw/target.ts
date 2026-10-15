@@ -109,7 +109,7 @@ export function createOpenclawSkillTarget(deps: CreateOpenclawSkillTargetDeps = 
       );
       await writeFileAtomically(join(pluginDirectory, "index.mjs"), OPENCLAW_PLUGIN_INDEX);
       await writeFileAtomically(
-        join(pluginDirectory, "memmy-workspace-bridge.mjs"),
+        join(pluginDirectory, "cuby-workspace-bridge.mjs"),
         await loadMemmyWorkspaceBridgeRuntimeAsset()
       );
       await writeFileAtomically(
@@ -455,7 +455,7 @@ import {
   loadRuntimeL3,
   notifyRuntimeBoundary,
   openRuntimeSession
-} from "./memmy-workspace-bridge.mjs";
+} from "./cuby-workspace-bridge.mjs";
 
 const PLUGIN_ID = "cuby-memory";
 const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
@@ -465,7 +465,7 @@ const sessionCache = new Map();
 const runtimeSessionCache = new Map();
 const l3InjectOnce = new Map();
 const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);
-const BRIDGE_URL = new URL("./memmy-workspace-bridge.mjs", import.meta.url);
+const BRIDGE_URL = new URL("./cuby-workspace-bridge.mjs", import.meta.url);
 const completedTurns = new Set();
 const CUBY_FETCH_TIMEOUT_MS = 45000;
 const CUBY_RECALL_TIMEOUT_MS = 45000;

@@ -71,7 +71,7 @@ describe("L3 World Model automatic adapter matrix", () => {
     expect(source).toContain('"l3WorldModelProtocolVersion": 2');
     expect(source).not.toContain('"kind": "inventory"');
     expect(source).not.toContain("workspaceBridge");
-    expect(listFiles(hermesRoot).some((path) => path.endsWith("memmy-workspace-bridge.mjs"))).toBe(false);
+    expect(listFiles(hermesRoot).some((path) => path.endsWith("cuby-workspace-bridge.mjs"))).toBe(false);
     expect(listFiles(hermesRoot).some((path) => /outbox|boundary.*\.json|cursor.*\.json/iu.test(path))).toBe(false);
     await target.uninstallPlugin(target.targetId);
     expect(existsSync(providerPath)).toBe(false);
@@ -96,7 +96,7 @@ function nodeAdapterCases(base: string, configPath: string): NodeAdapterCase[] {
     {
       name: "Codex",
       rootDirectory: codex,
-      bridgePath: join(codex, "hooks", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(codex, "hooks", "cuby-workspace-bridge.mjs"),
       create: () => createCodexSkillTarget({
         rootDirectory: codex,
         memmyConfigPath: configPath,
@@ -106,25 +106,25 @@ function nodeAdapterCases(base: string, configPath: string): NodeAdapterCase[] {
     {
       name: "Cursor",
       rootDirectory: cursor,
-      bridgePath: join(cursor, "hooks", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(cursor, "hooks", "cuby-workspace-bridge.mjs"),
       create: () => createCursorSkillTarget({ rootDirectory: cursor, memmyConfigPath: configPath })
     },
     {
       name: "Claude Code",
       rootDirectory: claude,
-      bridgePath: join(claude, "hooks", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(claude, "hooks", "cuby-workspace-bridge.mjs"),
       create: () => createClaudeCodeSkillTarget({ rootDirectory: claude, memmyConfigPath: configPath })
     },
     {
       name: "OpenCode",
       rootDirectory: opencode,
-      bridgePath: join(opencode, "plugins", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(opencode, "plugins", "cuby-workspace-bridge.mjs"),
       create: () => createOpencodeSkillTarget({ rootDirectory: opencode, memmyConfigPath: configPath })
     },
     {
       name: "OpenClaw",
       rootDirectory: openclaw,
-      bridgePath: join(openclaw, "extensions", "cuby-memory", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(openclaw, "extensions", "cuby-memory", "cuby-workspace-bridge.mjs"),
       create: () => createOpenclawSkillTarget({
         rootDirectory: openclaw,
         configPath: join(openclaw, "openclaw.json"),
@@ -135,7 +135,7 @@ function nodeAdapterCases(base: string, configPath: string): NodeAdapterCase[] {
     {
       name: "DeepSeek Harness",
       rootDirectory: deepseek,
-      bridgePath: join(deepseek, "profiles", "node_modules", "@memmy", "cuby-memory", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(deepseek, "profiles", "node_modules", "@memmy", "memmy-memory", "cuby-workspace-bridge.mjs"),
       create: () => createDeepseekHarnessSkillTarget({ rootDirectory: deepseek, memmyConfigPath: configPath })
     }
   ];

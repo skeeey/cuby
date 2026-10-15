@@ -266,7 +266,7 @@ describe("packaged desktop runtime configuration", () => {
     expect(buildScript).toContain('npm ci --prefix "$RUNTIME_DIR/memory" --omit=dev --install-links');
     expect(buildScript).toContain('require_packaged_runtime_file "$packaged_agent_source_core/dist/src/index.js"');
     expect(buildScript).toContain('require_packaged_runtime_file "$packaged_agent_source_core/dist/src/codex-source-turn.js"');
-    expect(buildScript).toContain('require_packaged_runtime_file "$packaged_memory_runtime/dist/src/agent-source/integration/workspace-bridge/memmy-workspace-bridge.mjs"');
+    expect(buildScript).toContain('require_packaged_runtime_file "$packaged_memory_runtime/dist/src/agent-source/integration/workspace-bridge/cuby-workspace-bridge.mjs"');
     expect(buildScript).toContain('[ -L "$packaged_agent_source_core" ]');
   });
 
@@ -643,7 +643,7 @@ async function createAsarFixture(
   if (platform === "win32") writeFileSync(join(onnxRuntimeRoot, "onnxruntime.dll"), "win-x64-dll");
   const lifecycleSidecar = join(
     source,
-    "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/memmy-workspace-bridge.mjs",
+    "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/cuby-workspace-bridge.mjs",
   );
   mkdirSync(dirname(lifecycleSidecar), { recursive: true });
   writeFileSync(lifecycleSidecar, "export {};\n");

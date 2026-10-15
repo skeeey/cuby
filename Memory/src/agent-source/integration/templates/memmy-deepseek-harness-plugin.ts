@@ -11,7 +11,7 @@ import {
   openRuntimeSession,
   readDeepseekHookSourceTurn,
   startRuntimeTurn
-} from "./memmy-workspace-bridge.mjs";
+} from "./cuby-workspace-bridge.mjs";
 
 export const name = "memmy-memory";
 export const inject = ["agents", "sessions", "tools", "systemPrompt"];

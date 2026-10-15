@@ -7,8 +7,8 @@ const sourceDirectory = dirname(fileURLToPath(import.meta.url));
 const backendDirectory = resolve(sourceDirectory, "../../../../..");
 const mode = process.argv.includes("--dist") ? "dist" : "source";
 const destination = mode === "dist"
-  ? join(backendDirectory, "dist/src/adapters/outbound/skill-writer/workspace-bridge/memmy-workspace-bridge.mjs")
-  : join(sourceDirectory, "memmy-workspace-bridge.mjs");
+  ? join(backendDirectory, "dist/src/adapters/outbound/skill-writer/workspace-bridge/cuby-workspace-bridge.mjs")
+  : join(sourceDirectory, "cuby-workspace-bridge.mjs");
 const temporary = `${destination}.${process.pid}.tmp`;
 
 await mkdir(dirname(destination), { recursive: true });

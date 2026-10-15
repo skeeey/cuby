@@ -34,7 +34,7 @@ export function createDeepseekHarnessSkillTarget(
 ): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveDeepseekHarnessHomeDirectory();
   const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
-  const pluginDirectory = join(rootDirectory, "profiles", "node_modules", "@memmy", "cuby-memory");
+  const pluginDirectory = join(rootDirectory, "profiles", "node_modules", "@memmy", "memmy-memory");
   const patchPath = join(rootDirectory, "cordis.patch.yml");
 
   return {
@@ -64,7 +64,7 @@ export function createDeepseekHarnessSkillTarget(
       const pluginSource = await readTextFile(join(pluginDirectory, "index.mjs"));
       const clientSource = await readTextFile(join(pluginDirectory, "client.js"));
       const packageSource = await readTextFile(join(pluginDirectory, "package.json"));
-      const bridgeSource = await readTextFile(join(pluginDirectory, "memmy-workspace-bridge.mjs"));
+      const bridgeSource = await readTextFile(join(pluginDirectory, "cuby-workspace-bridge.mjs"));
       return patch.includes("name: " + yamlString(PLUGIN_PACKAGE_NAME)) &&
         pluginSource === DEEPSEEK_HARNESS_PLUGIN_INDEX &&
         clientSource === DEEPSEEK_HARNESS_PLUGIN_CLIENT &&
@@ -84,7 +84,7 @@ export function createDeepseekHarnessSkillTarget(
       await writeFileAtomically(join(pluginDirectory, "index.mjs"), DEEPSEEK_HARNESS_PLUGIN_INDEX);
       await writeFileAtomically(join(pluginDirectory, "client.js"), DEEPSEEK_HARNESS_PLUGIN_CLIENT);
       await writeFileAtomically(
-        join(pluginDirectory, "memmy-workspace-bridge.mjs"),
+        join(pluginDirectory, "cuby-workspace-bridge.mjs"),
         await loadMemmyWorkspaceBridgeRuntimeAsset()
       );
       await writeFileAtomically(

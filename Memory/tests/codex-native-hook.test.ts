@@ -36,7 +36,7 @@ async function fixture(responseStatus = "stored") {
   await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
   const endpoint = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
   writeFileSync(join(dir, "cuby-resume-hook.mjs"), renderMemmyResumeHookScript({ source: "codex", mode: "codex" }));
-  writeFileSync(join(dir, "memmy-workspace-bridge.mjs"), await loadMemmyWorkspaceBridgeRuntimeAsset());
+  writeFileSync(join(dir, "cuby-workspace-bridge.mjs"), await loadMemmyWorkspaceBridgeRuntimeAsset());
   writeFileSync(join(dir, "cuby-memory-config.json"), JSON.stringify({ endpoint, userId: "fixture-owner", memmy_config_path: join(dir, "missing.yaml") }));
   const path = join(dir, "transcript.jsonl"); writeFileSync(path, transcript());
   return { dir, path, requests, close: () => new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())) };

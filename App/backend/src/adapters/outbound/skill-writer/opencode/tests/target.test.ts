@@ -75,7 +75,7 @@ describe("opencode skill target", () => {
 
     await target.installPlugin?.("opencode");
 
-    const pluginPath = join(rootDirectory, "plugins", "memmy-memory.js");
+    const pluginPath = join(rootDirectory, "plugins", "cuby-memory.js");
     const pluginConfigPath = join(rootDirectory, "plugins", "cuby-memory-config.json");
     const commandPath = join(rootDirectory, "commands", "cuby-resume.md");
     const pluginSource = readFileSync(pluginPath, "utf8");
@@ -96,7 +96,7 @@ describe("opencode skill target", () => {
       userId: "local-user",
       workspaceHostId: expect.stringMatching(/^[a-f0-9]{64}$/u)
     });
-    const bridgePath = join(rootDirectory, "plugins", "memmy-workspace-bridge.mjs");
+    const bridgePath = join(rootDirectory, "plugins", "cuby-workspace-bridge.mjs");
     expect(existsSync(bridgePath)).toBe(true);
     expect(pluginSource).toContain('import { tool } from "@opencode-ai/plugin";');
     expect(pluginSource).toContain("export const MemmyMemoryPlugin");
@@ -368,7 +368,7 @@ interface OpencodePluginHooks {
 
 async function loadPluginHooks(rootDirectory: string): Promise<OpencodePluginHooks> {
   const pluginDirectory = join(rootDirectory, "plugins");
-  const pluginSource = readFileSync(join(pluginDirectory, "memmy-memory.js"), "utf8").replace(
+  const pluginSource = readFileSync(join(pluginDirectory, "cuby-memory.js"), "utf8").replace(
     'import { tool } from "@opencode-ai/plugin";',
     [
       "const schemaValue = () => ({ optional() { return this; } });",
@@ -376,7 +376,7 @@ async function loadPluginHooks(rootDirectory: string): Promise<OpencodePluginHoo
       "tool.schema = { string: schemaValue, enum: schemaValue, array: schemaValue };"
     ].join("\n")
   );
-  const runtimePath = join(pluginDirectory, `memmy-memory-runtime-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
+  const runtimePath = join(pluginDirectory, `cuby-memory-runtime-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
   writeFileSync(runtimePath, pluginSource, "utf8");
   const module = await import(pathToFileURL(runtimePath).href) as {
     MemmyMemoryPlugin(input: {

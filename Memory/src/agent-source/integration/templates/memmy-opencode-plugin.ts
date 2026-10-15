@@ -14,7 +14,7 @@ import {
   openRuntimeSession,
   readOpencodeHookSourceTurn,
   startRuntimeTurn
-} from "./memmy-workspace-bridge.mjs";
+} from "./cuby-workspace-bridge.mjs";
 
 const SOURCE = "opencode";
 const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);

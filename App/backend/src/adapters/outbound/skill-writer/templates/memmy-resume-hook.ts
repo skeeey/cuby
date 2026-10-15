@@ -24,7 +24,7 @@ import {
   notifyRuntimeBoundary,
   openRuntimeSession,
   startRuntimeTurn
-} from "./memmy-workspace-bridge.mjs";
+} from "./cuby-workspace-bridge.mjs";
 
 const SOURCE = ${JSON.stringify(options.source)};
 const MODE = ${JSON.stringify(options.mode)};

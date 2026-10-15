@@ -508,7 +508,7 @@ describe("openclaw skill target", () => {
         "const spawnSync = globalThis.__memmySpawnSync;"
       )
       .replace(
-        /import \{\s*closeRuntimeSession,[\s\S]*?\} from "\.\/memmy-workspace-bridge\.mjs";/u,
+        /import \{\s*closeRuntimeSession,[\s\S]*?\} from "\.\/cuby-workspace-bridge\.mjs";/u,
         "const { closeRuntimeSession, loadRuntimeL3, notifyRuntimeBoundary, openRuntimeSession, syncRuntimeEnvironment } = globalThis.__memmyRuntime;"
       )
       .replace(
@@ -516,8 +516,8 @@ describe("openclaw skill target", () => {
         'const CONFIG_URL = new URL("file:///tmp/cuby-memory-config.json");'
       )
       .replace(
-        'const BRIDGE_URL = new URL("./memmy-workspace-bridge.mjs", import.meta.url);',
-        'const BRIDGE_URL = new URL("file:///tmp/memmy-workspace-bridge.mjs");'
+        'const BRIDGE_URL = new URL("./cuby-workspace-bridge.mjs", import.meta.url);',
+        'const BRIDGE_URL = new URL("file:///tmp/cuby-workspace-bridge.mjs");'
       );
     const spawnInputs: Record<string, unknown>[] = [];
     const fakeSpawnSync = vi.fn((_command: unknown, _args: unknown, options: { input?: string }) => {

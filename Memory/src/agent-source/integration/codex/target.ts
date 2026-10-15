@@ -26,7 +26,7 @@ const HOOK_DIRECTORY_NAME = "hooks";
 const HOOK_SCRIPT_FILE_NAME = "cuby-resume-hook.mjs";
 const LEGACY_HOOK_SCRIPT_FILE_NAME = "memmy-memory-resume-hook.mjs";
 const HOOK_CONFIG_FILE_NAME = "cuby-memory-config.json";
-const WORKSPACE_BRIDGE_FILE_NAME = "memmy-workspace-bridge.mjs";
+const WORKSPACE_BRIDGE_FILE_NAME = "cuby-workspace-bridge.mjs";
 const HOOK_TIMEOUT_SECONDS = 60;
 const START_MARKER = "<!-- cuby:start v=1 -->";
 const END_MARKER = "<!-- cuby:end v=1 -->";

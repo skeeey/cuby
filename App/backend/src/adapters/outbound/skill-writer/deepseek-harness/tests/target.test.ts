@@ -576,7 +576,7 @@ function createRoot(): string {
 }
 
 function installedPluginDirectory(rootDirectory: string): string {
-  return join(rootDirectory, "profiles", "node_modules", "@memmy", "cuby-memory");
+  return join(rootDirectory, "profiles", "node_modules", "@memmy", "memmy-memory");
 }
 
 function writeDeepseekSessionFile(rootDirectory: string, sessionId: string, cwd: string, agentPreset?: string, turnCount = 1): void {

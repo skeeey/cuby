@@ -683,7 +683,7 @@ verify_packaged_mac_unpacked_artifacts() {
   require_packaged_runtime_file "$packaged_memory_runtime/memory-runtime.json"
   require_packaged_runtime_file "$packaged_memory_runtime/dist/src/server/index.js"
   require_packaged_runtime_file "$packaged_memory_runtime/dist/src/cli/index.js"
-  require_packaged_runtime_file "$packaged_memory_runtime/dist/src/agent-source/integration/workspace-bridge/memmy-workspace-bridge.mjs"
+  require_packaged_runtime_file "$packaged_memory_runtime/dist/src/agent-source/integration/workspace-bridge/cuby-workspace-bridge.mjs"
   require_packaged_runtime_file "$packaged_agent_source_core/package.json"
   require_packaged_runtime_file "$packaged_agent_source_core/dist/src/index.js"
   require_packaged_runtime_file "$packaged_agent_source_core/dist/src/codex-source-turn.js"
