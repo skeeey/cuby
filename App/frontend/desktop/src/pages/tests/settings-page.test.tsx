@@ -40,6 +40,7 @@ const browserUpdateSourcePath = fileURLToPath(new URL("../../app/browser-update.
 const tokenUsageStylesPath = fileURLToPath(new URL("../settings-token-usage.module.css", import.meta.url));
 const modelConfigSourcePath = fileURLToPath(new URL("../model-config.ts", import.meta.url));
 const modelWorkspaceSourcePath = fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url));
+const modelLibrarySourcePath = fileURLToPath(new URL("../model-library-section.tsx", import.meta.url));
 const overflowTooltipSourcePath = fileURLToPath(new URL("../../components/overflow-tooltip-text.tsx", import.meta.url));
 
 function createMemoryStorage(): Storage {
@@ -187,7 +188,7 @@ describe("自定义模型能力选择", () => {
   });
 
   it("模型能力沿用标准 Select 四选一，不再拆分文本用途", () => {
-    const source = readFileSync(modelWorkspaceSourcePath, "utf8");
+    const source = readFileSync(modelLibrarySourcePath, "utf8");
 
     expect(source).toContain('const MODEL_KIND_OPTIONS = ["text", "embedding", "asr", "image"] as const;');
     expect(source).toContain("value={kind}");
@@ -742,7 +743,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型工作区测试连接按钮固定位置和尺寸，状态提示展示在按钮左侧", () => {
-    const workspaceSource = readFileSync(fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url)), "utf8");
+    const workspaceSource = readFileSync(modelLibrarySourcePath, "utf8");
     const fieldsSource = readFileSync(fileURLToPath(new URL("../api-key-form-fields.tsx", import.meta.url)), "utf8");
 
     expect(fieldsSource).toContain("inline-flex w-[112px] h-10 shrink-0 items-center justify-center px-4");
@@ -765,7 +766,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型工作区协议默认地址与模型配置常量保持一致", () => {
-    const workspaceSource = readFileSync(fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url)), "utf8");
+    const workspaceSource = readFileSync(modelLibrarySourcePath, "utf8");
     const modelSource = readFileSync(modelConfigSourcePath, "utf8");
 
     const defaults = [
@@ -883,12 +884,13 @@ describe("SettingsPageView", () => {
 
   it("catalog 读取或保存失败时在模型工作区展示错误", () => {
     const source = readFileSync(modelWorkspaceSourcePath, "utf8");
+    const librarySource = readFileSync(modelLibrarySourcePath, "utf8");
 
     expect(source).toContain("modelWorkspaceErrorText(error, t)");
     expect(source).not.toContain("MessageToast");
     expect(source).toContain('role="alert"');
     expect(source).toContain("{saveError}");
-    expect(source).toContain("mutationErrorText(result.error, t)");
+    expect(librarySource).toContain("mutationErrorText(result.error, t)");
     expect(source.indexOf("{saveError}")).toBeLessThan(source.indexOf("<ModelAssignmentSection"));
   });
 
@@ -904,7 +906,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型工作区连接编辑展示已保存脱敏 key，且保存不回传脱敏值", () => {
-    const workspaceSource = readFileSync(fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url)), "utf8");
+    const workspaceSource = readFileSync(modelLibrarySourcePath, "utf8");
     const fieldsSource = readFileSync(fileURLToPath(new URL("../api-key-form-fields.tsx", import.meta.url)), "utf8");
 
     expect(workspaceSource).toContain("maskedValue={editor.connectionId && !editorProviderChanged");
