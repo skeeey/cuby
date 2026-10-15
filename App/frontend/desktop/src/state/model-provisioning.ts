@@ -83,7 +83,7 @@ function findExistingEndpointId(
 
 /** Reads the latest catalog, applies a pure mutation, saves; retries once on catalog conflicts. */
 export async function saveCatalogMutation(input: {
-  configClient: ConfigClient;
+  configClient: Pick<ConfigClient, "getModelConfig" | "saveModelCatalog">;
   mutate: (workspace: ModelWorkspace) => ModelWorkspace;
 }): Promise<ModelProviderConfig> {
   let lastError: unknown;

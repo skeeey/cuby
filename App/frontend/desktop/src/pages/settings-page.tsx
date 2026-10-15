@@ -29,6 +29,7 @@ import type { AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import type { ModelWorkspaceMode } from "../state/model-workspace.js";
 import { AppFrame } from "./app-frame.js";
+import { CuberouterModelSection } from "./cuberouter-model-section.js";
 import { ModelWorkspaceSection } from "./model-workspace-section.js";
 import {
   MEMORY_TOKEN_BUDGET_SECTION_ID,
@@ -1613,24 +1614,35 @@ export function SettingsPageView(props: SettingsPageViewProps) {
           hidden={activeTab !== "model"}
         >
         <div id="model-config">
-          <ModelWorkspaceSection
-            mode={workspaceMode}
-            seedConfig={state.modelConfig}
-            configClient={configClient}
-            onConfigSaved={(saved) => dispatch(appActions.modelConfigUpdated(saved))}
-            onFinishSetup={setupReturnRoute === "/onboarding"
-              ? () => {
-                  window.sessionStorage.removeItem(SETTINGS_ADD_MODEL_RETURN_STORAGE_KEY);
-                  const nextUrl = `${window.location.pathname}${window.location.search}`;
-                  window.history.replaceState(window.history.state, "", nextUrl);
-                  dispatch(appActions.navigate("/onboarding"));
-                }
-              : undefined}
-            onReturnToMain={() => dispatch(appActions.navigate("/main"))}
-            autoOpenAddConnection={
-              setupReturnRoute === "/main"
-            }
-          />
+          {state.account.identityProvider === "cuberouter" ? (
+            <CuberouterModelSection
+              username={state.account.username}
+              organizationName={state.account.organizationName}
+              seedConfig={state.modelConfig}
+              configClient={configClient}
+              accountClient={accountClient}
+              onConfigSaved={(saved) => dispatch(appActions.modelConfigUpdated(saved))}
+            />
+          ) : (
+            <ModelWorkspaceSection
+              mode={workspaceMode}
+              seedConfig={state.modelConfig}
+              configClient={configClient}
+              onConfigSaved={(saved) => dispatch(appActions.modelConfigUpdated(saved))}
+              onFinishSetup={setupReturnRoute === "/onboarding"
+                ? () => {
+                    window.sessionStorage.removeItem(SETTINGS_ADD_MODEL_RETURN_STORAGE_KEY);
+                    const nextUrl = `${window.location.pathname}${window.location.search}`;
+                    window.history.replaceState(window.history.state, "", nextUrl);
+                    dispatch(appActions.navigate("/onboarding"));
+                  }
+                : undefined}
+              onReturnToMain={() => dispatch(appActions.navigate("/main"))}
+              autoOpenAddConnection={
+                setupReturnRoute === "/main"
+              }
+            />
+          )}
         </div>
         </div>
 

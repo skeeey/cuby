@@ -948,6 +948,27 @@ describe("SettingsPageView", () => {
     expect(source).toContain("const isSignedIn = Boolean(state.account.userId)");
   });
 
+  it("cuberouter 身份把模型配置换成 key 卡，其他身份仍渲染模型库", () => {
+    const cuberouterHtml = normalizeSsrHtml(renderSettingsPageView(createCuberouterModeState()));
+    const localHtml = normalizeSsrHtml(renderSettingsPageView(createByokModeState()));
+    const cuberouterPanel = cuberouterHtml.slice(
+      cuberouterHtml.indexOf('id="model-config"'),
+      cuberouterHtml.indexOf('id="token-usage"')
+    );
+    const localPanel = localHtml.slice(
+      localHtml.indexOf('id="model-config"'),
+      localHtml.indexOf('id="token-usage"')
+    );
+
+    expect(cuberouterPanel).toContain("API Key");
+    expect(cuberouterPanel).toContain("选择用于模型调用的 key；每行标注计费主体与剩余额度。");
+    expect(cuberouterPanel).toContain("alice@a.com (yeebo)");
+    expect(cuberouterPanel).not.toContain("模型库");
+
+    expect(localPanel).toContain("模型库");
+    expect(localPanel).not.toContain("选择用于模型调用的 key");
+  });
+
   it("退出登录后刷新 canonical 配置，并按实际 BYOK Agent 模型决定落点", async () => {
     const catalogWithUnselectedByokAgent = createCatalog(true);
     catalogWithUnselectedByokAgent.modelAssignments.byok.agent = { candidates: [], default: null };
@@ -1403,6 +1424,23 @@ function createByokModeSignedInState(): AppState {
   return appReducer(
     createByokModeState(),
     appActions.accountUpdated({ userId: "cuberouter:7", identityProvider: "cuberouter" })
+  );
+}
+
+/**
+ * Creates a BYOK mode settings page state signed in through cuberouter with an organization.
+ *
+ * @returns A BYOK settings page state carrying the cuberouter username and organization name.
+ */
+function createCuberouterModeState(): AppState {
+  return appReducer(
+    createByokModeState(),
+    appActions.accountUpdated({
+      userId: "cuberouter:7",
+      identityProvider: "cuberouter",
+      username: "alice@a.com",
+      organizationName: "yeebo"
+    })
   );
 }
 
