@@ -9,8 +9,8 @@ import { createWindowsUpdateLauncherFile } from "../src/main/windows-update-laun
 describe("Windows update launcher", () => {
   it("encodes the VBS launcher as UTF-16LE with BOM without losing Chinese paths or arguments", () => {
     const helperPath = "D:\\测试路径\\Memmy\\data\\Memmy\\updates\\install-win-update.ps1";
-    const installerPath = "D:\\测试路径\\Memmy\\data\\Memmy\\updates\\Memmy-1.1.0.exe";
-    const appPath = "D:\\测试路径\\Memmy\\Memmy.exe";
+    const installerPath = "D:\\测试路径\\Memmy\\data\\Memmy\\updates\\Cuby-1.1.0.exe";
+    const appPath = "D:\\测试路径\\Memmy\\Cuby.exe";
     const logPath = "D:\\测试路径\\Memmy\\data\\Memmy\\updates\\win-update-install.log";
     const markerPath = "D:\\测试路径\\Memmy\\data\\Memmy\\prepared-required-update.json";
     const command = [

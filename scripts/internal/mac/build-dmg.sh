@@ -308,7 +308,7 @@ create_dmg_cli_installer_command() {
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_PATH="/Applications/Memmy.app"
+APP_PATH="/Applications/Cuby.app"
 INSTALLER="$APP_PATH/Contents/Resources/cli/install-cli"
 
 if [ ! -x "$INSTALLER" ]; then
@@ -657,10 +657,10 @@ verify_computer_history_helpers() {
 
 resolve_packaged_mac_app_path() {
   local target_cpu="$1"
-  local app_path="$DESKTOP_DIR/release/mac-$target_cpu/Memmy.app"
+  local app_path="$DESKTOP_DIR/release/mac-$target_cpu/Cuby.app"
 
   if [ "$target_cpu" = "x64" ] && [ ! -d "$app_path" ]; then
-    app_path="$DESKTOP_DIR/release/mac/Memmy.app"
+    app_path="$DESKTOP_DIR/release/mac/Cuby.app"
   fi
 
   printf '%s\n' "$app_path"

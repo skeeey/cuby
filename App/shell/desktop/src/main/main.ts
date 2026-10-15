@@ -200,7 +200,7 @@ const MAIN_WINDOW_ROUTE_TARGET_CHANNEL = "memmy:route-target-request";
 const UPDATE_DOWNLOAD_PROGRESS_CHANNEL = "memmy:update-download-progress";
 const PREPARED_REQUIRED_UPDATE_FILE = "prepared-required-update.json";
 const WINDOWS_UPDATE_PROMPT_LANGUAGE_FILE = "update-prompt-language.txt";
-const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.memmy";
+const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.cuby";
 const REQUIRED_UPDATE_BACKGROUND_FIRST_CHECK_DELAY_MS = 60 * 1000;
 // Background update check interval: defaults to 5 minutes; can be overridden via the
 // MEMMY_UPDATE_CHECK_INTERVAL_MIN env var (set a small value during testing without changing code).
@@ -1433,7 +1433,7 @@ function resolveInstalledWindowsUpdatePromptScriptPath(): string | null {
     return null;
   }
 
-  const scriptPath = join(localAppData, "Memmy", "launcher", "MemmyUpdatePrompt.ps1");
+  const scriptPath = join(localAppData, "Cuby", "launcher", "CubyUpdatePrompt.ps1");
   return existsSync(scriptPath) ? scriptPath : null;
 }
 
@@ -1874,7 +1874,7 @@ function resolvePreparedRequiredUpdateLockPath(): string {
 function resolveWindowsUpgradeRelayLockPath(): string | null {
   if (process.platform !== "win32") return null;
   const localAppData = process.env.LOCALAPPDATA?.trim();
-  return localAppData ? join(localAppData, "Memmy", "upgrade-staging", "active.lock") : null;
+  return localAppData ? join(localAppData, "Cuby", "upgrade-staging", "active.lock") : null;
 }
 
 /**
@@ -2355,7 +2355,7 @@ async function installMacDmgUpdateInBackground(
   await mkdir(updatesDirectory, { recursive: true });
   const destinationAppPath = resolveMacUpdateDestinationAppPath();
   if (!destinationAppPath) {
-    throw new Error("Cannot resolve installed Memmy.app path for background update");
+    throw new Error("Cannot resolve installed Cuby.app path for background update");
   }
   const helperPath = join(updatesDirectory, `install-mac-update-${Date.now()}.zsh`);
   const logPath = join(updatesDirectory, "mac-update-install.log");
@@ -2383,7 +2383,7 @@ async function installMacDmgUpdateInBackground(
  * Resolves the app bundle path that a macOS background update should replace.
  *
  * An unsigned test build may, due to App Translocation, have a current execution path that is not
- * under `/Applications`; but as long as the user has already drag-installed `/Applications/Memmy.app`,
+ * under `/Applications`; but as long as the user has already drag-installed `/Applications/Cuby.app`,
  * that official install location should still be the one replaced.
  *
  * @returns The app path that can be replaced in the background; null when the install location cannot be confirmed.
@@ -2398,9 +2398,9 @@ function resolveMacUpdateDestinationAppPath(): string | null {
     return currentAppPath;
   }
 
-  const installedMemmyAppPath = "/Applications/Memmy.app";
-  if (existsSync(installedMemmyAppPath)) {
-    return installedMemmyAppPath;
+  const installedCubyAppPath = "/Applications/Cuby.app";
+  if (existsSync(installedCubyAppPath)) {
+    return installedCubyAppPath;
   }
 
   const applicationsAppPath = join("/Applications", basename(currentAppPath));

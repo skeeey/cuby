@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 const describeOnWindows = process.platform === "win32" ? describe : describe.skip;
-const scriptPath = fileURLToPath(new URL("../build/MemmyWindowsStandardUpgradeCheck.ps1", import.meta.url));
+const scriptPath = fileURLToPath(new URL("../build/CubyWindowsStandardUpgradeCheck.ps1", import.meta.url));
 const installerIncludePath = fileURLToPath(new URL("../build/installer-win-unsigned.nsh", import.meta.url));
 const fixtureRoots: string[] = [];
 const powershellTimeoutMs = 30_000;
@@ -40,16 +40,16 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
     expect(result.stdout).toContain("manually migrate files before choosing a new directory");
   });
 
-  it("blocks relocation when the selected target already contains another Memmy executable", () => {
+  it("blocks relocation when the selected target already contains another Cuby executable", () => {
     const fixture = createFixture();
     fixture.targetInstallDir = join(fixture.root, "other-drive", "Memmy");
     mkdirSync(fixture.targetInstallDir, { recursive: true });
-    copyFileSync(fixture.installedExePath, join(fixture.targetInstallDir, "Memmy.exe"));
+    copyFileSync(fixture.installedExePath, join(fixture.targetInstallDir, "Cuby.exe"));
 
     const result = runCheck(fixture);
 
     expect(result.status).toBe(2);
-    expect(result.stdout).toContain("installation-blocked:selected target already contains Memmy.exe");
+    expect(result.stdout).toContain("installation-blocked:selected target already contains Cuby.exe");
   });
 
   it("blocks relocation when the selected drive already contains runtime data", () => {
@@ -61,7 +61,7 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
     const result = runCheck(fixture);
 
     expect(result.status).toBe(2);
-    expect(result.stdout).toContain("installation-blocked:selected installation drive already contains Memmy runtime data");
+    expect(result.stdout).toContain("installation-blocked:selected installation drive already contains Cuby runtime data");
   });
 
   it("allows an empty legacy data directory because it contains no data to preserve", () => {
@@ -182,7 +182,7 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
     expect(source).not.toContain('IfFileExists "$MemmyInstalledExePath" 0 memmy_relay_done');
     expect(source).toContain('StrCmp $MemmyStandardUpgradeSafe "1" memmy_relay_done');
     expect(source).toContain('StrCmp $MemmyStandardUpgradeSafe "1" memmy_check_app_running_done');
-    expect(source).toContain("MemmyWindowsStandardUpgradeCheck.ps1");
+    expect(source).toContain("CubyWindowsStandardUpgradeCheck.ps1");
     expect(source).toContain("-AllowMissingExecutable");
     expect(source).toMatch(/memmy_standard_check_safe:[\s\S]*StrCmp \$R4 "-AllowMissingExecutable" memmy_standard_check_fresh/u);
   });
@@ -219,7 +219,7 @@ function createFixture(): Fixture {
   const root = mkdtempSync(join(tmpdir(), "memmy-standard-upgrade-check-"));
   fixtureRoots.push(root);
   const installDir = join(root, "install", "Memmy");
-  const installedExePath = join(installDir, "Memmy.exe");
+  const installedExePath = join(installDir, "Cuby.exe");
   const installerPath = join(root, "downloads", "Memmy-update.exe");
   const installationRecordPath = join(root, "local", "Memmy", "data-layout", "last-install.json");
   const migrationStatePath = join(root, "local", "Memmy", "data-migration", "state.json");

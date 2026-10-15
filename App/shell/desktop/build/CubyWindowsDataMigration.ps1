@@ -147,7 +147,7 @@ function Get-CanonicalExternalRuntimeHomePath {
     }
     return Get-NormalizedPath -Path $legacyHome
   }
-  return Get-NormalizedPath -Path (Join-Path $installRoot 'MemmyData\.memmy')
+  return Get-NormalizedPath -Path (Join-Path $installRoot 'CubyData\.cuby')
 }
 
 function Assert-NoReparsePath {
@@ -202,7 +202,7 @@ function Read-DataRootPointer {
       $normalizedValue = Get-NormalizedPath -Path $value
       $runtimeRoot = [System.IO.Path]::GetPathRoot($normalizedValue)
       $canonicalDriveRuntimeHome = if ($runtimeRoot) {
-        Join-Path $runtimeRoot "MemmyData\.memmy"
+        Join-Path $runtimeRoot "CubyData\.cuby"
       } else {
         ""
       }
@@ -215,7 +215,7 @@ function Read-DataRootPointer {
             (Test-SamePath -Left $normalizedValue -Right $verifiedExternalRuntimeHomePath))) {
         return $normalizedValue
       }
-      Write-MigrationLog -Message "Ignoring data-root pointer outside a supported Memmy runtime root: $normalizedValue"
+      Write-MigrationLog -Message "Ignoring data-root pointer outside a supported Cuby runtime root: $normalizedValue"
     }
   }
   catch {
@@ -1285,12 +1285,12 @@ function Read-VerifiedPreviousMigrationForCarryForward {
 
   $previousState = Get-Content -LiteralPath $StatePath -Raw -Encoding UTF8 | ConvertFrom-Json
   if ([string]$previousState.phase -ne "app-verified") {
-    throw "A previous data migration still requires app verification. Open Memmy successfully before installing again."
+    throw "A previous data migration still requires app verification. Open Cuby successfully before installing again."
   }
   if (-not $previousState.targetUserDataPath -or
       -not $previousState.targetRuntimeHomePath -or
       -not (Test-SamePath -Left ([string]$previousState.targetUserDataPath) -Right $TargetUserDataPath)) {
-    throw "Verified migration cleanup targets do not match the current trusted data layout. Open the existing Memmy again before changing its installation drive."
+    throw "Verified migration cleanup targets do not match the current trusted data layout. Open the existing Cuby again before changing its installation drive."
   }
 
   $rememberedRuntimeHomePath = Read-DataRootPointer -Path $PointerPath
@@ -1299,7 +1299,7 @@ function Read-VerifiedPreviousMigrationForCarryForward {
     ($rememberedRuntimeHomePath -and
       (Test-SamePath -Left ([string]$previousState.targetRuntimeHomePath) -Right $rememberedRuntimeHomePath))
   if (-not $previousRuntimeTargetIsTrusted) {
-    throw "Verified migration cleanup targets do not match the current trusted data layout. Open the existing Memmy again before changing its installation drive."
+    throw "Verified migration cleanup targets do not match the current trusted data layout. Open the existing Cuby again before changing its installation drive."
   }
 
   Write-MigrationLog -Message "Carrying the previously verified migration rollback artifacts into the next migration transaction."

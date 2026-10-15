@@ -5,7 +5,7 @@ import { dirname, join } from "node:path";
 import { spawnSync } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 
-const scriptPath = new URL("../build/MemmyWindowsDataMigration.ps1", import.meta.url).pathname
+const scriptPath = new URL("../build/CubyWindowsDataMigration.ps1", import.meta.url).pathname
   .replace(/^\/(?:[A-Za-z]:)/u, (value) => value.slice(1));
 const temporaryDirectories: string[] = [];
 
@@ -703,7 +703,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     });
   });
 
-  it("ignores a data-root pointer outside supported Memmy runtime roots", async () => {
+  it("ignores a data-root pointer outside supported Cuby runtime roots", async () => {
     const fixture = await createFixture();
     const arbitraryRuntimePath = join(fixture.root, "arbitrary", "runtime");
     await mkdir(arbitraryRuntimePath, { recursive: true });
@@ -719,7 +719,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     expect(existsSync(join(fixture.targetRuntimeHomePath, "do-not-copy.txt"))).toBe(false);
     expect(await readFile(join(arbitraryRuntimePath, "do-not-copy.txt"), "utf8")).toBe("private");
     expect(await readFile(fixture.logPath, "utf8")).toContain(
-      "Ignoring data-root pointer outside a supported Memmy runtime root"
+      "Ignoring data-root pointer outside a supported Cuby runtime root"
     );
   });
 

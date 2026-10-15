@@ -104,7 +104,7 @@ try {
   $normalizedInstallerPath = Get-NormalizedAbsolutePath $InstallerPath 'installer path'
   $normalizedInstallationRecordPath = Get-NormalizedAbsolutePath $InstallationRecordPath 'installation record path'
   $normalizedMigrationStatePath = Get-NormalizedAbsolutePath $MigrationStatePath 'migration state path'
-  $expectedInstalledExePath = Get-NormalizedAbsolutePath (Join-Path $normalizedInstallDir 'Memmy.exe') 'expected installed executable path'
+  $expectedInstalledExePath = Get-NormalizedAbsolutePath (Join-Path $normalizedInstallDir 'Cuby.exe') 'expected installed executable path'
 
   Assert-NoReparsePath $normalizedInstallDir 'installDir'
   Assert-NoReparsePath $normalizedTargetInstallDir 'target installDir'
@@ -124,12 +124,12 @@ try {
         (Test-SameOrDescendantPath $normalizedInstallDir $normalizedTargetInstallDir)) {
       Stop-Installation 'selected target overlaps the installed application directory'
     }
-    if (Test-Path -LiteralPath (Join-Path $normalizedTargetInstallDir 'Memmy.exe') -PathType Leaf) {
-      Stop-Installation 'selected target already contains Memmy.exe'
+    if (Test-Path -LiteralPath (Join-Path $normalizedTargetInstallDir 'Cuby.exe') -PathType Leaf) {
+      Stop-Installation 'selected target already contains Cuby.exe'
     }
     $targetLegacyDataPath = Join-Path $normalizedTargetInstallDir 'data'
     if (Test-DirectoryContainsData $targetLegacyDataPath) {
-      Stop-Installation 'selected target already contains install-local Memmy data'
+      Stop-Installation 'selected target already contains install-local Cuby data'
     }
 
     $targetRuntimeHasData = Test-DirectoryContainsData $normalizedTargetRuntimeHomePath @('updates')
@@ -150,7 +150,7 @@ try {
         $targetRuntimeIsRecordedSource = $false
       }
       if (-not $targetRuntimeIsRecordedSource) {
-        Stop-Installation 'selected installation drive already contains Memmy runtime data'
+        Stop-Installation 'selected installation drive already contains Cuby runtime data'
       }
     }
 
@@ -158,7 +158,7 @@ try {
   }
   $installedExeExists = Test-Path -LiteralPath $normalizedInstalledExePath -PathType Leaf
   if (-not $installedExeExists -and -not $AllowMissingExecutable) {
-    throw "installed Memmy.exe is missing"
+    throw "installed Cuby.exe is missing"
   }
   if (-not (Test-Path -LiteralPath $normalizedInstallerPath -PathType Leaf)) {
     throw "downloaded installer is missing"
