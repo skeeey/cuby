@@ -1255,7 +1255,9 @@ wc -l /tmp/cuby-leftovers.txt
 - `scripts/internal/mac/build-dmg.sh:163` 的 `APP_EXEC="$MACOS_DIR/Memmy"` → `Cuby`。它现在靠下面 `:166-173` 的"取唯一可执行文件"兜底仍能工作，所以不报错——但 `packaged-runtime-boundary.test.ts:2727` 断言了这个字面量，**脚本与测试必须同批改**，否则要么测试挂、要么 DMG 冒烟只在兜底路径下通过。
 - `App/shell/desktop/src/main/main.ts:3217` 的兜底下载文件名 `Memmy-${version}-…` → `Cuby-…`（仅在更新 URL 的 basename 不可用时使用，但会写进用户磁盘）。
 
-其余纯注释/用例标题的残留（`installer-win-unsigned.nsh:22,37,659` 的旧路径与话术、`packaged-runtime-boundary.test.ts:2724` 的用例标题）由 Step 2 的白名单扫描一并列出。
+其余纯注释/用例标题的残留（`installer-win-unsigned.nsh:22,37,659` 的旧路径与话术、`packaged-runtime-boundary.test.ts:2724` 的用例标题、`windows-launch-at-login.test.ts:64` 的用例名）由 Step 2 的白名单扫描一并列出。
+
+**已知的两处"看着该改、其实可以不改"，别误判为漏网**（Task 2 审查的结论）：`App/shell/desktop/tests/windows-data-migration.test.ts:105,190,230,820,1009` 与 `windows-data-migration-state.test.ts:374,404,450,524` 仍用 `MemmyData\.memmy`。这些用例走的是"显式传入受信源"的分支（脚本参数由测试直接给定），不经由从 `userDataPath` 推导的规范路径，所以两种拼写都能通过。**是否对齐由你判断**：对齐能让 fixture 更贴近实际布局，不对齐则保留一条覆盖显式源路径的用例——两种都站得住，不要为它改动源码。
 
 清理工具单独处理——`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 目前只认 `Memmy` 的进程名、安装路径与数据家目录。它们要**同时覆盖两套**（Cuby 与 Memmy），而不是把 Memmy 换成 Cuby：这些脚本的用处之一正是清掉旧安装。具体做法是在各文件的进程名匹配、安装路径探测与数据家目录枚举处**各加一组 Cuby 条目**，保留原有 Memmy 条目；`clear-all-windows.ps1` 的 `-AdditionalMemmyHome` 参数及其"目录名须以 Memmy 或 .memmy 开头"的校验放宽为同时接受 Cuby / .cuby。
 
