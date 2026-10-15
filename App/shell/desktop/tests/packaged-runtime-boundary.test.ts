@@ -577,7 +577,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("boot:error");
     expect(source).toContain("showPackagedStartupError(error)");
     expect(source).toContain("dialog.showErrorBox");
-    expect(source).toContain("Memmy 启动失败");
+    expect(source).toContain("Cuby 启动失败");
   });
 
   it("hides the default in-window menu bar outside macOS", () => {

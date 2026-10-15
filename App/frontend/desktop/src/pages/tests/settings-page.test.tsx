@@ -499,11 +499,11 @@ describe("SettingsPageView", () => {
     const windowsEnglishHtml = normalizeSsrHtml(renderSettingsPageView(createReadyState(), "en-US", createUpdateViewModel(), "win32"));
     const macHtml = normalizeSsrHtml(renderSettingsPageView(createReadyState(), "zh-CN", createUpdateViewModel(), "darwin"));
 
-    expect(windowsHtml).toContain("在 Windows 状态栏常驻 Memmy 图标，便于随时呼出");
-    expect(windowsHtml).not.toContain("在 macOS 状态栏常驻 Memmy 图标，便于随时呼出");
-    expect(windowsEnglishHtml).toContain("Keep a Memmy icon in the Windows system tray for quick access");
-    expect(windowsEnglishHtml).not.toContain("Keep a Memmy icon in the macOS status bar for quick access");
-    expect(macHtml).toContain("在 macOS 状态栏常驻 Memmy 图标，便于随时呼出");
+    expect(windowsHtml).toContain("在 Windows 状态栏常驻 Cuby 图标，便于随时呼出");
+    expect(windowsHtml).not.toContain("在 macOS 状态栏常驻 Cuby 图标，便于随时呼出");
+    expect(windowsEnglishHtml).toContain("Keep a Cuby icon in the Windows system tray for quick access");
+    expect(windowsEnglishHtml).not.toContain("Keep a Cuby icon in the macOS status bar for quick access");
+    expect(macHtml).toContain("在 macOS 状态栏常驻 Cuby 图标，便于随时呼出");
   });
 
   it("日志级别下拉选择走 handleLogLevelChange 持久化到 localStorage 与主进程 IPC", () => {
@@ -589,12 +589,12 @@ describe("SettingsPageView", () => {
     expect(html).toContain("Token 用量");
     expect(modelConfigHtml).toContain("模型库");
     expect(modelConfigHtml).toContain("平台提供");
-    expect(modelConfigHtml).toContain("Memmy Platform");
+    expect(modelConfigHtml).toContain("Cuby Platform");
     expect(modelConfigHtml).toContain("通用文本");
     expect(modelConfigHtml).toContain("添加配置");
     expect(modelConfigHtml).toContain("Agent 任务模型");
-    expect(modelConfigHtml).toContain("Memmy Platform · ASR");
-    expect(modelConfigHtml).not.toContain("为语音识别 ASR选择模型 Memmy Platform · 通用文本");
+    expect(modelConfigHtml).toContain("Cuby Platform · ASR");
+    expect(modelConfigHtml).not.toContain("为语音识别 ASR选择模型 Cuby Platform · 通用文本");
     expect(html).toContain("平台赠送额度");
     expect(html).toContain("自定义 API Key 消耗");
     expect(html).not.toContain("查看用量详情");
@@ -644,7 +644,7 @@ describe("SettingsPageView", () => {
     expect(html).toContain("注册时间：2026-04-12");
     expect(html).toContain("Token 用量");
     expect(modelConfigHtml).toContain("模型库");
-    expect(modelConfigHtml).toContain("Memmy Platform");
+    expect(modelConfigHtml).toContain("Cuby Platform");
     expect(modelConfigHtml).toContain("平台提供");
     expect(modelConfigHtml).toContain("添加配置");
     expect(modelConfigHtml).toContain("main-model");
@@ -826,7 +826,7 @@ describe("SettingsPageView", () => {
     expect(html).toContain("打磨 Agent 技能与偏好");
     expect(html).toContain("Embedding 检索");
     expect(html).toContain("记忆向量化检索");
-    expect(html).toContain("Memmy Platform 本地 Embedding");
+    expect(html).toContain("Cuby Platform 本地 Embedding");
     expect(html).toContain("语音识别 ASR");
     expect(html).toContain("生图模型");
     expect(html).toContain("未配置");

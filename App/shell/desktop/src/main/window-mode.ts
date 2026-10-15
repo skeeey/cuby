@@ -54,7 +54,7 @@ export const fullWindowOptions = {
   height: 780,
   minWidth: 980,
   minHeight: 640,
-  title: "Memmy",
+  title: "Cuby",
   backgroundColor: "#f1f8f7"
 } as const;
 

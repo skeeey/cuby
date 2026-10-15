@@ -62,7 +62,7 @@ it("does not access cloud or expose stale bases when signed out", async () => {
   });
   expect(fetcher).not.toHaveBeenCalled();
 });
-it("checks the switch before transmitting the question and uses only Memmy JWT", async () => {
+it("checks the switch before transmitting the question and uses only Cuby JWT", async () => {
   const fetcher = vi.fn(async () => reply({ ...settings, enabled: false }));
   const client = new ManagedKnowledgeClient({
     baseUrl: "https://cloud.example",

@@ -809,7 +809,7 @@ function showPackagedStartupError(error: unknown): void {
   const message = formatStartupError(error);
   const truncatedMessage = message.length > 4000 ? `${message.slice(0, 4000)}\n...` : message;
   dialog.showErrorBox(
-    "Memmy 启动失败",
+    "Cuby 启动失败",
     `${truncatedMessage}\n\n启动日志：${startupLogPath()}`
   );
 }

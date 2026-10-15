@@ -181,7 +181,7 @@ export function Header() {
         <span class="topbar__brand-mark" aria-hidden="true">
           <img
             src="/viewer/memos-logo.svg"
-            alt="Memmy"
+            alt="Cuby"
             width={24}
             height={24}
             style="display:block"

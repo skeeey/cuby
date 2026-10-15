@@ -73,11 +73,11 @@ describe("startup splash localization", () => {
     const englishHtml = resolveUpdateSplashHtml("en-US", "1.0.8<script>");
     const chineseHtml = resolveUpdateSplashHtml("zh-CN", "1.0.8");
 
-    expect(englishHtml).toContain("Completing Memmy update");
-    expect(englishHtml).toContain("Memmy will reopen automatically");
+    expect(englishHtml).toContain("Completing Cuby update");
+    expect(englishHtml).toContain("Cuby will reopen automatically");
     expect(englishHtml).toContain("1.0.8&lt;script&gt;");
     expect(englishHtml).not.toContain("1.0.8<script>");
-    expect(chineseHtml).toContain("正在完成 Memmy 更新");
+    expect(chineseHtml).toContain("正在完成 Cuby 更新");
     expect(chineseHtml).toContain("安装完成后会自动打开新版。");
   });
 });

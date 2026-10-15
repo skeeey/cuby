@@ -30,7 +30,7 @@ describe("StartupScreen", () => {
   it("full loading uses welcome mascot and title without card chrome", () => {
     const html = renderStartup(<StartupScreen />);
 
-    expect(html).toContain("Memmy");
+    expect(html).toContain("Cuby");
     expect(html).toContain("Starting");
     expect(html).not.toContain("Memmy 启动中");
     expect(html).toContain('class="sr-only"');

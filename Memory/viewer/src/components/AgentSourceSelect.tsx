@@ -32,7 +32,7 @@ interface AgentSourceSelectProps {
 }
 
 const ALL_AGENT_ICON_SOURCES = [
-  { sourceId: "memmy-agent", displayName: "Memmy" },
+  { sourceId: "memmy-agent", displayName: "Cuby" },
   { sourceId: "codex", displayName: "Codex" },
   { sourceId: "claude_code", displayName: "Claude Code" },
 ] as const;

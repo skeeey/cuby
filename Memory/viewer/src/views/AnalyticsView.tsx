@@ -1,4 +1,4 @@
-/** Analytics view aligned with Memmy's memory analysis page. */
+/** Analytics view aligned with Cuby's memory analysis page. */
 import { useEffect, useMemo, useRef, useState } from "preact/hooks";
 import { api } from "../api/client";
 import { RefreshButton } from "../components/RefreshButton";

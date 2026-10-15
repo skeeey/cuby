@@ -15,7 +15,7 @@ vi.mock("../../state/app-state.js", async (importOriginal) => {
   return { ...actual, useAppState: () => ({ state: mocks.state, dispatch: vi.fn() }) };
 });
 
-const knowledgeUnavailableText = "知识库需要 Memmy 云账号，当前账号不可用。";
+const knowledgeUnavailableText = "知识库需要 Cuby 云账号，当前账号不可用。";
 
 beforeEach(() => {
   mocks.state = createInitialAppState();
@@ -35,7 +35,7 @@ describe("KnowledgePage identity gate", () => {
     );
 
     expect(html).toContain(knowledgeUnavailableText);
-    expect(html).not.toContain("登录 Memmy");
+    expect(html).not.toContain("登录 Cuby");
   });
 
   it("keeps rendering the workspace shell for a memmy cloud identity", () => {
