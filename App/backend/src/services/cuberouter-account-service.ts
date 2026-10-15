@@ -53,6 +53,24 @@ function toApiError(error: unknown): Error {
   return Object.assign(new Error(message), { code: code ? CUBEROUTER_ERROR_CODES[code] : "internal" });
 }
 
+export interface CuberouterModelChoices {
+  account: { username: string; organizationName: string | null };
+  /** The current line's OpenAI-compatible base (`<线路>/v1`) the panel reads and writes against. */
+  apiBase: string;
+  keys: Array<{
+    scope: "organization" | "personal";
+    id: number;
+    name: string;
+    secret?: string;
+    status?: number;
+    usable: boolean;
+    billing:
+      | { kind: "personal"; remainingQuota: number | null }
+      | { kind: "organization"; organizationName: string; remainingQuota: number | null };
+  }>;
+  models: string[];
+}
+
 export interface CuberouterAccountService {
   register(input: CuberouterAuthInput & { nodeId?: string }): Promise<CuberouterAuthResult>;
   login(input: { username: string; password: string; nodeId?: string }): Promise<CuberouterAuthResult>;
@@ -64,6 +82,10 @@ export interface CuberouterAccountService {
   getNodes(): Promise<{ nodes: string[]; currentNodeId: string | null }>;
   /** Measures every line and reports which one a first registration should use. */
   probeNodes(): Promise<{ nodes: string[]; defaultNodeId: string | null }>;
+  /** The desktop's model page data: my keys with their billing, the selectable models, balance. */
+  readModelChoices(): Promise<CuberouterModelChoices>;
+  /** One personal key's plaintext, read at the moment the user selects it. */
+  getPersonalKey(tokenId: number): Promise<{ key: string }>;
   logout(): Promise<{ ok: true }>;
 }
 
@@ -325,6 +347,84 @@ export function createCuberouterAccountService(
     ) ?? null;
   }
 
+  /** The desktop's model page data: my keys with their billing, the selectable models, balance. */
+  async function readModelChoices(): Promise<CuberouterModelChoices> {
+    const session = options.accountSessionRepository.get();
+    const accessToken = options.accountSessionRepository.getCloudUuid();
+    if (!session.authenticated || !accessToken) {
+      throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
+    }
+    const { client, url } = clientForNode(await currentOrProbedNodeId());
+
+    // Core reads propagate: the panel must show its retry state, not an empty key list that looks
+    // like "the account has no keys". Only the balance degrades, because it is decoration.
+    const organizations = await client.listOrganizations(accessToken);
+    const organization = organizations[0] ?? null;
+    // The instance numbers users, and a profile without a usable id must not be sent as one:
+    // 0 is the instance's own "no server-side filter", and the row filter below decides instead.
+    const ownerUserId = Number(session.profile.userId);
+    const hasOwner = Number.isFinite(ownerUserId) && ownerUserId > 0;
+    const organizationTokens = organization
+      ? await client.listMyOrganizationTokens(accessToken, organization.id, hasOwner ? ownerUserId : 0)
+      : [];
+    const personalTokens = await client.listPersonalTokens(accessToken);
+    const models = await client.getUserModels(accessToken);
+    const self = await client.getSelf(accessToken).catch((error) => {
+      log(`[cuberouter] reading self quota failed: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    });
+
+    const personalQuota = self?.quota ?? null;
+    const organizationQuota = organization && organization.quota !== undefined && organization.usedQuota !== undefined
+      ? organization.quota - organization.usedQuota
+      : null;
+
+    return {
+      account: { username: session.profile.username ?? "", organizationName: organization?.name ?? null },
+      apiBase: `${url}/v1`,
+      keys: [
+        ...organizationTokens
+          // A plain member's list includes the organization's public keys, held by other people.
+          .filter(
+            (token) =>
+              token.responsibleUserId === undefined || (hasOwner && token.responsibleUserId === ownerUserId)
+          )
+          .map((token) => ({
+            scope: "organization" as const,
+            id: token.id,
+            name: token.name,
+            secret: token.key,
+            ...(token.status === undefined ? {} : { status: token.status }),
+            usable: token.status === undefined || token.status === 1,
+            billing: {
+              kind: "organization" as const,
+              organizationName: organization?.name ?? "",
+              remainingQuota: organizationQuota
+            }
+          })),
+        ...personalTokens.map((token) => ({
+          scope: "personal" as const,
+          id: token.id,
+          name: token.name,
+          ...(token.status === undefined ? {} : { status: token.status }),
+          usable: token.status === undefined || token.status === 1,
+          billing: { kind: "personal" as const, remainingQuota: personalQuota }
+        }))
+      ],
+      models
+    };
+  }
+
+  /** One personal key's plaintext, read at the moment the user selects it. */
+  async function getPersonalKey(tokenId: number): Promise<{ key: string }> {
+    const accessToken = options.accountSessionRepository.getCloudUuid();
+    if (!options.accountSessionRepository.get().authenticated || !accessToken) {
+      throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
+    }
+    const { client } = clientForNode(await currentOrProbedNodeId());
+    return { key: await client.getPersonalTokenKey(accessToken, tokenId) };
+  }
+
   return {
     async register(input) {
       // Resolved once, before the try: the account must be created and then logged into on the
@@ -418,6 +518,10 @@ export function createCuberouterAccountService(
       // exists on one of them, and the visitor is on the wrong one just as often.
       throw lastError ?? rejection ?? Object.assign(new Error("cuberouter 登录失败"), { code: "internal" as const });
     },
+
+    readModelChoices,
+
+    getPersonalKey,
 
     async logout() {
       options.accountSessionRepository.clear();

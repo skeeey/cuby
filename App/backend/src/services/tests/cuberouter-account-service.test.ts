@@ -31,7 +31,12 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
     searchPersonalTokens: vi.fn(async () => []),
     createPersonalToken: vi.fn(async () => undefined),
     getPersonalTokenKey: vi.fn(async () => "sk-personal"),
-    getSelf: vi.fn(async () => ({ userId: "7", username: "alice", displayName: "Alice", quota: 0 })),
+    getSelf: vi.fn(async () => ({ quota: 100, usedQuota: 0 })),
+    getUserModels: vi.fn(async () => ["deepseek-v4.1-flash", "gpt-oss-120b"]),
+    listPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice", status: 1 }]),
+    listMyOrganizationTokens: vi.fn(async () => [
+      { id: 11, name: "cuby-desktop-alice", key: "sk-org", status: 1, responsibleUserId: 7 }
+    ]),
     ...overrides
   };
 }
@@ -46,6 +51,22 @@ function fakeRepository() {
     repository: { upsert, clear: vi.fn() } as any,
     upsert
   };
+}
+
+/** A repository whose active session is the cuberouter account the login produced. */
+function authenticatedRepository() {
+  const view = {
+    authenticated: true,
+    isNewUser: false,
+    profile: { userId: "7", username: "alice", displayName: "Alice", identityProvider: "cuberouter", organizationName: null }
+  };
+  return {
+    get: vi.fn(() => view),
+    getCloudUuid: vi.fn(() => "jwt-1"),
+    getAuthChannel: vi.fn(() => "cuberouter"),
+    upsert: vi.fn(() => view),
+    clear: vi.fn()
+  } as any;
 }
 
 /** A create that answers the way the instance does: the key it was asked for, freshly made. */
@@ -132,7 +153,10 @@ function createTestService(input: {
       searchPersonalTokens: async () => [],
       createPersonalToken: async () => undefined,
       getPersonalTokenKey: async () => "sk-personal",
-      getSelf: async () => ({ userId: "7", username: "alice", displayName: "Alice", quota: 0 })
+      getSelf: async () => ({ quota: 0, usedQuota: 0 }),
+      getUserModels: async () => [],
+      listPersonalTokens: async () => [],
+      listMyOrganizationTokens: async () => []
     } satisfies CuberouterClient);
 
   const service = createCuberouterAccountService({
@@ -485,7 +509,10 @@ describe("cuberouter account service", () => {
         asked.push(node.url);
       },
       listOrganizationTokens: async () => [{ id: 11, name: "cuby-desktop", key: "sk-org" }],
-      getSelf: async () => ({ userId: "7", username: "alice", displayName: "Alice", quota: 0 })
+      getSelf: async () => ({ quota: 0, usedQuota: 0 }),
+      getUserModels: async () => [],
+      listPersonalTokens: async () => [],
+      listMyOrganizationTokens: async () => []
     }])) as never;
     // The machine's current line is cn; the user picks hk for the new account.
     const service = createTestService({ nodes: TWO_NODES, clientsByUrl, preferredNodeId: "cn" });
@@ -841,5 +868,89 @@ describe("desktop token name", () => {
 
   it("ignores surrounding whitespace", () => {
     expect(toDesktopTokenName("  liangyt@yeebo.com.cn  ")).toBe("cuby-desktop-liangyt");
+  });
+});
+
+describe("cuberouter model choices", () => {
+  it("reports the organization key with the organization pool as its billing", async () => {
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => [{ id: "5", name: "yeebo", quota: 100000, usedQuota: 2500 }])
+    });
+    const { repository } = fakeRepository();
+    const service = singleNodeService(client, authenticatedRepository());
+
+    const choices = await service.readModelChoices();
+
+    expect(choices.account).toEqual({ username: "alice", organizationName: "yeebo" });
+    expect(choices.apiBase).toBe("http://127.0.0.1:3000/v1");
+    expect(choices.keys).toEqual([
+      {
+        scope: "organization",
+        id: 11,
+        name: "cuby-desktop-alice",
+        secret: "sk-org",
+        status: 1,
+        usable: true,
+        billing: { kind: "organization", organizationName: "yeebo", remainingQuota: 97500 }
+      },
+      {
+        scope: "personal",
+        id: 41,
+        name: "cuby-desktop-alice",
+        status: 1,
+        usable: true,
+        billing: { kind: "personal", remainingQuota: 100 }
+      }
+    ]);
+    expect(choices.models).toEqual(["deepseek-v4.1-flash", "gpt-oss-120b"]);
+  });
+
+  it("keeps only the member's own organization rows and drops disabled personal keys' usability", async () => {
+    const client = fakeClient({
+      listMyOrganizationTokens: vi.fn(async () => [
+        { id: 11, name: "mine", key: "sk-mine", status: 1, responsibleUserId: 7 },
+        { id: 12, name: "someone-else", key: "sk-other", status: 1, responsibleUserId: 99 }
+      ]),
+      listPersonalTokens: vi.fn(async () => [
+        { id: 41, name: "disabled", status: 2 },
+        { id: 42, name: "no-status-reported" }
+      ])
+    });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    const choices = await service.readModelChoices();
+
+    expect(choices.keys.map((key) => key.name)).toEqual(["mine", "disabled", "no-status-reported"]);
+    expect(choices.keys.map((key) => key.usable)).toEqual([true, false, true]);
+  });
+
+  it("leaves the balance null when the instance will not report it, and still lists the key", async () => {
+    const client = fakeClient({
+      // No organization: the key under test is the personal one, which is keys[0] only then.
+      listOrganizations: vi.fn(async () => []),
+      getSelf: vi.fn(async () => { throw new Error("self boom"); }),
+      listPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice", status: 1 }])
+    });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    const choices = await service.readModelChoices();
+
+    expect(choices.keys[0]?.billing).toEqual({ kind: "personal", remainingQuota: null });
+  });
+
+  it("propagates a core list failure instead of reporting an empty key list", async () => {
+    const client = fakeClient({
+      listPersonalTokens: vi.fn(async () => { throw new Error("token list boom"); })
+    });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.readModelChoices()).rejects.toThrow("token list boom");
+  });
+
+  it("reads one personal key's plaintext on demand", async () => {
+    const client = fakeClient({ getPersonalTokenKey: vi.fn(async () => "sk-plain") });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.getPersonalKey(41)).resolves.toEqual({ key: "sk-plain" });
   });
 });
