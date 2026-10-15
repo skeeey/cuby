@@ -31,8 +31,8 @@ case "${CUBY_ACCOUNT_CHANNEL:-phone}" in
     ;;
 esac
 
-DMG="$ROOT_DIR/App/shell/desktop/release/Memmy-$DESKTOP_VERSION-darwin-x64-$PACKAGE_EDITION-signed.dmg"
-ARTIFACT_NAME="Memmy-$DESKTOP_VERSION-darwin-x64-$PACKAGE_EDITION-signed.\${ext}"
+DMG="$ROOT_DIR/App/shell/desktop/release/Cuby-$DESKTOP_VERSION-darwin-x64-$PACKAGE_EDITION-signed.dmg"
+ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-darwin-x64-$PACKAGE_EDITION-signed.\${ext}"
 
 log() {
   package_step_start "$*"

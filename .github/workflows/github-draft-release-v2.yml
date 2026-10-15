@@ -390,10 +390,10 @@ jobs:
           mkdir -p release-assets
           base="https://memtensor-cdn.oss-cn-shanghai.aliyuncs.com/memmy/$VERSION"
           artifacts=(
-            "Memmy-$VERSION-win32-x64-cn-signed.exe"
-            "Memmy-$VERSION-win32-x64-intl-signed.exe"
-            "Memmy-$VERSION-darwin-arm64-cn-signed.dmg"
-            "Memmy-$VERSION-darwin-arm64-intl-signed.dmg"
+            "Cuby-$VERSION-win32-x64-cn-signed.exe"
+            "Cuby-$VERSION-win32-x64-intl-signed.exe"
+            "Cuby-$VERSION-darwin-arm64-cn-signed.dmg"
+            "Cuby-$VERSION-darwin-arm64-intl-signed.dmg"
           )
           : > release-assets/OSS_VERIFICATION.jsonl
 
@@ -425,8 +425,8 @@ jobs:
           done
 
           jq -s '.' release-assets/OSS_VERIFICATION.jsonl > release-assets/OSS_VERIFICATION.json
-          (cd release-assets && md5sum Memmy-* > MD5SUMS.txt)
-          (cd release-assets && sha256sum Memmy-* > SHA256SUMS.txt)
+          (cd release-assets && md5sum Cuby-* > MD5SUMS.txt)
+          (cd release-assets && sha256sum Cuby-* > SHA256SUMS.txt)
 
       - name: Build release notes
         if: ${{ steps.release.outputs.preflight_level == 'full' }}
@@ -637,7 +637,7 @@ jobs:
               --write-out '%{http_code}' \
               "$DOC_AGENT_RELEASE_NOTES_DRAFT_URL" || true)"
             if [[ "$response_status" != "200" ]]; then
-              echo "::error title=Doc Agent draft generation failed::The 106 draft endpoint returned HTTP $response_status. Manual recovery: inspect release-assets/DOC_AGENT_RELEASE_NOTES_REQUEST.json, 106 logs, token/URL config, and LLM settings; do not fall back silently for a real Memmy release." >&2
+              echo "::error title=Doc Agent draft generation failed::The 106 draft endpoint returned HTTP $response_status. Manual recovery: inspect release-assets/DOC_AGENT_RELEASE_NOTES_REQUEST.json, 106 logs, token/URL config, and LLM settings; do not fall back silently for a real Cuby release." >&2
               exit 1
             fi
             if ! jq -e 'type == "object" and ((.release_notes_md // .release_notes_markdown // "") | length) > 0' \
@@ -652,7 +652,7 @@ jobs:
             fi
             if ! jq -e '(.quality_report.candidate_selection.requested_candidate_count // .candidate_selection.requested_candidate_count // 0) >= 3' \
               release-assets/DOC_AGENT_RELEASE_NOTES_RESPONSE.json >/dev/null; then
-              echo "::error title=Doc Agent candidate selection missing::The 106 response must prove three-candidate generation/scoring for Memmy. Manual recovery: verify the 106 Memmy draft endpoint is running the v2 renderer." >&2
+              echo "::error title=Doc Agent candidate selection missing::The 106 response must prove three-candidate generation/scoring for Cuby. Manual recovery: verify the 106 Cuby draft endpoint is running the v2 renderer." >&2
               exit 1
             fi
             if jq -e '(.needs_review // .quality_report.needs_review // false) == true or (.quality_report.ok // .ok // false) != true' \
@@ -696,14 +696,14 @@ jobs:
 
           ## Downloads
 
-          - Windows x64 (China): [Memmy-$VERSION-win32-x64-cn-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Memmy-$VERSION-win32-x64-cn-signed.exe)
-          - Windows x64 (International): [Memmy-$VERSION-win32-x64-intl-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Memmy-$VERSION-win32-x64-intl-signed.exe)
-          - macOS Apple Silicon (China): [Memmy-$VERSION-darwin-arm64-cn-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Memmy-$VERSION-darwin-arm64-cn-signed.dmg)
-          - macOS Apple Silicon (International): [Memmy-$VERSION-darwin-arm64-intl-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Memmy-$VERSION-darwin-arm64-intl-signed.dmg)
+          - Windows x64 (China): [Cuby-$VERSION-win32-x64-cn-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-win32-x64-cn-signed.exe)
+          - Windows x64 (International): [Cuby-$VERSION-win32-x64-intl-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-win32-x64-intl-signed.exe)
+          - macOS Apple Silicon (China): [Cuby-$VERSION-darwin-arm64-cn-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-arm64-cn-signed.dmg)
+          - macOS Apple Silicon (International): [Cuby-$VERSION-darwin-arm64-intl-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-arm64-intl-signed.dmg)
 
           ## Installation
 
-          On Windows, download the appropriate signed exe and run the installer. On Apple Silicon Macs, download the appropriate signed dmg, open it, and drag Memmy to Applications.
+          On Windows, download the appropriate signed exe and run the installer. On Apple Silicon Macs, download the appropriate signed dmg, open it, and drag Cuby to Applications.
 
           ## Checksums
 
@@ -897,14 +897,14 @@ jobs:
           if ! gh release create "$TAG" \
             --repo "$GITHUB_REPOSITORY" \
             --target "$TARGET_SHA" \
-            --title "Memmy $TAG" \
+            --title "Cuby $TAG" \
             --notes-file release-assets/RELEASE_NOTES.md \
             --draft; then
             echo "::error title=Draft Release creation failed::Could not create Draft Release $TAG. Manual recovery: confirm GitHub release permissions and that no tag/Release already exists." >&2
             exit 1
           fi
           draft_created=1
-          if ! gh release upload "$TAG" release-assets/Memmy-* release-assets/MD5SUMS.txt release-assets/SHA256SUMS.txt release-assets/RELEASE_NOTES.md release-assets/RELEASE_NOTES_SOURCE.json release-assets/QUALITY_REPORT.json release-assets/RELEASE_EVIDENCE.json \
+          if ! gh release upload "$TAG" release-assets/Cuby-* release-assets/MD5SUMS.txt release-assets/SHA256SUMS.txt release-assets/RELEASE_NOTES.md release-assets/RELEASE_NOTES_SOURCE.json release-assets/QUALITY_REPORT.json release-assets/RELEASE_EVIDENCE.json \
             --repo "$GITHUB_REPOSITORY"; then
             echo "::error title=Draft asset upload failed::Asset upload failed after Draft Release creation. Automatic recovery: the workflow will delete the half-created Draft Release and tag so it can be safely re-run." >&2
             exit 1

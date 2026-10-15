@@ -371,7 +371,7 @@ describe("GitHub Draft Release v2 workflow", () => {
     expect(download).toContain("Installer checksum verification failed");
     expect(download).toContain('[[ ! -s "release-assets/$artifact" ]]');
     expect(download).toContain("Installer download is empty");
-    expect(download.match(/Memmy-\$VERSION-/g)).toHaveLength(4);
+    expect(download.match(/Cuby-\$VERSION-/g)).toHaveLength(4);
     expect(download).toContain("MD5SUMS.txt");
     expect(download).toContain("SHA256SUMS.txt");
     expect(ossIntegritySource).toContain('metadata.objectType === "Normal"');

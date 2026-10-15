@@ -220,7 +220,7 @@ function createFixture(): Fixture {
   fixtureRoots.push(root);
   const installDir = join(root, "install", "Memmy");
   const installedExePath = join(installDir, "Cuby.exe");
-  const installerPath = join(root, "downloads", "Memmy-update.exe");
+  const installerPath = join(root, "downloads", "Cuby-update.exe");
   const installationRecordPath = join(root, "local", "Memmy", "data-layout", "last-install.json");
   const migrationStatePath = join(root, "local", "Memmy", "data-migration", "state.json");
   const userDataPath = join(root, "roaming", "Memmy");

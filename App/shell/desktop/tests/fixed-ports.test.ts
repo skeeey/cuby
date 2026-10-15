@@ -20,7 +20,7 @@ describe("fixed ports never revert to the Memmy era", () => {
     expect(PACKAGED_RENDERER_DEFAULT_PORT).toBe(29100);
   });
 
-  it("no desktop source file still binds a Memmy-era fixed port", () => {
+  it("no desktop source file still binds a Cuby-era fixed port", () => {
     const offenders = sourceFiles(join(import.meta.dirname, "..", "src"))
       .filter((file) => MEMMY_ERA_PORTS.test(readFileSync(file, "utf8")));
     expect(offenders).toEqual([]);

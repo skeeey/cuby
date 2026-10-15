@@ -144,7 +144,7 @@ jobs:
           # local run script points at, so ship that too rather than only the
           # installer.
           cd App/shell/desktop/release
-          7z a -tzip "Memmy-${{ needs.resolve.outputs.version }}-win32-x64-${{ needs.resolve.outputs.edition }}-unpacked.zip" win-unpacked >/dev/null
+          7z a -tzip "Cuby-${{ needs.resolve.outputs.version }}-win32-x64-${{ needs.resolve.outputs.edition }}-unpacked.zip" win-unpacked >/dev/null
       - name: Upload the unpacked build
         uses: actions/upload-artifact@v4
         with:

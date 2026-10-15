@@ -124,8 +124,8 @@ case "${CUBY_ACCOUNT_CHANNEL:-phone}" in
     ;;
 esac
 
-FINAL_EXE="$DESKTOP_DIR/release/Memmy-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.exe"
-ARTIFACT_NAME="Memmy-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.\${ext}"
+FINAL_EXE="$DESKTOP_DIR/release/Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.exe"
+ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.\${ext}"
 package_log_init "win-$DESKTOP_VERSION-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING" "$DESKTOP_DIR/release/logs"
 package_install_error_trap
 package_log "Windows package context: version=$DESKTOP_VERSION arch=$PACKAGE_ARCH edition=$PACKAGE_EDITION signing=$PACKAGE_SIGNING installer=$FINAL_EXE"
@@ -351,11 +351,11 @@ setlocal
 set "SCRIPT_DIR=%~dp0"
 for %%I in ("%SCRIPT_DIR%..") do set "RESOURCES_DIR=%%~fI"
 for %%I in ("%RESOURCES_DIR%\..") do set "APP_DIR=%%~fI"
-set "APP_EXEC=%APP_DIR%\Memmy.exe"
+set "APP_EXEC=%APP_DIR%\Cuby.exe"
 set "ENTRY=%RESOURCES_DIR%\app.asar\\$asar_entry"
 
 if not exist "%APP_EXEC%" (
-  echo Cannot find Memmy executable: "%APP_EXEC%" 1>&2
+  echo Cannot find Cuby executable: "%APP_EXEC%" 1>&2
   exit /b 1
 )
 
