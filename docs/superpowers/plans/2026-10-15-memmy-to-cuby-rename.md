@@ -18,6 +18,7 @@
 - **协议头**：`x-memmy-<name>` → `x-cuby-<name>`，17 个，逐字对应。
 - **机械替换的文件类型范围**：`--include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh'`。**别漏了 shell / PowerShell / NSIS / cmd** —— `scripts/package-win.sh`、`scripts/clear-data.sh`、`scripts/clear-all-windows.ps1`、`App/shell/desktop/build/installer-win-unsigned.nsh` 等文件里同样有路径、环境变量与产品名。
 - **绝不动**：`scripts/install.sh`、`scripts/internal/linux/**`、`README.md`、`README.zh-CN.md`、`docs/**`、`package.json` 的 `name` 字段与所有 `@memmy/*` / `@memtensor/memmy-memory-*` 包名、`App/memmy-agent/` 目录名、`App/memmy-agent/src/memmy-memory/` 模块目录名、`memmy.cn` / `memmy.bot` 域名、config schema 键（`memmyAgent` / `memmyMemory`）、内部标识符（`MemmyAgentClient`、`memmyConfigPath` 等）。
+- **清理工具要"加"不要"换"**：`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 的职责本就包括清掉**旧安装**的数据，整批改名会让它们再也清不了老 Memmy。这几个文件**排除在机械扫描之外**，由 Task 15 Step 3 单独处理成"同时覆盖 Cuby 与 Memmy"。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
 - **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
 
@@ -215,10 +216,11 @@ git commit -m "fix(desktop): point the installer and upgrade paths at Cuby"
 
 **Files:**
 - Modify: `App/shell/desktop/src/main/windows-launch-at-login.ts:54`
-- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:46,58-59,335,397`（`MemmyData` 目录名在 `:46` 定义，`:335`、`:397` 是它的两处派生路径）
+- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:38,46,58-59,335,376,397,472`（`:38` 是 `%APPDATA%\Memmy` 用户数据目录名，`:376`/`:472` 是它的两处比较基准；`:46` 是安装盘 `MemmyData`，`:335`/`:397` 是它的派生路径）
 - Test: `App/shell/desktop/tests/windows-launch-at-login.test.ts`
 - Test: `App/shell/desktop/tests/windows-data-layout.test.ts:32,43-44`
 - Test: `App/shell/desktop/tests/windows-standard-upgrade-check.test.ts:58`
+- Test: `App/shell/desktop/tests/windows-data-migration-state.test.ts:221`
 
 **Interfaces:**
 - Consumes: Task 1 的 `productName = Cuby`（目录名与产品名保持一致）。
@@ -249,6 +251,8 @@ Expected: FAIL。
 ```
 
 同文件 `:46` 的安装盘数据目录名 `"MemmyData"` → `"CubyData"`（`:335`、`:397` 两处派生路径里的 `MemmyData` 与 `.memmy` 随之变为 `CubyData` 与 `.cuby`）。
+
+同文件 `:38` 的 `%APPDATA%` 用户数据目录名 `"Memmy"` → `"Cuby"`，`:376`、`:472` 两处比较基准同步（它们判断某个路径是不是本应用的账号副本，改一半会让判断失效）。对应测试 `windows-data-migration-state.test.ts:221` 的 fixture 同步改为 `join(root, "AppData", "Roaming", "Cuby")`。
 
 - [ ] **Step 4: 运行测试**
 
@@ -315,6 +319,7 @@ grep -rl '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --includ
   --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./scripts/install.sh$' \
+  | grep -v '^\./scripts/clear-' \
   | grep -v '^\./scripts/internal/linux/' \
   | grep -v '^\./tests/linux-cli-packaging.test.mjs$' \
   | grep -v '^\./docs/' \
@@ -342,7 +347,7 @@ Expected: `.memmy` → `.cuby`（`\.memmy\b` 不会命中 `.memmyMemory` / `.mem
 grep -rn '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
   --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
 ```
 
 Expected: 无输出。
@@ -398,6 +403,7 @@ Expected: FAIL —— `defaultConfigPaths()` 仍读 `MEMMY_CONFIG`，对 `CUBY_C
 ```bash
 grep -rl 'MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./scripts/install.sh$' \
+  | grep -v '^\./scripts/clear-' \
   | grep -v '^\./scripts/internal/linux/' \
   | grep -v '^\./tests/linux-cli-packaging.test.mjs$' \
   | grep -v '^\./docs/' \
@@ -411,7 +417,7 @@ xargs -a /tmp/cuby-env-files.txt perl -pi -e 's/\bMEMMY_/CUBY_/g'
 
 ```bash
 grep -rn '\bMEMMY_\|process\.env\.MEMMY_\|env\.MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
 ```
 
 Expected: 无输出。
@@ -645,6 +651,7 @@ Expected: FAIL —— 实际为 19100。
 grep -rl '18960\|18970\|18980\|18990\|19100' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.css' \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./scripts/install.sh$' \
+  | grep -v '^\./scripts/clear-' \
   | grep -v '^\./scripts/internal/linux/' \
   | grep -v '^\./docs/' | grep -v '^\./README' \
   > /tmp/cuby-port-files.txt
@@ -663,7 +670,7 @@ xargs -a /tmp/cuby-port-files.txt perl -pi -e '
 
 ```bash
 grep -rn '\b18960\b\|\b18970\b\|\b18980\b\|\b18990\b\|\b19100\b' --exclude-dir=node_modules --exclude-dir=dist . \
-  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
 grep -rn '\b28960\b' --exclude-dir=node_modules --exclude-dir=dist . | wc -l   # 期望 ≈35
 ```
 
@@ -1052,8 +1059,10 @@ git commit -m "feat: switch the user-visible product-name literals to Cuby"
 ```bash
 grep -rl '"Memmy\|Memmy 启动失败\|Memmy Starting' --include='*.test.ts' --include='*.test.tsx' --exclude-dir=node_modules App/frontend/desktop/src App/shell/desktop/tests \
   > /tmp/cuby-copy-tests.txt
-xargs -a /tmp/cuby-copy-tests.txt perl -pi -e 's/\bMemmy\b/Cuby/g'
+xargs -a /tmp/cuby-copy-tests.txt perl -pi -e 's/"Memmy"/"Cuby"/g; s/Memmy 启动失败/Cuby 启动失败/g; s/Memmy Starting/Cuby Starting/g'
 ```
+
+> **必须按匹配项替换，不能整文件替换 `\bMemmy\b`**：命中的文件里还有属于其它层的字符串——例如 `windows-data-migration-state.test.ts:221` 的 `join(root, "AppData", "Roaming", "Memmy")` 是 Task 2 的数据目录 fixture。整文件替换会把它们一起改掉，造成与源码不一致。
 
 - [ ] **Step 2: 运行确认失败**
 
@@ -1186,9 +1195,11 @@ wc -l /tmp/cuby-leftovers.txt
 
 逐条审阅 `/tmp/cuby-leftovers.txt`：每一条要么是**内部标识符/包名**（保留），要么是需要改的漏网（改掉）。改完重跑至清单只剩白名单项。
 
-- [ ] **Step 3: 更新仍描述旧名的注释**
+- [ ] **Step 3: 更新仍描述旧名的注释与清理工具**
 
-已知几处：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。同时把 `runtime-services.ts:2415` 那条注释里的端口号更新为新值。
+已知几处注释：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。同时把 `runtime-services.ts:2415` 那条注释里的端口号更新为新值。
+
+清理工具单独处理——`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 目前只认 `Memmy` 的进程名、安装路径与数据家目录。它们要**同时覆盖两套**（Cuby 与 Memmy），而不是把 Memmy 换成 Cuby：这些脚本的用处之一正是清掉旧安装。具体做法是在各文件的进程名匹配、安装路径探测与数据家目录枚举处**各加一组 Cuby 条目**，保留原有 Memmy 条目；`clear-all-windows.ps1` 的 `-AdditionalMemmyHome` 参数及其"目录名须以 Memmy 或 .memmy 开头"的校验放宽为同时接受 Cuby / .cuby。
 
 - [ ] **Step 4: 本地打包冒烟（Windows 与 macOS 各一次）**
 
