@@ -761,12 +761,15 @@ xargs -a /tmp/cuby-port-files.txt perl -pi -e '
 
 > 注意：不要把 19000 / 19001 / 18961 一起替换——它们是开发端口，不在改名列内（`\b` 边界不会让 `19000` 命中 `19100`，但**不要**扩大正则范围）。
 
+**`Memory/adapters/**` 的 `.js`/`.py` 载荷在范围内**：`Memory/adapters/{openclaw,dsh}/index.js` 与 `hermes/memmy_provider/__init__.py` 会被 `adapter-installer.ts` **原样拷进用户机器**，其中默认指向 18960。漏掉它们，新装用户的出站适配器会连到旧端口，且 Step 4 的验证 grep 不会返回空。
+
 - [ ] **Step 4: 验证**
 
 ```bash
 grep -rn '\b18960\b\|\b18970\b\|\b18980\b\|\b18990\b\|\b19100\b' --exclude-dir=node_modules --exclude-dir=dist . \
-  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)'
-grep -rn '\b28960\b' --exclude-dir=node_modules --exclude-dir=dist . | wc -l   # 期望 ≈35
+  | grep -vE '^(\./)?(docs/|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|\.github/workflows/linux-cli-installer\.yml|tests/linux-cli-packaging\.test\.mjs)' \
+  | grep -viE 'readme' | grep -vE '^(\./)?\.github/release-notes/'
+grep -rn '\b28960\b' --exclude-dir=node_modules --exclude-dir=dist . | wc -l   # 实测 104（47 处产品代码 + 57 处测试）
 ```
 
 Expected: 第一条无输出。
