@@ -38,12 +38,12 @@ $dataPointerPath = Join-Path $targetUserDataPath 'data-root.txt'
 $migrationStatePath = if ($MigrationStatePathOverride) { $MigrationStatePathOverride } else { Join-Path $env:LOCALAPPDATA 'Cuby\data-migration\state.json' }
 $migrationLogPath = if ($MigrationLogPathOverride) { $MigrationLogPathOverride } else { Join-Path $env:LOCALAPPDATA 'Cuby\upgrade-logs\data-migration.log' }
 $installationRecordPath = if ($InstallationRecordPathOverride) { $InstallationRecordPathOverride } else { Join-Path $env:LOCALAPPDATA 'Cuby\data-layout\last-install.json' }
-$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.cuby' }
+$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }
 $installDriveRoot = [System.IO.Path]::GetPathRoot($normalizedTargetInstallDir)
 $targetRuntimeHomePath = if ($TargetRuntimeHomePathOverride) {
   $TargetRuntimeHomePathOverride
 } elseif ([string]::Equals($installDriveRoot, 'C:\', [System.StringComparison]::OrdinalIgnoreCase)) {
-  $legacyRuntimeHomePath
+  Join-Path $env:USERPROFILE '.cuby'
 } else {
   Join-Path $installDriveRoot 'CubyData\.cuby'
 }

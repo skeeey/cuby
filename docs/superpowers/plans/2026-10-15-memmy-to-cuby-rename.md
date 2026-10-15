@@ -28,6 +28,8 @@
 - **`.css` 文件不在 Task 3 的范围内**：CSS 类 `memmy-*` → `cuby-*` 由 Task 10 统一处理（范围限 `App/frontend/desktop/src`），Task 3 的扫描清单也不含 `.css`。
 - **不改的内部类名（Task 15 白名单要用）**：`Knowledge/src/ui/page.tsx` 的 `memmy-knowledge*` / `memmy-local-token*`（51 个 CSS 选择器）、`scripts/auto-release-mac.sh` 里发布工程师本机的日志目录 `~/.memmy-release`（`:34,195,196`，开发本机状态，不是产品路径）。
 - **技能内容要跟着改**：`App/memmy-agent/src/skills/**/SKILL.md`、`Memory/src/cli/skills/**` 不是"文档"，是**随产品分发、由 agent 在运行时读取的内容**。里面引用的 `MEMMY_AGENT_TMUX_SOCKET_DIR` 等变量必须跟着改；`App/memmy-agent/.env.example` 同理（开发配置模板，不是文档）。
+  - **注意 include 列表**：Task 3 的扫描类型不含 `*.md`，所以 `SKILL.md` 里的**路径**（如 `image-generation/SKILL.md:62` 的 `~/.memmy/media/generated/…`）扫不到，要显式改。Task 4 的命令没有 include 列表，反而覆盖到了这些文件。
+- **`installer-win-unsigned.nsh` 的 `-LegacyRuntimeHomePath "$PROFILE\.memmy"` 保持 `.memmy`，别"顺手修正"**：这是传给迁移脚本的**旧安装**家目录（源），不是新应用的家目录。同一变量在 relay 脚本里身兼两职（`:41` 的 legacy 默认 + `:45-47` 的 C:\ 目标分支），改名时必须**拆成两个值**——legacy 默认留 `.memmy`，C:\ 目标分支用 `.cuby`。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
 - **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
 
