@@ -194,6 +194,39 @@ describe("cuberouter model section", () => {
     await vi.waitFor(() => expect(accountClient.getModelChoices).toHaveBeenCalledTimes(2));
   });
 
+  it("refreshes the key alone when the instance does not list the provisioned model", async () => {
+    // The re-provisioned model is one this instance does not offer: seeding the three slots with
+    // it would hand the account a model it cannot call, so the fresh key lands with nothing
+    // selected and the panel's empty state guides the choice instead.
+    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
+    }));
+    const { accountClient, configClient } = await renderSection({
+      storedConfig: storedConfigWithEndpoint(),
+      reprovision: async () => ({
+        apiKey: "sk-fresh",
+        apiBase: CHOICES.apiBase,
+        model: "unlisted-model"
+      })
+    });
+
+    await vi.waitFor(() => expect(refreshKeysButton()).toBeInstanceOf(HTMLButtonElement));
+    await act(async () => refreshKeysButton().click());
+
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    const written = configClient.saveModelCatalog.mock.calls[0]![0] as ModelConfigInput;
+    expect(JSON.stringify(written)).toContain("sk-fresh");
+    expect(written.providers[0]!.models).toEqual([]);
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([]);
+    expect(written.modelAssignments.byok.agent.default).toBeNull();
+    expect(written.modelAssignments.byok.memorySummary).toBeNull();
+    expect(written.modelAssignments.byok.memoryEvolution).toBeNull();
+    expect(JSON.stringify(written)).not.toContain("unlisted-model");
+    // The key just written has no list identity yet: the record goes and the list is re-read.
+    await vi.waitFor(() => expect(window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toBeNull());
+    await vi.waitFor(() => expect(accountClient.getModelChoices).toHaveBeenCalledTimes(2));
+  });
+
   it("keeps the record and the retry entry when the refresh save fails", async () => {
     // A refused save writes nothing, so nothing may be claimed: the record has to survive, or
     // the entry's own gate (`record && !selectedKey`) removes the only way to try again.

@@ -166,11 +166,16 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setSavePending(true);
     try {
       const provisioning = await props.accountClient.reprovisionKey();
-      const fresh: CuberouterSelection = {
-        agent: { models: [provisioning.model], default: provisioning.model },
-        memorySummary: provisioning.model,
-        memoryEvolution: provisioning.model
-      };
+      // The build's model is only a preferred default here too: seed the three slots while this
+      // instance lists it, otherwise write the key alone and let the rows show 未配置, which is
+      // what guides the user into picking a model the account can actually call.
+      const fresh: CuberouterSelection = choices?.models.includes(provisioning.model)
+        ? {
+            agent: { models: [provisioning.model], default: provisioning.model },
+            memorySummary: provisioning.model,
+            memoryEvolution: provisioning.model
+          }
+        : { agent: { models: [] }, memorySummary: "", memoryEvolution: "" };
       setSelection(fresh);
       const saved = await commit((current) => applyCuberouterSelection(current, {
         apiBase: provisioning.apiBase,

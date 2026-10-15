@@ -17,7 +17,7 @@ import {
 /** What a login should do about the model key. */
 export type CuberouterLoginKeyDecision =
   | { action: "reuse"; apiKey: string; record: CuberouterKeySelection }
-  | { action: "provision" }
+  | { action: "provision"; availableModels: string[] | null }
   | { action: "keep" };
 
 /**
@@ -25,6 +25,8 @@ export type CuberouterLoginKeyDecision =
  * listed and usable (a personal key's plaintext is revealed on the spot); `keep` covers the one
  * case where nothing may be written — the instance could not be asked and a cuberouter
  * connection already exists — because a transient outage must not overwrite the user's key.
+ * `provision` carries the instance's model list along (`null` when the instance could not be
+ * asked), so the seeding behind it can tell a missing default from an unasked instance.
  */
 export async function resolveCuberouterLoginKey(input: {
   apiBase: string;
@@ -38,11 +40,13 @@ export async function resolveCuberouterLoginKey(input: {
     const remembered = input.record
       ? choices.keys.find((key) => key.scope === input.record!.scope && key.id === input.record!.id && key.usable)
       : undefined;
-    if (!input.record || !remembered) return { action: "provision" };
+    if (!input.record || !remembered) return { action: "provision", availableModels: choices.models };
     const apiKey = remembered.secret ?? (await input.revealPersonalKey(remembered.id)).key;
     return { action: "reuse", apiKey, record: input.record };
   } catch {
-    return connectionHasCredential(input.catalog, input.apiBase) ? { action: "keep" } : { action: "provision" };
+    return connectionHasCredential(input.catalog, input.apiBase)
+      ? { action: "keep" }
+      : { action: "provision", availableModels: null };
   }
 }
 
@@ -58,26 +62,37 @@ function connectionHasCredential(catalog: ModelConfigView, apiBase: string): boo
 }
 
 /**
- * Writes one cuberouter key. The catalog's current model selection always stays when it has one:
- * a login — provisioning included — must never reset the user's choices. Only a line with no
- * selection yet is seeded with the build's default model in all three slots.
+ * Writes one cuberouter key. The catalog's current model selection always stays when it has one —
+ * a login, provisioning included, must never reset the user's choices, and any non-empty slot
+ * (an agent model or either memory model) counts as a selection. Only a line with no selection
+ * yet is seeded with the build's default model, and only while the instance's list
+ * (`availableModels`) actually offers it: an unlisting or unknown instance seeds nothing, so the
+ * panel shows 未配置 and guides the user instead of writing a model the account cannot call.
  */
 export async function provisionCuberouterKey(input: {
   configClient: ConfigClient;
   endpoint: { apiBase: string; protocol: ModelEndpointProtocol; apiKey: string };
   defaultModel: string;
+  /** The instance's model list; null when the choices request failed and the list is unknown. */
+  availableModels: string[] | null;
 }): Promise<ModelProviderConfig> {
   return saveCatalogMutation({
     configClient: input.configClient,
     mutate: (workspace) => {
       const current = readCuberouterSelection(workspace.catalog, input.endpoint.apiBase);
-      const selection = current.agent.models.length > 0
+      const hasSelection = current.agent.models.length > 0
+        || Boolean(current.memorySummary)
+        || Boolean(current.memoryEvolution);
+      const seedable = !hasSelection && Boolean(input.availableModels?.includes(input.defaultModel));
+      const selection = hasSelection
         ? current
-        : {
-            agent: { models: [input.defaultModel], default: input.defaultModel },
-            memorySummary: input.defaultModel,
-            memoryEvolution: input.defaultModel
-          };
+        : seedable
+          ? {
+              agent: { models: [input.defaultModel], default: input.defaultModel },
+              memorySummary: input.defaultModel,
+              memoryEvolution: input.defaultModel
+            }
+          : { agent: { models: [] }, memorySummary: "", memoryEvolution: "" };
       return applyCuberouterSelection(workspace, {
         apiBase: input.endpoint.apiBase,
         protocol: input.endpoint.protocol,

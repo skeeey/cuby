@@ -232,7 +232,10 @@ export function AccountAuthPanel() {
             protocol: "openai-chat-completions",
             apiKey: decision.action === "reuse" ? decision.apiKey : result.provisioning.apiKey
           },
-          defaultModel: result.provisioning.model
+          defaultModel: result.provisioning.model,
+          // Only a provision carries the instance's model list; a reuse never asked for it, so the
+          // seeding behind it treats the list as unknown and writes no model.
+          availableModels: decision.action === "provision" ? decision.availableModels : null
         });
         const storage = cuberouterKeySelectionStorage();
         if (decision.action === "reuse") {

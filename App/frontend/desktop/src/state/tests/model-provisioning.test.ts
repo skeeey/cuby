@@ -105,7 +105,8 @@ describe("provisionCuberouterKey", () => {
     await provisionCuberouterKey({
       configClient: client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
-      defaultModel: "deepseek-flash"
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash"]
     });
 
     expect(saved).toHaveLength(1);
@@ -134,7 +135,8 @@ describe("provisionCuberouterKey", () => {
     await provisionCuberouterKey({
       configClient: client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
-      defaultModel: "deepseek-flash"
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash"]
     });
 
     expect(client.saveModelCatalog).toHaveBeenCalledTimes(2);
@@ -146,7 +148,8 @@ describe("provisionCuberouterKey", () => {
     const input = {
       configClient: server.client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions" as const, apiKey: "sk-plain" },
-      defaultModel: "deepseek-flash"
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash"]
     };
 
     await provisionCuberouterKey(input);
@@ -185,7 +188,8 @@ describe("provisionCuberouterKey", () => {
     await provisionCuberouterKey({
       configClient: server.client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-new" },
-      defaultModel: "deepseek-flash"
+      defaultModel: "deepseek-flash",
+      availableModels: ["gpt-oss-120b"]
     });
 
     expect(server.saved).toHaveLength(1);
@@ -228,7 +232,10 @@ describe("provisionCuberouterKey", () => {
       }),
       revealPersonalKey: async () => ({ key: "sk-revealed" })
     });
-    expect(decision).toEqual({ action: "provision" });
+    expect(decision).toEqual({
+      action: "provision",
+      availableModels: ["gpt-oss-120b", "deepseek-v4.1-flash"]
+    });
 
     await provisionCuberouterKey({
       configClient: server.client,
@@ -237,7 +244,8 @@ describe("provisionCuberouterKey", () => {
         protocol: "openai-chat-completions",
         apiKey: decision.action === "provision" ? "sk-fresh" : "unreachable"
       },
-      defaultModel: "deepseek-flash"
+      defaultModel: "deepseek-flash",
+      availableModels: (decision as { availableModels?: string[] | null }).availableModels ?? null
     });
 
     expect(server.saved).toHaveLength(1);
@@ -254,6 +262,132 @@ describe("provisionCuberouterKey", () => {
     expect(byok.memorySummary).toBe(presetIdOf("deepseek-v4.1-flash"));
     expect(byok.memoryEvolution).toBe(presetIdOf("gpt-oss-120b"));
     // The build's default never lands in a slot the user already filled.
+    expect(JSON.stringify(written)).not.toContain("deepseek-flash");
+  });
+
+  // The build's model is a preferred default, not a promise: a key may be seeded with it only
+  // while the instance's own list (carried by the login decision) actually offers it. The four
+  // cases below pin each combination: listed, unlisted, unknown, and a non-empty draft.
+  it("seeds the build-time default into all three slots when the instance lists it", async () => {
+    const server = configClientServer();
+    const decision = await resolveCuberouterLoginKey({
+      apiBase: "http://127.0.0.1:3000/v1",
+      catalog: createModelWorkspace(null).catalog,
+      record: null,
+      getModelChoices: async () => ({
+        account: { username: "alice@a.com", organizationName: null },
+        apiBase: "http://127.0.0.1:3000/v1",
+        keys: [],
+        models: ["deepseek-flash", "gpt-oss-120b"]
+      }),
+      revealPersonalKey: async () => ({ key: "sk-revealed" })
+    });
+    // The list verdict travels with the decision: without it, provisioning cannot tell "the
+    // instance does not list the default" from "the instance was never asked".
+    expect(decision).toEqual({
+      action: "provision",
+      availableModels: ["deepseek-flash", "gpt-oss-120b"]
+    });
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-fresh" },
+      defaultModel: "deepseek-flash",
+      availableModels: (decision as { availableModels?: string[] | null }).availableModels ?? null
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const written = server.saved[0];
+    const provider = written.providers[0];
+    expect(provider.endpoints[0].apiKey).toBe("sk-fresh");
+    expect(provider.models.map((preset: any) => preset.model)).toEqual(["deepseek-flash"]);
+    const presetId = provider.models[0].presetId;
+    const byok = written.modelAssignments.byok;
+    expect(byok.agent.candidates).toEqual([presetId]);
+    expect(byok.agent.default).toBe(presetId);
+    expect(byok.memorySummary).toBe(presetId);
+    expect(byok.memoryEvolution).toBe(presetId);
+  });
+
+  it("writes only the key when the instance does not list the build-time default", async () => {
+    // A different deployment or group: the key is valid, the default model is not callable there.
+    // Seeding it anyway would leave the machine pointing at a model the account cannot use.
+    const server = configClientServer();
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
+      defaultModel: "deepseek-flash",
+      availableModels: ["gpt-oss-120b"]
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const written = server.saved[0];
+    const provider = written.providers[0];
+    expect(provider.endpoints[0].apiKey).toBe("sk-plain");
+    expect(provider.models).toEqual([]);
+    const byok = written.modelAssignments.byok;
+    expect(byok.agent.candidates).toEqual([]);
+    expect(byok.agent.default).toBeNull();
+    expect(byok.memorySummary).toBeNull();
+    expect(byok.memoryEvolution).toBeNull();
+    expect(JSON.stringify(written)).not.toContain("deepseek-flash");
+  });
+
+  it("writes only the key when the model list is unknown", async () => {
+    // The choices request failed (`availableModels: null`): an unknown list is not a listing, so
+    // the default is not seeded — the next login, with the list at hand, self-heals the choice.
+    const server = configClientServer();
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
+      defaultModel: "deepseek-flash",
+      availableModels: null
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const written = server.saved[0];
+    const provider = written.providers[0];
+    expect(provider.endpoints[0].apiKey).toBe("sk-plain");
+    expect(provider.models).toEqual([]);
+    const byok = written.modelAssignments.byok;
+    expect(byok.agent.candidates).toEqual([]);
+    expect(byok.agent.default).toBeNull();
+    expect(byok.memorySummary).toBeNull();
+    expect(byok.memoryEvolution).toBeNull();
+    expect(JSON.stringify(written)).not.toContain("deepseek-flash");
+  });
+
+  it("keeps a memory-only selection and seeds nothing over it", async () => {
+    // A machine that configured only the memory slots: its draft is a selection even while the
+    // agent slot is empty, so the build's default must not be seeded over it — the memory model
+    // survives untouched and only the key changes.
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: "http://127.0.0.1:3000/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-old",
+      selection: { agent: { models: [] }, memorySummary: "gpt-oss-120b", memoryEvolution: "" }
+    });
+    const server = configClientServer(seeded.catalog);
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-new" },
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash", "gpt-oss-120b"]
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const written = server.saved[0];
+    const provider = written.providers[0];
+    expect(provider.endpoints[0].apiKey).toBe("sk-new");
+    expect(provider.models.map((preset: any) => preset.model)).toEqual(["gpt-oss-120b"]);
+    const byok = written.modelAssignments.byok;
+    expect(byok.agent.candidates).toEqual([]);
+    expect(byok.agent.default).toBeNull();
+    expect(byok.memorySummary).toBe(provider.models[0].presetId);
+    expect(byok.memoryEvolution).toBeNull();
     expect(JSON.stringify(written)).not.toContain("deepseek-flash");
   });
 });
@@ -319,15 +453,16 @@ describe("resolveCuberouterLoginKey", () => {
       revealPersonalKey: async () => ({ key: "sk-revealed" })
     });
 
-    await expect(resolve([])).resolves.toEqual({ action: "provision" });
-    await expect(resolve([{ ...listedKey, usable: false }])).resolves.toEqual({ action: "provision" });
+    await expect(resolve([])).resolves.toEqual({ action: "provision", availableModels: ["deepseek-flash"] });
+    await expect(resolve([{ ...listedKey, usable: false }]))
+      .resolves.toEqual({ action: "provision", availableModels: ["deepseek-flash"] });
     await expect(resolveCuberouterLoginKey({
       apiBase: "https://cn.example/v1",
       catalog: createModelWorkspace(null).catalog,
       record: null,
       getModelChoices: async () => choicesOf([listedKey]),
       revealPersonalKey: async () => ({ key: "sk-revealed" })
-    })).resolves.toEqual({ action: "provision" });
+    })).resolves.toEqual({ action: "provision", availableModels: ["deepseek-flash"] });
   });
 
   it("keeps a connection already written when the instance cannot be asked", async () => {
@@ -352,6 +487,8 @@ describe("resolveCuberouterLoginKey", () => {
   });
 
   it("provisions when the instance cannot be asked and nothing is written", async () => {
+    // The list is unknown on this path, and an unknown list seeds nothing: the decision says so
+    // with `availableModels: null` rather than leaving the seeding to guess.
     await expect(resolveCuberouterLoginKey({
       apiBase: "https://cn.example/v1",
       catalog: createModelWorkspace(null).catalog,
@@ -360,7 +497,7 @@ describe("resolveCuberouterLoginKey", () => {
         throw new Error("instance offline");
       },
       revealPersonalKey: async () => ({ key: "sk-revealed" })
-    })).resolves.toEqual({ action: "provision" });
+    })).resolves.toEqual({ action: "provision", availableModels: null });
   });
 });
 
