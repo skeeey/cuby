@@ -19,8 +19,12 @@
 - **机械替换的文件类型范围**：`--include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh'`。**别漏了 shell / PowerShell / NSIS / cmd** —— `scripts/package-win.sh`、`scripts/clear-data.sh`、`scripts/clear-all-windows.ps1`、`App/shell/desktop/build/installer-win-unsigned.nsh` 等文件里同样有路径、环境变量与产品名。
 - **绝不动**：`scripts/install.sh`、`scripts/internal/linux/**`、`Memory/installers/**`（独立的 Memory CLI 安装器，装到 `~/.memmy/cli` 与 `~/.memmy/bin`；与 Linux CLI 安装面同类，同样延后，见 Ruling 15）、`README.md`、`README.zh-CN.md`、`docs/**`、`package.json` 的 `name` 字段与所有 `@memmy/*` / `@memtensor/memmy-memory-*` 包名、`App/memmy-agent/` 目录名、`App/memmy-agent/src/memmy-memory/` 模块目录名、`memmy.cn` / `memmy.bot` 域名、config schema 键（`memmyAgent` / `memmyMemory`）、内部标识符（`MemmyAgentClient`、`memmyConfigPath` 等）。
 - **绝不动（密钥材料）**：`Migrations/src/migrations/v1.0.7/legacy-app-state-model-config-source.ts:7` 的 `DEFAULT_KEY_MATERIAL = "Memmy local SecretStore v1"`。它是**派生密钥的输入**，改一个字都会让老用户已加密的凭据解不开。对应测试 `Migrations/tests/0002-import-legacy-app-state-model-config.test.ts:31` 里同样的字面量也**不动**。任何 sweep 与"顺手改名"都不得碰它。
-- **排除模式必须用 `grep -vE`**：计划里的排除清单用扩展正则（`'^(\./)?…'`）。用基础正则的 `grep -v` 时 `(\./)?` 会被当作字面字符，整条模式匹配不到任何东西，排除静默失效——**执行时先按 Step 3 的 `wc -l` 与"是否仍含禁改项"两步自检**。
+- **排除模式必须用 `grep -vE`**：计划里的排除清单用扩展正则（`'^(\./)?…'`）。用基础正则的 `grep -v` 时 `(\./)?` 会被当作字面字符，整条模式匹配不到任何东西，排除静默失效——**执行时先按 Step 3 的 `wc -l` 与"是否仍含禁改项"两步自检**。本仓库的 `grep` 是 ugrep，`-r .` 输出**不带 `./` 前缀**，所以模式必须写成 `^(\./)?` 而不是 `^\./`。
+- **延后的"文档面"包含所有 README，不只根目录那两个**：`App/memmy-agent/README.md`、`App/backend/README.md`、`Memory/readme.md`、`Memory/src/cli/npm/README.md`、`extra-dependencies/*/README.md` 等**任意层级**的 README 都归文档那一轮。排除模式用**大小写不敏感**的 `grep -viE 'readme'`（全大写的 `README` 和 `readme.md` 都要覆盖），不是 `^README`。
+- **绝不动（历史记录）**：`.github/release-notes/*.md` 是**已发布版本的记录**，永不改写（`v1.1.2.md` 里出现 `MEMMY_*` 是当时的事实）。排除模式加 `^\./\.github/release-notes/`。
+- **`.github/workflows/linux-cli-installer.yml` 也排除**：它把 `MEMMY_INSTALL_ROOT`、`MEMMY_BIN_DIR`、`MEMMY_VERSION`、`MEMMY_RELEASE_BASE_URL` 直接传给不动的 `scripts/install.sh`（`install.sh:7-8` 用 `${MEMMY_INSTALL_ROOT:-…}` 读）。改名会让脚本忽略这些路径、回落到默认值。与 Linux CLI 安装面同一轮延后。
 - **清理工具要"加"不要"换"**：`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 的职责本就包括清掉**旧安装**的数据，整批改名会让它们再也清不了老 Memmy。这几个文件**排除在机械扫描之外**，由 Task 15 Step 3 单独处理成"同时覆盖 Cuby 与 Memmy"。
+- **技能内容要跟着改**：`App/memmy-agent/src/skills/**/SKILL.md`、`Memory/src/cli/skills/**` 不是"文档"，是**随产品分发、由 agent 在运行时读取的内容**。里面引用的 `MEMMY_AGENT_TMUX_SOCKET_DIR` 等变量必须跟着改；`App/memmy-agent/.env.example` 同理（它是开发配置模板，不是文档）。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
 - **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
 
@@ -331,7 +335,9 @@ grep -rl '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --includ
   | grep -vE '^(\./)?scripts/internal/linux/' \
   | grep -vE '^(\./)?tests/linux-cli-packaging\.test\.mjs$' \
   | grep -vE '^(\./)?docs/' \
-  | grep -vE '^(\./)?README' \
+  | grep -viE 'readme' \
+  | grep -vE '^(\./)?\.github/release-notes/' \
+  | grep -vE '^(\./)?\.github/workflows/linux-cli-installer\.yml$' \
   | grep -vE '^(\./)?Memory/installers/' \
   > /tmp/cuby-home-files.txt
 wc -l /tmp/cuby-home-files.txt
@@ -342,7 +348,7 @@ grep -n 'memmyMemory\|memmyConfigPath\|memmyAgent' /tmp/cuby-home-files.txt | he
 
 ```bash
 # 1) 禁改文件一个都不该出现——无输出才算通过
-grep -E 'scripts/install\.sh|scripts/clear-|scripts/internal/linux/|tests/linux-cli-packaging|Memory/installers/|^docs/|^README' /tmp/cuby-home-files.txt
+grep -E 'scripts/install\.sh|scripts/clear-|scripts/internal/linux/|tests/linux-cli-packaging|Memory/installers/|.github/workflows/linux-cli-installer.yml|^docs/|^README' /tmp/cuby-home-files.txt
 # 2) 数量应与预期同量级（实测基线：216 个文件）
 wc -l < /tmp/cuby-home-files.txt
 ```
@@ -378,7 +384,7 @@ Expected: `.memmy` → `.cuby`（`\.memmy\b` 不会命中 `.memmyMemory` / `.mem
 grep -rn '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
   --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^(\./)?(docs/|README|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)'
 ```
 
 Expected: 无输出。
@@ -438,7 +444,9 @@ grep -rl 'MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.g
   | grep -vE '^(\./)?scripts/internal/linux/' \
   | grep -vE '^(\./)?tests/linux-cli-packaging\.test\.mjs$' \
   | grep -vE '^(\./)?docs/' \
-  | grep -vE '^(\./)?README' \
+  | grep -viE 'readme' \
+  | grep -vE '^(\./)?\.github/release-notes/' \
+  | grep -vE '^(\./)?\.github/workflows/linux-cli-installer\.yml$' \
   | grep -vE '^(\./)?Memory/installers/' \
   > /tmp/cuby-env-files.txt
 wc -l /tmp/cuby-env-files.txt
@@ -449,7 +457,7 @@ xargs -a /tmp/cuby-env-files.txt perl -pi -e 's/\bMEMMY_/CUBY_/g'
 
 ```bash
 grep -rn '\bMEMMY_\|process\.env\.MEMMY_\|env\.MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^(\./)?(docs/|README|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)'
 ```
 
 Expected: 无输出。
@@ -495,7 +503,7 @@ xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/g'
 
 ```bash
 grep -rho 'x-cuby-[a-z-]*' --exclude-dir=node_modules --exclude-dir=dist . | sort -u | wc -l   # 期望 17
-grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist . | grep -vE '^(\./)?(docs/|README|Memory/installers/)'
+grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist . | grep -vE '^(\./)?(docs/|README|Memory/installers/|.github/workflows/linux-cli-installer.yml)'
 ```
 
 Expected: 17，且第二条无输出。
@@ -702,7 +710,7 @@ xargs -a /tmp/cuby-port-files.txt perl -pi -e '
 
 ```bash
 grep -rn '\b18960\b\|\b18970\b\|\b18980\b\|\b18990\b\|\b19100\b' --exclude-dir=node_modules --exclude-dir=dist . \
-  | grep -vE '^(\./)?(docs/|README|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)'
 grep -rn '\b28960\b' --exclude-dir=node_modules --exclude-dir=dist . | wc -l   # 期望 ≈35
 ```
 
@@ -1238,7 +1246,7 @@ Expected: PASS，**除三个既有的环境失败**（改名前就已失败，�
 
 ```bash
 grep -rni 'memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.codegraph . \
-  | grep -vE '^(\./)?(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs|docs/brand/)' \
+  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs|docs/brand/)' \
   | grep -viE '@memmy/|@memtensor/memmy-memory|memmy-agent|memmyMemory|memmyConfigPath|memmyConfigWriter|memmyAgent(Admin|Client|WebSocket|Project|Session|Ui|Slash|Goal|Message|Request|Unsubscribe)?|MemmyAgent|memmy-runtime-config|memmy-skill-directory|memmy-plugin|memmy-resume-hook|memmy-deepseek-harness|memmy-opencode|memmy-workspace-bridge|memmy-migrations|memmy-account|memmy-memory-cli|memmy_bridge|memmy-bridge|MemmyLauncher|memmy\.cn|memmy\.bot|memmy-memory|memmy-resume' \
   > /tmp/cuby-leftovers.txt
 wc -l /tmp/cuby-leftovers.txt
