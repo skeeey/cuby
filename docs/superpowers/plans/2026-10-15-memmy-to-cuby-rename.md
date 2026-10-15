@@ -983,6 +983,7 @@ git commit -m "refactor(desktop): rename the memmy-* CSS classes to cuby-*"
 - Modify: `App/frontend/desktop/src/pages/tests/memory-page.test.tsx:44`（`not.toContain` 那条已变成永真的死断言，改指新名）与 `App/frontend/desktop/src/components/tests/mascot.test.ts:18,28,33`（fixture URL 里的 `/assets/memmy-work.png` 改指新名，避免指向已删路径）
 - Rename: `App/frontend/desktop/src/assets/brand/memmy-cover.png` → `cuby-cover.png`
 - Rename: `App/frontend/desktop/src/assets/llm-provider-logo/memmy-account.png` → `cuby-account.png`
+- Test: `App/frontend/desktop/src/pages/tests/llm-provider-logo.test.tsx:26,34`（断言/读取该文件名，不同批改会变红）
 - Modify: `App/frontend/desktop/src/components/model-provider-logo.tsx:1,16,43,91`
 - Modify: `App/frontend/desktop/src/pages/llm-provider-logo.tsx:6`
 - Test（新增）: `App/frontend/desktop/src/components/mascot/tests/pose-assets.test.ts`
