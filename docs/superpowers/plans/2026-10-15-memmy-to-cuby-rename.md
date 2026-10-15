@@ -1321,6 +1321,8 @@ wc -l /tmp/cuby-leftovers.txt
 Run: `npm run package:win:x64:unsigned`（在 Windows 上）与 `npm run package:mac:arm64:cn:unsigned`（在 macOS 上）
 Expected: 产物名为 `Cuby-<version>-…`；安装后应用名、开始菜单快捷方式、dmg 卷标、`%LOCALAPPDATA%\Programs\Cuby`、`~/Applications/Cuby.app` 全部为 Cuby；启动后 `~/.cuby/` 被创建。
 
+**Windows 这一次还要额外走一遍"保留锁的恢复路径"**：relay 与 recovery 两个脚本对 `legacyRuntimeHomePath` 的语义现在是一个跨文件契约（recovery 的 `Assert-CubySamePath` 拿 relay 持久化的值比对），而两边的测试都是 Windows-gated 且总是传 `-Override`，本地跑不到。冒烟时确认：一次失败的 relayed 升级能触发 `migration-recovery-required`，并真的走到数据恢复与 prepared-migration 回滚，而不是被 quarantine 掉。
+
 - [ ] **Step 5: 提交**
 
 ```bash
