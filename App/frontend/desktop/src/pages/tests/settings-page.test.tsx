@@ -850,7 +850,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型连接弹窗不展示高级选项和 Token 限额", () => {
-    const source = readFileSync(modelWorkspaceSourcePath, "utf8");
+    const source = readFileSync(modelLibrarySourcePath, "utf8");
 
     expect(source).not.toContain("showEditorAdvanced");
     expect(source).not.toContain('t("apiKey.advanced")');
