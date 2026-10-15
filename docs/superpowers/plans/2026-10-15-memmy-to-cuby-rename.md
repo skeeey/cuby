@@ -976,6 +976,9 @@ git commit -m "refactor(desktop): rename the memmy-* CSS classes to cuby-*"
 - Delete: `App/frontend/desktop/src/assets/mascot/{memo-idle-alpha.webm,pet-entrance.webp}`
 - Delete: `App/frontend/desktop/src/assets/mascot/{memmy-body-blush,memmy-paddle,memmy-rice-poc,memmy-rice-transparent,memmy-rice-white,memmy-rice}.png`
 - Delete: 18 张 `memmy-<pose>.png`（已被 `cuby-<pose>.png` 取代）
+- Modify: `App/frontend/desktop/src/pages/agent-source-logos.ts:11,53-54`（直接 import 了 `memmy-rice.png`，删素材前必须改指 `cuby-neutral.png`）
+- Modify: `Memory/viewer/src/components/AgentSourceLogo.tsx:11,15-16`（同上，跨包引用同一素材）
+- Modify: `App/frontend/desktop/src/pages/memory/tests/{memories-sub-page,logs-sub-page}.test.tsx`（3 处 `toContain("memmy-rice.png")` 断言）与 `App/frontend/desktop/src/theme/tests/style-alignment.test.ts:352,359,360`（允许清单里的 `memmy-rice.png` / `memo-idle-alpha.webm` / `pet-entrance.webp`）
 - Rename: `App/frontend/desktop/src/assets/brand/memmy-cover.png` → `cuby-cover.png`
 - Rename: `App/frontend/desktop/src/assets/llm-provider-logo/memmy-account.png` → `cuby-account.png`
 - Modify: `App/frontend/desktop/src/components/model-provider-logo.tsx:1,16,43,91`
