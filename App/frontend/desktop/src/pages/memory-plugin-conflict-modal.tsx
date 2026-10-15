@@ -20,7 +20,7 @@ export function MemoryPluginConflictModal(props: MemoryPluginConflictModalProps)
         className="memory-plugin-conflict-modal"
       >
         <div className="memory-plugin-conflict-modal__mascot">
-          <Cuby pose="shield" size={112} className="memmy-bob" />
+          <Cuby pose="shield" size={112} className="cuby-bob" />
         </div>
 
         <h2 id="memory-plugin-conflict-title" className="memory-plugin-conflict-modal__title">

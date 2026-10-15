@@ -23,7 +23,7 @@ export function NicknameModal(props: NicknameModalProps) {
       <div className="w-full max-w-sm bg-background-paper rounded-card-lg shadow-lg border border-border-stone/60 overflow-hidden">
         <div className="px-7 pt-6 pb-2 text-center">
           <div className="flex justify-center -mb-4">
-            <Cuby pose="blush" size={96} className="memmy-bob" />
+            <Cuby pose="blush" size={96} className="cuby-bob" />
           </div>
           <h2 className="text-lg font-bold text-text-ink">{t("login.nicknameSlogan")}</h2>
         </div>

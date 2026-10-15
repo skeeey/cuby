@@ -1994,7 +1994,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
           >
             <div className="px-7 pt-7 pb-4 text-center">
               <div className="flex justify-center mb-1">
-                <Cuby pose="hum" size={120} className="memmy-bob" />
+                <Cuby pose="hum" size={120} className="cuby-bob" />
               </div>
               <h2 className="text-lg font-bold text-text-ink">{t("settings.token.applyMore.title")}</h2>
             </div>

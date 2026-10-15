@@ -18,7 +18,7 @@ export function ImprovementProgramModal(props: ImprovementProgramModalProps) {
       <div className="bg-background-paper rounded-card-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-border-stone/30">
         <div className="px-7 pt-7 pb-4 text-center">
           <div className="flex justify-center mb-1">
-            <Cuby pose="hum" size={120} className="memmy-bob" />
+            <Cuby pose="hum" size={120} className="cuby-bob" />
           </div>
           <h2 className="text-lg font-bold text-text-ink">{t("onboarding.improvement.title")}</h2>
           <p className="text-sm text-text-ink/65 mt-1.5 leading-relaxed">{t("onboarding.improvement.body")}</p>

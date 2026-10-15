@@ -141,7 +141,7 @@ export type PetAgentEventAction =
   | { type: "error"; message: string };
 
 /** Definition for pet transparent root class. */
-export const PET_TRANSPARENT_ROOT_CLASS = "memmy-pet-transparent";
+export const PET_TRANSPARENT_ROOT_CLASS = "cuby-pet-transparent";
 
 /** Contract for display state input. */
 export interface DisplayStateInput {
@@ -1937,7 +1937,7 @@ export function PetPageView({ bus, mainRoute = "/main", onNavigate, onPetWindowC
             />
           </div>
           <div className="absolute inset-0 transition-opacity duration-200" style={{ opacity: showIdle ? 0 : 1, pointerEvents: "none" }}>
-            <Cuby pose={memmyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${displayState === "processing" ? "memmy-bob" : ""}`} />
+            <Cuby pose={memmyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${displayState === "processing" ? "cuby-bob" : ""}`} />
           </div>
         </div>
 

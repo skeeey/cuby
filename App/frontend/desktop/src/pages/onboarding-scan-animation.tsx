@@ -106,7 +106,7 @@ export function OnboardingScanAnimation(props: OnboardingScanAnimationProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-canvas-oat">
       <div className="w-full max-w-[460px] mx-4">
         <div className="flex items-center gap-3 mb-5">
-          <Cuby pose="read" size={64} className="memmy-bob shrink-0 drop-shadow-[0_5px_12px_rgba(34,39,36,0.10)]" />
+          <Cuby pose="read" size={64} className="cuby-bob shrink-0 drop-shadow-[0_5px_12px_rgba(34,39,36,0.10)]" />
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-text-ink flex items-center gap-1.5">
               {t(titleKey)}

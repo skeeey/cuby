@@ -814,7 +814,7 @@ export function OnboardingPage() {
           <div className="bg-background-paper rounded-card-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-border-stone/30">
             <div className="px-7 pt-7 pb-5 text-center">
               <div className="flex justify-center mb-2">
-                <Cuby pose="shield" size={96} className="memmy-bob" />
+                <Cuby pose="shield" size={96} className="cuby-bob" />
               </div>
               <h2 className="text-lg font-bold text-text-ink">{t("onboarding.permission.title")}</h2>
               <p className="text-sm text-text-ink/50 mt-1.5">{t("onboarding.permission.subtitle")}</p>

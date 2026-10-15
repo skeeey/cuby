@@ -2691,7 +2691,7 @@ export function HomePage() {
         <section className="app-frame-page-content home-empty-screen flex flex-col items-center justify-center h-full">
           <div className="text-center mb-8">
             <div className="home-empty-brand-mascot flex justify-center">
-              <Cuby pose="think" size={165} className="memmy-bob" />
+              <Cuby pose="think" size={165} className="cuby-bob" />
             </div>
             <h1 className="text-2xl font-bold text-text-ink">{t("home.subtitle")}</h1>
           </div>

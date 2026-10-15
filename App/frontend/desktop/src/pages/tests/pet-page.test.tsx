@@ -708,7 +708,7 @@ describe("PetPageView SSR", () => {
   it("声明桌宠透明根背景样式，避免透明 Electron 窗口绘制桌面面板", () => {
     const styles = readFileSync(stylesPath, "utf8");
 
-    expect(PET_TRANSPARENT_ROOT_CLASS).toBe("memmy-pet-transparent");
+    expect(PET_TRANSPARENT_ROOT_CLASS).toBe("cuby-pet-transparent");
     expect(styles).toContain(`.${PET_TRANSPARENT_ROOT_CLASS}`);
     expect(styles).toContain("background: transparent !important");
     expect(styles).toContain(".pet-answer-preview-text");

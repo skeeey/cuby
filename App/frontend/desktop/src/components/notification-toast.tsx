@@ -26,31 +26,31 @@ export function NotificationToast(props: NotificationToastProps) {
 
   return (
     <div
-      className={`memmy-notification memmy-notification--${variant}`}
+      className={`cuby-notification cuby-notification--${variant}`}
       role="status"
       aria-live="polite"
     >
       {Icon ? (
-        <span className="memmy-notification__badge" aria-hidden="true">
+        <span className="cuby-notification__badge" aria-hidden="true">
           <Icon size={16} strokeWidth={2} />
         </span>
       ) : null}
-      <div className="memmy-notification__content">
-        <div className="memmy-notification__header">
-          <p className="memmy-notification__title">{props.title}</p>
+      <div className="cuby-notification__content">
+        <div className="cuby-notification__header">
+          <p className="cuby-notification__title">{props.title}</p>
           <button
             type="button"
-            className="memmy-notification__close"
+            className="cuby-notification__close"
             aria-label={t("common.close")}
             onClick={props.onDismiss}
           >
             <X size={14} strokeWidth={2.2} aria-hidden="true" />
           </button>
         </div>
-        {props.emphasis ? <p className="memmy-notification__emphasis">{props.emphasis}</p> : null}
-        {props.body ? <p className="memmy-notification__body">{props.body}</p> : null}
+        {props.emphasis ? <p className="cuby-notification__emphasis">{props.emphasis}</p> : null}
+        {props.body ? <p className="cuby-notification__body">{props.body}</p> : null}
         {props.actionLabel && props.onAction ? (
-          <button type="button" className="memmy-notification__action" onClick={props.onAction}>
+          <button type="button" className="cuby-notification__action" onClick={props.onAction}>
             <span>{props.actionLabel}</span>
             <ChevronRight size={13} strokeWidth={2.4} aria-hidden="true" />
           </button>

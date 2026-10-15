@@ -21,8 +21,8 @@ function CenterHandle() {
 }
 
 function stackItems(): Element[] {
-  const stack = document.body.querySelector(".memmy-notification-stack");
-  return stack ? Array.from(stack.querySelectorAll(".memmy-notification")) : [];
+  const stack = document.body.querySelector(".cuby-notification-stack");
+  return stack ? Array.from(stack.querySelectorAll(".cuby-notification")) : [];
 }
 
 describe("NotificationCenter", () => {
@@ -75,7 +75,7 @@ describe("NotificationCenter", () => {
     expect(document.body.textContent).not.toContain("通知 4");
 
     // Oldest visible ("通知 1") is rendered at the bottom; dismiss it via its close button.
-    const closeButtons = document.body.querySelectorAll('.memmy-notification [aria-label="关闭"]');
+    const closeButtons = document.body.querySelectorAll('.cuby-notification [aria-label="关闭"]');
     act(() => (closeButtons[closeButtons.length - 1] as HTMLButtonElement).click());
 
     expect(onClose).toHaveBeenCalledTimes(1);
@@ -89,7 +89,7 @@ describe("NotificationCenter", () => {
       center?.notify({ title: "带链接的通知", actionLabel: "打开详情", onAction });
     });
 
-    const action = document.body.querySelector(".memmy-notification__action");
+    const action = document.body.querySelector(".cuby-notification__action");
     expect(action?.textContent).toContain("打开详情");
     act(() => (action as HTMLButtonElement).click());
 

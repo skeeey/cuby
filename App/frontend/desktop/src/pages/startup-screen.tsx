@@ -40,7 +40,7 @@ export function StartupScreen(props: StartupScreenProps) {
       <div className="absolute bottom-[-60px] left-[-40px] w-56 h-56 bg-action-sky/10 rounded-full blur-3xl" />
       <div className="text-center relative z-10">
         <div className="startup-brand-mascot flex justify-center">
-          <Cuby pose={hasError ? "plead" : "wave"} size={hasError ? 158 : 205} className={hasError ? "" : "memmy-wave"} />
+          <Cuby pose={hasError ? "plead" : "wave"} size={hasError ? 158 : 205} className={hasError ? "" : "cuby-wave"} />
         </div>
         {hasError && (
           <p className="text-sm font-semibold text-text-ink/55 mt-2">{t("app.error.eyebrow")}</p>

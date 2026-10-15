@@ -337,11 +337,11 @@ describe("campaign and token credit prompts", () => {
       );
     });
 
-    expect(htmlContainer.querySelector(".memmy-notification--success")).not.toBeNull();
-    expect(htmlContainer.querySelector(".memmy-notification__title")?.textContent).toBe("🎁 弹幕抽奖 Token 已到账");
-    expect(htmlContainer.querySelector(".memmy-notification__emphasis")?.textContent).toBe("+500,000");
-    expect(htmlContainer.querySelector(".memmy-notification__body")).toBeNull();
-    expect(htmlContainer.querySelector(".memmy-notification__action")).toBeNull();
+    expect(htmlContainer.querySelector(".cuby-notification--success")).not.toBeNull();
+    expect(htmlContainer.querySelector(".cuby-notification__title")?.textContent).toBe("🎁 弹幕抽奖 Token 已到账");
+    expect(htmlContainer.querySelector(".cuby-notification__emphasis")?.textContent).toBe("+500,000");
+    expect(htmlContainer.querySelector(".cuby-notification__body")).toBeNull();
+    expect(htmlContainer.querySelector(".cuby-notification__action")).toBeNull();
 
     const close = htmlContainer.querySelector('[aria-label="关闭"]');
     act(() => (close as HTMLButtonElement).click());

@@ -1,8 +1,8 @@
 /** Window fullscreen module. */
 import { useEffect } from "react";
 
-export const WINDOW_FULLSCREEN_BODY_CLASS = "memmy-window-fullscreen";
-export const WINDOWS_PLATFORM_BODY_CLASS = "memmy-platform-windows";
+export const WINDOW_FULLSCREEN_BODY_CLASS = "cuby-window-fullscreen";
+export const WINDOWS_PLATFORM_BODY_CLASS = "cuby-platform-windows";
 
 /** Applies the desktop platform class used by native window chrome layout. */
 export function applyWindowPlatformClass(platform: string | null | undefined): void {

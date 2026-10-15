@@ -37,7 +37,7 @@ describe("StartupScreen", () => {
     expect(html).not.toContain('class="text-sm text-text-ink/60 mt-2 leading-relaxed">正在准备本地运行环境和应用状态。');
     expect(html).not.toContain('class="text-sm font-semibold text-text-ink/55">Memmy</p>');
     expect(html).not.toContain("bg-background-paper");
-    expect(html).toContain("memmy-wave");
+    expect(html).toContain("cuby-wave");
   });
 });
 

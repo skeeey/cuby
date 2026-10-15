@@ -29,7 +29,7 @@ export function LoginPage() {
       <section className="w-full max-w-md bg-background-paper rounded-card-lg shadow-lg border border-border-stone/60 overflow-hidden relative z-10">
         <div className="px-6 pt-6 pb-3 text-center">
           <div className="flex justify-center mb-1">
-            <Cuby pose="wave" size={118} className="memmy-wave" />
+            <Cuby pose="wave" size={118} className="cuby-wave" />
           </div>
           <p className="text-sm font-semibold text-text-ink/60">{t("nav.login")}</p>
           <h1 className="text-2xl font-extrabold text-text-ink mt-1">{t("login.title")}</h1>

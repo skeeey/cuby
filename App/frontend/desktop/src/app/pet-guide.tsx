@@ -129,7 +129,7 @@ export function PetGuideModal({ onChoice }: PetGuideModalProps) {
       <div className="bg-background-paper rounded-card-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-border-stone/40">
         <div className="px-8 pt-8 pb-5 text-center">
           <div className="flex justify-center mb-1">
-            <Cuby pose="celebrate" size={130} className="memmy-bob" />
+            <Cuby pose="celebrate" size={130} className="cuby-bob" />
           </div>
           <h2 className="text-lg font-bold text-text-ink">{t("petGuide.title")}</h2>
           <p className="text-sm text-text-ink/65 mt-2 leading-relaxed">
