@@ -37,7 +37,7 @@
 
 **Files:**
 - Modify: `App/shell/desktop/electron-builder.yml:1-3,70-71,84`
-- Modify: `App/shell/desktop/electron-builder.win.yml:1-3,81`
+- Modify: `App/shell/desktop/electron-builder.win.yml:1-3,84`
 - Modify: `App/shell/desktop/electron-builder.unsigned.yml:1-3,70-71,81`
 - Modify: `App/shell/desktop/electron-builder.win.unsigned.yml:1-3,81`
 - Modify: `App/shell/desktop/src/main/main.ts:492`
@@ -81,7 +81,7 @@ artifactName: Cuby-${version}-${arch}.${ext}
 同文件其余位置：
 - `electron-builder.yml:70-71` 与 `electron-builder.unsigned.yml:70-71`：`NSMicrophoneUsageDescription` / `NSAppleEventsUsageDescription` 文案里 `Memmy` → `Cuby`。
 - `electron-builder.yml:84` 与 `electron-builder.unsigned.yml:81`：`dmg.title: Cuby Installer`。
-- `electron-builder.win.yml:81` 与 `electron-builder.win.unsigned.yml:81`：`shortcutName: Cuby`。
+- `electron-builder.win.yml:84` 与 `electron-builder.win.unsigned.yml:81`：`shortcutName: Cuby`。
 
 - [ ] **Step 4: 改进程内应用名与两个脚本**
 
@@ -114,7 +114,7 @@ git commit -m "feat(desktop): rename the packaged app identity to Cuby"
 > **为什么有这个任务**：Task 1 把 `productName` 改成 `Cuby` 之后，可执行文件叫 `Cuby.exe` / `Cuby.app`，但安装器、Windows 升级链路与 macOS 后台更新仍在找 `Memmy.exe` / `Memmy.app`。这些文件的测试**不会因此变红**（它们断言的是自己的字面量），所以缺口是静默的——由 Task 1 的实现者在报告里发现。
 
 **Files:**
-- Modify: `App/shell/desktop/src/main/main.ts:2358,2386,2401`（`/Applications/Memmy.app`）、`:1436`（`MemmyUpdatePrompt.ps1` 的安装路径）
+- Modify: `App/shell/desktop/src/main/main.ts:203`（`WINDOWS_APP_USER_MODEL_ID` 仍是 `cn.memtensor.memmy`，`:494` 用它调 `app.setAppUserModelId`）、`:1436`（`MemmyUpdatePrompt.ps1` 的安装路径）、`:2358,2386,2401`（`/Applications/Memmy.app`）
 - Rename + Modify: `App/shell/desktop/build/MemmyWindowsDataMigration.ps1` → `CubyWindowsDataMigration.ps1`
 - Rename + Modify: `App/shell/desktop/build/MemmyWindowsUpgradeRelay.ps1` → `CubyWindowsUpgradeRelay.ps1`
 - Rename + Modify: `App/shell/desktop/build/MemmyWindowsUpgradeRecovery.ps1` → `CubyWindowsUpgradeRecovery.ps1`
@@ -124,7 +124,7 @@ git commit -m "feat(desktop): rename the packaged app identity to Cuby"
 - Modify: `App/shell/desktop/build/installer-win-unsigned.nsh`
 - Modify: `scripts/internal/mac/build-dmg.sh:311,660,663`
 - Modify: `tests/ocu-dev-install.test.mjs:117`（dev 包标识 `cn.memtensor.memmy.computeruse.dev` → `cn.memtensor.cuby.computeruse.dev`）
-- Test: `App/shell/desktop/tests/packaged-runtime-boundary.test.ts:62,919,922,981,984`
+- Test: `App/shell/desktop/tests/packaged-runtime-boundary.test.ts:62,919,922,981,984,1421`
 - Test: `App/shell/desktop/tests/{windows-upgrade-relay,windows-standard-upgrade-check,windows-data-migration,windows-update-launcher}.test.ts`
 
 **Interfaces:**
@@ -133,7 +133,7 @@ git commit -m "feat(desktop): rename the packaged app identity to Cuby"
 
 - [ ] **Step 1: 先改测试里的期望值（会失败）**
 
-`packaged-runtime-boundary.test.ts`：`:62` 的脚本路径、`:919`/`:922` 的 NSIS 行、`:981`/`:984` 的 PowerShell 函数名断言，全部 `Memmy` → `Cuby`。
+`packaged-runtime-boundary.test.ts`：`:62` 的脚本路径、`:919`/`:922` 的 NSIS 行、`:981`/`:984` 的 PowerShell 函数名断言、`:1421` 的 `WINDOWS_APP_USER_MODEL_ID` 字面量，全部 `Memmy` → `Cuby`。
 
 `windows-upgrade-relay.test.ts`、`windows-standard-upgrade-check.test.ts`、`windows-data-migration.test.ts`、`windows-update-launcher.test.ts`：把断言与 fixture 里的 `Memmy.exe`、`MemmyWindows*.ps1`、`MemmyUpdatePrompt.ps1`、函数名 `*-Memmy*` 改成对应的 Cuby 名。**注意**：这几个文件里用 `Memmy.exe` 当纯 fixture 文件名的用例（例如 `windows-upgrade-relay.test.ts:154,175,392,406,422,430-431,483,546,596` 里既创建又断言同名文件）**必须整组一起改**，否则创建与断言会不匹配。
 
@@ -170,9 +170,15 @@ git mv MemmyUpdatePrompt.ps1 CubyUpdatePrompt.ps1
 
 `tests/ocu-dev-install.test.mjs:117`：dev 包标识 `cn.memtensor.memmy.computeruse.dev` → `cn.memtensor.cuby.computeruse.dev`（与 Task 1 已改的 `~/Applications/Cuby Development` 保持一致；本地 dev 安装下次重装时重新注册，无迁移成本）。
 
-- [ ] **Step 5: 改 main.ts 的已安装路径**
+- [ ] **Step 5: 改 main.ts 的 AUMID 与已安装路径**
 
 `App/shell/desktop/src/main/main.ts`：
+
+```ts
+const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.cuby";
+```
+
+**必须与 `appId` 一致**：electron-builder 用 `appId` 给开始菜单/桌面快捷方式打 AUMID（`node_modules/app-builder-lib/templates/nsis/include/installer.nsh:200,209,225` 的 `WinShell::SetLnkAUMI "${APP_ID}"`）。两边不一致时，Windows 会把装出来的快捷方式和运行中的应用当成两个应用——任务栏固定分组、通知归属、跳转列表都会错乱。Task 1 只改了 `appId`，此处是它的配对项。
 
 ```ts
     throw new Error("Cannot resolve installed Cuby.app path for background update");
