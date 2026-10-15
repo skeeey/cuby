@@ -727,13 +727,19 @@ Expected: FAIL —— 实际为 19100。
 - [ ] **Step 3: 替换端口值**
 
 ```bash
-grep -rl '18960\|18970\|18980\|18990\|19100' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.css' \
+grep -rl '18960\|18970\|18980\|18990\|19100' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
+  --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -vE '^(\./)?scripts/install\.sh$' \
   | grep -vE '^(\./)?scripts/clear-' \
   | grep -vE '^(\./)?scripts/internal/linux/' \
-  | grep -vE '^(\./)?docs/' | grep -vE '^(\./)?README' \
+  | grep -vE '^(\./)?tests/linux-cli-packaging\.test\.mjs$' \
+  | grep -vE '^(\./)?docs/' | grep -viE 'readme' \
+  | grep -vE '^(\./)?\.github/release-notes/' \
+  | grep -vE '^(\./)?\.github/workflows/linux-cli-installer\.yml$' \
+  | grep -vE '^(\./)?Memory/installers/' \
   > /tmp/cuby-port-files.txt
+wc -l /tmp/cuby-port-files.txt   # 实测基线：66 个文件
 xargs -a /tmp/cuby-port-files.txt perl -pi -e '
   s/\b18960\b/28960/g;
   s/\b18970\b/28970/g;
