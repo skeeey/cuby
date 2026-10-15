@@ -287,7 +287,7 @@ export const PROVIDERS: ProviderSpec[] = [
   new ProviderSpec({
     name: "memmy_account",
     keywords: ["memmy-account", "memmy_account"],
-    displayName: "Memmy Account",
+    displayName: "Cuby Account",
     defaultApiBase: safeMemmyAccountApiBase(),
     resolveHeaders: resolveMemmyAccountHeaders,
   }),

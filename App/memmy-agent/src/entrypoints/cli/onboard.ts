@@ -1631,17 +1631,17 @@ export const SETTINGS_SECTION_META: Record<string, { displayName: string; subtit
     skipFields: new Set(),
   },
   "Memos Memory": {
-    displayName: "Memmy Memory",
+    displayName: "Cuby Memory",
     subtitle: "Configure local Memory integration",
     skipFields: new Set(),
   },
   "Memmy Memory": {
-    displayName: "Memmy Memory",
+    displayName: "Cuby Memory",
     subtitle: "Configure local Memory integration",
     skipFields: new Set(),
   },
   memmyMemory: {
-    displayName: "Memmy Memory",
+    displayName: "Cuby Memory",
     subtitle: "Configure local Memory integration",
     skipFields: new Set(),
   },
@@ -1793,7 +1793,7 @@ export async function runOnboard(
     "[A] Agent Settings",
     "[I] API Server",
     "[G] Gateway",
-    "[R] Memmy Memory",
+    "[R] Cuby Memory",
     "[D] Session DAG",
     "[O] Context Compaction",
     "[T] Tools",
@@ -1817,7 +1817,7 @@ export async function runOnboard(
       else if (answer === "[A] Agent Settings") await configureGeneralSettings(config, "Agent Settings");
       else if (answer === "[I] API Server") await configureGeneralSettings(config, "API Server");
       else if (answer === "[G] Gateway") await configureGeneralSettings(config, "Gateway");
-      else if (answer === "[R] Memmy Memory") await configureGeneralSettings(config, "Memmy Memory");
+      else if (answer === "[R] Cuby Memory") await configureGeneralSettings(config, "Memmy Memory");
       else if (answer === "[D] Session DAG") await configureGeneralSettings(config, "Session DAG");
       else if (answer === "[O] Context Compaction") await configureGeneralSettings(config, "Context Compaction");
       else if (answer === "[T] Tools") await configureGeneralSettings(config, "Tools");

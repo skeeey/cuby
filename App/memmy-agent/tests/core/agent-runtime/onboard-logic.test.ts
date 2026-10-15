@@ -935,8 +935,8 @@ describe("onboard logic", () => {
     expect(result.config.api.port).toBe(9999);
   });
 
-  it("runs the main menu Memmy Memory edit path", async () => {
-    usePrompt(["[R] Memmy Memory", /Enabled/, true, "done", "[S] Save and Exit"]);
+  it("runs the main menu Cuby Memory edit path", async () => {
+    usePrompt(["[R] Cuby Memory", /Enabled/, true, "done", "[S] Save and Exit"]);
     const result = await runOnboard(new Config());
 
     expect(result.shouldSave).toBe(true);

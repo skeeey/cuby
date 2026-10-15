@@ -1000,12 +1000,12 @@ export class CustomImageGenerationClient extends OpenAIImagesCompatibleImageGene
 
 export class MemmyAccountImageGenerationClient extends ImageGenerationProvider {
   static providerName = "memmy_account";
-  static displayName = "Memmy Account";
+  static displayName = "Cuby Account";
   providerName = "memmy_account";
   missingKeyMessage =
-    "Memmy Account image generation API key is not configured. Set tools.imageGeneration.apiKey.";
+    "Cuby Account image generation API key is not configured. Set tools.imageGeneration.apiKey.";
   missingBaseMessage =
-    "Memmy Account image generation API base is not configured. Set tools.imageGeneration.apiBase.";
+    "Cuby Account image generation API base is not configured. Set tools.imageGeneration.apiBase.";
 
   override async generate(args: any): Promise<GeneratedImageResponse> {
     if (!this.apiKey) throw new ImageGenerationError(this.missingKeyMessage);
@@ -1013,7 +1013,7 @@ export class MemmyAccountImageGenerationClient extends ImageGenerationProvider {
     const refs = args.referenceImages ?? [];
     if (refs.length)
       throw new ImageGenerationError(
-        "Memmy Account image generation does not support reference images",
+        "Cuby Account image generation does not support reference images",
       );
     const parameters: Record<string, any> = {
       size: qwenSize(args.model, args.aspectRatio, args.imageSize),
@@ -1036,7 +1036,7 @@ export class MemmyAccountImageGenerationClient extends ImageGenerationProvider {
       },
       body,
     );
-    await assertOk(response, "Memmy Account");
+    await assertOk(response, "Cuby Account");
     const data = await responseJson(response);
     const images = await dashscopeImagesFromPayload(this, data);
     this.requireImages(images, data);

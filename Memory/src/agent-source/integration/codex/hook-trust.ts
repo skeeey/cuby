@@ -55,8 +55,8 @@ export async function trustMemmyCodexHooks(options: TrustMemmyCodexHooksOptions)
   try {
     await client.request("initialize", {
       clientInfo: {
-        name: "memmy",
-        title: "Memmy",
+        name: "cuby",
+        title: "Cuby",
         version: "1"
       }
     });
@@ -85,7 +85,7 @@ export async function trustMemmyCodexHooks(options: TrustMemmyCodexHooksOptions)
     for (const hook of hooks) {
       const verified = verifiedHooks.find((candidate) => candidate.key === hook.key);
       if (!verified || verified.currentHash !== hook.currentHash || verified.trustStatus !== "trusted" || !verified.enabled) {
-        throw new Error(`Codex did not persist trust for the Memmy ${hook.eventName} hook`);
+        throw new Error(`Codex did not persist trust for the Cuby ${hook.eventName} hook`);
       }
     }
   } finally {
@@ -130,7 +130,7 @@ function selectMemmyHooks(
   );
   const selectedEvents = new Set(selected.map((hook) => hook.eventName));
   if (selected.length !== CUBY_HOOK_EVENTS.size || selectedEvents.size !== CUBY_HOOK_EVENTS.size) {
-    throw new Error("Codex did not discover every installed Memmy hook");
+    throw new Error("Codex did not discover every installed Cuby hook");
   }
   return selected;
 }

@@ -46,7 +46,7 @@ describe("OpenAI-compatible request kwargs", () => {
     });
     expect(defaultProvider.defaultHeaders).toMatchObject({
       "HTTP-Referer": "https://github.com/MemTensor/memmy-agent",
-      "X-OpenRouter-Title": "Memmy Agent",
+      "X-OpenRouter-Title": "Cuby Agent",
       "X-OpenRouter-Categories": "personal-agent,cli-agent",
     });
     expect(defaultProvider.defaultHeaders["x-session-affinity"]).toBeTruthy();
@@ -276,7 +276,7 @@ describe("OpenAI-compatible request kwargs", () => {
     const provider = providerFor("openrouter", "anthropic/claude-sonnet-4-5", { apiBase: "https://openrouter.ai/api/v1" });
 
     expect(provider.defaultHeaders["HTTP-Referer"]).toBe("https://github.com/MemTensor/memmy-agent");
-    expect(provider.defaultHeaders["X-OpenRouter-Title"]).toBe("Memmy Agent");
+    expect(provider.defaultHeaders["X-OpenRouter-Title"]).toBe("Cuby Agent");
     expect(provider.defaultHeaders["X-OpenRouter-Categories"]).toBe("personal-agent,cli-agent");
     expect(provider.defaultHeaders["x-session-affinity"]).toBeTruthy();
   });

@@ -84,13 +84,13 @@ const BUILT_IN_AVATARS = AvatarOptionSchema.array().parse([
   },
   {
     id: "memmy-focus",
-    displayName: "Memmy Focus",
+    displayName: "Cuby Focus",
     assetKey: "avatar.memmy.focus",
     kind: "image"
   },
   {
     id: "memmy-live",
-    displayName: "Memmy Live",
+    displayName: "Cuby Live",
     assetKey: "avatar.memmy.live",
     kind: "video"
   }

@@ -36,7 +36,7 @@ describe("Codex hook trust", () => {
       hookCommand: `node '${join(tempDir, "hooks", "cuby-resume-hook.mjs")}'`,
       codexExecutable: process.execPath,
       appServerArguments: ["-e", FAKE_CODEX_APP_SERVER, "missing-stop"]
-    })).rejects.toThrow("Codex did not discover every installed Memmy hook");
+    })).rejects.toThrow("Codex did not discover every installed Cuby hook");
   });
 });
 

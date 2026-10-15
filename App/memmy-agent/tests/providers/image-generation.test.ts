@@ -254,7 +254,7 @@ describe("image generation provider parity", () => {
     expect(fake.calls[0].url).toBe("https://openrouter.ai/api/v1/chat/completions");
     expect(fake.calls[0].headers.Authorization).toBe("Bearer sk-or-test");
     expect(fake.calls[0].headers["HTTP-Referer"]).toBe("https://github.com/MemTensor/memmy-agent");
-    expect(fake.calls[0].headers["X-OpenRouter-Title"]).toBe("Memmy Agent");
+    expect(fake.calls[0].headers["X-OpenRouter-Title"]).toBe("Cuby Agent");
     expect(fake.calls[0].headers["X-OpenRouter-Categories"]).toBe("personal-agent,cli-agent");
     expect(fake.calls[0].headers["X-Test"]).toBe("1");
     expect(fake.calls[0].json.modalities).toEqual(["image", "text"]);
