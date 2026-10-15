@@ -1327,6 +1327,10 @@ wc -l /tmp/cuby-leftovers.txt
 
 已知几处注释：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。
 
+**Task 13 审查追加的文案项**（同样逐条处理）：`App/frontend/desktop/src/i18n/messages.ts:534,2352` 的 `"重启 memmy-agent"`/`"Restart memmy-agent"`（`/restart` 命令面板项，**就在 Task 13 自己的文件里却因小写 `memmy-agent` 躲过了 `\bMemmy\b`**）；`App/backend/src/services/onboarding-first-report-memory-writer.ts:8-9`（与已改的 `messages.ts:430` 是**同一句话**，只是这里还没改）与 `:183-186`、`Memory/src/service/retrieval/retrieval-service.ts:1055-1056`（两处都在生成 "Memmy 初见报告" 这个记忆标题）；`settings-page.tsx:3438`；`onboarding-page.tsx:661,689`；`Memory/src/agent-source/integration/codex/target.ts:216,229,234-236`（Codex hook 的 `statusMessage`，会显示在 Codex 里）。
+
+> **`App/frontend/desktop/index.html:6` 的 `<title>Memmy</title>` 是硬性的**：Electron 用加载文档的标题做窗口/任务栏标题，而代码里没有任何地方设 `document.title` 或调 `setTitle`（已 grep 为空），所以 Task 13 改的 `window-mode.ts:57` 目前**不起作用**——不改 index.html 的话任务栏仍显示 Memmy。
+
 **Task 13 实现者列出的、仍在各 Task 名单之外的用户可见文案**（Task 15 逐条处理，不要指望白名单扫描自动列全）：`App/frontend/desktop/src/pages/settings-page.tsx:1879`、`App/frontend/desktop/index.html:6`、`App/shell/desktop/src/main/main.ts` 的托盘 tooltip/菜单/导出/诊断串、`desktop-screen-capture.ts` 的权限提示、`runtime-config.ts:4`、`memory-sources-page.tsx` 的提示语、`Memory/src/viewer/static.ts:103`。
 
 **Task 11 审查追加的几项**：①把 `App/frontend/desktop/src/components/mascot/tests/pose-assets.test.ts:26` 的陈旧清单从 3 个名字**扩到全部 26 个被删素材名**——守卫只覆盖 3/26 时，`memmy-wave.png` 之类被重新加回来不会有人发现（零成本、严格更强）；②同文件 `:2` 的未用 `readFileSync` import 删掉；③`App/memmy-agent/src/entrypoints/cli/tui.tsx:117` 的注释指向本计划已删除的 `memmy-rice.png`，改成不指向具体文件的表述（ASCII 稿本身仍是旧角色，见"后续轮次"）。
