@@ -74,7 +74,7 @@ v1/v2 已落地的现状：cuberouter 登录成功后，桌面端把一把 key �
 - 组织取列表第一个（与 `loginOnNode` 同规则，`cuberouter-account-service.ts:189-193`）；组织 key 只收 **我名下**的行（服务端已按普通成员收敛，客户端再按责任人字段确认一次）。
 - 个人 key 全量；`usable = status === 1 或实例未报告 status`（沿用 `findPersonalToken` 的判定，`cuberouter-account-service.ts:311-326`）。
 - 每个 key 带计费标注：组织 → `{ kind: "organization", name, remainingQuota: quota − usedQuota }`；个人 → `{ kind: "personal", remainingQuota: self.quota }`。
-- 降级：`self` 拉取失败 → 所有 `remainingQuota` 为 `null`（面板只显示计费主体）；`models` 拉取失败 → `models: []` + 面板给错误态。
+- 降级与传播：`self` 拉取失败 → 所有 `remainingQuota` 为 `null`（面板只显示计费主体）；组织 key / 个人 key / 可选模型**任一失败即传播**（面板据此进错误态 + 重试，绝不把失败显示成「没有 key」）。
 
 ### 4.2 契约与本地路由
 
@@ -122,7 +122,7 @@ v1/v2 已落地的现状：cuberouter 登录成功后，桌面端把一把 key �
 - ③ **用途分配**（复用 `ModelAssignmentSection`）：
   - 候选 = `choices.models` ∪ 「高级」里自加连接里的模型（去重）；
   - 只显示三行：对话模型（多选 + 默认）、记忆摘要、技能进化；embedding 以只读一行展示「本地向量模型（内建）」；asr/image 不显示；
-  - 默认值：已配置 → 显示配置值；未配置 → 构建期 `cuberouter.model`（若在列表里），否则留空并提示选择；配置里的模型已不在可选列表 → 该行标红提示改选（不猜）。
+  - 默认值：已配置 → 显示配置值；未配置 → 留空（构建期默认模型只在登录 provisioning 时播种）；配置里的模型已不在实例可选列表 → 该行仍显示该模型名（不显示「未配置」）、对话区可把该模型取消勾选，并在分配区下方提示「有模型已不在实例可选列表中，请重新选择。」。
   - 下拉需要搜索过滤：新增一个带搜索的分配下拉组件，不改通用 `Select`（`components/Select.tsx` 目前无搜索，且被 20+ 处使用，不动它的菜单行为）。
 - ④ **「高级」折叠**：内嵌 `ModelLibrarySection`（通用连接管理）。
 
@@ -136,31 +136,29 @@ v1/v2 已落地的现状：cuberouter 登录成功后，桌面端把一把 key �
 { [username: string]: { scope: "organization" | "personal"; id: number; name: string } }
 ```
 
-写入时机：面板换 key 成功后；登录 find-or-create 成功后。
+写入时机：**面板换 key 保存成功后**（保存被拒或失败时不写，记录不允许领先于配置）；登录复核判定「复用」成功后回写一次；「重新获取 key」成功后清除记录（新 key 尚无列表身份，等用户下次选择）。失效记录在 provision 分支清除。
 
-登录复核（`components/account-auth-panel.tsx` 的 `continueAfterAuth`）：
+登录复核（`components/account-auth-panel.tsx` 的 `continueAfterAuth`，判定函数为 `state/model-provisioning.ts` 的 `resolveCuberouterLoginKey`）：
 
-1. 配置里已有 cuberouter 连接（apiBase = 当前线路 `/v1` 且有 key）时：
-   - 有记录 → 拉 `model-choices`，记录里的 key 仍在列表且 `usable` → 用它（组织 key 直接用列表里的明文；个人 key 调一次 reveal）刷新配置；
-   - 记录失效 / 不在列表 → find-or-create（现有 `provisionByokModel`）并更新记录；
-   - **`model-choices` 拉取失败 → 保持现有配置不动**（宁可不刷新，也不覆盖用户选的 key），不阻断登录。
-2. 配置里没有 cuberouter 连接（首次）→ 现有 find-or-create。
+1. 记录里的 key 仍在 `model-choices` 列表且 `usable` → **reuse**：组织 key 直接用列表里的明文、个人 key 调一次 reveal，只刷新 `apiKey`；
+2. 记录缺失或失效 → **provision**：走一次 find-or-create（与登录同一路径，`POST /api/account/cuberouter/provision-key` 也复用它），并清除失效记录；
+3. `model-choices` 拉取失败且配置里已有可用连接（apiBase = 当前线路 `/v1` 且有密钥）→ **keep**：什么都不写（瞬时故障不得覆盖用户选的 key），不阻断登录；
+4. **模型选择与 key 决策解耦**：三条路径都保留目录里已有的模型选择（仅当选择为空时才播种构建期默认模型）——「改了模型但没点过 key」的机器，登出再登录也不会被重置。
 
 ### 4.6 写入通路
 
-`state/model-provisioning.ts` 新增 `applyCuberouterModelConfig({ configClient, apiBase, apiKey, selections })`，`selections` = `{ agent: { models: string[]; default: string }; memorySummary: string; memoryEvolution: string }`：
+`state/model-workspace.ts` 新增纯函数 `applyCuberouterSelection(workspace, { apiBase, protocol, apiKey?, selection })`（`selection` = `{ agent: { models: string[]; default?: string }; memorySummary: string; memoryEvolution: string }`），配合 `state/model-provisioning.ts` 的 `saveCatalogMutation({ configClient, mutate })`（每轮读一次最新目录；`model_config_changed` / `config_write_busy` 重试一次）落盘：
 
-- 面板持有单一 workspace 状态（`createModelWorkspace(seedConfig)`）：key 卡、用途分配、「高级」里的库操作共用它，全部经 `saveModelCatalog` 落盘，避免两份状态互相覆盖；
-- 目标 preset 集合：每个被分配用到的模型一条（capabilities = 它服务的槽位；对话模型多选时都记 `agent`），同模型被多槽位共用只写一条；
-- 复用同 apiBase 的 endpoint（沿用 `endpointId`），换 key 只改 `apiKey`；
-- 未被引用的托管 preset（同 apiBase 下）删除，避免目录堆积；
-- 一次 `saveModelCatalog(modelConfigInput(workspace))`，冲突沿用现有 `model_config_changed` / `config_write_busy` 重读重试。
+- preset 查找**限定在该 endpoint**（不跨 endpoint 认领同名模型）；未被本次选择引用的**本 endpoint** byok preset 删除（其它 endpoint 与 account preset 不动）；
+- 分配引用按「目录中残留的全部 preset id」清理，对话候选保留其它连接中仍具 `agent` 能力的 preset 并追加本次选择的 id（其它连接上的 asr / image / 自定义 embedding 分配不受影响）；
+- 复用同 apiBase 的 endpoint（沿用 `endpointId`），换 key 只改 `apiKey`；未给明文时保留已存密钥；embedding 不写（保持 memmy 内建本地缺省）；
+- 一次 `saveModelCatalog(modelConfigInput(workspace))`，冲突沿用现有重读重试。
 
 ## 5. 数据流
 
-- **打开面板**：mount → `GET model-choices` → 渲染 key 列表（计费/余额/状态）+ 模型候选；当前分配值从 `state.modelConfig` 读。
-- **换 key**：点选 → 个人 key 先 `POST personal-keys/:id/key` 取明文 → `applyCuberouterModelConfig`（只改 `apiKey`）→ 写选择记录。
-- **改分配**：改下拉 → `applyCuberouterModelConfig`（preset upsert/删除 + 分配指向）。
+- **打开面板**：mount → `GET model-choices` → 渲染 key 列表（计费/余额/状态）+ 模型候选；草稿由 `readCuberouterSelection(目录, apiBase)` 初始化。
+- **换 key**：点选 → 个人 key 先 `POST personal-keys/:id/key` 取明文 → `applyCuberouterSelection`（只改 `apiKey`）→ 保存成功后才写选择记录。
+- **改分配**：改下拉 → `applyCuberouterSelection`（preset upsert/删除 + 分配指向）→ 保存成功后按新目录重播草稿。
 - **登录**：见 4.5。
 - **余额刷新**：面板挂载时拉一次；「刷新」按钮重拉（余额只随使用变化，保存动作不触发重拉）。
 
@@ -190,7 +188,7 @@ v1/v2 已落地的现状：cuberouter 登录成功后，桌面端把一把 key �
 1. 后端 client 方法 + 单测。
 2. `readModelChoices` + 契约 + 路由 + 路由测试。
 3. 桌面组件拆分（纯重构，既有测试保持绿）。
-4. `CuberouterModelSection`（key 卡 / 分配 / 高级折叠）+ `applyCuberouterModelConfig` + 交互测试。
+4. `CuberouterModelSection`（key 卡 / 分配 / 高级折叠）+ `applyCuberouterSelection` / `saveCatalogMutation` + 交互测试。
 5. 选择记录 + 登录复核 + `auth-flow` 用例。
 6. 设置页接线 + 真机手测（WSL 起客户端或 Windows 包）。
 
