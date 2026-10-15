@@ -531,11 +531,11 @@ git commit -m "refactor: rename MEMMY_* environment variables to CUBY_*"
 - [ ] **Step 1: 替换**
 
 ```bash
-grep -rl 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
+grep -rli 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -vE '^(\./)?docs/' | grep -viE 'readme' \
   > /tmp/cuby-header-files.txt
 wc -l /tmp/cuby-header-files.txt   # 实测基线：78 个文件；其中不应出现 README/docs
-xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/g'
+xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/gi'
 ```
 
 > 排除用 `-viE 'readme'`（大小写不敏感），不要用锚定的 `^(\./)?README`——后者匹配不到 `App/backend/README.md` 这类嵌套 README（实测会混进来）。
@@ -1288,6 +1288,7 @@ Expected: PASS，**除三个既有的环境失败**（改名前就已失败，�
 1. `Memory/tests/agent-source-runtime.test.ts > owns startup and recurring scans in the Memory process`（`automatic scan did not complete`）
 2. `App/memmy-agent/tests/entrypoints/frontend-bridge/mcp-presets-api.test.ts > detects bundled OCU with an empty PATH and preserves the portable config`
 3. `App/memmy-agent/tests/core/agent-runtime/mcp-connection.test.ts > registers bundled OCU tools without looking up the launcher on PATH`
+4. `App/memmy-agent/tests/smoke/memory-layer-smoke-plan.test.ts`（`episode_idle_close` vs `trace_summary`，确定性失败，Task 5 实现者已用 stash 验证与改动无关）
 
 这三个文件都不被本计划任何 Task 触碰。不要为它们改动代码。
 
