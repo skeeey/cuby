@@ -490,18 +490,36 @@ git commit -m "feat: install the Cuby skill, hooks, PATH markers and CLI symlink
 
 ```ts
 import { describe, expect, it } from "vitest";
+import { readFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { PACKAGED_RENDERER_DEFAULT_PORT } from "../src/main/window-mode.js";
+
+const MEMMY_ERA_PORTS = /(\b18960\b|\b18970\b|\b18980\b|\b18990\b|\b19100\b)/;
+
+function sourceFiles(root: string, out: string[] = []): string[] {
+  for (const entry of readdirSync(root)) {
+    if (entry === "node_modules" || entry === "dist") continue;
+    const full = join(root, entry);
+    if (statSync(full).isDirectory()) sourceFiles(full, out);
+    else if (/\.(ts|tsx)$/.test(entry)) out.push(full);
+  }
+  return out;
+}
 
 describe("fixed ports never revert to the Memmy era", () => {
   it("packaged renderer uses 29100", () => {
     expect(PACKAGED_RENDERER_DEFAULT_PORT).toBe(29100);
   });
 
-  it("no source file still hardcodes a 1896x/1897x/1898x/1899x/191xx port", () => {
-    // 见 Step 4 的 grep 验证；此用例断言常量侧
+  it("no desktop source file still binds a Memmy-era fixed port", () => {
+    const offenders = sourceFiles(join(import.meta.dirname, "..", "src"))
+      .filter((file) => MEMMY_ERA_PORTS.test(readFileSync(file, "utf8")));
+    expect(offenders).toEqual([]);
   });
 });
 ```
+
+> 其余四个端口分属 `App/memmy-agent`、`App/backend`、`Memory` 各包，跨包 import 脆弱，由 Step 4 的全仓 grep 验证覆盖。
 
 - [ ] **Step 2: 运行确认失败**
 
@@ -674,7 +692,7 @@ git mv App/frontend/desktop/src/components/mascot/memmy.tsx App/frontend/desktop
 
 文件内：`export type MemmyPose` → `CubyPose`、`interface MemmyProps` → `CubyProps`、`function Memmy(` → `function Cuby(`、`preloadMemmyAsset` → `preloadCubyAsset`、`MemmyAssetPreloadOptions` → `CubyAssetPreloadOptions`、`const poseToAsset` → **`export const poseToAsset`**（Task 11 的测试要 import 它），`poseToAsset` 的右侧资源引用改为 `cuby-<pose>.png`（`neutral: cubyNeutralUrl` 等），`memmyRiceUrl` 之类的 import 名与路径一并改为 `cuby-neutral.png` 等。
 
-> 本步只改引用名与路径；5 个预留姿态的资源指向在 Task 11 处理。
+**14 个必做姿态**指向各自的 `cuby-<pose>.png`；**5 个预留姿态**（`work`/`point`/`box`/`wrench`/`peek`）删除各自的 import，`poseToAsset` 里一律指向 `cubyNeutralUrl`（Task 8 不产出这 5 张图，若照旧指向会留下指向不存在文件的 import，构建会坏）。这一步之后树必须能 typecheck 通过。
 
 - [ ] **Step 4: 运行类型检查与前端测试**
 
@@ -791,7 +809,7 @@ describe("mascot pose assets", () => {
 - [ ] **Step 2: 运行确认失败**
 
 Run: `npm run test -w @memmy/frontend-desktop -- src/components/mascot/tests/pose-assets.test.ts`
-Expected: FAIL —— 预留姿态当前指向各自的旧素材。
+Expected: FAIL —— `ships no Memmy-era artwork` 用例失败（旧素材还在）。姿态映射与预留位回落已在 Task 9 落地，这两个用例此时应当是绿的。
 
 - [ ] **Step 3: 改映射、删旧素材**
 
