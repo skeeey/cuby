@@ -181,6 +181,54 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
         throw cuberouterError("rejected", "cuberouter 未返回个人密钥的明文");
       }
       return key;
+    },
+
+    async getSelf(accessToken) {
+      const data = await request<Record<string, unknown>>(fetchImpl, baseUrl, options.timeoutMs, "/api/user/self", {
+        method: "GET",
+        accessToken
+      });
+      // Missing or unusable fields read as 0: the panel shows "剩余 0" rather than throwing on a
+      // balance that only decorates the key row.
+      return { quota: readCount(data.quota) ?? 0, usedQuota: readCount(data.used_quota) ?? 0 };
+    },
+
+    async getUserModels(accessToken) {
+      const data = await request<unknown>(fetchImpl, baseUrl, options.timeoutMs, "/api/user/models", {
+        method: "GET",
+        accessToken
+      });
+      // A flat array of names, already deduped across the member's groups by the instance.
+      return Array.isArray(data)
+        ? data.flatMap((item) => (typeof item === "string" && item.trim() ? [item.trim()] : []))
+        : [];
+    },
+
+    async listPersonalTokens(accessToken) {
+      const query = new URLSearchParams({ page_size: "100" }).toString();
+      const response = await request<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        `/api/token/?${query}`,
+        { method: "GET", accessToken }
+      );
+      return toPersonalTokens(Array.isArray(response.items) ? response.items : []);
+    },
+
+    async listMyOrganizationTokens(accessToken, organizationId, responsibleUserId) {
+      const query = new URLSearchParams({
+        responsible_user_id: String(responsibleUserId),
+        page_size: "100"
+      }).toString();
+      const response = await request<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        `/api/organizations/${encodeURIComponent(organizationId)}/tokens?${query}`,
+        { method: "GET", accessToken, headers: organizationContextHeaders(organizationId) }
+      );
+      return toOrganizationTokens(Array.isArray(response.items) ? response.items : []);
     }
   };
 }
@@ -266,7 +314,15 @@ function toOrganizations(items: unknown[]): CuberouterOrganization[] {
     const row = asRecord(item);
     const id = readString(row.id);
     const name = readString(row.name);
-    return id && name ? [{ id, name }] : [];
+    if (!id || !name) return [];
+    const quota = readCount(row.quota);
+    const usedQuota = readCount(row.used_quota);
+    return [{
+      id,
+      name,
+      ...(quota === null ? {} : { quota }),
+      ...(usedQuota === null ? {} : { usedQuota })
+    }];
   });
 }
 
@@ -293,7 +349,16 @@ function toOrganizationTokens(items: unknown[]): CuberouterOrganizationToken[] {
     const id = readCount(row.id);
     const name = readString(row.name);
     const key = readString(row.key);
-    return id === null || !name || !key ? [] : [{ id, name, key }];
+    if (id === null || !name || !key) return [];
+    const status = readCount(row.status);
+    const responsibleUserId = readCount(row.responsible_user_id);
+    return [{
+      id,
+      name,
+      key,
+      ...(status === null ? {} : { status }),
+      ...(responsibleUserId === null ? {} : { responsibleUserId })
+    }];
   });
 }
 

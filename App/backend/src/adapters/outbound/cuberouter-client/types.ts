@@ -31,6 +31,17 @@ export interface CuberouterRegistrationRequirements {
 export interface CuberouterOrganization {
   id: string;
   name: string;
+  /** The organization's pool (`quota`) and how much of it is spent, when the instance reports them. */
+  quota?: number;
+  usedQuota?: number;
+}
+
+/** The signed-in member's own quota, as `GET /api/user/self` reports it. */
+export interface CuberouterSelfSummary {
+  /** Remaining quota, the number the instance spends from. */
+  quota: number;
+  /** Quota already consumed; display only. */
+  usedQuota: number;
 }
 
 /** One organization token, with the plaintext key the instance returns to permitted members. */
@@ -38,6 +49,10 @@ export interface CuberouterOrganizationToken {
   id: number;
   name: string;
   key: string;
+  /** The instance's token state (1 enabled, 2 disabled, 3 expired, 4 exhausted). */
+  status?: number;
+  /** The member this key is held by; the picker keeps only the caller's own rows. */
+  responsibleUserId?: number;
 }
 
 /** One of the member's own (personal) tokens. The list masks the key, so only id/name are usable. */
@@ -103,4 +118,20 @@ export interface CuberouterClient {
   createPersonalToken(accessToken: string, input: { name: string }): Promise<void>;
   /** Reads one personal token's plaintext key, which the list endpoint never returns. */
   getPersonalTokenKey(accessToken: string, tokenId: number): Promise<string>;
+  /** The member's own quota, for the model page's balance annotation. */
+  getSelf(accessToken: string): Promise<CuberouterSelfSummary>;
+  /** The model names the member's groups may call. No capability metadata: names only. */
+  getUserModels(accessToken: string): Promise<string[]>;
+  /** Every personal token of the member (masked), newest first, one page. */
+  listPersonalTokens(accessToken: string): Promise<CuberouterPersonalToken[]>;
+  /**
+   * The organization tokens held by one member — the picker's "my keys". A plain member is
+   * scoped to their own tokens by the instance anyway; naming the member makes a manager's call
+   * mean the same thing instead of listing the whole organization.
+   */
+  listMyOrganizationTokens(
+    accessToken: string,
+    organizationId: string,
+    responsibleUserId: number
+  ): Promise<CuberouterOrganizationToken[]>;
 }
