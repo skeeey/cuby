@@ -105,8 +105,7 @@ describe("provisionCuberouterKey", () => {
     await provisionCuberouterKey({
       configClient: client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
-      defaultModel: "deepseek-flash",
-      keepSelection: false
+      defaultModel: "deepseek-flash"
     });
 
     expect(saved).toHaveLength(1);
@@ -135,8 +134,7 @@ describe("provisionCuberouterKey", () => {
     await provisionCuberouterKey({
       configClient: client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
-      defaultModel: "deepseek-flash",
-      keepSelection: false
+      defaultModel: "deepseek-flash"
     });
 
     expect(client.saveModelCatalog).toHaveBeenCalledTimes(2);
@@ -148,8 +146,7 @@ describe("provisionCuberouterKey", () => {
     const input = {
       configClient: server.client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions" as const, apiKey: "sk-plain" },
-      defaultModel: "deepseek-flash",
-      keepSelection: false
+      defaultModel: "deepseek-flash"
     };
 
     await provisionCuberouterKey(input);
@@ -188,8 +185,7 @@ describe("provisionCuberouterKey", () => {
     await provisionCuberouterKey({
       configClient: server.client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-new" },
-      defaultModel: "deepseek-flash",
-      keepSelection: true
+      defaultModel: "deepseek-flash"
     });
 
     expect(server.saved).toHaveLength(1);
@@ -202,6 +198,63 @@ describe("provisionCuberouterKey", () => {
     expect(byok.memorySummary).toBe(provider.models[0].presetId);
     expect(byok.memoryEvolution).toBe(provider.models[0].presetId);
     expect(JSON.stringify(server.saved[0])).not.toContain("deepseek-flash");
+  });
+
+  it("keeps a customized selection on the login's provision path, changing only the key", async () => {
+    // A machine the user customized but never clicked a key row on has no selection record, so
+    // the login decides "provision". That branch must still keep the catalog's models: only the
+    // key changes, nothing is seeded over the three slots and no preset is pruned.
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: "http://127.0.0.1:3000/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-old",
+      selection: {
+        agent: { models: ["gpt-oss-120b", "deepseek-v4.1-flash"], default: "gpt-oss-120b" },
+        memorySummary: "deepseek-v4.1-flash",
+        memoryEvolution: "gpt-oss-120b"
+      }
+    });
+    const server = configClientServer(seeded.catalog);
+
+    const decision = await resolveCuberouterLoginKey({
+      apiBase: "http://127.0.0.1:3000/v1",
+      catalog: seeded.catalog,
+      record: null,
+      getModelChoices: async () => ({
+        account: { username: "alice@a.com", organizationName: null },
+        apiBase: "http://127.0.0.1:3000/v1",
+        keys: [],
+        models: ["gpt-oss-120b", "deepseek-v4.1-flash"]
+      }),
+      revealPersonalKey: async () => ({ key: "sk-revealed" })
+    });
+    expect(decision).toEqual({ action: "provision" });
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: {
+        apiBase: "http://127.0.0.1:3000/v1",
+        protocol: "openai-chat-completions",
+        apiKey: decision.action === "provision" ? "sk-fresh" : "unreachable"
+      },
+      defaultModel: "deepseek-flash"
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const written = server.saved[0];
+    const provider = written.providers[0];
+    expect(provider.endpoints[0].apiKey).toBe("sk-fresh");
+    const presetIdOf = (model: string) =>
+      provider.models.find((preset: any) => preset.model === model).presetId;
+    expect(provider.models.map((preset: any) => preset.model).sort())
+      .toEqual(["deepseek-v4.1-flash", "gpt-oss-120b"]);
+    const byok = written.modelAssignments.byok;
+    expect(byok.agent.candidates).toEqual([presetIdOf("gpt-oss-120b"), presetIdOf("deepseek-v4.1-flash")]);
+    expect(byok.agent.default).toBe(presetIdOf("gpt-oss-120b"));
+    expect(byok.memorySummary).toBe(presetIdOf("deepseek-v4.1-flash"));
+    expect(byok.memoryEvolution).toBe(presetIdOf("gpt-oss-120b"));
+    // The build's default never lands in a slot the user already filled.
+    expect(JSON.stringify(written)).not.toContain("deepseek-flash");
   });
 });
 

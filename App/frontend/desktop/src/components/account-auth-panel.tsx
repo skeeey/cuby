@@ -220,9 +220,10 @@ export function AccountAuthPanel() {
 
       let saved: ModelProviderConfig;
       if (decision.action === "keep") {
-        // The instance could not be asked and a cuberouter connection already exists: read it and
-        // write nothing.
-        saved = await clients.config.getModelConfig();
+        // The instance could not be asked and a cuberouter connection already exists: the read
+        // taken above is fresh enough for the self-check, and a transient outage must not
+        // overwrite the user's key — write nothing.
+        saved = stored;
       } else {
         saved = await provisionCuberouterKey({
           configClient: clients.config,
@@ -231,8 +232,7 @@ export function AccountAuthPanel() {
             protocol: "openai-chat-completions",
             apiKey: decision.action === "reuse" ? decision.apiKey : result.provisioning.apiKey
           },
-          defaultModel: result.provisioning.model,
-          keepSelection: decision.action === "reuse"
+          defaultModel: result.provisioning.model
         });
         const storage = cuberouterKeySelectionStorage();
         if (decision.action === "reuse") {

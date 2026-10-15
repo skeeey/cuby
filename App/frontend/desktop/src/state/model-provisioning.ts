@@ -58,20 +58,20 @@ function connectionHasCredential(catalog: ModelConfigView, apiBase: string): boo
 }
 
 /**
- * Writes one cuberouter key (and, when there is no selection yet, the build's default model).
- * `keepSelection: true` is the re-login path: the catalog's current model selection stays.
+ * Writes one cuberouter key. The catalog's current model selection always stays when it has one:
+ * a login — provisioning included — must never reset the user's choices. Only a line with no
+ * selection yet is seeded with the build's default model in all three slots.
  */
 export async function provisionCuberouterKey(input: {
   configClient: ConfigClient;
   endpoint: { apiBase: string; protocol: ModelEndpointProtocol; apiKey: string };
   defaultModel: string;
-  keepSelection: boolean;
 }): Promise<ModelProviderConfig> {
   return saveCatalogMutation({
     configClient: input.configClient,
     mutate: (workspace) => {
       const current = readCuberouterSelection(workspace.catalog, input.endpoint.apiBase);
-      const selection = input.keepSelection && current.agent.models.length > 0
+      const selection = current.agent.models.length > 0
         ? current
         : {
             agent: { models: [input.defaultModel], default: input.defaultModel },
