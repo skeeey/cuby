@@ -24,7 +24,9 @@
 - **绝不动（历史记录）**：`.github/release-notes/*.md` 是**已发布版本的记录**，永不改写（`v1.1.2.md` 里出现 `MEMMY_*` 是当时的事实）。排除模式加 `^\./\.github/release-notes/`。
 - **`.github/workflows/linux-cli-installer.yml` 也排除**：它把 `MEMMY_INSTALL_ROOT`、`MEMMY_BIN_DIR`、`MEMMY_VERSION`、`MEMMY_RELEASE_BASE_URL` 直接传给不动的 `scripts/install.sh`（`install.sh:7-8` 用 `${MEMMY_INSTALL_ROOT:-…}` 读）。改名会让脚本忽略这些路径、回落到默认值。与 Linux CLI 安装面同一轮延后。
 - **清理工具要"加"不要"换"**：`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 的职责本就包括清掉**旧安装**的数据，整批改名会让它们再也清不了老 Memmy。这几个文件**排除在机械扫描之外**，由 Task 15 Step 3 单独处理成"同时覆盖 Cuby 与 Memmy"。
-- **技能内容要跟着改**：`App/memmy-agent/src/skills/**/SKILL.md`、`Memory/src/cli/skills/**` 不是"文档"，是**随产品分发、由 agent 在运行时读取的内容**。里面引用的 `MEMMY_AGENT_TMUX_SOCKET_DIR` 等变量必须跟着改；`App/memmy-agent/.env.example` 同理（它是开发配置模板，不是文档）。
+- **`.memmy` 只改"路径形态"**：`\.memmy\b` 这个朴素模式会误伤一大类非路径用法——`window.memmy`（预加载桥全局，~130 处）、`test.memmy.cn`（域名）、`avatar.memmy.default`（服务端资产键）、`modelPresets.memmy-account`（旧迁移从用户 config.yaml 读的键）、`com.memtensor.memmy-memory`（LaunchAgent 标签）、`.memmy-notification`（CSS 类）、`apiKey.provider.memmy`（i18n 键）。Task 3 的替换脚本 `/tmp/cuby-sweep.pl` 用"前置路径类字符 + 后置路径类字符/行尾"的规则把它们全部排除，并显式列出五个派生目录名。**这些非路径用法一律不改**：桥与键属内部标识符，域名与标签见各自的条目。
+- **`.css` 文件不在 Task 3 的范围内**：CSS 类 `memmy-*` → `cuby-*` 由 Task 10 统一处理，Task 3 的扫描清单也不含 `.css`。
+- **技能内容要跟着改**：`App/memmy-agent/src/skills/**/SKILL.md`、`Memory/src/cli/skills/**` 不是"文档"，是**随产品分发、由 agent 在运行时读取的内容**。里面引用的 `MEMMY_AGENT_TMUX_SOCKET_DIR` 等变量必须跟着改；`App/memmy-agent/.env.example` 同理（开发配置模板，不是文档）。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
 - **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
 
@@ -370,24 +372,49 @@ Expected: 清单里**不应**出现 `docs/`、`README*`、`scripts/install.sh`�
 
 - [ ] **Step 4: 精确替换并复核 diff**
 
+**先把替换脚本写成文件**（不要用 brief 里那条 `s/\.memmy\b/.cuby/g` —— 它把 `window.memmy`、域名、资产键一起改掉）：
+
 ```bash
-xargs -a /tmp/cuby-home-files.txt perl -pi -e 's/\.memmy\b/.cuby/g; s/\.memmy-/.cuby-/g'
+cat > /tmp/cuby-sweep.pl <<'PERL'
+s{\.memmy-knowledge}{.cuby-knowledge}g;
+s{\.memmy-upgrade-backup}{.cuby-upgrade-backup}g;
+s{\.memmy-migration-failed}{.cuby-migration-failed}g;
+s{\.memmy-bridge-source-hash}{.cuby-bridge-source-hash}g;
+s{\.memmy-agent(?![A-Za-z])}{.cuby-agent}g;
+s!(^|[/\\"'\x60~=(,\s])\.memmy(?=[/\\"'\x60)}.,\s]|$)!$1.cuby!gm;
+PERL
+xargs -a /tmp/cuby-home-files.txt perl -pi /tmp/cuby-sweep.pl
 git diff --stat
-git diff | grep '^[-+].*cuby' | grep -v 'cuby-bob\|cuby-account' | head -40
 ```
 
-Expected: `.memmy` → `.cuby`（`\.memmy\b` 不会命中 `.memmyMemory` / `.memmyConfigPath` 这类驼峰标识符，它们前后都不是词边界）。逐条扫一遍 diff 确认没有把标识符改名。
+最后一条规则只在 `.memmy` **前置是路径类字符**（`/ \ " ' \` ~ = ( ,` 或空白或行首）**且后置是路径类字符或行尾**时才替换。实测行为：
+
+| 会改 ✓ | 不会改 ✓ |
+| :--- | :--- |
+| `join(homedir(), ".memmy", "config.yaml")` | `window.memmy?.setPetWindow(true)`（预加载桥全局，属内部标识符） |
+| `"~/.memmy/workspace"` | `delete window.memmy;` |
+| `return ".memmy";`（`desktop-edition.ts:39`） | `https://test.memmy.cn/api`（域名不改） |
+| `// ~/.memmy/computer-history` | `assetKey: "avatar.memmy.default"`（服务端资产键） |
+| `$HOME/.memmy"` | `modelPresets.memmy-account`（旧迁移从用户 config.yaml 读的键） |
+| `".memmy-knowledge"` 等五个派生目录 | `com.memtensor.memmy-memory`（LaunchAgent 标签，归 Task 6） |
+| | `".memmy-notification"`（CSS 类，归 Task 10）、`apiKey.provider.memmy`（i18n 键，归 Task 13） |
+
+`window.memmy` 这座桥**不改**：它由 `App/shell/desktop/src/preload/preload.cts:313` 的 `exposeInMainWorld("memmy", …)` 定义、`global.d.ts:28` 声明，属于内部标识符（与 `memmyConfigPath`、`MemmyAgentClient` 同类），用户不可见。改它要连 preload、全局声明、33 个调用点与各测试里的字符串桩一起动，收益为零。
 
 - [ ] **Step 5: 全仓验证没有漏网**
 
+**注意**：改完之后仓里**仍然会合法存在** `.memmy`（`window.memmy` 桥、域名、`avatar.memmy.default`、`modelPresets.memmy-account`、LaunchAgent 标签、CSS 类、i18n 键）。所以不能用 `grep '\.memmy'` 判断，那会把它们全报成漏网。用**与替换脚本相同的规则**复扫：
+
 ```bash
-grep -rn '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
+grep -rl 'memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
   --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
   --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)' \
+  > /tmp/cuby-verify.txt
+perl -ne 'print "$ARGV:$.:$_" if m{(^|[/\\"'\x60~=(,\s])\.memmy(?=[/\\"'\x60)}.,\s]|$)}' $(cat /tmp/cuby-verify.txt) | head
 ```
 
-Expected: 无输出。
+Expected: **无输出**（路径形态的 `.memmy` 一个都不剩）。第二条若有输出，就是替换规则漏掉的形式；逐条判断后补进 `/tmp/cuby-sweep.pl` 再跑一次。
 
 - [ ] **Step 6: 跑测试**
 
@@ -533,6 +560,7 @@ git commit -m "refactor: rename the x-memmy-* protocol headers to x-cuby-*"
 - Modify: `App/shell/desktop/src/main/main.ts:570-571,601,611-623`
 - Modify: `App/shell/desktop/src/main/windows-cli-path.ts:54-55`
 - Modify: `App/backend/src/infrastructure/cli-binary/index.ts:15`
+- Modify: `Memory/src/cli/runtime-installer.ts:247,697,702`（macOS LaunchAgent 标签 `com.memtensor.memmy-memory` → `com.memtensor.cuby-memory`）
 - Modify: `Memory/src/cli/skills/memmy-memory/SKILL.md`（`name:` 字段与正文里的命令名）
 - Rename: `Memory/src/cli/skills/memmy-memory/` → `Memory/src/cli/skills/cuby-memory/`
 - Test: `App/backend/src/adapters/outbound/skill-writer/claude-code/tests/target.test.ts`
