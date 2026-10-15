@@ -773,6 +773,44 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain('-LegacyRuntimeHomePath $\\"$PROFILE\\.memmy$\\"');
   });
 
+  it("keeps the recovery's legacy home on Memmy and agrees with the relay about it", () => {
+    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
+    const recoverySource = readFileSync(winUpgradeRecoveryScriptPath, "utf8");
+
+    // The recovery's legacy home is the old install's home: it is handed to the migration as
+    // -LegacyRuntimeHomePath and compared against the field the relay persists.
+    const recoveryLegacyDefaultStart = recoverySource.indexOf(
+      "$expectedLegacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) {"
+    );
+    expect(recoveryLegacyDefaultStart).toBeGreaterThan(-1);
+    const recoveryLegacyDefault = recoverySource.slice(
+      recoveryLegacyDefaultStart,
+      recoverySource.indexOf("\n$", recoveryLegacyDefaultStart)
+    );
+    expect(recoveryLegacyDefault).toContain("Join-Path $env:USERPROFILE '.memmy'");
+    expect(recoveryLegacyDefault).not.toContain(".cuby");
+    expect(recoverySource).toContain("'-LegacyRuntimeHomePath', $expectedLegacyRuntimeHomePath,");
+
+    // The cross-file contract behind the comparison below: both defaults must name the same path,
+    // because the recovery asserts the relay's persisted legacyRuntimeHomePath against its own.
+    expect(relaySource).toContain(
+      "$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }"
+    );
+    expect(recoverySource).toContain(
+      "Assert-CubySamePath -Actual ([string]$state.legacyRuntimeHomePath) -Expected $expectedLegacyRuntimeHomePath"
+    );
+
+    // Every C:\-drive target branch resolves .cuby itself, never through the legacy variable.
+    const cDriveBranches = [
+      ...recoverySource.matchAll(/'C:\\', \[System\.StringComparison\]::OrdinalIgnoreCase\)\) \{\r?\n([\s\S]*?)\n\s*\}/g)
+    ].map((match) => match[1]);
+    expect(cDriveBranches).toHaveLength(3);
+    for (const branch of cDriveBranches) {
+      expect(branch).toContain(".cuby");
+      expect(branch).not.toContain("$expectedLegacyRuntimeHomePath");
+    }
+  });
+
   it("bridges electron-builder shortcut retention across relayed install-directory changes", () => {
     const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
     const installSectionSource = readFileSync(electronBuilderInstallSectionPath, "utf8");

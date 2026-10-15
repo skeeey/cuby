@@ -27,13 +27,13 @@ $expectedTargetUserDataPath = [System.IO.Path]::GetFullPath([string]$expectedTar
 $expectedLegacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) {
   [System.IO.Path]::GetFullPath($LegacyRuntimeHomePathOverride).TrimEnd('\')
 } else {
-  [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.cuby')).TrimEnd('\')
+  [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.memmy')).TrimEnd('\')
 }
 $installDriveRoot = [System.IO.Path]::GetPathRoot($normalizedInstallDir)
 $expectedTargetRuntimeHomePath = if ($TargetRuntimeHomePathOverride) {
   [System.IO.Path]::GetFullPath($TargetRuntimeHomePathOverride).TrimEnd('\')
 } elseif ([string]::Equals($installDriveRoot, 'C:\', [System.StringComparison]::OrdinalIgnoreCase)) {
-  $expectedLegacyRuntimeHomePath
+  [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.cuby')).TrimEnd('\')
 } else {
   [System.IO.Path]::GetFullPath((Join-Path $installDriveRoot 'CubyData\.cuby')).TrimEnd('\')
 }
@@ -332,7 +332,7 @@ try {
     $directExpectedRuntimeHomePath = if ($TargetRuntimeHomePathOverride) {
       $expectedTargetRuntimeHomePath
     } elseif ([string]::Equals($directInstallRoot, 'C:\', [System.StringComparison]::OrdinalIgnoreCase)) {
-      $expectedLegacyRuntimeHomePath
+      Resolve-CubyNormalizedPath (Join-Path $env:USERPROFILE '.cuby')
     } else {
       Resolve-CubyNormalizedPath (Join-Path $directInstallRoot 'CubyData\.cuby')
     }
@@ -374,7 +374,7 @@ try {
     if (-not $TargetRuntimeHomePathOverride) {
       $targetInstallRoot = [System.IO.Path]::GetPathRoot($stateTargetInstallDir)
       $expectedTargetRuntimeHomePath = if ([string]::Equals($targetInstallRoot, 'C:\', [System.StringComparison]::OrdinalIgnoreCase)) {
-        $expectedLegacyRuntimeHomePath
+        Resolve-CubyNormalizedPath (Join-Path $env:USERPROFILE '.cuby')
       } else {
         Resolve-CubyNormalizedPath (Join-Path $targetInstallRoot 'CubyData\.cuby')
       }
