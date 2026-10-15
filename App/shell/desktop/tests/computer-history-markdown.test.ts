@@ -4,7 +4,7 @@ import { resolveComputerHistoryMarkdownPath } from "../src/main/computer-history
 
 describe("Computer History Markdown path", () => {
   const home = path.resolve("/Users/tester");
-  const memmyHome = path.join(home, ".memmy-test");
+  const memmyHome = path.join(home, ".cuby-test");
   const histories = path.join(memmyHome, "computer-history", "histories");
 
   it("accepts a direct Markdown file in the configured history directory", () => {
@@ -14,7 +14,7 @@ describe("Computer History Markdown path", () => {
 
   it("expands a home-relative Memmy directory", () => {
     const file = path.join(histories, "entry.md");
-    expect(resolveComputerHistoryMarkdownPath(file, { MEMMY_HOME: "~/.memmy-test" }, home)).toBe(file);
+    expect(resolveComputerHistoryMarkdownPath(file, { MEMMY_HOME: "~/.cuby-test" }, home)).toBe(file);
   });
 
   it.each([

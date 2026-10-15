@@ -281,7 +281,7 @@ describe("CLI command helpers", () => {
     const workspace = path.join(root, "workspace");
     const statePath = path.join(
       workspace,
-      ".memmy-migrations",
+      ".cuby-migrations",
       "agent-workspace.json",
     );
     fs.mkdirSync(path.dirname(statePath), { recursive: true });
@@ -744,7 +744,7 @@ describe("CLI command helpers", () => {
     });
     const migrationStatePath = path.join(
       workspace,
-      ".memmy-migrations",
+      ".cuby-migrations",
       "agent-workspace.json",
     );
     expect(JSON.parse(fs.readFileSync(migrationStatePath, "utf8")).applied).toEqual(expect.arrayContaining([
@@ -832,7 +832,7 @@ describe("CLI command helpers", () => {
     const workspace = path.join(root, "workspace");
     const migrationStatePath = path.join(
       workspace,
-      ".memmy-migrations",
+      ".cuby-migrations",
       "agent-workspace.json",
     );
     fs.mkdirSync(path.dirname(migrationStatePath), { recursive: true });
