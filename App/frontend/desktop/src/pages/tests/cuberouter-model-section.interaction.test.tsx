@@ -6,6 +6,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/i18n-provider.js";
+import { CUBEROUTER_KEY_SELECTION_STORAGE_KEY } from "../../state/cuberouter-key-selection.js";
 import { createModelWorkspace } from "../../state/model-workspace.js";
 import { CuberouterModelSection } from "../cuberouter-model-section.js";
 
@@ -78,6 +79,25 @@ describe("cuberouter model section", () => {
     const written = configClient.saveModelCatalog.mock.calls[0]![0];
     expect(JSON.stringify(written)).toContain("sk-personal");
     expect(radio("my-own-key").checked).toBe(true);
+    expect(window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toContain("my-own-key");
+  });
+
+  it("shows the save error and leaves the selection record unwritten when the save fails", async () => {
+    await renderSection({
+      choices: async () => ({
+        ...CHOICES,
+        keys: [{ ...CHOICES.keys[1]!, status: 1, usable: true }]
+      }),
+      save: async () => {
+        throw Object.assign(new Error("boom"), { code: "internal" });
+      }
+    });
+
+    await vi.waitFor(() => expect(radio("my-own-key").disabled).toBe(false));
+    await act(async () => radio("my-own-key").click());
+
+    expect(container.textContent).toContain("模型配置保存失败，请重试；如仍失败，请重启应用后再试。");
+    expect(window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toBeNull();
   });
 
   it("shows a retry state when the choices request fails", async () => {

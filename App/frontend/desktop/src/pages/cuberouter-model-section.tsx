@@ -66,8 +66,8 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     : null;
 
   /** Saves one mutation built from the current draft, refreshing the workspace on success. */
-  async function commit(mutate: (current: ModelWorkspace, apiBase: string) => ModelWorkspace): Promise<void> {
-    if (!props.configClient || !choices) return;
+  async function commit(mutate: (current: ModelWorkspace, apiBase: string) => ModelWorkspace): Promise<boolean> {
+    if (!props.configClient || !choices) return false;
     setSavePending(true);
     setSaveError(null);
     try {
@@ -77,8 +77,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       });
       setWorkspace(createModelWorkspace(saved));
       props.onConfigSaved?.(saved);
+      return true;
     } catch {
       setSaveError(t("settings.modelWorkspace.saveFailed"));
+      return false;
     } finally {
       setSavePending(false);
     }
@@ -91,16 +93,19 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setPendingKeyId(id);
     try {
       const plaintext = key.secret ?? (await props.accountClient!.revealPersonalKey(key.id)).key;
-      await commit((current, apiBase) => applyCuberouterSelection(current, {
+      const committed = await commit((current, apiBase) => applyCuberouterSelection(current, {
         apiBase,
         protocol: PROTOCOL,
         apiKey: plaintext,
         selection
       }));
-      writeCuberouterKeySelection(
-        { username: props.username!, scope: key.scope, id: key.id, name: key.name },
-        cuberouterKeySelectionStorage()
-      );
+      // The record names the key the catalog actually holds: a failed save must not claim it.
+      if (committed) {
+        writeCuberouterKeySelection(
+          { username: props.username!, scope: key.scope, id: key.id, name: key.name },
+          cuberouterKeySelectionStorage()
+        );
+      }
     } catch {
       setSaveError(t("settings.modelWorkspace.saveFailed"));
     } finally {
