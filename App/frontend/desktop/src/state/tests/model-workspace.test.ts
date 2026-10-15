@@ -1204,4 +1204,88 @@ describe("cuberouter selection", () => {
       assignment.imageGeneration
     ]).not.toContain(dropped.presetId);
   });
+
+  it("adds its own preset when another connection already has a model of the same name", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://personal.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-personal",
+      model: "x",
+      capabilities: ["agent"]
+    });
+
+    const next = applyCuberouterSelection(personal.workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["x"] }, memorySummary: "x", memoryEvolution: "" }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    const personalPreset = provider?.models.find((preset) => preset.presetId === personal.presetId);
+    expect(personalPreset?.endpointId).toBe(personal.endpointId);
+    expect([...(personalPreset?.capabilities ?? [])].sort()).toEqual(["agent"]);
+    const cuberouterPreset = provider?.models.find((preset) => (
+      preset.model === "x" && preset.endpointId !== personal.endpointId
+    ));
+    expect(provider?.models).toHaveLength(2);
+    expect(cuberouterPreset?.model).toBe("x");
+    expect(cuberouterPreset?.presetId).not.toBe(personal.presetId);
+    expect(cuberouterPreset?.capabilities).toEqual(["agent", "memory_summary"]);
+  });
+
+  it("keeps another connection's agent candidate enrolled", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://personal.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-personal",
+      model: "assistant",
+      capabilities: ["agent"]
+    });
+    const workspace = setTaskModelCandidates(personal.workspace, "byok", [personal.presetId]);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"], default: "b" }, memorySummary: "", memoryEvolution: "" }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    const selectionIds = (provider?.models ?? [])
+      .filter((preset) => preset.endpointId !== personal.endpointId)
+      .map((preset) => preset.presetId);
+    const candidates = next.catalog.modelAssignments.byok.agent.candidates;
+    expect(selectionIds).toHaveLength(2);
+    expect(candidates).toContain(personal.presetId);
+    expect(candidates).toEqual(expect.arrayContaining(selectionIds));
+    expect(next.catalog.modelAssignments.byok.agent.default)
+      .toBe(provider?.models.find((preset) => preset.model === "b")?.presetId);
+  });
+
+  it("reads the selection from the openai provider when another byok provider is listed first", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "anthropic",
+      endpoint: "https://api.anthropic.com/v1",
+      protocol: "anthropic-messages",
+      apiKey: "sk-anthropic",
+      model: "claude-sonnet",
+      capabilities: ["agent"]
+    });
+    const workspace = applyCuberouterSelection(personal.workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+    });
+
+    expect(workspace.catalog.providers.map((provider) => provider.provider)).toEqual(["anthropic", "openai"]);
+    expect(readCuberouterSelection(workspace.catalog, API_BASE)).toEqual({
+      agent: { models: ["a"], default: "a" },
+      memorySummary: "a",
+      memoryEvolution: "a"
+    });
+  });
 });
