@@ -403,14 +403,20 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
   ));
 
   // Every preset still in the catalog: the endpoint prune above removed only this endpoint's stale
-  // presets, so these ids are exactly the ones assignments and candidates may still reference.
+  // presets, so these ids are exactly the ones assignments may still reference.
   const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
   const assignment = next.modelAssignments.byok;
   const agentIds = slots[0]!.models.flatMap((model) => presetIdByModel.get(model) ?? []);
-  // Candidates enrolled from other connections stay enrolled, as they do in `setTaskModelCandidates`;
-  // only this endpoint's removed presets leave the list.
+  // Candidates enrolled from other connections stay enrolled, but only while their preset still serves
+  // the agent slot: the loop above just rewrote the capabilities of this endpoint's presets, and the
+  // backend rejects an agent candidate whose preset no longer supports `agent`.
+  const agentCandidateIds = new Set(
+    visiblePresets(next, "byok")
+      .filter((preset) => preset.capabilities.includes("agent"))
+      .map((preset) => preset.presetId)
+  );
   assignment.agent.candidates = unique([
-    ...assignment.agent.candidates.filter((id) => remainingIds.has(id)),
+    ...assignment.agent.candidates.filter((id) => agentCandidateIds.has(id)),
     ...agentIds
   ]);
   const defaultModel = selection.agent.default?.trim();

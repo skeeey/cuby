@@ -1288,4 +1288,31 @@ describe("cuberouter selection", () => {
       memoryEvolution: "a"
     });
   });
+
+  it("drops a kept candidate whose preset stopped serving the agent slot", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a"] }, memorySummary: "", memoryEvolution: "" }
+    });
+
+    const next = applyCuberouterSelection(first, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      selection: { agent: { models: ["b"] }, memorySummary: "a", memoryEvolution: "" }
+    });
+
+    const assignment = next.catalog.modelAssignments.byok;
+    const presets = next.catalog.providers.flatMap((provider) => provider.models);
+    const kept = presets.find((preset) => preset.model === "a");
+    expect(kept?.capabilities).toEqual(["memory_summary"]);
+    expect(assignment.memorySummary).toBe(kept?.presetId);
+    expect(assignment.agent.candidates).not.toContain(kept?.presetId);
+    expect(assignment.agent.candidates).toEqual([presets.find((preset) => preset.model === "b")?.presetId]);
+    const byId = new Map(presets.map((preset) => [preset.presetId, preset]));
+    for (const candidateId of assignment.agent.candidates) {
+      expect(byId.get(candidateId)?.capabilities).toContain("agent");
+    }
+  });
 });
