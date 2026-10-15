@@ -25,7 +25,8 @@
 - **`.github/workflows/linux-cli-installer.yml` 也排除**：它把 `MEMMY_INSTALL_ROOT`、`MEMMY_BIN_DIR`、`MEMMY_VERSION`、`MEMMY_RELEASE_BASE_URL` 直接传给不动的 `scripts/install.sh`（`install.sh:7-8` 用 `${MEMMY_INSTALL_ROOT:-…}` 读）。改名会让脚本忽略这些路径、回落到默认值。与 Linux CLI 安装面同一轮延后。
 - **清理工具要"加"不要"换"**：`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 的职责本就包括清掉**旧安装**的数据，整批改名会让它们再也清不了老 Memmy。这几个文件**排除在机械扫描之外**，由 Task 15 Step 3 单独处理成"同时覆盖 Cuby 与 Memmy"。
 - **`.memmy` 只改"路径形态"**：`\.memmy\b` 这个朴素模式会误伤一大类非路径用法——`window.memmy`（预加载桥全局，~130 处）、`test.memmy.cn`（域名）、`avatar.memmy.default`（服务端资产键）、`modelPresets.memmy-account`（旧迁移从用户 config.yaml 读的键）、`com.memtensor.memmy-memory`（LaunchAgent 标签）、`.memmy-notification`（CSS 类）、`apiKey.provider.memmy`（i18n 键）。Task 3 的替换脚本 `/tmp/cuby-sweep.pl` 用"前置路径类字符 + 后置路径类字符/行尾"的规则把它们全部排除，并显式列出五个派生目录名。**这些非路径用法一律不改**：桥与键属内部标识符，域名与标签见各自的条目。
-- **`.css` 文件不在 Task 3 的范围内**：CSS 类 `memmy-*` → `cuby-*` 由 Task 10 统一处理，Task 3 的扫描清单也不含 `.css`。
+- **`.css` 文件不在 Task 3 的范围内**：CSS 类 `memmy-*` → `cuby-*` 由 Task 10 统一处理（范围限 `App/frontend/desktop/src`），Task 3 的扫描清单也不含 `.css`。
+- **不改的内部类名（Task 15 白名单要用）**：`Knowledge/src/ui/page.tsx` 的 `memmy-knowledge*` / `memmy-local-token*`（51 个 CSS 选择器）、`scripts/auto-release-mac.sh` 里发布工程师本机的日志目录 `~/.memmy-release`（`:34,195,196`，开发本机状态，不是产品路径）。
 - **技能内容要跟着改**：`App/memmy-agent/src/skills/**/SKILL.md`、`Memory/src/cli/skills/**` 不是"文档"，是**随产品分发、由 agent 在运行时读取的内容**。里面引用的 `MEMMY_AGENT_TMUX_SOCKET_DIR` 等变量必须跟着改；`App/memmy-agent/.env.example` 同理（开发配置模板，不是文档）。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
 - **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
@@ -380,6 +381,8 @@ s{\.memmy-knowledge}{.cuby-knowledge}g;
 s{\.memmy-upgrade-backup}{.cuby-upgrade-backup}g;
 s{\.memmy-migration-failed}{.cuby-migration-failed}g;
 s{\.memmy-bridge-source-hash}{.cuby-bridge-source-hash}g;
+s{\.memmy-migrations}{.cuby-migrations}g;
+s{\.memmy-test}{.cuby-test}g;
 s{\.memmy-agent(?![A-Za-z])}{.cuby-agent}g;
 s!(^|[/\\"'\x60~=(,\s])\.memmy(?=[/\\"'\x60)}.,\s]|$)!$1.cuby!gm;
 PERL
@@ -396,7 +399,9 @@ git diff --stat
 | `return ".memmy";`（`desktop-edition.ts:39`） | `https://test.memmy.cn/api`（域名不改） |
 | `// ~/.memmy/computer-history` | `assetKey: "avatar.memmy.default"`（服务端资产键） |
 | `$HOME/.memmy"` | `modelPresets.memmy-account`（旧迁移从用户 config.yaml 读的键） |
-| `".memmy-knowledge"` 等五个派生目录 | `com.memtensor.memmy-memory`（LaunchAgent 标签，归 Task 6） |
+| `".memmy-knowledge"` 等派生目录 | `com.memtensor.memmy-memory`（LaunchAgent 标签，归 Task 6） |
+
+**注意 `.memmy-knowledge` 的双重身份**：在 `Knowledge/src/ui/page.tsx` 里它以 **CSS 类**形式出现（51 个选择器：`memmy-knowledge*`、`memmy-local-token*`），不是路径。这条规则会误伤它——所以执行时**跳过 `Knowledge/src/ui/page.tsx`**，那些类名属内部标识符，不改。
 | | `".memmy-notification"`（CSS 类，归 Task 10）、`apiKey.provider.memmy`（i18n 键，归 Task 13） |
 
 `window.memmy` 这座桥**不改**：它由 `App/shell/desktop/src/preload/preload.cts:313` 的 `exposeInMainWorld("memmy", …)` 定义、`global.d.ts:28` 声明，属于内部标识符（与 `memmyConfigPath`、`MemmyAgentClient` 同类），用户不可见。改它要连 preload、全局声明、33 个调用点与各测试里的字符串桩一起动，收益为零。
