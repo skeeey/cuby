@@ -1359,3 +1359,4 @@ git commit -m "docs: align the remaining comments with the Cuby rename"
 - **Memory CLI 安装器**：`Memory/installers/install.sh` 与 `install.ps1` 同样把 `MEMMY_MEMORY_HOME` 与 `~/.memmy` 写死（装到 `~/.memmy/cli` 与 `~/.memmy/bin`）。与 Linux CLI 同类，同一轮处理；在此之前该安装路径不可用。仓库内无任何代码引用它们。
 - **服务端更新清单**：让 `DEFAULT_UPDATE_MANIFEST_URL` 指向 `Cuby-*` 产物。
 - **素材补全**：5 个预留姿态、Cuby 版待机动画（`cuby-idle-alpha.webm`）、新 logo/字标、`cuby.jpg` 的落地位置。
+- **TUI 的 ASCII 吉祥物**：`App/memmy-agent/src/entrypoints/cli/tui.tsx:117` 起的半块像素图画的仍是旧角色（色调枚举名即 `rice0/1/2`、`spoon0/1/2`，米团子 + 勺子），其注释指向本计划已删除的 `memmy-rice.png`。终端 UI 属用户可见面，但这是**需要新画稿**的设计交付（绘制 Cuby 的 ASCII 稿），不是改名能解决的。Task 15 至少要修掉指向已删文件的注释。
