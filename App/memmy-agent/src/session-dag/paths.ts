@@ -2,7 +2,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 
-export const SESSION_DAG_DIR_ENV = "MEMMY_AGENT_SESSION_DAG_DIR";
+export const SESSION_DAG_DIR_ENV = "CUBY_AGENT_SESSION_DAG_DIR";
 
 export function safeSessionDagKey(sessionKey: string): string {
   return sessionKey.replaceAll(":", "_").replace(/[^A-Za-z0-9_.-]+/g, "_");

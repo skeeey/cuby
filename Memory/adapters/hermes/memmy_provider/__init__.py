@@ -16,7 +16,7 @@ except Exception:
 
 class MemmyProvider(MemoryProvider):
     def __init__(self) -> None:
-        self._endpoint = os.environ.get("MEMMY_MEMORY_URL", "http://127.0.0.1:18960").rstrip("/")
+        self._endpoint = os.environ.get("CUBY_MEMORY_URL", "http://127.0.0.1:18960").rstrip("/")
         self._session_id = ""
         self._turn_id = ""
         self._query = ""
@@ -124,7 +124,7 @@ class MemmyProvider(MemoryProvider):
             method = "GET"
         payload = None if method == "GET" else json.dumps({**(body or {}), "source": "hermes"}).encode("utf-8")
         headers = {"Content-Type": "application/json", "x-memmy-profile-id": self._profile}
-        token = os.environ.get("MEMMY_MEMORY_TOKEN", "")
+        token = os.environ.get("CUBY_MEMORY_TOKEN", "")
         if token:
             headers["Authorization"] = f"Bearer {token}"
         request = urllib.request.Request(f"{self._endpoint}/api/v1{path}", data=payload, headers=headers, method=method)

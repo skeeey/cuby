@@ -534,12 +534,12 @@ try {
   if ($InstallerMode -eq 'Silent') {
     $arguments = @('/S') + $arguments
   }
-  $env:MEMMY_UPGRADE_WORK_DIR = $WorkDir
-  $env:MEMMY_UPGRADE_BACKUP_ROOT = $backupRoot
-  $env:MEMMY_UPGRADE_REOPEN_AFTER_INSTALL = $resolvedReopenAfterInstall
-  $env:MEMMY_UPGRADE_SOURCE_INSTALL_DIR = $normalizedSourceInstallDir
-  $env:MEMMY_UPGRADE_TARGET_INSTALL_DIR = $normalizedTargetInstallDir
-  Write-CubyUpgradeLog "child installer context workDir=$env:MEMMY_UPGRADE_WORK_DIR backupRoot=$env:MEMMY_UPGRADE_BACKUP_ROOT source=$env:MEMMY_UPGRADE_SOURCE_INSTALL_DIR target=$env:MEMMY_UPGRADE_TARGET_INSTALL_DIR reopen=$env:MEMMY_UPGRADE_REOPEN_AFTER_INSTALL mode=$InstallerMode"
+  $env:CUBY_UPGRADE_WORK_DIR = $WorkDir
+  $env:CUBY_UPGRADE_BACKUP_ROOT = $backupRoot
+  $env:CUBY_UPGRADE_REOPEN_AFTER_INSTALL = $resolvedReopenAfterInstall
+  $env:CUBY_UPGRADE_SOURCE_INSTALL_DIR = $normalizedSourceInstallDir
+  $env:CUBY_UPGRADE_TARGET_INSTALL_DIR = $normalizedTargetInstallDir
+  Write-CubyUpgradeLog "child installer context workDir=$env:CUBY_UPGRADE_WORK_DIR backupRoot=$env:CUBY_UPGRADE_BACKUP_ROOT source=$env:CUBY_UPGRADE_SOURCE_INSTALL_DIR target=$env:CUBY_UPGRADE_TARGET_INSTALL_DIR reopen=$env:CUBY_UPGRADE_REOPEN_AFTER_INSTALL mode=$InstallerMode"
   $relayPhase = 'installer-starting'
   Write-CubyRelayState
   Assert-CubyRelocationTargetIsSafe -AllowPreparedMigrationTarget:$migrationPrepared

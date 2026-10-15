@@ -172,7 +172,7 @@ describe("claude code skill target", () => {
       const commandFilePath = join(rootDirectory, "commands", "memmy-resume.md");
       const commandFile = readFileSync(commandFilePath, "utf8");
       expect(commandFile).toContain("argument-hint: <query | 1-5 | cancel>");
-      expect(commandFile).toContain("MEMMY_RESUME_COMMAND_ARGUMENTS:");
+      expect(commandFile).toContain("CUBY_RESUME_COMMAND_ARGUMENTS:");
       expect(commandFile).toContain("$ARGUMENTS");
 
       const run = await runNodeHook(
@@ -206,9 +206,9 @@ describe("claude code skill target", () => {
         JSON.stringify({
           hook_event_name: "UserPromptSubmit",
           prompt: [
-            "MEMMY_RESUME_COMMAND_ARGUMENTS:",
+            "CUBY_RESUME_COMMAND_ARGUMENTS:",
             "命令展开后的 query",
-            "MEMMY_RESUME_COMMAND_END",
+            "CUBY_RESUME_COMMAND_END",
             "",
             "This slash command is a parser shim."
           ].join("\n")

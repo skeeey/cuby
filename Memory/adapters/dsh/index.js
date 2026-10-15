@@ -12,11 +12,11 @@ export const Config = Schema.object({
   recallTimeoutMs: Schema.number().min(100).max(3000).default(3000)
 });
 
-const endpoint = (process.env.MEMMY_MEMORY_URL || "http://127.0.0.1:18960").replace(/\/$/, "");
+const endpoint = (process.env.CUBY_MEMORY_URL || "http://127.0.0.1:18960").replace(/\/$/, "");
 
 async function request(path, profileId, body, timeout = 3000) {
   const headers = { "content-type": "application/json", "x-memmy-profile-id": profileId };
-  if (process.env.MEMMY_MEMORY_TOKEN) headers.authorization = `Bearer ${process.env.MEMMY_MEMORY_TOKEN}`;
+  if (process.env.CUBY_MEMORY_TOKEN) headers.authorization = `Bearer ${process.env.CUBY_MEMORY_TOKEN}`;
   const response = await fetch(`${endpoint}/api/v1${path}`, {
     method: body === undefined ? "GET" : "POST",
     headers,

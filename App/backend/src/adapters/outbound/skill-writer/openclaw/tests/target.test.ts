@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { SkillManifest } from "../../types.js";
 import { createOpenclawSkillTarget } from "../index.js";
-import { MEMMY_VERSION } from "../../../../../project-version.js";
+import { CUBY_VERSION } from "../../../../../project-version.js";
 
 let tempDir: string | undefined;
 
@@ -143,7 +143,7 @@ describe("openclaw skill target", () => {
 
     expect(existsSync(join(pluginDirectory, "package.json"))).toBe(true);
     expect(pluginPackage.name).toBe("memmy-memory");
-    expect(pluginPackage.version).toBe(MEMMY_VERSION);
+    expect(pluginPackage.version).toBe(CUBY_VERSION);
     expect(pluginPackage.type).toBe("module");
     expect(pluginPackage.openclaw).toEqual({
       id: "memmy-memory",
@@ -151,7 +151,7 @@ describe("openclaw skill target", () => {
       extensions: ["./index.mjs"]
     });
     expect(pluginManifest.id).toBe("memmy-memory");
-    expect(pluginManifest.version).toBe(MEMMY_VERSION);
+    expect(pluginManifest.version).toBe(CUBY_VERSION);
     expect(pluginManifest.kind).toBe("memory");
     expect(pluginManifest.activation?.onStartup).toBe(true);
     expect(pluginManifest.contracts?.tools).toEqual([
@@ -218,10 +218,10 @@ describe("openclaw skill target", () => {
     expect(pluginIndex).toContain("const SYNC_COMPLETE_SCRIPT = [");
     expect(pluginIndex).toContain('].join("\\n");');
     expect(pluginIndex).not.toContain('].join("\\\\n");');
-    expect(pluginIndex).toContain("const MEMMY_FETCH_TIMEOUT_MS = 45000;");
-    expect(pluginIndex).toContain("const MEMMY_RECALL_TIMEOUT_MS = 45000;");
+    expect(pluginIndex).toContain("const CUBY_FETCH_TIMEOUT_MS = 45000;");
+    expect(pluginIndex).toContain("const CUBY_RECALL_TIMEOUT_MS = 45000;");
     expect(pluginIndex).toContain("timeout: 60000,");
-    expect(pluginIndex).toContain("}, MEMMY_RECALL_TIMEOUT_MS);");
+    expect(pluginIndex).toContain("}, CUBY_RECALL_TIMEOUT_MS);");
     expect(pluginIndex).toContain("async function fetchWithTimeout");
     expect(pluginIndex).toContain("new AbortController()");
     expect(pluginIndex).toContain('"Memmy request to " + url + " failed: " + formatErrorWithCause(error)');
@@ -253,7 +253,7 @@ describe("openclaw skill target", () => {
       source: "path",
       sourcePath: pluginDirectory,
       installPath: pluginDirectory,
-      version: MEMMY_VERSION
+      version: CUBY_VERSION
     });
     expect(config.plugins?.installs?.["memmy-memory"]?.installedAt).toEqual(expect.any(String));
     expect(skillFile).toContain("# Memmy Memory");

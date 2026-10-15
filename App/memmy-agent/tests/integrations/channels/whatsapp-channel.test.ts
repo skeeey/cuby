@@ -55,20 +55,20 @@ const wsRuntimeMock = vi.hoisted(() => {
 
 vi.mock("ws", () => ({ WebSocket: wsRuntimeMock.WebSocket }));
 
-const oldConfig = process.env.MEMMY_CONFIG;
+const oldConfig = process.env.CUBY_CONFIG;
 const roots: string[] = [];
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-whatsapp-"));
   roots.push(root);
-  process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+  process.env.CUBY_CONFIG = path.join(root, "config.yaml");
   return root;
 }
 
 afterEach(() => {
   vi.restoreAllMocks();
   wsRuntimeMock.reset();
-  process.env.MEMMY_CONFIG = oldConfig;
+  process.env.CUBY_CONFIG = oldConfig;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

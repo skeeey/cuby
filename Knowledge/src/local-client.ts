@@ -8,7 +8,7 @@ import { parseEvidence, type KnowledgeRecallClient } from "./client.js";
 /** Agent access uses the existing local backend token; no cloud credential enters the Agent hook. */
 export function createLocalKnowledgeClient(
   runtimeFile = path.join(
-    process.env.MEMMY_HOME || path.join(os.homedir(), ".cuby"),
+    process.env.CUBY_HOME || path.join(os.homedir(), ".cuby"),
     "runtime.json",
   ),
   fetcher: typeof fetch = fetch,

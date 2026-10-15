@@ -27,7 +27,7 @@ const INTL_COPY = {
 
 /** Overseas builds show the intl copy set; the mainland build keeps the CN set. */
 function campaignCopy() {
-  return import.meta.env.MEMMY_APP_EDITION === "intl" ? INTL_COPY : CN_COPY;
+  return import.meta.env.CUBY_APP_EDITION === "intl" ? INTL_COPY : CN_COPY;
 }
 
 /** Centered feature-update dialog inviting the user to the activity site. */

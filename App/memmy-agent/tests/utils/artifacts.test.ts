@@ -13,8 +13,8 @@ import {
 const PNG_DATA_URL =
   "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 
-const originalConfig = process.env.MEMMY_CONFIG;
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalConfig = process.env.CUBY_CONFIG;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const roots: string[] = [];
 
 function tmpRoot(prefix: string): string {
@@ -25,10 +25,10 @@ function tmpRoot(prefix: string): string {
 
 afterEach(() => {
   setConfigPath(null);
-  if (originalConfig === undefined) delete process.env.MEMMY_CONFIG;
-  else process.env.MEMMY_CONFIG = originalConfig;
-  if (originalDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalConfig === undefined) delete process.env.CUBY_CONFIG;
+  else process.env.CUBY_CONFIG = originalConfig;
+  if (originalDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -42,7 +42,7 @@ describe("artifact helpers", () => {
 
   it("writes generated image artifacts and sidecar metadata", () => {
     const root = tmpRoot("memmy-artifacts-");
-    delete process.env.MEMMY_AGENT_DATA_DIR;
+    delete process.env.CUBY_AGENT_DATA_DIR;
     setConfigPath(path.join(root, "config.yaml"));
     const createdAt = new Date("2026-05-08T12:00:00.000Z");
 
@@ -63,10 +63,10 @@ describe("artifact helpers", () => {
     expect(sidecar.source_images).toEqual(["/tmp/ref.png"]);
   });
 
-  it("writes generated image artifacts under MEMMY_AGENT_DATA_DIR media when configured", () => {
+  it("writes generated image artifacts under CUBY_AGENT_DATA_DIR media when configured", () => {
     const root = tmpRoot("memmy-artifacts-");
     const dataDir = path.join(root, "stable-data");
-    process.env.MEMMY_AGENT_DATA_DIR = dataDir;
+    process.env.CUBY_AGENT_DATA_DIR = dataDir;
     setConfigPath(path.join(root, "tmp-config", "config.yaml"));
 
     const artifact = storeGeneratedImageArtifact(PNG_DATA_URL, {
@@ -89,7 +89,7 @@ describe("artifact helpers", () => {
 
   it("stores MCP image blocks in the shared media directory", () => {
     const root = tmpRoot("memmy-tool-artifacts-");
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     setConfigPath(path.join(root, "config.yaml"));
     const base64 = PNG_DATA_URL.slice(PNG_DATA_URL.indexOf(",") + 1);
 
@@ -107,7 +107,7 @@ describe("artifact helpers", () => {
 
   it("rejects malformed, mismatched, and oversized MCP image blocks", () => {
     const root = tmpRoot("memmy-tool-artifacts-");
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     setConfigPath(path.join(root, "config.yaml"));
     const base64 = PNG_DATA_URL.slice(PNG_DATA_URL.indexOf(",") + 1);
 

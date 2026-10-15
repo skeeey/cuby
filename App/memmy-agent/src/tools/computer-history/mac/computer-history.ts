@@ -75,7 +75,7 @@ export class ComputerHistoryTool extends Tool {
   }
 
   static enabled(): boolean {
-    return isComputerHistorySupported() && process.env.MEMMY_COMPUTER_HISTORY !== "0";
+    return isComputerHistorySupported() && process.env.CUBY_COMPUTER_HISTORY !== "0";
   }
 
   get name(): string {

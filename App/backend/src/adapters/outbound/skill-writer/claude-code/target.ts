@@ -364,9 +364,9 @@ description: Fast Memmy resume lookup handled by the installed hook.
 argument-hint: <query | 1-5 | cancel>
 ---
 
-MEMMY_RESUME_COMMAND_ARGUMENTS:
+CUBY_RESUME_COMMAND_ARGUMENTS:
 $ARGUMENTS
-MEMMY_RESUME_COMMAND_END
+CUBY_RESUME_COMMAND_END
 
 This slash command is a parser shim for the installed Memmy UserPromptSubmit hook.
 If this text reaches the model, respond only with: Memmy resume hook did not intercept this command; reinstall the Memmy Claude Code hook.

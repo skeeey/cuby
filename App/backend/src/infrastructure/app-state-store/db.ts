@@ -23,8 +23,8 @@ export function openDatabase(options: OpenDatabaseOptions = {}): DatabaseSync {
 }
 
 export function resolveDefaultDatabasePath(): string {
-  if (process.env.MEMMY_APP_DB_PATH) {
-    return process.env.MEMMY_APP_DB_PATH;
+  if (process.env.CUBY_APP_DB_PATH) {
+    return process.env.CUBY_APP_DB_PATH;
   }
 
   if (process.platform === "darwin") {

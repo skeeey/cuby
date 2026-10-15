@@ -67,7 +67,7 @@ export class DesktopScreenClient {
 }
 export const desktopScreenClient = new DesktopScreenClient();
 export async function initializeDesktopScreenCapture(): Promise<void> {
-  if (process.platform === 'darwin' && process.env.MEMMY_DESKTOP_MANAGED_GATEWAY === '1') await desktopScreenClient.initialize();
+  if (process.platform === 'darwin' && process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1') await desktopScreenClient.initialize();
 }
 export function screenCaptureEnabled(config: any, platform = process.platform, available = desktopScreenClient.available): boolean {
   const cfg = config?.mcpServers?.open_computer_use ?? config?.tools?.mcpServers?.open_computer_use ?? config?.tools?.mcp_servers?.open_computer_use;

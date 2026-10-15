@@ -143,7 +143,7 @@ describe("memmy-memory CLI setup commands", () => {
         "    get(targetId) {",
         "      return {",
         "        async installPlugin(installedTargetId) {",
-        "          await writeFile(process.env.MEMMY_TEST_PLUGIN_MARKER, JSON.stringify({ configPath, targetId, installedTargetId }));",
+        "          await writeFile(process.env.CUBY_TEST_PLUGIN_MARKER, JSON.stringify({ configPath, targetId, installedTargetId }));",
         "        }",
         "      };",
         "    },",
@@ -154,8 +154,8 @@ describe("memmy-memory CLI setup commands", () => {
     );
     createAllAgentRoots(root);
     setEnv("HOME", root);
-    setEnv("MEMMY_AGENT_INTEGRATION_ROOT", integrationRoot);
-    setEnv("MEMMY_TEST_PLUGIN_MARKER", markerPath);
+    setEnv("CUBY_AGENT_INTEGRATION_ROOT", integrationRoot);
+    setEnv("CUBY_TEST_PLUGIN_MARKER", markerPath);
     const configPath = join(root, "config.yaml");
 
     await runCommand({
@@ -178,7 +178,7 @@ describe("memmy-memory CLI setup commands", () => {
   it("does not load packaged agent integrations during installer-style initialization", async () => {
     const root = tempRoot();
     setEnv("HOME", root);
-    setEnv("MEMMY_AGENT_INTEGRATION_ROOT", join(root, "missing-integration-runtime"));
+    setEnv("CUBY_AGENT_INTEGRATION_ROOT", join(root, "missing-integration-runtime"));
 
     await expect(runCommand({
       argv: [

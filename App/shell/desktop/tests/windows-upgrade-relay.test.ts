@@ -173,8 +173,8 @@ const createRelayFixture = async (
     `rmdir /s /q "${escapedTargetInstallDir}"`,
     `mkdir "${escapedTargetInstallDir}"`,
     `copy /y "${escapedAppStubPath}" "${escapedTargetInstallDir}\\Cuby.exe" >nul`,
-    "if not defined MEMMY_UPGRADE_WORK_DIR goto installer_done",
-    ">\"%MEMMY_UPGRADE_WORK_DIR%\\child-reopen-intent.txt\" echo(%MEMMY_UPGRADE_REOPEN_AFTER_INSTALL%",
+    "if not defined CUBY_UPGRADE_WORK_DIR goto installer_done",
+    ">\"%CUBY_UPGRADE_WORK_DIR%\\child-reopen-intent.txt\" echo(%CUBY_UPGRADE_REOPEN_AFTER_INSTALL%",
     ":installer_done",
     `exit /b ${installerExitCode}`,
     ""

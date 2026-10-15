@@ -106,7 +106,7 @@ describe("opencode skill target", () => {
     expect(pluginSource).toContain("dispose: async () =>");
     expect(pluginSource).toContain("memmy_memory_search: tool");
     expect(pluginSource).toContain('"Memmy request to " + url + " failed: " + formatErrorWithCause(error)');
-    expect(commandSource).toContain("MEMMY_RESUME_COMMAND_ARGUMENTS:");
+    expect(commandSource).toContain("CUBY_RESUME_COMMAND_ARGUMENTS:");
     expect(commandSource).toContain("$ARGUMENTS");
     expect(skillSource).toContain("# Memmy Memory");
     expect(skillSource).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
@@ -301,7 +301,7 @@ describe("opencode skill target", () => {
         messageID: "command-message",
         sessionID: "session-resume",
         type: "text",
-        text: "MEMMY_RESUME_COMMAND_ARGUMENTS:\n测试 query\nMEMMY_RESUME_COMMAND_END"
+        text: "CUBY_RESUME_COMMAND_ARGUMENTS:\n测试 query\nCUBY_RESUME_COMMAND_END"
       }];
       await hooks["chat.message"](
         { sessionID: "session-resume", messageID: "command-message", agent: "build" },

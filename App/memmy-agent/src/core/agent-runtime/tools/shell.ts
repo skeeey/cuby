@@ -476,8 +476,8 @@ export class ExecTool extends Tool {
       if (isWindows) {
         env.PATH = `${env.PATH ?? ""};${this.pathAppend}`;
       } else {
-        env.MEMMY_AGENT_PATH_APPEND = this.pathAppend;
-        command = `export PATH="$PATH${path.delimiter}$MEMMY_AGENT_PATH_APPEND"; ${command}`;
+        env.CUBY_AGENT_PATH_APPEND = this.pathAppend;
+        command = `export PATH="$PATH${path.delimiter}$CUBY_AGENT_PATH_APPEND"; ${command}`;
       }
     }
 

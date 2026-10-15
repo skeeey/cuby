@@ -2384,7 +2384,7 @@ function stripRawHtmlTags(value: string, dropTrailingPartial = false): string {
 }
 
 function stripActionCopyFromReport(report: string): string {
-  const reportBody = report.split(/\[\s*MEMMY_ACTIONS_JSON\s*\]/i, 1)[0] ?? report;
+  const reportBody = report.split(/\[\s*CUBY_ACTIONS_JSON\s*\]/i, 1)[0] ?? report;
   const paragraphs = reportBody
     .replace(/\r\n/g, "\n")
     .split(/\n{2,}/)

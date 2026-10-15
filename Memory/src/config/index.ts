@@ -305,7 +305,7 @@ export const MEMORY_SUMMARY_MAX_TOKENS = 512;
 
 export function defaultMemoryDatabasePath(): string {
   const baseDir =
-    process.env.MEMMY_MEMORY_HOME ??
+    process.env.CUBY_MEMORY_HOME ??
     process.env.MEMORY_SERVICE_HOME ??
     join(homedir(), ".cuby", "memory-service");
   return join(baseDir, "memory.sqlite");
@@ -535,7 +535,7 @@ export const DEFAULT_MEMMY_CONFIG: MemmyConfig = {
 
 export function defaultConfigPaths(): string[] {
   return [
-    process.env.MEMMY_CONFIG,
+    process.env.CUBY_CONFIG,
     join(homedir(), ".cuby", "config.yaml")
   ].filter((value): value is string => Boolean(value));
 }
@@ -588,59 +588,59 @@ function parseConfigFile(path: string): Record<string, unknown> {
 
 function configFromEnv(): Record<string, unknown> {
   return compactRecord({
-    domain: process.env.MEMMY_MEMORY_DOMAIN ?? process.env.MEMMY_DOMAIN,
-    userId: process.env.MEMMY_MEMORY_USER_ID ?? process.env.MEMMY_USER_ID ?? process.env.MEMORY_SERVICE_USER_ID,
+    domain: process.env.CUBY_MEMORY_DOMAIN ?? process.env.CUBY_DOMAIN,
+    userId: process.env.CUBY_MEMORY_USER_ID ?? process.env.CUBY_USER_ID ?? process.env.MEMORY_SERVICE_USER_ID,
     storage: compactRecord({
-      mode: process.env.MEMMY_MEMORY_MODE,
-      backend: process.env.MEMMY_MEMORY_BACKEND,
-      sqlitePath: process.env.MEMMY_MEMORY_DB ?? process.env.MEMORY_SERVICE_DB,
-      endpoint: process.env.MEMMY_MEMORY_URL ?? process.env.MEMORY_SERVICE_URL,
-      token: process.env.MEMMY_MEMORY_TOKEN ?? process.env.MEMORY_SERVICE_TOKEN
+      mode: process.env.CUBY_MEMORY_MODE,
+      backend: process.env.CUBY_MEMORY_BACKEND,
+      sqlitePath: process.env.CUBY_MEMORY_DB ?? process.env.MEMORY_SERVICE_DB,
+      endpoint: process.env.CUBY_MEMORY_URL ?? process.env.MEMORY_SERVICE_URL,
+      token: process.env.CUBY_MEMORY_TOKEN ?? process.env.MEMORY_SERVICE_TOKEN
     }),
     summary: compactRecord({
-      provider: process.env.MEMMY_SUMMARY_PROVIDER,
-      vendor: process.env.MEMMY_SUMMARY_VENDOR,
-      endpoint: process.env.MEMMY_SUMMARY_ENDPOINT,
-      model: process.env.MEMMY_SUMMARY_MODEL,
-      apiKey: process.env.MEMMY_SUMMARY_API_KEY,
-      temperature: numberEnv("MEMMY_SUMMARY_TEMPERATURE"),
-      maxTokens: numberEnv("MEMMY_SUMMARY_MAX_TOKENS"),
-      timeoutMs: numberEnv("MEMMY_SUMMARY_TIMEOUT_MS"),
-      maxRetries: numberEnv("MEMMY_SUMMARY_MAX_RETRIES")
+      provider: process.env.CUBY_SUMMARY_PROVIDER,
+      vendor: process.env.CUBY_SUMMARY_VENDOR,
+      endpoint: process.env.CUBY_SUMMARY_ENDPOINT,
+      model: process.env.CUBY_SUMMARY_MODEL,
+      apiKey: process.env.CUBY_SUMMARY_API_KEY,
+      temperature: numberEnv("CUBY_SUMMARY_TEMPERATURE"),
+      maxTokens: numberEnv("CUBY_SUMMARY_MAX_TOKENS"),
+      timeoutMs: numberEnv("CUBY_SUMMARY_TIMEOUT_MS"),
+      maxRetries: numberEnv("CUBY_SUMMARY_MAX_RETRIES")
     }),
     evolution: compactRecord({
-      provider: process.env.MEMMY_EVOLUTION_PROVIDER,
-      vendor: process.env.MEMMY_EVOLUTION_VENDOR,
-      endpoint: process.env.MEMMY_EVOLUTION_ENDPOINT,
-      model: process.env.MEMMY_EVOLUTION_MODEL,
-      apiKey: process.env.MEMMY_EVOLUTION_API_KEY,
-      enableThinking: booleanEnv("MEMMY_EVOLUTION_ENABLE_THINKING"),
-      temperature: numberEnv("MEMMY_EVOLUTION_TEMPERATURE"),
-      maxTokens: numberEnv("MEMMY_EVOLUTION_MAX_TOKENS"),
-      timeoutMs: numberEnv("MEMMY_EVOLUTION_TIMEOUT_MS"),
-      maxRetries: numberEnv("MEMMY_EVOLUTION_MAX_RETRIES")
+      provider: process.env.CUBY_EVOLUTION_PROVIDER,
+      vendor: process.env.CUBY_EVOLUTION_VENDOR,
+      endpoint: process.env.CUBY_EVOLUTION_ENDPOINT,
+      model: process.env.CUBY_EVOLUTION_MODEL,
+      apiKey: process.env.CUBY_EVOLUTION_API_KEY,
+      enableThinking: booleanEnv("CUBY_EVOLUTION_ENABLE_THINKING"),
+      temperature: numberEnv("CUBY_EVOLUTION_TEMPERATURE"),
+      maxTokens: numberEnv("CUBY_EVOLUTION_MAX_TOKENS"),
+      timeoutMs: numberEnv("CUBY_EVOLUTION_TIMEOUT_MS"),
+      maxRetries: numberEnv("CUBY_EVOLUTION_MAX_RETRIES")
     }),
     embedding: compactRecord({
-      provider: process.env.MEMMY_EMBEDDING_PROVIDER,
-      endpoint: process.env.MEMMY_EMBEDDING_ENDPOINT,
-      model: process.env.MEMMY_EMBEDDING_MODEL,
-      apiKey: process.env.MEMMY_EMBEDDING_API_KEY,
-      maxInputTokens: numberEnv("MEMMY_EMBEDDING_MAX_INPUT_TOKENS"),
-      batchSize: numberEnv("MEMMY_EMBEDDING_BATCH_SIZE"),
-      timeoutMs: numberEnv("MEMMY_EMBEDDING_TIMEOUT_MS"),
-      maxRetries: numberEnv("MEMMY_EMBEDDING_MAX_RETRIES")
+      provider: process.env.CUBY_EMBEDDING_PROVIDER,
+      endpoint: process.env.CUBY_EMBEDDING_ENDPOINT,
+      model: process.env.CUBY_EMBEDDING_MODEL,
+      apiKey: process.env.CUBY_EMBEDDING_API_KEY,
+      maxInputTokens: numberEnv("CUBY_EMBEDDING_MAX_INPUT_TOKENS"),
+      batchSize: numberEnv("CUBY_EMBEDDING_BATCH_SIZE"),
+      timeoutMs: numberEnv("CUBY_EMBEDDING_TIMEOUT_MS"),
+      maxRetries: numberEnv("CUBY_EMBEDDING_MAX_RETRIES")
     }),
     algorithm: compactRecord({
-      enableMemoryAdd: booleanEnv("MEMMY_ENABLE_MEMORY_ADD"),
-      enableMemorySearch: booleanEnv("MEMMY_ENABLE_MEMORY_SEARCH"),
-      enableQueryRewrite: booleanEnv("MEMMY_ENABLE_QUERY_REWRITE"),
+      enableMemoryAdd: booleanEnv("CUBY_ENABLE_MEMORY_ADD"),
+      enableMemorySearch: booleanEnv("CUBY_ENABLE_MEMORY_SEARCH"),
+      enableQueryRewrite: booleanEnv("CUBY_ENABLE_QUERY_REWRITE"),
       retrieval: compactRecord({
         readOnlyInjectionProfile:
-          process.env.MEMMY_RETRIEVAL_INJECTION_PROFILE ??
-          process.env.MEMMY_READONLY_INJECTION_PROFILE,
-        skillInjectionMode: process.env.MEMMY_SKILL_INJECTION_MODE,
-        skillSummaryChars: numberEnv("MEMMY_SKILL_SUMMARY_CHARS"),
-        skillFullMaxChars: numberEnv("MEMMY_SKILL_FULL_MAX_CHARS")
+          process.env.CUBY_RETRIEVAL_INJECTION_PROFILE ??
+          process.env.CUBY_READONLY_INJECTION_PROFILE,
+        skillInjectionMode: process.env.CUBY_SKILL_INJECTION_MODE,
+        skillSummaryChars: numberEnv("CUBY_SKILL_SUMMARY_CHARS"),
+        skillFullMaxChars: numberEnv("CUBY_SKILL_FULL_MAX_CHARS")
       })
     })
   });

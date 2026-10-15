@@ -7,7 +7,7 @@ import YAML from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkillManifest } from "../../types.js";
 import { createHermesSkillTarget } from "../index.js";
-import { MEMMY_VERSION } from "../../../../../project-version.js";
+import { CUBY_VERSION } from "../../../../../project-version.js";
 
 let tempDir: string | undefined;
 
@@ -113,10 +113,10 @@ describe("hermes skill target", () => {
     };
 
     expect(pluginYaml).toContain("name: memmy-memory");
-    expect(pluginYaml).toContain(`version: ${MEMMY_VERSION}`);
+    expect(pluginYaml).toContain(`version: ${CUBY_VERSION}`);
     expect(pluginYaml).toContain("kind: exclusive");
     expect(commandPluginYaml).toContain("name: memmy-resume");
-    expect(commandPluginYaml).toContain(`version: ${MEMMY_VERSION}`);
+    expect(commandPluginYaml).toContain(`version: ${CUBY_VERSION}`);
     expect(commandPluginYaml).toContain("kind: standalone");
     expect(pluginInit).toContain("class MemmyMemoryProvider");
     expect(pluginInit).not.toContain("x-memmy-agent-kind");

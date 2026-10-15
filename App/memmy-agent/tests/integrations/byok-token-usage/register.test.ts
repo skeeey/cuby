@@ -57,7 +57,7 @@ describe("installByokTokenUsage", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("reads runtime.json from MEMMY_HOME when the active development profile is relocated", async () => {
+  it("reads runtime.json from CUBY_HOME when the active development profile is relocated", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-home-"));
     const memmyHome = join(tempDir, "isolated-profile");
     mkdirSync(memmyHome, { recursive: true });
@@ -70,7 +70,7 @@ describe("installByokTokenUsage", () => {
 
     installByokTokenUsage(configFixture(), {
       hooks,
-      env: { MEMMY_HOME: memmyHome },
+      env: { CUBY_HOME: memmyHome },
       homeDir: join(tempDir, "user-home"),
       fetchImpl: fetchImpl as typeof fetch,
     });
@@ -90,7 +90,7 @@ describe("installByokTokenUsage", () => {
     );
   });
 
-  it("keeps the default user-home runtime path when MEMMY_HOME is not set", async () => {
+  it("keeps the default user-home runtime path when CUBY_HOME is not set", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-default-home-"));
     const runtimeHome = join(tempDir, ".cuby");
     mkdirSync(runtimeHome, { recursive: true });

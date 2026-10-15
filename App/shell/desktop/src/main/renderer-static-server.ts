@@ -55,14 +55,14 @@ export async function startPackagedRendererStaticServer(
 }
 
 function resolvePackagedRendererPort(): number {
-  const raw = process.env.MEMMY_PACKAGED_RENDERER_PORT?.trim();
+  const raw = process.env.CUBY_PACKAGED_RENDERER_PORT?.trim();
   if (!raw) {
     return PACKAGED_RENDERER_DEFAULT_PORT;
   }
 
   const port = Number.parseInt(raw, 10);
   if (!Number.isInteger(port) || port <= 0 || port > 65535) {
-    throw new Error(`MEMMY_PACKAGED_RENDERER_PORT must be an integer between 1 and 65535: ${raw}`);
+    throw new Error(`CUBY_PACKAGED_RENDERER_PORT must be an integer between 1 and 65535: ${raw}`);
   }
 
   return port;

@@ -28,7 +28,7 @@ const envPath = findRepoEnvFile(moduleDir);
 const parsed = envPath ? (loadDotenv({ path: envPath, processEnv: {} }).parsed ?? {}) : {};
 const testEnv = {
   ...parsed,
-  MEMMY_CLOUD_SERVICE: "https://cloud.test.invalid"
+  CUBY_CLOUD_SERVICE: "https://cloud.test.invalid"
 };
 
 export default defineConfig({

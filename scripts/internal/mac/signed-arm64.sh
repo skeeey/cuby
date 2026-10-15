@@ -3,22 +3,22 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../.." && pwd)"
 source "$ROOT_DIR/scripts/internal/shared/package-logging.sh"
-CERT_DIR="${MEMMY_MAC_CERT_DIR:-$ROOT_DIR/Mac软件打包}"
+CERT_DIR="${CUBY_MAC_CERT_DIR:-$ROOT_DIR/Mac软件打包}"
 SIGNING_DIR="$ROOT_DIR/.signing-local"
 KEYCHAIN="${CSC_KEYCHAIN:-/private/tmp/memmy-build-arm64.keychain-db}"
-KEYCHAIN_PASSWORD_FILE="${MEMMY_KEYCHAIN_PASSWORD_FILE:-$SIGNING_DIR/keychain-password-arm64.txt}"
+KEYCHAIN_PASSWORD_FILE="${CUBY_KEYCHAIN_PASSWORD_FILE:-$SIGNING_DIR/keychain-password-arm64.txt}"
 FALLBACK_KEYCHAIN_PASSWORD_FILE="$SIGNING_DIR/keychain-password.txt"
-P12_FILE="${MEMMY_P12_FILE:-$CERT_DIR/证书.p12}"
-P12_PASSWORD_FILE="${MEMMY_P12_PASSWORD_FILE:-$SIGNING_DIR/p12-password.txt}"
+P12_FILE="${CUBY_P12_FILE:-$CERT_DIR/证书.p12}"
+P12_PASSWORD_FILE="${CUBY_P12_PASSWORD_FILE:-$SIGNING_DIR/p12-password.txt}"
 FALLBACK_P12_PASSWORD_FILE="$CERT_DIR/证书密码.txt"
 APPLE_API_KEY="${APPLE_API_KEY:-$CERT_DIR/AuthKey_CUARD5SC47.p8}"
 APPLE_API_KEY_ID="${APPLE_API_KEY_ID:-CUARD5SC47}"
 APPLE_API_ISSUER="${APPLE_API_ISSUER:-5ed1f28c-0bb2-4369-89fe-d04023d48d45}"
 CSC_NAME="${CSC_NAME:-XINYUE REN (S7NLXHGBJ2)}"
 CODESIGN_IDENTITY="${CODESIGN_IDENTITY:-Developer ID Application: XINYUE REN (S7NLXHGBJ2)}"
-DESKTOP_VERSION="${MEMMY_DESKTOP_VERSION:-$(node -p "require('$ROOT_DIR/App/shell/desktop/package.json').version")}"
+DESKTOP_VERSION="${CUBY_DESKTOP_VERSION:-$(node -p "require('$ROOT_DIR/App/shell/desktop/package.json').version")}"
 
-case "${MEMMY_ACCOUNT_CHANNEL:-phone}" in
+case "${CUBY_ACCOUNT_CHANNEL:-phone}" in
   email)
     PACKAGE_EDITION="intl"
     ;;
@@ -26,7 +26,7 @@ case "${MEMMY_ACCOUNT_CHANNEL:-phone}" in
     PACKAGE_EDITION="cn"
     ;;
   *)
-    echo "Unsupported MEMMY_ACCOUNT_CHANNEL: ${MEMMY_ACCOUNT_CHANNEL:-}" >&2
+    echo "Unsupported CUBY_ACCOUNT_CHANNEL: ${CUBY_ACCOUNT_CHANNEL:-}" >&2
     exit 1
     ;;
 esac

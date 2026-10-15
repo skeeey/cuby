@@ -9,12 +9,12 @@ describe("Computer History Markdown path", () => {
 
   it("accepts a direct Markdown file in the configured history directory", () => {
     const file = path.join(histories, "2026-09-14T00-00-00Z-6h-summary.md");
-    expect(resolveComputerHistoryMarkdownPath(file, { MEMMY_HOME: memmyHome }, home)).toBe(file);
+    expect(resolveComputerHistoryMarkdownPath(file, { CUBY_HOME: memmyHome }, home)).toBe(file);
   });
 
   it("expands a home-relative Memmy directory", () => {
     const file = path.join(histories, "entry.md");
-    expect(resolveComputerHistoryMarkdownPath(file, { MEMMY_HOME: "~/.cuby-test" }, home)).toBe(file);
+    expect(resolveComputerHistoryMarkdownPath(file, { CUBY_HOME: "~/.cuby-test" }, home)).toBe(file);
   });
 
   it.each([
@@ -24,6 +24,6 @@ describe("Computer History Markdown path", () => {
     `${path.join(histories, "entry.md")}\n/tmp/other.md`,
     "",
   ])("rejects a path outside the flat Markdown summary store: %s", (file) => {
-    expect(() => resolveComputerHistoryMarkdownPath(file, { MEMMY_HOME: memmyHome }, home)).toThrow();
+    expect(() => resolveComputerHistoryMarkdownPath(file, { CUBY_HOME: memmyHome }, home)).toThrow();
   });
 });

@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 
-if [ "${MEMMY_PACKAGE_LOGGING_SH_LOADED:-}" = "1" ]; then
+if [ "${CUBY_PACKAGE_LOGGING_SH_LOADED:-}" = "1" ]; then
   return 0
 fi
-MEMMY_PACKAGE_LOGGING_SH_LOADED=1
+CUBY_PACKAGE_LOGGING_SH_LOADED=1
 
 package_log_now() {
   date '+%Y-%m-%d %H:%M:%S'
@@ -35,36 +35,36 @@ package_log_format_duration() {
 package_log_init() {
   local label="$1"
   local default_log_dir="$2"
-  local log_dir="${MEMMY_PACKAGE_LOG_DIR:-$default_log_dir}"
+  local log_dir="${CUBY_PACKAGE_LOG_DIR:-$default_log_dir}"
   local safe_label
 
   mkdir -p "$log_dir"
-  if [ -z "${MEMMY_PACKAGE_LOG_FILE:-}" ]; then
+  if [ -z "${CUBY_PACKAGE_LOG_FILE:-}" ]; then
     safe_label="$(package_log_safe_label "$label")"
-    MEMMY_PACKAGE_LOG_FILE="$log_dir/$safe_label-$(date '+%Y%m%d-%H%M%S').log"
-    export MEMMY_PACKAGE_LOG_FILE
+    CUBY_PACKAGE_LOG_FILE="$log_dir/$safe_label-$(date '+%Y%m%d-%H%M%S').log"
+    export CUBY_PACKAGE_LOG_FILE
   fi
 
-  touch "$MEMMY_PACKAGE_LOG_FILE"
-  if [ "${MEMMY_PACKAGE_LOG_CAPTURE_ACTIVE:-}" != "1" ]; then
-    MEMMY_PACKAGE_LOG_CAPTURE_ACTIVE=1
-    export MEMMY_PACKAGE_LOG_CAPTURE_ACTIVE
-    exec > >(tee -a "$MEMMY_PACKAGE_LOG_FILE") 2> >(tee -a "$MEMMY_PACKAGE_LOG_FILE" >&2)
+  touch "$CUBY_PACKAGE_LOG_FILE"
+  if [ "${CUBY_PACKAGE_LOG_CAPTURE_ACTIVE:-}" != "1" ]; then
+    CUBY_PACKAGE_LOG_CAPTURE_ACTIVE=1
+    export CUBY_PACKAGE_LOG_CAPTURE_ACTIVE
+    exec > >(tee -a "$CUBY_PACKAGE_LOG_FILE") 2> >(tee -a "$CUBY_PACKAGE_LOG_FILE" >&2)
   fi
-  if [ -z "${MEMMY_PACKAGE_TOTAL_STARTED_AT:-}" ]; then
-    MEMMY_PACKAGE_TOTAL_STARTED_AT="$(package_log_seconds)"
-    export MEMMY_PACKAGE_TOTAL_STARTED_AT
+  if [ -z "${CUBY_PACKAGE_TOTAL_STARTED_AT:-}" ]; then
+    CUBY_PACKAGE_TOTAL_STARTED_AT="$(package_log_seconds)"
+    export CUBY_PACKAGE_TOTAL_STARTED_AT
   fi
 
-  package_log "Package log file: $MEMMY_PACKAGE_LOG_FILE"
+  package_log "Package log file: $CUBY_PACKAGE_LOG_FILE"
 }
 
 package_log() {
   local line
   line="[$(package_log_now)] $*"
   printf '\n%s\n' "$line"
-  if [ -n "${MEMMY_PACKAGE_LOG_FILE:-}" ] && [ "${MEMMY_PACKAGE_LOG_CAPTURE_ACTIVE:-}" != "1" ]; then
-    printf '%s\n' "$line" >> "$MEMMY_PACKAGE_LOG_FILE"
+  if [ -n "${CUBY_PACKAGE_LOG_FILE:-}" ] && [ "${CUBY_PACKAGE_LOG_CAPTURE_ACTIVE:-}" != "1" ]; then
+    printf '%s\n' "$line" >> "$CUBY_PACKAGE_LOG_FILE"
   fi
 }
 
@@ -74,25 +74,25 @@ package_step_finish_current() {
   local elapsed
   local state="DONE"
 
-  if [ -z "${MEMMY_PACKAGE_ACTIVE_STEP:-}" ]; then
+  if [ -z "${CUBY_PACKAGE_ACTIVE_STEP:-}" ]; then
     return 0
   fi
 
   now="$(package_log_seconds)"
-  elapsed=$((now - ${MEMMY_PACKAGE_ACTIVE_STEP_STARTED_AT:-$now}))
+  elapsed=$((now - ${CUBY_PACKAGE_ACTIVE_STEP_STARTED_AT:-$now}))
   if [ "$status" -ne 0 ]; then
     state="FAILED"
   fi
-  package_log "$state: $MEMMY_PACKAGE_ACTIVE_STEP ($(package_log_format_duration "$elapsed"))"
-  MEMMY_PACKAGE_ACTIVE_STEP=""
-  MEMMY_PACKAGE_ACTIVE_STEP_STARTED_AT=""
+  package_log "$state: $CUBY_PACKAGE_ACTIVE_STEP ($(package_log_format_duration "$elapsed"))"
+  CUBY_PACKAGE_ACTIVE_STEP=""
+  CUBY_PACKAGE_ACTIVE_STEP_STARTED_AT=""
 }
 
 package_step_start() {
   package_step_finish_current 0
-  MEMMY_PACKAGE_ACTIVE_STEP="$*"
-  MEMMY_PACKAGE_ACTIVE_STEP_STARTED_AT="$(package_log_seconds)"
-  package_log "START: $MEMMY_PACKAGE_ACTIVE_STEP"
+  CUBY_PACKAGE_ACTIVE_STEP="$*"
+  CUBY_PACKAGE_ACTIVE_STEP_STARTED_AT="$(package_log_seconds)"
+  package_log "START: $CUBY_PACKAGE_ACTIVE_STEP"
 }
 
 package_run_step() {
@@ -135,10 +135,10 @@ package_log_finish() {
 
   package_step_finish_current "$status"
   now="$(package_log_seconds)"
-  elapsed=$((now - ${MEMMY_PACKAGE_TOTAL_STARTED_AT:-$now}))
+  elapsed=$((now - ${CUBY_PACKAGE_TOTAL_STARTED_AT:-$now}))
   if [ "$status" -ne 0 ]; then
     state="FAILED"
   fi
   package_log "$state: total packaging time $(package_log_format_duration "$elapsed")"
-  package_log "Package log file: $MEMMY_PACKAGE_LOG_FILE"
+  package_log "Package log file: $CUBY_PACKAGE_LOG_FILE"
 }

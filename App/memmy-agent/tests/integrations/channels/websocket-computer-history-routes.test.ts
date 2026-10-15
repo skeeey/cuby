@@ -92,9 +92,9 @@ function snapshot(): ComputerHistorySnapshot {
 }
 
 describe.each(["win32", "linux"] as const)("Computer History unsupported platform %s", (platform) => {
-  it.each([undefined, "1"])("blocks all HTTP entry points even with MEMMY_COMPUTER_HISTORY=%s", async (enabled) => {
+  it.each([undefined, "1"])("blocks all HTTP entry points even with CUBY_COMPUTER_HISTORY=%s", async (enabled) => {
     vi.spyOn(process, "platform", "get").mockReturnValue(platform);
-    vi.stubEnv("MEMMY_COMPUTER_HISTORY", enabled);
+    vi.stubEnv("CUBY_COMPUTER_HISTORY", enabled);
     const instance = channel();
     instance.modelSelectionResolver = vi.fn();
     const routes = [

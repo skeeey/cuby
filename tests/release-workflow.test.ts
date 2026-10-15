@@ -437,7 +437,7 @@ describe("GitHub Draft Release v2 workflow", () => {
     expect(releaseNotes).toContain("DOC_AGENT_RELEASE_NOTES_DRAFT_URL");
     expect(releaseNotes).toContain("DOC_AGENT_RELEASE_NOTES_DRAFT_TOKEN");
     expect(releaseNotes).toContain("DOC_AGENT_RELEASE_NOTES_REQUEST.json");
-    expect(releaseNotes).toContain("MEMMY_RELEASE_STYLE_EXAMPLES.json");
+    expect(releaseNotes).toContain("CUBY_RELEASE_STYLE_EXAMPLES.json");
     expect(releaseNotes).toContain("candidate_count: 3");
     expect(releaseNotes).toContain(".release_notes_md // .release_notes_markdown");
     expect(releaseNotes).toContain("Doc Agent draft configuration missing");

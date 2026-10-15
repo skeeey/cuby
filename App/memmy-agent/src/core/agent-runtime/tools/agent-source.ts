@@ -659,8 +659,8 @@ async function localApiRequest<T>(
 }
 
 function readRuntimeConfig(): RuntimeConfig {
-  const memmyHome = process.env.MEMMY_HOME?.trim()
-    ? path.resolve(process.env.MEMMY_HOME)
+  const memmyHome = process.env.CUBY_HOME?.trim()
+    ? path.resolve(process.env.CUBY_HOME)
     : path.join(os.homedir(), ".cuby");
   const configPath = path.join(memmyHome, "runtime.json");
   const parsed = JSON.parse(fs.readFileSync(configPath, "utf8")) as Record<string, unknown>;

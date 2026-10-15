@@ -22,7 +22,7 @@ const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
 const HTTP_TIMEOUT_MS = 45000;
 
 export function apply(ctx, config = {}) {
-  const memmyConfigPath = cleanText(config.memmyConfigPath) || process.env.MEMMY_CONFIG || DEFAULT_MEMMY_CONFIG_PATH;
+  const memmyConfigPath = cleanText(config.memmyConfigPath) || process.env.CUBY_CONFIG || DEFAULT_MEMMY_CONFIG_PATH;
   const memorySessionIds = new Map();
   const pendingStarts = new Map();
   const activeTurns = new Map();

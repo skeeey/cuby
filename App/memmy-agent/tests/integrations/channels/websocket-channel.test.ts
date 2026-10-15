@@ -93,7 +93,7 @@ function deferred<T = void>(): { promise: Promise<T>; resolve: (value: T) => voi
   return { promise, resolve };
 }
 
-const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const roots: string[] = [];
 
 function tinyPngBytes(): Buffer {
@@ -122,7 +122,7 @@ function writeWebuiText(name = "report.txt"): string {
 function tempDataDir(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-websocket-test-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
+  process.env.CUBY_AGENT_DATA_DIR = root;
   return root;
 }
 
@@ -138,8 +138,8 @@ function webuiChannel(bus: MessageBus, root = tempDataDir()): WebSocketChannel {
 afterEach(() => {
   vi.restoreAllMocks();
   websocketTurnWallStartTimes.clear();
-  if (oldDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+  if (oldDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

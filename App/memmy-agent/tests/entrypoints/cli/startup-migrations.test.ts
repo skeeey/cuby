@@ -33,7 +33,7 @@ function tempRoot(): string {
 function migrationEnv(root: string): NodeJS.ProcessEnv {
   return {
     HOME: root,
-    MEMMY_AGENT_SESSION_DAG_DIR: path.join(root, "session-dag"),
+    CUBY_AGENT_SESSION_DAG_DIR: path.join(root, "session-dag"),
   };
 }
 
@@ -69,7 +69,7 @@ describe("startup migrations", () => {
       },
       {
         USERPROFILE: root,
-        MEMMY_AGENT_SESSION_DAG_DIR: "~\\session-dag",
+        CUBY_AGENT_SESSION_DAG_DIR: "~\\session-dag",
       },
     );
 

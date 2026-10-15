@@ -85,7 +85,7 @@ export function resolveMigrationTargets(
     agentWorkspace: canonicalWorkspace,
     sessionDagDir: absolutePath(
       options.sessionDagDirOverride?.trim()
-        || env.MEMMY_AGENT_SESSION_DAG_DIR
+        || env.CUBY_AGENT_SESSION_DAG_DIR
         || path.join(path.dirname(workspacePath), "session-dag"),
       env,
     ),

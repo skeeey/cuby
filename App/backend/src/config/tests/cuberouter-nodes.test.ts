@@ -16,7 +16,7 @@ describe("cuberouter node table", () => {
   });
 
   it("lets the config file replace the environment", () => {
-    const env = { MEMMY_CUBEROUTER_URLS: "cn=https://from-env.example" };
+    const env = { CUBY_CUBEROUTER_URLS: "cn=https://from-env.example" };
     expect(resolveCuberouterNodes({ env }).map((node) => node.id)).toEqual(["cn"]);
     expect(
       resolveCuberouterNodes({ env, settings: { urls: [{ id: "hk", url: "https://from-file.example" }] } })
@@ -31,12 +31,12 @@ describe("cuberouter node table", () => {
       { id: "cn", url: "https://cuberouter.cn" },
       { id: "hk", url: "https://cuberouter.com" }
     ]);
-    expect(resolveCuberouterNodes({ env: { MEMMY_CUBEROUTER_URLS: "  " } }).map((node) => node.id))
+    expect(resolveCuberouterNodes({ env: { CUBY_CUBEROUTER_URLS: "  " } }).map((node) => node.id))
       .toEqual(["cn", "hk"]);
   });
 
   it("takes a single line from the environment, so local development needs one variable", () => {
-    expect(resolveCuberouterNodes({ env: { MEMMY_CUBEROUTER_URLS: "cn=http://127.0.0.1:3000/" } }))
+    expect(resolveCuberouterNodes({ env: { CUBY_CUBEROUTER_URLS: "cn=http://127.0.0.1:3000/" } }))
       .toEqual([{ id: "cn", url: "http://127.0.0.1:3000" }]);
   });
 });

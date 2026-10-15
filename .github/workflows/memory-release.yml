@@ -68,8 +68,8 @@ jobs:
       - name: Build CLI launcher
         shell: bash
         env:
-          MEMMY_MEMORY_TARGET: ${{ matrix.target }}
-          MEMMY_MEMORY_VERSION: ${{ steps.version.outputs.value }}
+          CUBY_MEMORY_TARGET: ${{ matrix.target }}
+          CUBY_MEMORY_VERSION: ${{ steps.version.outputs.value }}
         run: bash Memory/src/cli/scripts/build-binary.sh
       - uses: actions/upload-artifact@v4
         with:

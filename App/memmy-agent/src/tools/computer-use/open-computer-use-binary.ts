@@ -54,11 +54,11 @@ export function resolveOpenComputerUseCommand(
   } catch {
     return command;
   }
-  const devBinary = (options.environment ?? process.env).MEMMY_DEV_COMPUTER_USE_BINARY;
+  const devBinary = (options.environment ?? process.env).CUBY_DEV_COMPUTER_USE_BINARY;
   if (platform === "darwin" && devBinary && !/([\\/])app\.asar(?:\.unpacked)?([\\/])/.test(root)) {
     // dev-start installs the helper outside temporary worktrees so macOS can
     // resolve its permission identity. Never silently use the broken temp copy.
-    if (!path.isAbsolute(devBinary)) throw new Error("MEMMY_DEV_COMPUTER_USE_BINARY must be an absolute path");
+    if (!path.isAbsolute(devBinary)) throw new Error("CUBY_DEV_COMPUTER_USE_BINARY must be an absolute path");
     try {
       accessSync(devBinary, constants.X_OK);
     } catch {

@@ -28,14 +28,14 @@ describe("default test Memory connection", () => {
       homeDir: root,
       env: {
         ...(source === "process environment" ? {
-          MEMMY_MEMORY_URL: "http://127.0.0.1:18960",
-          MEMMY_MEMORY_TOKEN: "fixture-user-environment-token",
+          CUBY_MEMORY_URL: "http://127.0.0.1:18960",
+          CUBY_MEMORY_TOKEN: "fixture-user-environment-token",
         } : source === "legacy environment aliases" ? {
           MEMORY_SERVICE_URL: "http://127.0.0.1:18960",
           MEMORY_SERVICE_TOKEN: "fixture-user-environment-token",
         } : {}),
         ...vitestConfig.test?.env,
-        MEMMY_CONFIG: configPath,
+        CUBY_CONFIG: configPath,
       },
     });
     const request = vi.fn<typeof fetch>(async () => new Response("{}", { status: 200 }));

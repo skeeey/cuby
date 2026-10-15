@@ -95,7 +95,7 @@ function shouldLog(level: MemoryLogLevel): boolean {
 }
 
 function configuredLogLevel(): MemoryLogLevel | "silent" {
-  const raw = process.env.MEMMY_LOG_LEVEL?.trim().toLowerCase();
+  const raw = process.env.CUBY_LOG_LEVEL?.trim().toLowerCase();
   if (raw === "error" || raw === "warn" || raw === "info" || raw === "debug") {
     return raw;
   }

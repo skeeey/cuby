@@ -18,7 +18,7 @@ import {
 
 const roots: string[] = [];
 const oldPath = process.env.PATH;
-const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const oldPresetEnv = {
   FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
   BRAVE_API_KEY: process.env.BRAVE_API_KEY,
@@ -27,7 +27,7 @@ const oldPresetEnv = {
 function useConfig(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-mcp-presets-"));
   roots.push(root);
-  delete process.env.MEMMY_AGENT_DATA_DIR;
+  delete process.env.CUBY_AGENT_DATA_DIR;
   setConfigPath(path.join(root, "config.yaml"));
   return root;
 }
@@ -36,8 +36,8 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   process.env.PATH = oldPath;
-  if (oldDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+  if (oldDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
   for (const [key, value] of Object.entries(oldPresetEnv)) {
     if (value == null) delete process.env[key];
     else process.env[key] = value;
@@ -241,7 +241,7 @@ describe("mcp presets api", () => {
   it("uses the runtime data directory for managed stdio preset cwd", () => {
     const root = useConfig();
     const dataDir = path.join(root, "data");
-    process.env.MEMMY_AGENT_DATA_DIR = dataDir;
+    process.env.CUBY_AGENT_DATA_DIR = dataDir;
 
     mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
 

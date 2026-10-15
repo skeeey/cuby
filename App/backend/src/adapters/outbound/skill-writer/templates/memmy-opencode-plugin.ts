@@ -469,7 +469,7 @@ function replaceUserTextParts(parts, text) {
 
 function parseResumeCommandArguments(value) {
   const text = normalizeText(value);
-  const sentinel = text.match(/MEMMY_RESUME_COMMAND_ARGUMENTS:\s*([\s\S]*?)\s*MEMMY_RESUME_COMMAND_END/u);
+  const sentinel = text.match(/CUBY_RESUME_COMMAND_ARGUMENTS:\s*([\s\S]*?)\s*CUBY_RESUME_COMMAND_END/u);
   if (sentinel) {
     return normalizeText(sentinel[1]);
   }
@@ -523,7 +523,7 @@ function renderMemmyContextPacket(markdown, source, currentUserRequest) {
 
 async function createMemmyClient() {
   const localConfig = await readLocalConfig();
-  const memmyConfigPath = normalizeText(process.env.MEMMY_CONFIG) ||
+  const memmyConfigPath = normalizeText(process.env.CUBY_CONFIG) ||
     normalizeText(localConfig.memmy_config_path) ||
     DEFAULT_MEMMY_CONFIG_PATH;
   const runtimeConfig = await readMemmyConfig(memmyConfigPath).catch(() => ({}));
@@ -1056,9 +1056,9 @@ export function renderMemmyOpencodeResumeCommand(): string {
     "description: Search Memmy L1 episodes and continue a selected task.",
     "---",
     "",
-    "MEMMY_RESUME_COMMAND_ARGUMENTS:",
+    "CUBY_RESUME_COMMAND_ARGUMENTS:",
     "$ARGUMENTS",
-    "MEMMY_RESUME_COMMAND_END",
+    "CUBY_RESUME_COMMAND_END",
     "",
     "The installed Memmy OpenCode plugin handles this command before normal task execution.",
     ""

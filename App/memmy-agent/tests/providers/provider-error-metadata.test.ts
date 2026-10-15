@@ -119,15 +119,15 @@ describe("provider error metadata", () => {
   });
 
   it("parses OpenAI compat timeout from environment", () => {
-    const old = process.env.MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S;
+    const old = process.env.CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S;
     try {
-      process.env.MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S = "2.5";
+      process.env.CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S = "2.5";
       expect(openaiCompatTimeoutS()).toBe(2.5);
-      process.env.MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S = "-1";
-      expect(floatEnv("MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S", 120)).toBe(120);
+      process.env.CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S = "-1";
+      expect(floatEnv("CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S", 120)).toBe(120);
     } finally {
-      if (old == null) delete process.env.MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S;
-      else process.env.MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S = old;
+      if (old == null) delete process.env.CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S;
+      else process.env.CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S = old;
     }
   });
 

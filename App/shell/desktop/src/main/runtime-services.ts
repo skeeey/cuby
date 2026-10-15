@@ -132,22 +132,22 @@ const DAEMON_LOG_MAX_SIZE = 5 * 1024 * 1024;
 const DAEMON_LOG_MAX_FILES = 5;
 const AGENT_GATEWAY_RESTART_DELAYS_MS = [250, 1_000, 2_000, 5_000, 10_000] as const;
 const AGENT_GATEWAY_STABLE_MS = 30_000;
-const DESKTOP_MANAGED_MEMORY_ENV = "MEMMY_DESKTOP_MANAGED_MEMORY";
+const DESKTOP_MANAGED_MEMORY_ENV = "CUBY_DESKTOP_MANAGED_MEMORY";
 const MEMORY_RESTART_IPC_TYPE = "memmy-memory:restart";
-const DESKTOP_MANAGED_GATEWAY_ENV = "MEMMY_DESKTOP_MANAGED_GATEWAY";
-const BROWSER_PREPARATION_ATTEMPT_ID_ENV = "MEMMY_BROWSER_PREPARATION_ATTEMPT_ID";
+const DESKTOP_MANAGED_GATEWAY_ENV = "CUBY_DESKTOP_MANAGED_GATEWAY";
+const BROWSER_PREPARATION_ATTEMPT_ID_ENV = "CUBY_BROWSER_PREPARATION_ATTEMPT_ID";
 const MANAGED_RESTART_IPC_TYPE = "memmy-agent:restart";
-const MIGRATIONS_READY_CONFIG_ENV = "MEMMY_MIGRATIONS_READY_CONFIG";
-const MIGRATIONS_READY_WORKSPACE_ENV = "MEMMY_MIGRATIONS_READY_WORKSPACE";
-const MIGRATIONS_READY_SESSION_DAG_ENV = "MEMMY_MIGRATIONS_READY_SESSION_DAG";
-const MIGRATIONS_READY_APP_DATABASE_ENV = "MEMMY_MIGRATIONS_READY_APP_DATABASE";
-const APP_DATABASE_ENV = "MEMMY_APP_DATABASE";
+const MIGRATIONS_READY_CONFIG_ENV = "CUBY_MIGRATIONS_READY_CONFIG";
+const MIGRATIONS_READY_WORKSPACE_ENV = "CUBY_MIGRATIONS_READY_WORKSPACE";
+const MIGRATIONS_READY_SESSION_DAG_ENV = "CUBY_MIGRATIONS_READY_SESSION_DAG";
+const MIGRATIONS_READY_APP_DATABASE_ENV = "CUBY_MIGRATIONS_READY_APP_DATABASE";
+const APP_DATABASE_ENV = "CUBY_APP_DATABASE";
 
 function sessionDagMigrationTarget(
   agentWorkspace: string,
   env: NodeJS.ProcessEnv = process.env
 ): string {
-  const override = env.MEMMY_AGENT_SESSION_DAG_DIR;
+  const override = env.CUBY_AGENT_SESSION_DAG_DIR;
   return resolve(
     override && override.trim()
       ? override
@@ -350,8 +350,8 @@ export async function preparePackagedRuntimeConfig(
   const shouldWriteConfig = options.writeConfig ?? true;
   const shouldEnsureDirectories = options.ensureDirectories ?? true;
   const shouldFillMissingAgentSecret = options.fillMissingAgentSecret ?? true;
-  const memmyHome = resolvePath(env.MEMMY_HOME ?? "~/.cuby");
-  const configPath = resolvePath(env.MEMMY_CONFIG ?? join(memmyHome, "config.yaml"));
+  const memmyHome = resolvePath(env.CUBY_HOME ?? "~/.cuby");
+  const configPath = resolvePath(env.CUBY_CONFIG ?? join(memmyHome, "config.yaml"));
   const secretFactory = options.secretFactory ?? createPersistentSecret;
   const defaultWorkspace = join(memmyHome, "workspace");
   const applyRuntimeDefaults = (config: ConfigRecord): ConfigRecord => {
@@ -384,10 +384,10 @@ export async function preparePackagedRuntimeConfig(
       config.fileMemory.enabled = false;
     }
     const agentWorkspace = resolvePath(
-      env.MEMMY_AGENT_WORKSPACE ?? stringValue(defaults.workspace) ?? defaultWorkspace
+      env.CUBY_AGENT_WORKSPACE ?? stringValue(defaults.workspace) ?? defaultWorkspace
     );
     const memoryDatabasePath = resolvePath(
-      env.MEMMY_MEMORY_DB ??
+      env.CUBY_MEMORY_DB ??
         env.MEMORY_SERVICE_DB ??
         stringValue(storage.sqlitePath) ??
         join(memmyHome, "memory-service", "memory.sqlite")
@@ -419,10 +419,10 @@ export async function preparePackagedRuntimeConfig(
   const gateway = ensureRecord(config, "gateway");
   const defaults = ensureRecord(ensureRecord(config, "agents"), "defaults");
   const agentWorkspace = resolvePath(
-    env.MEMMY_AGENT_WORKSPACE ?? stringValue(defaults.workspace) ?? defaultWorkspace
+    env.CUBY_AGENT_WORKSPACE ?? stringValue(defaults.workspace) ?? defaultWorkspace
   );
   const memoryDatabasePath = resolvePath(
-    env.MEMMY_MEMORY_DB ??
+    env.CUBY_MEMORY_DB ??
       env.MEMORY_SERVICE_DB ??
       stringValue(storage.sqlitePath) ??
       join(memmyHome, "memory-service", "memory.sqlite")
@@ -434,12 +434,12 @@ export async function preparePackagedRuntimeConfig(
     ]);
   }
 
-  const memoryEndpoint = stringValue(env.MEMMY_MEMORY_URL) ??
+  const memoryEndpoint = stringValue(env.CUBY_MEMORY_URL) ??
     stringValue(env.MEMORY_SERVICE_URL) ??
     stringValue(storage.endpoint) ??
     DEFAULT_MEMORY_URL;
   const memoryUrl = parseHttpUrl(memoryEndpoint, "Memory endpoint");
-  const memoryToken = stringValue(env.MEMMY_MEMORY_TOKEN) ??
+  const memoryToken = stringValue(env.CUBY_MEMORY_TOKEN) ??
     stringValue(env.MEMORY_SERVICE_TOKEN) ??
     stringValue(storage.token) ??
     "";
@@ -467,9 +467,9 @@ export async function preparePackagedRuntimeConfig(
 export async function resolvePackagedRuntimeMigrationTargets(
   env: RuntimeEnv = process.env
 ): Promise<{ configPath: string; agentWorkspace?: string }> {
-  const memmyHome = resolvePath(env.MEMMY_HOME ?? "~/.cuby");
-  const configPath = resolvePath(env.MEMMY_CONFIG ?? join(memmyHome, "config.yaml"));
-  const explicitWorkspace = stringValue(env.MEMMY_AGENT_WORKSPACE);
+  const memmyHome = resolvePath(env.CUBY_HOME ?? "~/.cuby");
+  const configPath = resolvePath(env.CUBY_CONFIG ?? join(memmyHome, "config.yaml"));
+  const explicitWorkspace = stringValue(env.CUBY_AGENT_WORKSPACE);
   if (!explicitWorkspace) return { configPath };
   const agentWorkspace = resolvePath(explicitWorkspace);
   await mkdir(agentWorkspace, { recursive: true });
@@ -496,7 +496,7 @@ export async function runPackagedMigrationCommand(options: {
     ...process.env,
     ELECTRON_RUN_AS_NODE: "1",
     NODE_ENV: process.env.NODE_ENV ?? "production",
-    MEMMY_LOG_LEVEL: options.logLevel
+    CUBY_LOG_LEVEL: options.logLevel
   };
   delete env[MIGRATIONS_READY_CONFIG_ENV];
   delete env[MIGRATIONS_READY_WORKSPACE_ENV];
@@ -716,8 +716,8 @@ export function startPackagedBrowserPreparation(
       {
         env: {
           ...process.env,
-          MEMMY_CONFIG: runtimeConfig.configPath,
-          MEMMY_AGENT_WORKSPACE: runtimeConfig.agentWorkspace,
+          CUBY_CONFIG: runtimeConfig.configPath,
+          CUBY_AGENT_WORKSPACE: runtimeConfig.agentWorkspace,
           [BROWSER_PREPARATION_ATTEMPT_ID_ENV]: attemptId,
           ELECTRON_RUN_AS_NODE: "1",
           NODE_ENV: process.env.NODE_ENV ?? "production"
@@ -1133,11 +1133,11 @@ async function startManagedMemoryService(
     "--db",
     runtimeConfig.memoryDatabasePath
   ], {
-    MEMMY_CONFIG: runtimeConfig.configPath,
-    MEMMY_MEMORY_URL: runtimeConfig.memoryBaseUrl,
-    MEMMY_MEMORY_TOKEN: runtimeConfig.memoryToken,
-    MEMMY_MEMORY_DB: runtimeConfig.memoryDatabasePath,
-    MEMMY_EMBEDDING_MODEL_ROOT: join(runtimeDir ?? options.resourcesPath, "embedding-models"),
+    CUBY_CONFIG: runtimeConfig.configPath,
+    CUBY_MEMORY_URL: runtimeConfig.memoryBaseUrl,
+    CUBY_MEMORY_TOKEN: runtimeConfig.memoryToken,
+    CUBY_MEMORY_DB: runtimeConfig.memoryDatabasePath,
+    CUBY_EMBEDDING_MODEL_ROOT: join(runtimeDir ?? options.resourcesPath, "embedding-models"),
     MEMORY_SERVICE_URL: runtimeConfig.memoryBaseUrl,
     MEMORY_SERVICE_TOKEN: runtimeConfig.memoryToken,
     MEMORY_SERVICE_DB: runtimeConfig.memoryDatabasePath,
@@ -1195,8 +1195,8 @@ async function runBundledMemoryCli(
         ...process.env,
         ELECTRON_RUN_AS_NODE: "1",
         NODE_ENV: process.env.NODE_ENV ?? "production",
-        MEMMY_CLI_ANALYTICS_SKIP: "1",
-        MEMMY_CONFIG: runtimeConfig.configPath
+        CUBY_CLI_ANALYTICS_SKIP: "1",
+        CUBY_CONFIG: runtimeConfig.configPath
       },
       stdio: ["ignore", "pipe", "pipe"],
       windowsHide: true
@@ -1244,8 +1244,8 @@ function runBundledMemoryCliSync(
         ...process.env,
         ELECTRON_RUN_AS_NODE: "1",
         NODE_ENV: process.env.NODE_ENV ?? "production",
-        MEMMY_CLI_ANALYTICS_SKIP: "1",
-        MEMMY_CONFIG: runtimeConfig.configPath
+        CUBY_CLI_ANALYTICS_SKIP: "1",
+        CUBY_CONFIG: runtimeConfig.configPath
       },
       stdio: "ignore",
       timeout: 6_000,
@@ -1572,10 +1572,10 @@ export class AgentGatewaySupervisor {
       "--port",
       String(this.runtimeConfig.agentGatewayHealthPort)
     ], {
-      MEMMY_CONFIG: this.runtimeConfig.configPath,
-      MEMMY_AGENT_WORKSPACE: this.runtimeConfig.agentWorkspace,
-      MEMMY_MEMORY_URL: this.runtimeConfig.memoryBaseUrl,
-      MEMMY_MEMORY_TOKEN: this.runtimeConfig.memoryToken,
+      CUBY_CONFIG: this.runtimeConfig.configPath,
+      CUBY_AGENT_WORKSPACE: this.runtimeConfig.agentWorkspace,
+      CUBY_MEMORY_URL: this.runtimeConfig.memoryBaseUrl,
+      CUBY_MEMORY_TOKEN: this.runtimeConfig.memoryToken,
       MEMORY_SERVICE_URL: this.runtimeConfig.memoryBaseUrl,
       MEMORY_SERVICE_TOKEN: this.runtimeConfig.memoryToken,
       [MIGRATIONS_READY_CONFIG_ENV]: this.runtimeConfig.configPath,
@@ -1766,7 +1766,7 @@ export function resolveDevelopmentRuntimeEntryPaths(mainDirectory: string): Runt
 export function resolveDevelopmentRuntimeExecutable(
   env: NodeJS.ProcessEnv = process.env
 ): string {
-  return env.MEMMY_RUNTIME_NODE_PATH?.trim()
+  return env.CUBY_RUNTIME_NODE_PATH?.trim()
     || env.npm_node_execpath?.trim()
     || "node";
 }
@@ -1797,7 +1797,7 @@ export function spawnNodeService(
   const childEnv: Record<string, string> = {
     ...process.env,
     ...env,
-    MEMMY_LOG_LEVEL: logOptions.logLevel,
+    CUBY_LOG_LEVEL: logOptions.logLevel,
     ELECTRON_RUN_AS_NODE: "1",
     NODE_ENV: process.env.NODE_ENV ?? "production"
   };
@@ -2515,11 +2515,11 @@ function parseDesktopManagedRestartNotice(value: unknown): DesktopManagedRestart
 
 function restartNoticeEnv(notice: DesktopManagedRestartNotice): Record<string, string> {
   return {
-    MEMMY_AGENT_RESTART_NOTIFY_CHANNEL: notice.channel,
-    MEMMY_AGENT_RESTART_NOTIFY_CHAT_ID: notice.chatId,
-    MEMMY_AGENT_RESTART_STARTED_AT: notice.startedAt,
+    CUBY_AGENT_RESTART_NOTIFY_CHANNEL: notice.channel,
+    CUBY_AGENT_RESTART_NOTIFY_CHAT_ID: notice.chatId,
+    CUBY_AGENT_RESTART_STARTED_AT: notice.startedAt,
     ...(Object.keys(notice.metadata).length > 0
-      ? { MEMMY_AGENT_RESTART_NOTIFY_METADATA: JSON.stringify(notice.metadata) }
+      ? { CUBY_AGENT_RESTART_NOTIFY_METADATA: JSON.stringify(notice.metadata) }
       : {})
   };
 }

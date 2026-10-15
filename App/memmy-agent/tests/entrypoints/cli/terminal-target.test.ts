@@ -11,8 +11,8 @@ import {
   type TerminalTargetDependencies,
 } from "../../../src/entrypoints/cli/commands.js";
 
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
-const originalConfig = process.env.MEMMY_CONFIG;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
+const originalConfig = process.env.CUBY_CONFIG;
 const originalHome = process.env.HOME;
 const originalUserProfile = process.env.USERPROFILE;
 const roots: string[] = [];
@@ -25,8 +25,8 @@ function makeLoop(): {
 } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-terminal-target-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
-  process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+  process.env.CUBY_AGENT_DATA_DIR = root;
+  process.env.CUBY_CONFIG = path.join(root, "config.yaml");
   const workspace = path.join(root, "workspace");
   fs.mkdirSync(workspace, { recursive: true });
   const loop = new AgentLoop({
@@ -60,10 +60,10 @@ function makeLoop(): {
 }
 
 afterEach(() => {
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
-  if (originalConfig == null) delete process.env.MEMMY_CONFIG;
-  else process.env.MEMMY_CONFIG = originalConfig;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
+  if (originalConfig == null) delete process.env.CUBY_CONFIG;
+  else process.env.CUBY_CONFIG = originalConfig;
   if (originalHome == null) delete process.env.HOME;
   else process.env.HOME = originalHome;
   if (originalUserProfile == null) delete process.env.USERPROFILE;
@@ -135,7 +135,7 @@ describe("terminal target resolution", () => {
   it("expands Windows project paths with USERPROFILE when HOME is unavailable", () => {
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-terminal-target-home-"));
     roots.push(root);
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const workspace = path.join(root, "workspace");
     fs.mkdirSync(workspace, { recursive: true });
     const dependencies = {

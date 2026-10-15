@@ -175,10 +175,10 @@ const writeWindowsUserPath = async (value: string): Promise<void> => {
     "$key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')",
     "if ($null -eq $key) { throw 'Unable to open HKCU\\Environment for writing.' }",
     "try {",
-    "  $key.SetValue('Path', $env:MEMMY_WINDOWS_USER_PATH_VALUE, [Microsoft.Win32.RegistryValueKind]::ExpandString)",
+    "  $key.SetValue('Path', $env:CUBY_WINDOWS_USER_PATH_VALUE, [Microsoft.Win32.RegistryValueKind]::ExpandString)",
     "} finally { $key.Dispose() }"
   ].join("\n");
-  await runWindowsPowerShell(script, { MEMMY_WINDOWS_USER_PATH_VALUE: value });
+  await runWindowsPowerShell(script, { CUBY_WINDOWS_USER_PATH_VALUE: value });
 };
 
 const broadcastWindowsEnvironmentChange = async (): Promise<void> => {

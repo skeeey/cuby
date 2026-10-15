@@ -12,7 +12,7 @@ MIGRATIONS_STAGING_DIR="$DESKTOP_DIR/dist/Migrations"
 CLI_BIN_DIR="$RUNTIME_DIR/bin"
 DMG_HELPER_DIR="$DESKTOP_DIR/dist/dmg"
 EMBEDDING_MODELS_DIR="$DESKTOP_DIR/dist/embedding-models"
-EMBEDDING_MODEL_ID="${MEMMY_EMBEDDING_MODEL:-Xenova/all-MiniLM-L6-v2}"
+EMBEDDING_MODEL_ID="${CUBY_EMBEDDING_MODEL:-Xenova/all-MiniLM-L6-v2}"
 source "$ROOT_DIR/scripts/internal/shared/package-logging.sh"
 package_log_init "mac-build-dmg" "$DESKTOP_DIR/release/logs"
 package_install_error_trap
@@ -54,8 +54,8 @@ resolve_target_cpu() {
 }
 
 write_desktop_edition_manifest() {
-  local account_channel="${MEMMY_ACCOUNT_CHANNEL:-phone}"
-  local package_signing="${MEMMY_PACKAGE_SIGNING:-}"
+  local account_channel="${CUBY_ACCOUNT_CHANNEL:-phone}"
+  local package_signing="${CUBY_PACKAGE_SIGNING:-}"
   local edition="cn"
 
   case "$account_channel" in
@@ -66,13 +66,13 @@ write_desktop_edition_manifest() {
       account_channel="phone"
       ;;
     *)
-      echo "Unsupported MEMMY_ACCOUNT_CHANNEL: $account_channel" >&2
+      echo "Unsupported CUBY_ACCOUNT_CHANNEL: $account_channel" >&2
       exit 1
       ;;
   esac
 
   if [ -z "$package_signing" ]; then
-    if [ "${MEMMY_SKIP_CODESIGN:-}" = "1" ]; then
+    if [ "${CUBY_SKIP_CODESIGN:-}" = "1" ]; then
       package_signing="unsigned"
     else
       package_signing="signed"
@@ -83,7 +83,7 @@ write_desktop_edition_manifest() {
     signed|unsigned)
       ;;
     *)
-      echo "Unsupported MEMMY_PACKAGE_SIGNING: $package_signing" >&2
+      echo "Unsupported CUBY_PACKAGE_SIGNING: $package_signing" >&2
       exit 1
       ;;
   esac
@@ -97,10 +97,10 @@ write_desktop_edition_manifest() {
 
 # Resolves NSMicrophoneUsageDescription from the package edition (cn/intl).
 resolve_microphone_usage_description() {
-  local edition="${MEMMY_APP_EDITION:-}"
+  local edition="${CUBY_APP_EDITION:-}"
 
   if [ -z "$edition" ]; then
-    case "${MEMMY_ACCOUNT_CHANNEL:-phone}" in
+    case "${CUBY_ACCOUNT_CHANNEL:-phone}" in
       email)
         edition="intl"
         ;;
@@ -177,8 +177,8 @@ if [ ! -x "\$APP_EXEC" ]; then
 fi
 
 DEFAULT_CONFIG="\$HOME/.cuby/config.yaml"
-if [ -z "\${MEMMY_CONFIG:-}" ] && [ -f "\$DEFAULT_CONFIG" ]; then
-  export MEMMY_CONFIG="\$DEFAULT_CONFIG"
+if [ -z "\${CUBY_CONFIG:-}" ] && [ -f "\$DEFAULT_CONFIG" ]; then
+  export CUBY_CONFIG="\$DEFAULT_CONFIG"
 fi
 
 export ELECTRON_RUN_AS_NODE=1
@@ -207,7 +207,7 @@ while [ -L "$SOURCE" ]; do
   fi
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SOURCE")" && pwd)"
-PREFIX="${MEMMY_CLI_PREFIX:-}"
+PREFIX="${CUBY_CLI_PREFIX:-}"
 
 usage() {
   cat <<'USAGE'
@@ -773,14 +773,14 @@ prune_mac_runtime_artifacts() {
 }
 
 cd "$ROOT_DIR"
-if [ -n "${MEMMY_DESKTOP_VERSION:-}" ]; then
-  DESKTOP_VERSION="$MEMMY_DESKTOP_VERSION"
+if [ -n "${CUBY_DESKTOP_VERSION:-}" ]; then
+  DESKTOP_VERSION="$CUBY_DESKTOP_VERSION"
 else
   DESKTOP_VERSION="$(node -p "require('$DESKTOP_DIR/package.json').version")"
 fi
 package_step_start "Verify macOS package version metadata"
 node scripts/internal/shared/verify-package-version.mjs --expected "$DESKTOP_VERSION"
-export MEMMY_VERSION_SYNC_CHECK_ONLY=1
+export CUBY_VERSION_SYNC_CHECK_ONLY=1
 
 for builder_arg in "$@"; do
   case "$builder_arg" in
@@ -799,13 +799,13 @@ done
 
 BUILDER_CONFIG="electron-builder.yml"
 TARGET_CPU="$(resolve_target_cpu "$@")"
-if [ "${MEMMY_SKIP_CODESIGN:-}" = "1" ]; then
+if [ "${CUBY_SKIP_CODESIGN:-}" = "1" ]; then
   BUILDER_CONFIG="electron-builder.unsigned.yml"
   echo "Building unsigned DMG for local testing. This build is not notarized."
 fi
 
 echo "Preparing macOS $TARGET_CPU package."
-package_log "macOS package context: version=$DESKTOP_VERSION arch=$TARGET_CPU builderConfig=$BUILDER_CONFIG signing=${MEMMY_PACKAGE_SIGNING:-${MEMMY_SKIP_CODESIGN:+unsigned}}"
+package_log "macOS package context: version=$DESKTOP_VERSION arch=$TARGET_CPU builderConfig=$BUILDER_CONFIG signing=${CUBY_PACKAGE_SIGNING:-${CUBY_SKIP_CODESIGN:+unsigned}}"
 
 package_step_start "Install root workspace dependencies if needed"
 if [ ! -x "$ROOT_DIR/node_modules/.bin/tsc" ] || [ ! -x "$ROOT_DIR/node_modules/.bin/electron-builder" ]; then
@@ -979,7 +979,7 @@ package_step_start "Prepare bundled embedding model"
 node "$ROOT_DIR/scripts/internal/shared/prepare-embedding-model.mjs" "$EMBEDDING_MODELS_DIR"
 cp -R "$EMBEDDING_MODELS_DIR" "$RUNTIME_DIR/memory/embedding-models"
 
-if [ "${MEMMY_PACKAGE_PREPARE_ONLY:-}" = "1" ]; then
+if [ "${CUBY_PACKAGE_PREPARE_ONLY:-}" = "1" ]; then
   echo "Prepared desktop runtime resources at $RUNTIME_DIR"
   package_log_finish 0
   exit 0
@@ -988,14 +988,14 @@ fi
 cd "$DESKTOP_DIR"
 # DMG background images are committed static assets and are no longer generated during packaging.
 # For style changes, see the historical generator in git history.
-MEMMY_MICROPHONE_USAGE_DESCRIPTION="$(resolve_microphone_usage_description)"
-echo "Using edition microphone usage description: $MEMMY_MICROPHONE_USAGE_DESCRIPTION"
+CUBY_MICROPHONE_USAGE_DESCRIPTION="$(resolve_microphone_usage_description)"
+echo "Using edition microphone usage description: $CUBY_MICROPHONE_USAGE_DESCRIPTION"
 
 BUILDER_ARGS=(--config "$BUILDER_CONFIG")
-if [ -n "${MEMMY_ELECTRON_DIST:-}" ]; then
-  BUILDER_ARGS+=(--config.electronDist="$MEMMY_ELECTRON_DIST")
+if [ -n "${CUBY_ELECTRON_DIST:-}" ]; then
+  BUILDER_ARGS+=(--config.electronDist="$CUBY_ELECTRON_DIST")
 fi
-BUILDER_ARGS+=(--config.mac.extendInfo.NSMicrophoneUsageDescription="$MEMMY_MICROPHONE_USAGE_DESCRIPTION")
+BUILDER_ARGS+=(--config.mac.extendInfo.NSMicrophoneUsageDescription="$CUBY_MICROPHONE_USAGE_DESCRIPTION")
 
 package_step_start "Run electron-builder macOS DMG packaging"
 npx electron-builder "${BUILDER_ARGS[@]}" --mac dmg "$@"

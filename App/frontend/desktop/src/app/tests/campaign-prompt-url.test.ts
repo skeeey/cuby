@@ -2,9 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { getCampaignActivityUrl } from "../campaign-prompt-url.js";
 
 beforeEach(() => {
-  vi.stubEnv("MEMMY_APP_EDITION", "cn");
-  vi.stubEnv("MEMMY_LEGAL_CN_BASE_URL", "https://test.memmy.cn");
-  vi.stubEnv("MEMMY_LEGAL_INTL_BASE_URL", "https://test.memmy.bot");
+  vi.stubEnv("CUBY_APP_EDITION", "cn");
+  vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "https://test.memmy.cn");
+  vi.stubEnv("CUBY_LEGAL_INTL_BASE_URL", "https://test.memmy.bot");
 });
 
 afterEach(() => {
@@ -18,7 +18,7 @@ describe("getCampaignActivityUrl", () => {
   });
 
   it("uses the intl activity path and language prefix", () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "intl");
+    vi.stubEnv("CUBY_APP_EDITION", "intl");
     expect(getCampaignActivityUrl("en-US")).toBe("https://test.memmy.bot/activity/");
     expect(getCampaignActivityUrl("zh-CN")).toBe("https://test.memmy.bot/cn/activity/");
   });

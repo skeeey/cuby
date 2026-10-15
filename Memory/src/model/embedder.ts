@@ -443,7 +443,7 @@ function resolveEmbeddedEmbeddingModelRoot(model: string): string | null {
 
 function candidateEmbeddedEmbeddingModelRoots(): string[] {
   const roots: string[] = [];
-  const explicitRoot = process.env.MEMMY_EMBEDDING_MODEL_ROOT?.trim();
+  const explicitRoot = process.env.CUBY_EMBEDDING_MODEL_ROOT?.trim();
   if (explicitRoot) {
     roots.push(explicitRoot);
   }

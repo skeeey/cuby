@@ -25,6 +25,6 @@ export function createCliStyle(options: { color?: boolean } = {}): CliStyle {
 
 function shouldUseColor(): boolean {
   if (process.env.NO_COLOR) return false;
-  if (process.env.MEMMY_FORCE_COLOR === "1") return true;
+  if (process.env.CUBY_FORCE_COLOR === "1") return true;
   return Boolean(process.stdout.isTTY);
 }

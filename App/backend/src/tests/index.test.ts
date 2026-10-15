@@ -28,7 +28,7 @@ afterEach(async () => {
   await closeServer(cuberouterServer);
   cuberouterServer = undefined;
   if (cuberouterUrlWasSet) {
-    restoreOptionalEnv("MEMMY_CUBEROUTER_URLS", previousCuberouterUrls);
+    restoreOptionalEnv("CUBY_CUBEROUTER_URLS", previousCuberouterUrls);
     cuberouterUrlWasSet = false;
   }
 
@@ -40,8 +40,8 @@ afterEach(async () => {
 
 describe("local api", () => {
   it("requires an explicit Memmy config path instead of using the user's home directory", async () => {
-    const previousMemmyConfig = process.env.MEMMY_CONFIG;
-    delete process.env.MEMMY_CONFIG;
+    const previousMemmyConfig = process.env.CUBY_CONFIG;
+    delete process.env.CUBY_CONFIG;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-config-path-"));
 
     try {
@@ -53,9 +53,9 @@ describe("local api", () => {
           memoryClient: createMockMemoryClient(),
           cloudClient: createMockCloudClient()
         })
-      ).rejects.toThrow("memmyConfigPath or MEMMY_CONFIG is required");
+      ).rejects.toThrow("memmyConfigPath or CUBY_CONFIG is required");
     } finally {
-      restoreOptionalEnv("MEMMY_CONFIG", previousMemmyConfig);
+      restoreOptionalEnv("CUBY_CONFIG", previousMemmyConfig);
     }
   });
 
@@ -204,9 +204,9 @@ describe("local api", () => {
     await vi.waitFor(() => expect(reloadReasons).toEqual([{ reason: "desktop_startup" }]));
   });
 
-  it("uses the built-in default Cloud client when MEMMY_CLOUD_URL is missing", async () => {
-    const previousCloudUrl = process.env.MEMMY_CLOUD_URL;
-    delete process.env.MEMMY_CLOUD_URL;
+  it("uses the built-in default Cloud client when CUBY_CLOUD_URL is missing", async () => {
+    const previousCloudUrl = process.env.CUBY_CLOUD_URL;
+    delete process.env.CUBY_CLOUD_URL;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
 
     try {
@@ -220,7 +220,7 @@ describe("local api", () => {
 
       expect(backend.runtimeConfig.baseUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
     } finally {
-      restoreOptionalEnv("MEMMY_CLOUD_URL", previousCloudUrl);
+      restoreOptionalEnv("CUBY_CLOUD_URL", previousCloudUrl);
     }
   });
 
@@ -253,14 +253,14 @@ describe("local api", () => {
   });
 
   it("fails fast when no HTTP Memory Layer is configured", async () => {
-    const previousMemoryLayerUrl = process.env.MEMMY_MEMORY_LAYER_URL;
-    const previousMemoryDbPath = process.env.MEMMY_MEMORY_DB_PATH;
-    const previousMemosDbPath = process.env.MEMMY_MEMOS_DB_PATH;
-    const previousDisableSqlite = process.env.MEMMY_DISABLE_MEMOS_SQLITE;
-    delete process.env.MEMMY_MEMORY_LAYER_URL;
-    delete process.env.MEMMY_MEMORY_DB_PATH;
-    delete process.env.MEMMY_MEMOS_DB_PATH;
-    process.env.MEMMY_DISABLE_MEMOS_SQLITE = "1";
+    const previousMemoryLayerUrl = process.env.CUBY_MEMORY_LAYER_URL;
+    const previousMemoryDbPath = process.env.CUBY_MEMORY_DB_PATH;
+    const previousMemosDbPath = process.env.CUBY_MEMOS_DB_PATH;
+    const previousDisableSqlite = process.env.CUBY_DISABLE_MEMOS_SQLITE;
+    delete process.env.CUBY_MEMORY_LAYER_URL;
+    delete process.env.CUBY_MEMORY_DB_PATH;
+    delete process.env.CUBY_MEMOS_DB_PATH;
+    process.env.CUBY_DISABLE_MEMOS_SQLITE = "1";
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
 
     try {
@@ -272,18 +272,18 @@ describe("local api", () => {
           cloudClient: createMockCloudClient(),
           memmyConfigPath: join(tempDir, "config.yaml")
         })
-      ).rejects.toThrow("MEMMY_MEMORY_LAYER_URL is required");
+      ).rejects.toThrow("CUBY_MEMORY_LAYER_URL is required");
     } finally {
-      restoreOptionalEnv("MEMMY_MEMORY_LAYER_URL", previousMemoryLayerUrl);
-      restoreOptionalEnv("MEMMY_MEMORY_DB_PATH", previousMemoryDbPath);
-      restoreOptionalEnv("MEMMY_MEMOS_DB_PATH", previousMemosDbPath);
-      restoreOptionalEnv("MEMMY_DISABLE_MEMOS_SQLITE", previousDisableSqlite);
+      restoreOptionalEnv("CUBY_MEMORY_LAYER_URL", previousMemoryLayerUrl);
+      restoreOptionalEnv("CUBY_MEMORY_DB_PATH", previousMemoryDbPath);
+      restoreOptionalEnv("CUBY_MEMOS_DB_PATH", previousMemosDbPath);
+      restoreOptionalEnv("CUBY_DISABLE_MEMOS_SQLITE", previousDisableSqlite);
     }
   });
 
   it("uses a 20s default timeout for Memory Layer HTTP clients", () => {
     expect(readMemoryLayerConfig({
-      MEMMY_MEMORY_LAYER_URL: " http://127.0.0.1:18960 "
+      CUBY_MEMORY_LAYER_URL: " http://127.0.0.1:18960 "
     } as NodeJS.ProcessEnv)).toMatchObject({
       baseUrl: "http://127.0.0.1:18960",
       timeoutMs: 20_000
@@ -292,8 +292,8 @@ describe("local api", () => {
 
   it("accepts Memory service URL aliases for the writable Memory Layer client", () => {
     expect(readMemoryLayerConfig({
-      MEMMY_MEMORY_URL: " http://127.0.0.1:18960 ",
-      MEMMY_MEMORY_TOKEN: "memory-token"
+      CUBY_MEMORY_URL: " http://127.0.0.1:18960 ",
+      CUBY_MEMORY_TOKEN: "memory-token"
     } as NodeJS.ProcessEnv)).toMatchObject({
       baseUrl: "http://127.0.0.1:18960",
       token: "memory-token"
@@ -401,7 +401,7 @@ describe("local api", () => {
         "    apiKey: cloud.login.uuid",
         "    endpoints:",
         "      platform:",
-        `        apiBase: ${process.env.MEMMY_CLOUD_SERVICE}/api/agentExternal/v1`,
+        `        apiBase: ${process.env.CUBY_CLOUD_SERVICE}/api/agentExternal/v1`,
         "        protocol: memmy-account",
         "modelPresets:",
         "  account-agent:",
@@ -453,8 +453,8 @@ describe("local api", () => {
     expect(parsed.app.userMode).toBe("account");
   });
 
-  it("uses MEMMY_CONFIG as the shared startup sync and settings writer path", async () => {
-    const previousMemmyConfig = process.env.MEMMY_CONFIG;
+  it("uses CUBY_CONFIG as the shared startup sync and settings writer path", async () => {
+    const previousMemmyConfig = process.env.CUBY_CONFIG;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
     const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
     mkdirSync(join(tempDir, ".cuby"), { recursive: true });
@@ -497,7 +497,7 @@ describe("local api", () => {
       ].join("\n"),
       "utf8"
     );
-    process.env.MEMMY_CONFIG = memmyConfigPath;
+    process.env.CUBY_CONFIG = memmyConfigPath;
 
     try {
       backend = await createLocalBackend({
@@ -571,7 +571,7 @@ describe("local api", () => {
         protocol: "openai-chat-completions"
       });
     } finally {
-      restoreOptionalEnv("MEMMY_CONFIG", previousMemmyConfig);
+      restoreOptionalEnv("CUBY_CONFIG", previousMemmyConfig);
     }
   });
 
@@ -955,7 +955,7 @@ describe("local api", () => {
   });
 
   it("default integrations routes proxy capabilities/authorize/list/delete to Cloud Service with machine token", async () => {
-    const previousCloudUrl = process.env.MEMMY_CLOUD_URL;
+    const previousCloudUrl = process.env.CUBY_CLOUD_URL;
     const requests: Array<{
       method?: string;
       url?: string;
@@ -1053,7 +1053,7 @@ describe("local api", () => {
     if (!address || typeof address === "string") {
       throw new Error("Mock integrations server did not bind to a port");
     }
-    process.env.MEMMY_CLOUD_URL = `http://127.0.0.1:${address.port}`;
+    process.env.CUBY_CLOUD_URL = `http://127.0.0.1:${address.port}`;
     await startMockCuberouterServer();
     const memmyConfigPath = join(tempDir, "config.yaml");
 
@@ -1157,7 +1157,7 @@ describe("local api", () => {
         .map((request) => request.machineComposioToken);
       expect(new Set(composioTokens).size).toBe(1);
     } finally {
-      restoreOptionalEnv("MEMMY_CLOUD_URL", previousCloudUrl);
+      restoreOptionalEnv("CUBY_CLOUD_URL", previousCloudUrl);
     }
   });
 
@@ -1248,11 +1248,11 @@ async function startMockCuberouterServer(): Promise<string> {
     throw new Error("Mock cuberouter server did not bind to a port");
   }
 
-  previousCuberouterUrls = process.env.MEMMY_CUBEROUTER_URLS;
+  previousCuberouterUrls = process.env.CUBY_CUBEROUTER_URLS;
   cuberouterUrlWasSet = true;
   const baseUrl = `http://127.0.0.1:${address.port}`;
   // One line, so the build under test never probes the shipped table.
-  process.env.MEMMY_CUBEROUTER_URLS = `cn=${baseUrl}`;
+  process.env.CUBY_CUBEROUTER_URLS = `cn=${baseUrl}`;
   return baseUrl;
 }
 

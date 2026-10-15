@@ -489,7 +489,7 @@ jobs:
             agent_version="$(node -p "require('./App/memmy-agent/package.json').version")"
             desktop_version="$(node -p "require('./App/shell/desktop/package.json').version")"
 
-          node <<'NODE' > release-assets/MEMMY_RELEASE_STYLE_EXAMPLES.json
+          node <<'NODE' > release-assets/CUBY_RELEASE_STYLE_EXAMPLES.json
           const { execFileSync } = require("node:child_process");
           const path = require("node:path");
 
@@ -561,7 +561,7 @@ jobs:
               --slurpfile compare release-assets/DRAFT_COMPARE.json \
               --slurpfile pullRequests release-assets/DRAFT_PULL_REQUESTS.json \
               --slurpfile artifacts release-assets/ARTIFACTS.json \
-              --slurpfile styleExamples release-assets/MEMMY_RELEASE_STYLE_EXAMPLES.json \
+              --slurpfile styleExamples release-assets/CUBY_RELEASE_STYLE_EXAMPLES.json \
               '{
                 source_id: $sourceId,
                 sourceId: $sourceId,

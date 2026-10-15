@@ -18,7 +18,7 @@ set -euo pipefail
 # 1. Configuration (★ the two placeholder items must be filled first, or the script refuses to run)
 # ============================================================
 REPO_DIR="/Users/zongy/Documents/MemTensor/Memmy-agent"
-BRANCH="${MEMMY_RELEASE_BRANCH:-}"
+BRANCH="${CUBY_RELEASE_BRANCH:-}"
 
 # Backend for upload + querying the download list (cn/intl share the same one)
 API_BASE="https://api.memmy.cn"
@@ -72,7 +72,7 @@ case "$BRANCH" in
   release/v*.*.*)
     ;;
   *)
-    die "Packaging requires a release/vX.Y.Z branch; set MEMMY_RELEASE_BRANCH explicitly"
+    die "Packaging requires a release/vX.Y.Z branch; set CUBY_RELEASE_BRANCH explicitly"
     ;;
 esac
 
@@ -121,15 +121,15 @@ log "Verified source release version: $NEW_VERSION"
 # ============================================================
 # 4. Domestic network: local binaries, avoid GitHub downloads
 # ============================================================
-export MEMMY_ELECTRON_DIST="$REPO_DIR/App/shell/desktop/node_modules/electron/dist"
+export CUBY_ELECTRON_DIST="$REPO_DIR/App/shell/desktop/node_modules/electron/dist"
 export CUSTOM_DMGBUILD_PATH="$(find "$HOME/Library/Caches/electron-builder" -name dmgbuild -type f 2>/dev/null | head -1)"
-export MEMMY_DESKTOP_VERSION="$NEW_VERSION"
+export CUBY_DESKTOP_VERSION="$NEW_VERSION"
 
 RELEASE_DIR="$REPO_DIR/App/shell/desktop/release"
 
 # ---- Common: configure public runtime origin → build → upload ----
 set_cloud_service() {
-  export MEMMY_CLOUD_SERVICE="$1"
+  export CUBY_CLOUD_SERVICE="$1"
   echo "Cloud service configured for packaging."
 }
 

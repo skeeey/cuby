@@ -12,10 +12,10 @@
 # electron.exe`. Running that script here is idempotent and self-healing, and
 # it honours ELECTRON_MIRROR when the caller has one set.
 
-if [ "${MEMMY_ENSURE_ELECTRON_DIST_SH_LOADED:-}" = "1" ]; then
+if [ "${CUBY_ENSURE_ELECTRON_DIST_SH_LOADED:-}" = "1" ]; then
   return 0
 fi
-MEMMY_ENSURE_ELECTRON_DIST_SH_LOADED=1
+CUBY_ENSURE_ELECTRON_DIST_SH_LOADED=1
 
 # ensure_electron_dist <desktop_dir>
 #

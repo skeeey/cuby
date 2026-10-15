@@ -6,7 +6,7 @@
  *
  * Note: this module must be the first import in each entrypoint (main.ts /
  * index.ts), so it completes before providers/registry.ts or any other module
- * reads MEMMY_CLOUD_SERVICE during module evaluation. Packaged manifest values
+ * reads CUBY_CLOUD_SERVICE during module evaluation. Packaged manifest values
  * take priority over inherited environment values so upgrades cannot keep a
  * stale cloud endpoint from an earlier installation.
  */
@@ -20,7 +20,7 @@ import { fileURLToPath } from "node:url";
 
 /**
  * Walk upward from the given directory to find the absolute path of the
- * repository root .env containing MEMMY_CLOUD_SERVICE.
+ * repository root .env containing CUBY_CLOUD_SERVICE.
  *
  * @param startDir Starting directory.
  * @returns Absolute .env path when found; otherwise null.
@@ -43,7 +43,7 @@ export function findRepoEnvFile(startDir: string): string | null {
 
 function hasCloudService(filePath: string): boolean {
   try {
-    return /^\s*MEMMY_CLOUD_SERVICE\s*=/m.test(readFileSync(filePath, "utf8"));
+    return /^\s*CUBY_CLOUD_SERVICE\s*=/m.test(readFileSync(filePath, "utf8"));
   } catch {
     return false;
   }
@@ -67,22 +67,22 @@ export function loadCloudServiceEnv(options: LoadCloudServiceEnvOptions = {}): s
     if (!existsSync(manifestPath)) {
       throw new Error("Packaged desktop runtime manifest is missing");
     }
-    env.MEMMY_CLOUD_SERVICE = cloudServiceFromDesktopRuntimeManifest(
+    env.CUBY_CLOUD_SERVICE = cloudServiceFromDesktopRuntimeManifest(
       readFileSync(manifestPath, "utf8"),
     );
-    // MEMMY_CLOUD_URL is a development-only override. Do not let a stale
+    // CUBY_CLOUD_URL is a development-only override. Do not let a stale
     // value inherited from an older installation redirect a packaged app.
-    delete env.MEMMY_CLOUD_URL;
+    delete env.CUBY_CLOUD_URL;
     return manifestPath;
   }
 
-  if (Object.prototype.hasOwnProperty.call(env, "MEMMY_CLOUD_SERVICE")) {
-    const externalValue = env.MEMMY_CLOUD_SERVICE?.trim();
+  if (Object.prototype.hasOwnProperty.call(env, "CUBY_CLOUD_SERVICE")) {
+    const externalValue = env.CUBY_CLOUD_SERVICE?.trim();
     if (externalValue) {
-      env.MEMMY_CLOUD_SERVICE = externalValue;
+      env.CUBY_CLOUD_SERVICE = externalValue;
       return "environment";
     }
-    delete env.MEMMY_CLOUD_SERVICE;
+    delete env.CUBY_CLOUD_SERVICE;
   }
 
   const envPath = findRepoEnvFile(options.cwd ?? process.cwd()) ?? findRepoEnvFile(moduleDir);

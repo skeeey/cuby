@@ -42,7 +42,7 @@ describe("package version guard", () => {
     expect(readJson(join(root, "App/memmy-agent/package.json")).version).toBe("1.1.2");
     expect(readJson(join(root, "App/shell/desktop/package.json")).version).toBe("1.1.2");
     expect(readFileSync(join(root, "App/backend/src/project-version.ts"), "utf8"))
-      .toContain('MEMMY_VERSION = "1.1.2"');
+      .toContain('CUBY_VERSION = "1.1.2"');
     expect(readJson(join(root, "Memory/package.json")).version).toBe("2.1.0");
     expect(readJson(join(root, "Memory/src/cli/npm/package.json")).version).toBe("2.1.0");
     const rootLock = readJson(join(root, "package-lock.json"));
@@ -82,7 +82,7 @@ describe("package version guard", () => {
     const result = spawnSync(process.execPath, [script], {
       cwd: root,
       encoding: "utf8",
-      env: { ...process.env, MEMMY_VERSION_SYNC_CHECK_ONLY: "1" },
+      env: { ...process.env, CUBY_VERSION_SYNC_CHECK_ONLY: "1" },
     });
 
     expect(result.status, result.stderr).toBe(0);
@@ -206,7 +206,7 @@ function fixtureRepo(version, memoryVersion = version) {
   });
   writeText(
     join(root, "App/backend/src/project-version.ts"),
-    `export const MEMMY_VERSION = ${JSON.stringify(version)};\n`,
+    `export const CUBY_VERSION = ${JSON.stringify(version)};\n`,
   );
   return root;
 }

@@ -1,20 +1,20 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createMemoryLogger, memoryErrorFields } from "../src/logging/logger.js";
 
-const originalLogLevel = process.env.MEMMY_LOG_LEVEL;
+const originalLogLevel = process.env.CUBY_LOG_LEVEL;
 
 afterEach(() => {
   if (originalLogLevel === undefined) {
-    delete process.env.MEMMY_LOG_LEVEL;
+    delete process.env.CUBY_LOG_LEVEL;
   } else {
-    process.env.MEMMY_LOG_LEVEL = originalLogLevel;
+    process.env.CUBY_LOG_LEVEL = originalLogLevel;
   }
   vi.restoreAllMocks();
 });
 
 describe("Memory structured logger", () => {
   it("writes JSON lines with only timestamp, level, and a readable message", () => {
-    process.env.MEMMY_LOG_LEVEL = "info";
+    process.env.CUBY_LOG_LEVEL = "info";
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     createMemoryLogger("worker").info("job.succeeded", {
@@ -32,7 +32,7 @@ describe("Memory structured logger", () => {
   });
 
   it("redacts credentials in fields and error messages", () => {
-    process.env.MEMMY_LOG_LEVEL = "error";
+    process.env.CUBY_LOG_LEVEL = "error";
     const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
     createMemoryLogger("llm").error("request.failed", {
@@ -47,8 +47,8 @@ describe("Memory structured logger", () => {
     expect(line).toContain("[redacted]");
   });
 
-  it("honors MEMMY_LOG_LEVEL", () => {
-    process.env.MEMMY_LOG_LEVEL = "warn";
+  it("honors CUBY_LOG_LEVEL", () => {
+    process.env.CUBY_LOG_LEVEL = "warn";
     const write = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
 
     createMemoryLogger("worker").info("job.succeeded");
@@ -57,7 +57,7 @@ describe("Memory structured logger", () => {
   });
 
   it("includes memory context when summary falls back to the evolution model", () => {
-    process.env.MEMMY_LOG_LEVEL = "warn";
+    process.env.CUBY_LOG_LEVEL = "warn";
     const write = vi.spyOn(process.stderr, "write").mockImplementation(() => true);
 
     createMemoryLogger("pipeline").warn("summary.fallback_started", {
@@ -78,7 +78,7 @@ describe("Memory structured logger", () => {
   });
 
   it("uses English for built-in log messages", () => {
-    process.env.MEMMY_LOG_LEVEL = "debug";
+    process.env.CUBY_LOG_LEVEL = "debug";
     const stdoutWrite = vi.spyOn(process.stdout, "write").mockImplementation(() => true);
     const events: Array<[string, string]> = [
       ["embedding", "request.started"],

@@ -62,14 +62,14 @@ import { prepareStartupMigrations } from "../../../src/entrypoints/cli/startup-m
 import { VERSION } from "../../../src/version.js";
 
 const ENV_KEYS = [
-  "MEMMY_AGENT_DATA_DIR",
-  "MEMMY_AGENT_WORKSPACE",
-  "MEMMY_CONFIG",
-  "MEMMY_MIGRATIONS_READY_CONFIG",
-  "MEMMY_MIGRATIONS_READY_SESSION_DAG",
-  "MEMMY_MIGRATIONS_READY_WORKSPACE",
-  "MEMMY_AGENT_SESSION_DAG_DIR",
-  "MEMMY_CLOUD_SERVICE",
+  "CUBY_AGENT_DATA_DIR",
+  "CUBY_AGENT_WORKSPACE",
+  "CUBY_CONFIG",
+  "CUBY_MIGRATIONS_READY_CONFIG",
+  "CUBY_MIGRATIONS_READY_SESSION_DAG",
+  "CUBY_MIGRATIONS_READY_WORKSPACE",
+  "CUBY_AGENT_SESSION_DAG_DIR",
+  "CUBY_CLOUD_SERVICE",
   "OAUTH_CLI_KIT_TOKEN_PATH",
   "OPENAI_CODEX_TOKEN_PATH",
   "CHATGPT_TOKEN_PATH",
@@ -89,7 +89,7 @@ const originalStdinIsTty = (process.stdin as any).isTTY;
 function tempRoot(prefix = "memmy-cli-"): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   roots.push(root);
-  process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "session-dag");
+  process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "session-dag");
   return root;
 }
 
@@ -230,7 +230,7 @@ describe("CLI command helpers", () => {
   it("routes bare memmy to the Ink TUI", async () => {
     const root = tempRoot();
     setConfigPath(writeConfig(root, {}));
-    process.env.MEMMY_AGENT_WORKSPACE = path.join(root, "workspace");
+    process.env.CUBY_AGENT_WORKSPACE = path.join(root, "workspace");
     const runRoot = vi.fn(async () => undefined);
     setRootInteractiveRunnerForTest(runRoot);
 
@@ -289,7 +289,7 @@ describe("CLI command helpers", () => {
     setConfigPath(writeConfig(root, {
       agents: { defaults: { workspace } },
     }));
-    process.env.MEMMY_AGENT_WORKSPACE = workspace;
+    process.env.CUBY_AGENT_WORKSPACE = workspace;
     const runRoot = vi.fn(async () => undefined);
     setRootInteractiveRunnerForTest(runRoot);
 
@@ -342,10 +342,10 @@ describe("CLI command helpers", () => {
     const legacyDir = path.join(root, "cron");
     fs.mkdirSync(legacyDir, { recursive: true });
     fs.writeFileSync(path.join(legacyDir, "jobs.json"), "[]", "utf8");
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
 
     const config = await onboard({ config: configPath, workspace, defaults: true });
-    delete process.env.MEMMY_AGENT_DATA_DIR;
+    delete process.env.CUBY_AGENT_DATA_DIR;
 
     expect(config.agents.defaults.workspace).toBe(workspace);
     expect(fs.existsSync(configPath)).toBe(true);
@@ -652,7 +652,7 @@ describe("CLI command helpers", () => {
       })}\n`,
       "utf8",
     );
-    process.env.MEMMY_AGENT_DATA_DIR = path.join(root, "data");
+    process.env.CUBY_AGENT_DATA_DIR = path.join(root, "data");
     const sidebarState = {
       ...defaultWebuiSidebarState(),
       pinned_keys: ["websocket:legacy"],
@@ -1483,7 +1483,7 @@ describe("CLI command helpers", () => {
   });
 
   it("resolves GitHub Copilot token storage under the auth directory", () => {
-    process.env.MEMMY_AGENT_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-data-"));
+    process.env.CUBY_AGENT_DATA_DIR = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-data-"));
 
     const tokenPath = getStorage().getTokenPath();
 
@@ -1886,8 +1886,8 @@ describe("CLI command parity with memmy test_commands", () => {
   });
 
   it("provider logout paths resolve to expected files", () => {
-    process.env.MEMMY_AGENT_DATA_DIR = tempRoot();
-    expect(path.basename(path.join(process.env.MEMMY_AGENT_DATA_DIR, "auth", "codex.json"))).toBe("codex.json");
+    process.env.CUBY_AGENT_DATA_DIR = tempRoot();
+    expect(path.basename(path.join(process.env.CUBY_AGENT_DATA_DIR, "auth", "codex.json"))).toBe("codex.json");
     const ghPath = getStorage().getTokenPath();
     expect(path.basename(ghPath)).toBe("github-copilot.json");
     expect(path.basename(path.dirname(ghPath))).toBe("auth");
@@ -2073,7 +2073,7 @@ describe("CLI command parity with memmy test_commands", () => {
     const legacyDir = path.join(root, "global", "cron");
     fs.mkdirSync(legacyDir, { recursive: true });
     fs.writeFileSync(path.join(legacyDir, "jobs.json"), "[]", "utf8");
-    process.env.MEMMY_AGENT_DATA_DIR = path.join(root, "global");
+    process.env.CUBY_AGENT_DATA_DIR = path.join(root, "global");
     const override = path.join(root, "override-workspace");
     vi.spyOn(AgentLoop, "fromConfig").mockReturnValue(fakeAgentLoop() as any);
 
@@ -2090,7 +2090,7 @@ describe("CLI command parity with memmy test_commands", () => {
     const legacyDir = path.join(root, "global", "cron");
     fs.mkdirSync(legacyDir, { recursive: true });
     fs.writeFileSync(path.join(legacyDir, "jobs.json"), "[]", "utf8");
-    process.env.MEMMY_AGENT_DATA_DIR = path.join(root, "global");
+    process.env.CUBY_AGENT_DATA_DIR = path.join(root, "global");
     vi.spyOn(AgentLoop, "fromConfig").mockReturnValue(fakeAgentLoop() as any);
 
     await agent({ message: "hello", config: configPath });

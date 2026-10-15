@@ -77,9 +77,9 @@ describe("standalone Memory runtime installer", () => {
     expect(pointer?.version).toBe("2.1.0");
     expect(readFileSync(pointer!.entrypoint, "utf8")).toContain("runtime fixture");
     const launcher = readFileSync(join(home, "bin", "memmy-memory-service.cjs"), "utf8");
-    expect(launcher).toContain(`MEMMY_HOME: ${JSON.stringify(home)}`);
-    expect(launcher).toContain(`MEMMY_CONFIG: ${JSON.stringify(join(home, "config.yaml"))}`);
-    expect(launcher).toContain("MEMMY_EMBEDDING_MODEL_ROOT");
+    expect(launcher).toContain(`CUBY_HOME: ${JSON.stringify(home)}`);
+    expect(launcher).toContain(`CUBY_CONFIG: ${JSON.stringify(join(home, "config.yaml"))}`);
+    expect(launcher).toContain("CUBY_EMBEDDING_MODEL_ROOT");
     expect(JSON.parse(readFileSync(join(home, "memory-service", "installation.json"), "utf8"))).toMatchObject({
       agents: ["openclaw", "hermes"]
     });

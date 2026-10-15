@@ -9,7 +9,7 @@ import { renderMemmySkillBootstrapManifest } from "../templates/memmy-skill-dire
 import type { MemoryPluginConflict, SkillManifest, SkillTarget } from "../types.js";
 import { readMemmyMemoryServiceConfig } from "../memmy-runtime-config.js";
 import { resolveHermesHomeDirectory } from "../../agent-paths.js";
-import { MEMORY_SERVICE_VERSION as MEMMY_VERSION } from "../../../version.js";
+import { MEMORY_SERVICE_VERSION as CUBY_VERSION } from "../../../version.js";
 
 const HERMES_TARGET_ID = "hermes";
 const HERMES_DISPLAY_NAME = "Hermes";
@@ -310,13 +310,13 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 }
 
 const HERMES_PLUGIN_YAML = `name: memmy-memory
-version: ${MEMMY_VERSION}
+version: ${CUBY_VERSION}
 kind: exclusive
 description: "Memmy local memory provider."
 `;
 
 const HERMES_COMMAND_PLUGIN_YAML = `name: memmy-resume
-version: ${MEMMY_VERSION}
+version: ${CUBY_VERSION}
 kind: standalone
 description: "Direct Memmy resume slash command."
 `;
@@ -429,7 +429,7 @@ def _plugin_config() -> Dict[str, str]:
 
 
 def _memmy_config_path() -> Path:
-    env_path = _clean_text(os.environ.get("MEMMY_CONFIG"))
+    env_path = _clean_text(os.environ.get("CUBY_CONFIG"))
     if env_path:
         return Path(env_path).expanduser()
     configured = _plugin_config().get("memmy_config_path", "")
@@ -934,7 +934,7 @@ PLUGIN_DIR = Path(__file__).resolve().parent
 DEFAULT_MEMMY_CONFIG_PATH = Path.home() / ".cuby" / "config.yaml"
 HTTP_TIMEOUT_SECONDS = 45.0
 SHUTDOWN_THREAD_TIMEOUT_SECONDS = 60.0
-MEMMY_SEARCH_SCHEMA = {
+CUBY_SEARCH_SCHEMA = {
     "name": "memmy_memory_search",
     "description": "Search Memmy local memory for relevant facts, preferences, policies, world models, and skills.",
     "parameters": {
@@ -951,7 +951,7 @@ MEMMY_SEARCH_SCHEMA = {
     },
 }
 
-MEMMY_REMEMBER_SCHEMA = {
+CUBY_REMEMBER_SCHEMA = {
     "name": "memmy_memory_add",
     "description": "Write an important fact, preference, decision, or task insight into Memmy local memory.",
     "parameters": {
@@ -966,7 +966,7 @@ MEMMY_REMEMBER_SCHEMA = {
     },
 }
 
-MEMMY_MEMORY_GET_SCHEMA = {
+CUBY_MEMORY_GET_SCHEMA = {
     "name": "memmy_memory_get",
     "description": "Read one Memmy memory detail by id. Use this for trace_, policy_, world_, skill_, and episode_ ids returned by memory search.",
     "parameters": {
@@ -1075,7 +1075,7 @@ class MemmyMemoryProvider(MemoryProvider):
             self._threads = [item for item in self._threads if item.is_alive()]
 
     def get_tool_schemas(self) -> List[Dict[str, Any]]:
-        return [MEMMY_SEARCH_SCHEMA, MEMMY_MEMORY_GET_SCHEMA, MEMMY_REMEMBER_SCHEMA]
+        return [CUBY_SEARCH_SCHEMA, CUBY_MEMORY_GET_SCHEMA, CUBY_REMEMBER_SCHEMA]
 
     def handle_tool_call(self, tool_name: str, args: Dict[str, Any], **kwargs) -> str:
         try:
@@ -1307,7 +1307,7 @@ def _plugin_config() -> Dict[str, str]:
 
 
 def _memmy_config_path() -> Path:
-    env_path = _clean_text(os.environ.get("MEMMY_CONFIG"))
+    env_path = _clean_text(os.environ.get("CUBY_CONFIG"))
     if env_path:
         return Path(env_path).expanduser()
     configured = _plugin_config().get("memmy_config_path", "")

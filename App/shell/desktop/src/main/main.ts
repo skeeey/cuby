@@ -181,7 +181,7 @@ const PET_FULLSCREEN_EXIT_TIMEOUT_MS = 2500;
 loadCloudServiceEnv({
   manifestPath: app.isPackaged ? join(import.meta.dirname, "desktop-edition.json") : undefined,
 });
-const UPDATE_MANIFEST_BASE_URL = resolveCloudServiceBaseUrl(process.env.MEMMY_CLOUD_SERVICE);
+const UPDATE_MANIFEST_BASE_URL = resolveCloudServiceBaseUrl(process.env.CUBY_CLOUD_SERVICE);
 const UPDATE_MANIFEST_PATH = "/api/memmy/desktop/latest";
 const DEFAULT_UPDATE_MANIFEST_URL = `${UPDATE_MANIFEST_BASE_URL}${UPDATE_MANIFEST_PATH}`;
 const UPDATE_INSTALL_QUIT_DELAY_MS = 300;
@@ -203,9 +203,9 @@ const WINDOWS_UPDATE_PROMPT_LANGUAGE_FILE = "update-prompt-language.txt";
 const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.cuby";
 const REQUIRED_UPDATE_BACKGROUND_FIRST_CHECK_DELAY_MS = 60 * 1000;
 // Background update check interval: defaults to 5 minutes; can be overridden via the
-// MEMMY_UPDATE_CHECK_INTERVAL_MIN env var (set a small value during testing without changing code).
+// CUBY_UPDATE_CHECK_INTERVAL_MIN env var (set a small value during testing without changing code).
 const REQUIRED_UPDATE_BACKGROUND_CHECK_INTERVAL_MS =
-  Math.max(1, Number(process.env.MEMMY_UPDATE_CHECK_INTERVAL_MIN) || 5) * 60 * 1000;
+  Math.max(1, Number(process.env.CUBY_UPDATE_CHECK_INTERVAL_MIN) || 5) * 60 * 1000;
 // Jitter ratio: the actual interval is randomized within [base, base×(1+ratio)] so that not every
 // client hits the server at the exact same moment when a release ships (thundering herd).
 const REQUIRED_UPDATE_BACKGROUND_CHECK_JITTER_RATIO = 0.2;
@@ -321,7 +321,7 @@ async function boot(): Promise<void> {
   try {
     bootStartedAt = Date.now();
     bootStage = "initializing";
-    process.env.MEMMY_APP_EDITION = resolveCurrentDesktopEdition();
+    process.env.CUBY_APP_EDITION = resolveCurrentDesktopEdition();
     initLogger();
     forceLightWindowChrome();
     await writePackagedStartupLog("boot:start");
@@ -495,16 +495,16 @@ function configureAppIdentity(): void {
   }
   app.setPath("userData", userDataPath);
   if (app.isPackaged) {
-    process.env.MEMMY_HOME = memmyHome;
-    process.env.MEMMY_CONFIG = join(memmyHome, "config.yaml");
+    process.env.CUBY_HOME = memmyHome;
+    process.env.CUBY_CONFIG = join(memmyHome, "config.yaml");
     if (process.platform === "win32") {
       const memoryDatabasePath = join(memmyHome, "memory-service", "memory.sqlite");
-      process.env.MEMMY_MEMORY_DB = memoryDatabasePath;
+      process.env.CUBY_MEMORY_DB = memoryDatabasePath;
       process.env.MEMORY_SERVICE_DB = memoryDatabasePath;
     }
   } else {
-    process.env.MEMMY_HOME ??= memmyHome;
-    process.env.MEMMY_CONFIG ??= join(memmyHome, "config.yaml");
+    process.env.CUBY_HOME ??= memmyHome;
+    process.env.CUBY_CONFIG ??= join(memmyHome, "config.yaml");
   }
 }
 
@@ -521,7 +521,7 @@ function resolveDesktopRuntimeHomePath(edition: DesktopEdition): string {
  * @returns The desktop package edition identity.
  */
 function resolveCurrentDesktopEdition(): DesktopEdition {
-  return resolveDesktopEdition(readCurrentDesktopEditionManifest(), process.env.MEMMY_ACCOUNT_CHANNEL);
+  return resolveDesktopEdition(readCurrentDesktopEditionManifest(), process.env.CUBY_ACCOUNT_CHANNEL);
 }
 
 function resolveCurrentDesktopAccountChannel(): AccountChannel {
@@ -533,7 +533,7 @@ function resolveCurrentDesktopAccountChannel(): AccountChannel {
  * @returns The desktop package signing identity.
  */
 function resolveCurrentDesktopPackageSigning(): DesktopPackageSigning {
-  return resolveDesktopPackageSigning(readCurrentDesktopEditionManifest(), process.env.MEMMY_PACKAGE_SIGNING);
+  return resolveDesktopPackageSigning(readCurrentDesktopEditionManifest(), process.env.CUBY_PACKAGE_SIGNING);
 }
 
 function resolveCurrentDesktopPlatformType(): string {
@@ -822,10 +822,10 @@ async function startLocalApi(services: ManagedRuntimeServices | null): Promise<D
   const databasePath = join(app.getPath("userData"), "app.sqlite");
   let memoryControl: { baseUrl: string; token: string };
   if (services) {
-    process.env.MEMMY_CONFIG ??= services.memory.configPath;
-    process.env.MEMMY_MEMORY_LAYER_URL = services.memory.baseUrl;
-    process.env.MEMMY_MEMORY_LAYER_TOKEN = services.memory.token;
-    process.env.MEMMY_MEMORY_DB_PATH = services.memory.databasePath;
+    process.env.CUBY_CONFIG ??= services.memory.configPath;
+    process.env.CUBY_MEMORY_LAYER_URL = services.memory.baseUrl;
+    process.env.CUBY_MEMORY_LAYER_TOKEN = services.memory.token;
+    process.env.CUBY_MEMORY_DB_PATH = services.memory.databasePath;
     memoryControl = {
       baseUrl: services.memory.baseUrl,
       token: services.memory.token
@@ -837,10 +837,10 @@ async function startLocalApi(services: ManagedRuntimeServices | null): Promise<D
       secretFactory: () => "",
       writeConfig: false
     });
-    process.env.MEMMY_CONFIG ??= memoryRuntime.configPath;
-    process.env.MEMMY_MEMORY_LAYER_URL ??= memoryRuntime.memoryBaseUrl;
-    process.env.MEMMY_MEMORY_LAYER_TOKEN ??= memoryRuntime.memoryToken;
-    process.env.MEMMY_MEMORY_DB_PATH ??= memoryRuntime.memoryDatabasePath;
+    process.env.CUBY_CONFIG ??= memoryRuntime.configPath;
+    process.env.CUBY_MEMORY_LAYER_URL ??= memoryRuntime.memoryBaseUrl;
+    process.env.CUBY_MEMORY_LAYER_TOKEN ??= memoryRuntime.memoryToken;
+    process.env.CUBY_MEMORY_DB_PATH ??= memoryRuntime.memoryDatabasePath;
     memoryControl = {
       baseUrl: memoryRuntime.memoryBaseUrl,
       token: memoryRuntime.memoryToken
@@ -861,10 +861,10 @@ async function startLocalApi(services: ManagedRuntimeServices | null): Promise<D
           bootstrapSecret: services.agentGateway.bootstrapSecret
         })
       : undefined,
-    memmyConfigPath: process.env.MEMMY_CONFIG,
+    memmyConfigPath: process.env.CUBY_CONFIG,
     memoryBaseUrl: memoryControl.baseUrl,
     memoryReady: services?.memory.ready,
-    runtimeConfigPath: process.env.MEMMY_HOME ? join(process.env.MEMMY_HOME, "runtime.json") : undefined
+    runtimeConfigPath: process.env.CUBY_HOME ? join(process.env.CUBY_HOME, "runtime.json") : undefined
   });
   const agentGateway: NonNullable<DesktopRuntimeConfig["agentGateway"]> =
     services?.agentGateway ?? await resolveAgentGatewayRuntimeConfig();
@@ -4801,7 +4801,7 @@ function attachRendererShortcutGuards(targetWindow: BrowserWindow): void {
  */
 function resolveRendererUrl(mode: DesktopWindowMode, target: RendererRouteTarget | null = null): string {
   return resolveDesktopRendererUrl({
-    explicitUrl: process.env.MEMMY_RENDERER_URL,
+    explicitUrl: process.env.CUBY_RENDERER_URL,
     isPackaged: app.isPackaged,
     mainDir: import.meta.dirname,
     mode,
@@ -4838,7 +4838,7 @@ function parseRendererRouteTarget(value: unknown): RendererRouteTarget | null {
  * @returns The completed scenario or undefined.
  */
 function getBootstrapScenario(): BootstrapScenario | undefined {
-  return process.env.MEMMY_BOOTSTRAP_SCENARIO === "completed" ? "completed" : undefined;
+  return process.env.CUBY_BOOTSTRAP_SCENARIO === "completed" ? "completed" : undefined;
 }
 
 function handleAnalyticsClientId(_event: IpcMainEvent, payload: unknown): void {
@@ -5292,9 +5292,9 @@ async function fetchDesktopImage(request: DesktopImageActionRequest, senderUrl: 
 }
 
 function resolveAgentMediaDir(): string {
-  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.cuby/config.yaml");
-  const dataDir = process.env.MEMMY_AGENT_DATA_DIR?.trim()
-    ? resolvePathValue(process.env.MEMMY_AGENT_DATA_DIR)
+  const configPath = resolvePathValue(process.env.CUBY_CONFIG ?? "~/.cuby/config.yaml");
+  const dataDir = process.env.CUBY_AGENT_DATA_DIR?.trim()
+    ? resolvePathValue(process.env.CUBY_AGENT_DATA_DIR)
     : dirname(configPath);
   return join(dataDir, "media");
 }
@@ -5642,9 +5642,9 @@ async function exportDiagnosticsReport(owner: BrowserWindow | null): Promise<Dia
  */
 function buildDiagnosticsReport(): string {
   const logsDirectory = resolveLogsDirectory();
-  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.cuby/config.yaml");
-  const agentWorkspace = process.env.MEMMY_AGENT_WORKSPACE ??
-    join(resolvePathValue(process.env.MEMMY_HOME ?? "~/.cuby"), "workspace");
+  const configPath = resolvePathValue(process.env.CUBY_CONFIG ?? "~/.cuby/config.yaml");
+  const agentWorkspace = process.env.CUBY_AGENT_WORKSPACE ??
+    join(resolvePathValue(process.env.CUBY_HOME ?? "~/.cuby"), "workspace");
   const memoryDatabasePath = runtimeServices?.memory.databasePath ?? "<not-started>";
   const runtimeBaseUrl = runtimeConfig?.baseUrl ?? "<not-ready>";
   const agentGatewayBaseUrl = runtimeConfig?.agentGateway?.baseUrl ?? "<not-ready>";

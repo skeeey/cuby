@@ -53,7 +53,7 @@ export interface CreateLocalBackendOptions {
   agentAdapterRegistry?: AgentAdapterRegistry;
   agentAdapterPluginDirectories?: string[];
   runtimeConfigPath?: string;
-  /** Memmy config path. Required unless MEMMY_CONFIG is set. */
+  /** Memmy config path. Required unless CUBY_CONFIG is set. */
   memmyConfigPath?: string;
   /** Memory service address exposed to desktop and browser-debug clients. */
   memoryBaseUrl?: string;
@@ -78,9 +78,9 @@ export interface LocalBackend {
 
 export async function createLocalBackend(options: CreateLocalBackendOptions): Promise<LocalBackend> {
   loadCloudServiceEnv();
-  const memmyConfigPath = options.memmyConfigPath ?? process.env.MEMMY_CONFIG;
+  const memmyConfigPath = options.memmyConfigPath ?? process.env.CUBY_CONFIG;
   if (!memmyConfigPath) {
-    throw new Error("memmyConfigPath or MEMMY_CONFIG is required");
+    throw new Error("memmyConfigPath or CUBY_CONFIG is required");
   }
   const appStateStore = createAppStateStore({ databasePath: options.databasePath });
   let server: Awaited<ReturnType<typeof createLocalApiServer>> | null = null;
@@ -248,16 +248,16 @@ function tryGetInstallationId(appStateStore: ReturnType<typeof createAppStateSto
 }
 
 export function readMemoryLayerConfig(env: NodeJS.ProcessEnv): MemoryLayerConfig | null {
-  const baseUrl = (env.MEMMY_MEMORY_LAYER_URL ?? env.MEMMY_MEMORY_URL ?? env.MEMORY_SERVICE_URL)?.trim();
+  const baseUrl = (env.CUBY_MEMORY_LAYER_URL ?? env.CUBY_MEMORY_URL ?? env.MEMORY_SERVICE_URL)?.trim();
   if (!baseUrl) {
     return null;
   }
 
   return {
     baseUrl,
-    token: env.MEMMY_MEMORY_LAYER_TOKEN ?? env.MEMMY_MEMORY_TOKEN ?? env.MEMORY_SERVICE_TOKEN ?? "",
-    timeoutMs: Number.parseInt(env.MEMMY_MEMORY_LAYER_TIMEOUT_MS ?? String(DEFAULT_MEMORY_LAYER_TIMEOUT_MS), 10),
-    maxRetries: Number.parseInt(env.MEMMY_MEMORY_LAYER_MAX_RETRIES ?? "3", 10)
+    token: env.CUBY_MEMORY_LAYER_TOKEN ?? env.CUBY_MEMORY_TOKEN ?? env.MEMORY_SERVICE_TOKEN ?? "",
+    timeoutMs: Number.parseInt(env.CUBY_MEMORY_LAYER_TIMEOUT_MS ?? String(DEFAULT_MEMORY_LAYER_TIMEOUT_MS), 10),
+    maxRetries: Number.parseInt(env.CUBY_MEMORY_LAYER_MAX_RETRIES ?? "3", 10)
   };
 }
 
@@ -273,5 +273,5 @@ function createDefaultMemoryClient(env: NodeJS.ProcessEnv): MemoryClient {
     return createHttpMemoryClient(memoryLayerConfig);
   }
 
-  throw new Error("MEMMY_MEMORY_LAYER_URL is required");
+  throw new Error("CUBY_MEMORY_LAYER_URL is required");
 }

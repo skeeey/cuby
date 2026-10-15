@@ -38,8 +38,8 @@ vi.mock("../../../src/entrypoints/frontend-bridge/mcp-presets-api.js", async (im
 
 const running: WebSocketChannel[] = [];
 const tmpDirs: string[] = [];
-const originalMemmyAgentConfig = process.env.MEMMY_CONFIG;
-const originalMemmyAgentDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalMemmyAgentConfig = process.env.CUBY_CONFIG;
+const originalMemmyAgentDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 afterEach(async () => {
   await Promise.all(running.splice(0).map((channel) => channel.stop()));
@@ -49,10 +49,10 @@ afterEach(async () => {
   childProcessMocks.spawn.mockClear();
   childProcessMocks.spawnSync.mockClear();
   routeMocks.mcpPresetsSettingsAction.mockReset();
-  if (originalMemmyAgentConfig === undefined) delete process.env.MEMMY_CONFIG;
-  else process.env.MEMMY_CONFIG = originalMemmyAgentConfig;
-  if (originalMemmyAgentDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalMemmyAgentDataDir;
+  if (originalMemmyAgentConfig === undefined) delete process.env.CUBY_CONFIG;
+  else process.env.CUBY_CONFIG = originalMemmyAgentConfig;
+  if (originalMemmyAgentDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalMemmyAgentDataDir;
 });
 
 describe("WebSocket HTTP route helpers", () => {
@@ -183,7 +183,7 @@ describe("WebSocket HTTP route helpers", () => {
   function configModel(root: string, model: string): void {
     const configPath = path.join(root, "config.yaml");
     fs.writeFileSync(configPath, `model: ${model}\n`, "utf8");
-    process.env.MEMMY_CONFIG = configPath;
+    process.env.CUBY_CONFIG = configPath;
   }
 
   function mockDirtyGitWorkspace(root: string): void {
@@ -238,7 +238,7 @@ describe("WebSocket HTTP route helpers", () => {
       "    agent: { candidates: [], default: null }",
       "",
     ].join("\n"), "utf8");
-    process.env.MEMMY_CONFIG = configPath;
+    process.env.CUBY_CONFIG = configPath;
   }
 
   const localConnection = { remoteAddress: "127.0.0.1" };
@@ -749,7 +749,7 @@ describe("WebSocket HTTP route helpers", () => {
     expect(updated.status, updatedText).toBe(200);
     const body = JSON.parse(updatedText) as Record<string, any>;
     expect(body.image_generation.max_images_per_turn).toBe(24);
-    expect(loadConfig(process.env.MEMMY_CONFIG).tools.imageGeneration).toMatchObject({
+    expect(loadConfig(process.env.CUBY_CONFIG).tools.imageGeneration).toMatchObject({
       enabled: true,
       maxImagesPerTurn: 24,
     });
@@ -766,7 +766,7 @@ describe("WebSocket HTTP route helpers", () => {
     );
     expect(unlimited.status).toBe(200);
     expect(((await unlimited.json()) as any).image_generation.max_images_per_turn).toBeNull();
-    expect(loadConfig(process.env.MEMMY_CONFIG).tools.imageGeneration.maxImagesPerTurn).toBeNull();
+    expect(loadConfig(process.env.CUBY_CONFIG).tools.imageGeneration.maxImagesPerTurn).toBeNull();
 
     const settings = await fetch(`http://127.0.0.1:${port}/api/settings`, { headers });
     expect(settings.status).toBe(200);
@@ -779,7 +779,7 @@ describe("WebSocket HTTP route helpers", () => {
       { headers },
     );
     expect(rejected.status).toBe(400);
-    expect(loadConfig(process.env.MEMMY_CONFIG).tools.imageGeneration.toObject()).not.toHaveProperty("apiKey");
+    expect(loadConfig(process.env.CUBY_CONFIG).tools.imageGeneration.toObject()).not.toHaveProperty("apiKey");
   });
 
   it("lists only websocket sessions on the WebUI sessions route", async () => {
@@ -794,7 +794,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("uses session message timestamps for WebUI thread messages when transcripts omit time", () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const manager = new SessionManager(root);
     const session = new Session({ key: "websocket:timed" });
     bindWebuiSession(session, root);
@@ -817,7 +817,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("replays context compaction transcript rows as one WebUI divider message", () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const manager = new SessionManager(root);
     const session = new Session({ key: "websocket:compact" });
     bindWebuiSession(session, root);
@@ -927,7 +927,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("scopes WebUI sidebar state routes to the configured data directory", async () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const channel = makeChannel({ sessionManager: seedSession(root, "websocket:sidebar") });
     const port = await startChannel(channel);
     const headers = await authHeaders(port);
@@ -959,7 +959,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("removes session and WebUI transcript files from the delete route", async () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const manager = seedSession(root, "websocket:doomed");
     appendTranscriptObject("websocket:doomed", { event: "user", chat_id: "doomed", text: "x" });
     const cancelActiveTasks = vi.fn(async () => 1);
@@ -1240,7 +1240,7 @@ describe("WebSocket HTTP route helpers", () => {
   it("projects the runtime file memory snapshot into the command palette", () => {
     const root = tmpRoot();
     const configPath = path.join(root, "config.yaml");
-    process.env.MEMMY_CONFIG = configPath;
+    process.env.CUBY_CONFIG = configPath;
     fs.writeFileSync(
       configPath,
       "fileMemory:\n  enabled: true\nsessionDag:\n  enabled: true\n",

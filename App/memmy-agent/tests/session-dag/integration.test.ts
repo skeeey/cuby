@@ -191,12 +191,12 @@ describe("Session DAG integration", () => {
     const sessionKey = "cli:history-dag";
     const store = new SessionDagStore({
       sessionKey,
-      dbPath: sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: path.join(root, "dag") }),
+      dbPath: sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: path.join(root, "dag") }),
     });
     seedGraph(store);
     store.close();
-    const oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    const oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     try {
       const msg = new InboundMessage({ channel: "cli", chatId: "direct", senderId: "user", content: "/history-dag", sessionKey });
       const outbound = await cmdHistoryDag(new CommandContext({
@@ -216,8 +216,8 @@ describe("Session DAG integration", () => {
         activePathEdgeIds: [expect.any(String)],
       });
     } finally {
-      if (oldDagDir === undefined) delete process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-      else process.env.MEMMY_AGENT_SESSION_DAG_DIR = oldDagDir;
+      if (oldDagDir === undefined) delete process.env.CUBY_AGENT_SESSION_DAG_DIR;
+      else process.env.CUBY_AGENT_SESSION_DAG_DIR = oldDagDir;
     }
   });
 
@@ -225,7 +225,7 @@ describe("Session DAG integration", () => {
     const root = tmpRoot();
     const dagDir = path.join(root, "dag");
     const sessionKey = "cli:legacy-history-dag";
-    const dbPath = sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: dagDir });
+    const dbPath = sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: dagDir });
     const seedStore = new SessionDagStore({ sessionKey, dbPath });
     const ids = seedStore.applyPatch({
       turn: { turn_id: "turn-1", message_start: 0, message_end: 2 },
@@ -250,8 +250,8 @@ describe("Session DAG integration", () => {
     seedStore.db.prepare("DELETE FROM dag_meta WHERE key='task_transition_repair_v1'").run();
     seedStore.close();
 
-    const oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = dagDir;
+    const oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = dagDir;
     try {
       const msg = new InboundMessage({ channel: "cli", chatId: "direct", senderId: "user", content: "/history-dag", sessionKey });
       const outbound = await cmdHistoryDag(new CommandContext({
@@ -287,8 +287,8 @@ describe("Session DAG integration", () => {
         repairedStore.close();
       }
     } finally {
-      if (oldDagDir === undefined) delete process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-      else process.env.MEMMY_AGENT_SESSION_DAG_DIR = oldDagDir;
+      if (oldDagDir === undefined) delete process.env.CUBY_AGENT_SESSION_DAG_DIR;
+      else process.env.CUBY_AGENT_SESSION_DAG_DIR = oldDagDir;
     }
   });
 
@@ -321,7 +321,7 @@ describe("Session DAG integration", () => {
       { role: "assistant", content: "a1" },
     ];
     sessions.save(session);
-    const storePath = sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: path.join(root, "dag") });
+    const storePath = sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: path.join(root, "dag") });
     const seedStore = new SessionDagStore({ sessionKey, dbPath: storePath });
     seedCompactionGraph(seedStore, session.messages.length);
     const graphBeforeCompaction = seedStore.readGraphForHistoryDag();
@@ -400,7 +400,7 @@ describe("Session DAG integration", () => {
       ],
     });
     sessions.save(session);
-    const storePath = sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: path.join(root, "dag") });
+    const storePath = sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: path.join(root, "dag") });
     const seedStore = new SessionDagStore({ sessionKey, dbPath: storePath });
     seedCompactionGraph(seedStore, session.messages.length);
     seedStore.close();
@@ -477,8 +477,8 @@ describe("Session DAG integration", () => {
       },
     });
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => undefined);
-    const previousDagRoot = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = dagRoot;
+    const previousDagRoot = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = dagRoot;
 
     try {
       await expect(
@@ -510,8 +510,8 @@ describe("Session DAG integration", () => {
       expect(session.metadata.lastSummary).toBeUndefined();
       expect(session.messages).toEqual(messagesBefore);
     } finally {
-      if (previousDagRoot === undefined) delete process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-      else process.env.MEMMY_AGENT_SESSION_DAG_DIR = previousDagRoot;
+      if (previousDagRoot === undefined) delete process.env.CUBY_AGENT_SESSION_DAG_DIR;
+      else process.env.CUBY_AGENT_SESSION_DAG_DIR = previousDagRoot;
     }
   });
 

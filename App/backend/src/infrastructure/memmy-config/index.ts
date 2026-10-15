@@ -37,24 +37,24 @@ export {
 } from "./model-config-catalog.js";
 import { normalizeTimeZoneOffset } from "../../utils/time-zone.js";
 
-const MEMMY_ACCOUNT_PROVIDER = "memmy_account";
-const MEMMY_ACCOUNT_MODEL = "agent_chat";
-const MEMMY_ACCOUNT_IMAGE_MODEL = "image_gen";
+const CUBY_ACCOUNT_PROVIDER = "memmy_account";
+const CUBY_ACCOUNT_MODEL = "agent_chat";
+const CUBY_ACCOUNT_IMAGE_MODEL = "image_gen";
 const LEGACY_ACCOUNT_BYOK_LOCAL_SELECTION_BASELINE = "accountByokLocalSelectionBaseline";
 const ACCOUNT_MODELS = {
-  agent: MEMMY_ACCOUNT_MODEL,
+  agent: CUBY_ACCOUNT_MODEL,
   memory_summary: "memory_summary",
   memory_evolution: "memory_evolution",
   embedding: "embedding",
   asr: "asr",
-  image_generation: MEMMY_ACCOUNT_IMAGE_MODEL
+  image_generation: CUBY_ACCOUNT_IMAGE_MODEL
 } as const;
 type AccountCapability = keyof typeof ACCOUNT_MODELS;
 type AccountPresetIds = Record<AccountCapability, string>;
 
 /** Handles resolve memmy account api base. */
 export function resolveMemmyAccountApiBase(): string {
-  return `${resolveCloudServiceBaseUrl(process.env.MEMMY_CLOUD_SERVICE)}/api/agentExternal/v1`;
+  return `${resolveCloudServiceBaseUrl(process.env.CUBY_CLOUD_SERVICE)}/api/agentExternal/v1`;
 }
 type AgentApiType = "auto" | "chatCompletions" | "responses";
 
@@ -433,7 +433,7 @@ function deriveRuntimeMemmyConfigState(
 ): RuntimeMemmyConfigState {
   const appCloudUuid = existingString(asRecord(config.app)?.cloudUuid);
   const providerCloudUuid = existingString(
-    asRecord(asRecord(config.providers)?.[MEMMY_ACCOUNT_PROVIDER])?.apiKey
+    asRecord(asRecord(config.providers)?.[CUBY_ACCOUNT_PROVIDER])?.apiKey
   );
   if (appCloudUuid && providerCloudUuid && appCloudUuid !== providerCloudUuid) {
     return runtimeConfigProblem(
@@ -481,7 +481,7 @@ function deriveRuntimeMemmyConfigState(
 function hasAccountProjection(config: Record<string, unknown>): boolean {
   const app = asRecord(config.app);
   const credential = existingString(app?.cloudUuid)
-    ?? existingString(asRecord(asRecord(config.providers)?.[MEMMY_ACCOUNT_PROVIDER])?.apiKey);
+    ?? existingString(asRecord(asRecord(config.providers)?.[CUBY_ACCOUNT_PROVIDER])?.apiKey);
   return Boolean(credential && resolveRuntimeAgentSelection(config, "account").ok);
 }
 
@@ -506,7 +506,7 @@ function deriveAccountRuntimeConfigState(
 ): RuntimeMemmyConfigState {
   const cloudUuid =
     existingString(asRecord(config.app)?.cloudUuid) ??
-    existingString(asRecord(asRecord(config.providers)?.[MEMMY_ACCOUNT_PROVIDER])?.apiKey);
+    existingString(asRecord(asRecord(config.providers)?.[CUBY_ACCOUNT_PROVIDER])?.apiKey);
   if (!cloudUuid) {
     return runtimeConfigProblem("no_model_config", configPath, "Account runtime config is missing cloud uuid");
   }
@@ -539,10 +539,10 @@ function readAccountProjection(
   config: Record<string, unknown>
 ): { cloudUuid: string; userId?: string } | undefined {
   const cloudUuid = existingString(asRecord(config.app)?.cloudUuid)
-    ?? existingString(asRecord(asRecord(config.providers)?.[MEMMY_ACCOUNT_PROVIDER])?.apiKey);
+    ?? existingString(asRecord(asRecord(config.providers)?.[CUBY_ACCOUNT_PROVIDER])?.apiKey);
   if (!cloudUuid) return undefined;
   const userId = existingString(asRecord(config.app)?.userId)
-    ?? existingString(asRecord(asRecord(config.providers)?.[MEMMY_ACCOUNT_PROVIDER])?.ownerAccountId);
+    ?? existingString(asRecord(asRecord(config.providers)?.[CUBY_ACCOUNT_PROVIDER])?.ownerAccountId);
   return userId ? { cloudUuid, userId } : { cloudUuid };
 }
 
@@ -585,8 +585,8 @@ export async function writeAccountModelProjectionToMemmyConfig(
     }
 
     const providers = isRecord(config.providers) ? { ...config.providers } : {};
-    const existingAccountProvider = isRecord(providers[MEMMY_ACCOUNT_PROVIDER])
-      ? { ...providers[MEMMY_ACCOUNT_PROVIDER] }
+    const existingAccountProvider = isRecord(providers[CUBY_ACCOUNT_PROVIDER])
+      ? { ...providers[CUBY_ACCOUNT_PROVIDER] }
       : {};
     const existingEndpoints = isRecord(existingAccountProvider.endpoints)
       ? { ...existingAccountProvider.endpoints }
@@ -598,7 +598,7 @@ export async function writeAccountModelProjectionToMemmyConfig(
       || existingRoleRouting.evolution !== "fixed"
       || existingString(existingAccountProvider.apiKey) !== effectiveCloudUuid
       || existingString(existingAccountProvider.ownerAccountId) !== ownerAccountId;
-    providers[MEMMY_ACCOUNT_PROVIDER] = {
+    providers[CUBY_ACCOUNT_PROVIDER] = {
       ...existingAccountProvider,
       ownerAccountId,
       apiKey: effectiveCloudUuid,
@@ -611,8 +611,8 @@ export async function writeAccountModelProjectionToMemmyConfig(
         }
       }
     };
-    delete (providers[MEMMY_ACCOUNT_PROVIDER] as Record<string, unknown>).apiBase;
-    delete (providers[MEMMY_ACCOUNT_PROVIDER] as Record<string, unknown>).apiType;
+    delete (providers[CUBY_ACCOUNT_PROVIDER] as Record<string, unknown>).apiBase;
+    delete (providers[CUBY_ACCOUNT_PROVIDER] as Record<string, unknown>).apiType;
     config.providers = providers;
 
     const presets = isRecord(config.modelPresets) ? { ...config.modelPresets } : {};
@@ -625,7 +625,7 @@ export async function writeAccountModelProjectionToMemmyConfig(
     for (const [capability, presetId] of Object.entries(presetIds)) {
       presets[presetId] = {
         ...(isRecord(presets[presetId]) ? presets[presetId] : {}),
-        provider: MEMMY_ACCOUNT_PROVIDER,
+        provider: CUBY_ACCOUNT_PROVIDER,
         endpoint: "platform",
         model: ACCOUNT_MODELS[capability as keyof typeof ACCOUNT_MODELS],
         source: "account",
@@ -642,14 +642,14 @@ export async function writeAccountModelProjectionToMemmyConfig(
 
     const memory = { ...existingMemory };
     const roleRouting = { ...existingRoleRouting };
-    const projectedAccountProvider = asRecord(providers[MEMMY_ACCOUNT_PROVIDER])!;
+    const projectedAccountProvider = asRecord(providers[CUBY_ACCOUNT_PROVIDER])!;
     const projectedPlatformEndpoint = asRecord(asRecord(projectedAccountProvider.endpoints)?.platform)!;
     const accountApiBase = existingString(projectedPlatformEndpoint.apiBase)!;
     const accountApiKey = existingString(projectedPlatformEndpoint.apiKey)
       ?? existingString(projectedAccountProvider.apiKey)!;
     const accountConnection = {
       provider: "openai_compatible",
-      sourceProvider: MEMMY_ACCOUNT_PROVIDER,
+      sourceProvider: CUBY_ACCOUNT_PROVIDER,
       endpoint: accountApiBase,
       apiKey: accountApiKey
     };
@@ -738,7 +738,7 @@ export async function clearAccountModelProjectionFromMemmyConfig(
   const result = await mutateRuntimeConfig(configPath, (config) => {
     const appConfig = isRecord(config.app) ? { ...config.app } : {};
     const providers = isRecord(config.providers) ? { ...config.providers } : {};
-    const accountProvider = asRecord(providers[MEMMY_ACCOUNT_PROVIDER]);
+    const accountProvider = asRecord(providers[CUBY_ACCOUNT_PROVIDER]);
     if (input.force) {
       delete appConfig.cloudUuid;
       delete appConfig.userId;
@@ -746,7 +746,7 @@ export async function clearAccountModelProjectionFromMemmyConfig(
       setAppConfig(config, appConfig);
       delete config.uuid;
       delete config.identity;
-      delete providers[MEMMY_ACCOUNT_PROVIDER];
+      delete providers[CUBY_ACCOUNT_PROVIDER];
       config.providers = providers;
       const presets = isRecord(config.modelPresets) ? { ...config.modelPresets } : {};
       for (const [presetId, value] of Object.entries(presets)) {
@@ -782,7 +782,7 @@ export async function clearAccountModelProjectionFromMemmyConfig(
     }
 
     if (accountProvider?.ownerAccountId === ownerAccountId) {
-      delete providers[MEMMY_ACCOUNT_PROVIDER];
+      delete providers[CUBY_ACCOUNT_PROVIDER];
       config.providers = providers;
     }
     const presets = isRecord(config.modelPresets) ? { ...config.modelPresets } : {};
@@ -1081,7 +1081,7 @@ function accountMemoryConnectionMatches(
 ): boolean {
   const memory = previousMemoryRecord(value);
   return memory.provider === "openai_compatible"
-    && memory.sourceProvider === MEMMY_ACCOUNT_PROVIDER
+    && memory.sourceProvider === CUBY_ACCOUNT_PROVIDER
     && memory.endpoint === endpoint
     && memory.model === model
     && memory.apiKey === apiKey;

@@ -1536,7 +1536,7 @@ export function formatMemoryServiceAddress(baseUrl: string | undefined): string 
 }
 
 export function resolveMemoryDocsUrl(
-  rawEdition = import.meta.env.MEMMY_APP_EDITION as string | undefined
+  rawEdition = import.meta.env.CUBY_APP_EDITION as string | undefined
 ): string {
   return rawEdition?.trim().toLowerCase() === "intl"
     ? MEMORY_DOCS_URLS.intl

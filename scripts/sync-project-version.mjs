@@ -3,7 +3,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const checkOnly = process.argv.includes("--check") || process.env.MEMMY_VERSION_SYNC_CHECK_ONLY === "1";
+const checkOnly = process.argv.includes("--check") || process.env.CUBY_VERSION_SYNC_CHECK_ONLY === "1";
 const rootManifestPath = join(root, "package.json");
 const rootManifest = await readJson(rootManifestPath);
 const version = rootManifest.version;
@@ -26,7 +26,7 @@ for (const relativePath of derivedManifests) {
 
 await updateText(
   "App/backend/src/project-version.ts",
-  `/** Generated from the root package.json by scripts/sync-project-version.mjs. */\nexport const MEMMY_VERSION = ${JSON.stringify(version)};\n`
+  `/** Generated from the root package.json by scripts/sync-project-version.mjs. */\nexport const CUBY_VERSION = ${JSON.stringify(version)};\n`
 );
 
 await updateJson("package-lock.json", (json) => {

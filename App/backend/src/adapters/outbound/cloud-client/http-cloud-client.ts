@@ -89,7 +89,7 @@ export interface CreateHttpCloudClientOptions {
 
 /** Creates create http cloud client. */
 export function createHttpCloudClient(options: CreateHttpCloudClientOptions = {}): CloudClient {
-  const baseUrl = normalizeBaseUrl(options.baseUrl ?? resolveCloudServiceBaseUrl(process.env.MEMMY_CLOUD_SERVICE));
+  const baseUrl = normalizeBaseUrl(options.baseUrl ?? resolveCloudServiceBaseUrl(process.env.CUBY_CLOUD_SERVICE));
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const deviceId = options.deviceId;
@@ -518,7 +518,7 @@ async function requestCloudData<T>(
       ...(options.bearerCredential ? { authorization: `Bearer ${options.bearerCredential}` } : {}),
       ...(options.composioMachineToken ? { "x-memmy-composio-token": options.composioMachineToken } : {}),
       ...(options.deviceId ? { "x-memmy-device-id": options.deviceId } : {}),
-      "x-agent-region": normalizeAgentRegion(process.env.MEMMY_APP_EDITION)
+      "x-agent-region": normalizeAgentRegion(process.env.CUBY_APP_EDITION)
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: AbortSignal.timeout(timeoutMs)

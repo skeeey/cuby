@@ -258,7 +258,7 @@ describe("onboarding insight service", () => {
       ],
       reportGenerator: {
         async generateReport() {
-          return "这是一段有效的模型报告。\n[MEMMY_ACTIONS_JSON]\n{invalid json";
+          return "这是一段有效的模型报告。\n[CUBY_ACTIONS_JSON]\n{invalid json";
         }
       },
       now: () => 100
@@ -1077,7 +1077,7 @@ describe("onboarding insight service", () => {
     expect(body.messages[0].content).toContain("不要生成按钮、行动卡片、CTA");
     expect(body.messages[0].content).toContain("不得包含任何原始 HTML 标签或样式");
     expect(body.messages[0].content).toContain("不要输出思考过程、执行计划、要求确认、Prompt 复述或起草说明");
-    expect(body.messages[0].content).not.toContain("[MEMMY_ACTIONS_JSON]");
+    expect(body.messages[0].content).not.toContain("[CUBY_ACTIONS_JSON]");
     const userPayload = JSON.parse(String(body.messages[1].content));
     expect(userPayload.reportGoal.primary).toBe("user_preferences_latest_project_memory_and_actionable_todos");
     expect(userPayload.reportGoal.lengthConstraint).toContain("300-500 Chinese characters");

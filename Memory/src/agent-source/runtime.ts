@@ -144,7 +144,7 @@ export interface CreateAgentSourceExecutorOptions {
 export function createAgentSourceExecutor(options: CreateAgentSourceExecutorOptions): AgentSourceExecutor {
   const registry = options.sourceRegistry ?? createBuiltinSourceRegistry();
   const configPath = options.configPath ?? join(
-    process.env.MEMMY_HOME?.trim() || join(homedir(), ".cuby"),
+    process.env.CUBY_HOME?.trim() || join(homedir(), ".cuby"),
     "config.yaml"
   );
   const integrationRegistry = options.integrationRegistry ?? createBuiltinIntegrationRegistry(configPath);

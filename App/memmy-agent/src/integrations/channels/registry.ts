@@ -84,7 +84,7 @@ export function discoverPlugins(enabledNames: Set<string> | string[] | null = nu
 }
 
 function packageSearchRoots(): string[] {
-  const envRoots = String(process.env.MEMMY_AGENT_CHANNEL_PLUGIN_PATHS ?? "")
+  const envRoots = String(process.env.CUBY_AGENT_CHANNEL_PLUGIN_PATHS ?? "")
     .split(path.delimiter)
     .map((entry) => entry.trim())
     .filter(Boolean);

@@ -75,8 +75,8 @@ describe("campaign and token credit prompts", () => {
   });
 
   it("uses remote status only for eligibility and keeps the project activity URL", async () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "cn");
-    vi.stubEnv("MEMMY_LEGAL_CN_BASE_URL", "https://project-url.example");
+    vi.stubEnv("CUBY_APP_EDITION", "cn");
+    vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "https://project-url.example");
 
     await act(async () => {
       root.render(
@@ -280,7 +280,7 @@ describe("campaign and token credit prompts", () => {
   });
 
   it("renders the overseas copy for the intl edition", () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "intl");
+    vi.stubEnv("CUBY_APP_EDITION", "intl");
 
     act(() => {
       root.render(
@@ -301,7 +301,7 @@ describe("campaign and token credit prompts", () => {
   });
 
   it("renders the overseas Chinese copy for the intl edition", () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "intl");
+    vi.stubEnv("CUBY_APP_EDITION", "intl");
 
     act(() => {
       root.render(

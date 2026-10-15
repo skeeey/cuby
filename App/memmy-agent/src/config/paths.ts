@@ -13,7 +13,7 @@ function ensureDir(value: string): string {
 }
 
 function defaultWorkspacePath(): string {
-  return expandHome(process.env.MEMMY_AGENT_WORKSPACE || "~/.cuby/workspace");
+  return expandHome(process.env.CUBY_AGENT_WORKSPACE || "~/.cuby/workspace");
 }
 
 export function getConfigPath(): string {
@@ -21,7 +21,7 @@ export function getConfigPath(): string {
 }
 
 export function getDataDir(): string {
-  return ensureDir(expandHome(process.env.MEMMY_AGENT_DATA_DIR || path.dirname(getConfigPath())));
+  return ensureDir(expandHome(process.env.CUBY_AGENT_DATA_DIR || path.dirname(getConfigPath())));
 }
 
 export function getRuntimeSubdir(name: string): string {
@@ -45,7 +45,7 @@ export function getWebuiDir(): string {
 }
 
 export function getWorkspacePath(workspace?: string | null): string {
-  return ensureDir(expandHome(workspace || process.env.MEMMY_AGENT_WORKSPACE || "~/.cuby/workspace"));
+  return ensureDir(expandHome(workspace || process.env.CUBY_AGENT_WORKSPACE || "~/.cuby/workspace"));
 }
 
 export function isDefaultWorkspace(workspace?: string | null): boolean {

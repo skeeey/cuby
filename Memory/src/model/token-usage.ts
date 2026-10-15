@@ -185,7 +185,7 @@ export class HttpByokTokenUsageRecorder implements MemoryTokenUsageSink {
   constructor(options: HttpByokTokenUsageRecorderOptions = {}) {
     const env = options.env ?? process.env;
     this.runtimeConfig = options.runtimeConfig;
-    this.runtimeConfigPath = options.runtimeConfigPath ?? env.MEMMY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath();
+    this.runtimeConfigPath = options.runtimeConfigPath ?? env.CUBY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath();
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.onBudgetedUsage = options.onBudgetedUsage;
@@ -558,7 +558,7 @@ export async function fetchAppMemoryBudget(
 ): Promise<{ dailyUsed: number; lifetimeUsed: number } | null> {
   const env = options.env ?? process.env;
   const runtime = options.runtimeConfig
-    ?? readRuntimeConfig(options.runtimeConfigPath ?? env.MEMMY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath());
+    ?? readRuntimeConfig(options.runtimeConfigPath ?? env.CUBY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath());
   if (!runtime) {
     return null;
   }

@@ -186,7 +186,7 @@ function makeFeishuEvent({
 afterEach(() => {
   vi.restoreAllMocks();
   larkSdkMock.reset();
-  delete process.env.MEMMY_AGENT_DATA_DIR;
+  delete process.env.CUBY_AGENT_DATA_DIR;
 });
 
 describe("Feishu runtime startup", () => {
@@ -594,7 +594,7 @@ describe("Feishu inbound media", () => {
 
   it("saves downloaded media with an absolute path in content text", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "feishu-data-"));
-    process.env.MEMMY_AGENT_DATA_DIR = tmpDir;
+    process.env.CUBY_AGENT_DATA_DIR = tmpDir;
     const channel = makeFeishuChannel();
     channel.downloadFileSync = vi.fn(() => [Buffer.from("voice-bytes"), null]) as any;
 

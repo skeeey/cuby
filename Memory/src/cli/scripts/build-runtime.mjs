@@ -15,7 +15,7 @@ const repositoryRoot = resolve(memoryRoot, "..");
 const options = parseOptions(process.argv.slice(2));
 const manifest = JSON.parse(await readFile(join(memoryRoot, "package.json"), "utf8"));
 const version = options.version ?? manifest.version;
-const target = options.target ?? process.env.MEMMY_MEMORY_TARGET ?? hostTarget();
+const target = options.target ?? process.env.CUBY_MEMORY_TARGET ?? hostTarget();
 const [platform, arch] = validateTarget(target);
 const outputRoot = resolve(options.output ?? join(memoryRoot, "dist", "releases"));
 const assetName = `memmy-memory-runtime-${version}-${target}.tar.gz`;
@@ -49,7 +49,7 @@ try {
   run("npm", ["ci", "--omit=dev", "--no-audit", "--no-fund", ...platformFlags], runtimeRoot);
   await vendorWorkspacePackages(runtimeRoot, workspaceDependencies);
 
-  if (process.env.MEMMY_MEMORY_SKIP_EMBEDDING_MODEL !== "1") {
+  if (process.env.CUBY_MEMORY_SKIP_EMBEDDING_MODEL !== "1") {
     run("node", [join(repositoryRoot, "scripts", "internal", "shared", "prepare-embedding-model.mjs"), join(runtimeRoot, "embedding-models")], repositoryRoot);
     await verifyEmbeddingModel(runtimeRoot);
   }
@@ -61,7 +61,7 @@ try {
     target,
     entrypoint: "dist/src/server/index.js",
     viewer: "dist/viewer/index.html",
-    includesEmbeddingModel: process.env.MEMMY_MEMORY_SKIP_EMBEDDING_MODEL !== "1",
+    includesEmbeddingModel: process.env.CUBY_MEMORY_SKIP_EMBEDDING_MODEL !== "1",
     builtAt: new Date().toISOString()
   });
 
@@ -156,7 +156,7 @@ async function verifyRuntimeDependencies(root, target, platform, arch, workspace
 }
 
 async function verifyEmbeddingModel(root) {
-  const model = process.env.MEMMY_EMBEDDING_MODEL || "Xenova/all-MiniLM-L6-v2";
+  const model = process.env.CUBY_EMBEDDING_MODEL || "Xenova/all-MiniLM-L6-v2";
   for (const file of ["config.json", "tokenizer.json", "tokenizer_config.json", "onnx/model_quantized.onnx"]) {
     if (!existsSync(join(root, "embedding-models", model, file))) throw new Error(`embedding model asset is missing: ${file}`);
   }

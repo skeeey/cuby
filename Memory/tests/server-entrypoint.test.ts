@@ -15,7 +15,7 @@ describe("memmy memory server entrypoint", () => {
       storage: { mode: "local", backend: "sqlite", sqlitePath: join(root, "memory.sqlite") },
     } }));
     const listeners = ["SIGINT", "SIGTERM", "exit"].map((signal) => process.listenerCount(signal));
-    vi.stubEnv("MEMMY_DESKTOP_MANAGED_MEMORY", "1");
+    vi.stubEnv("CUBY_DESKTOP_MANAGED_MEMORY", "1");
     const originalRestart = memoryRestart.requestMemoryServiceRestart;
     vi.spyOn(memoryRestart, "requestMemoryServiceRestart").mockImplementation((dependencies) =>
       originalRestart({ ...dependencies, send: null }));

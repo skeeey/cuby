@@ -103,9 +103,9 @@ async function validManifest(directory, key) {
 }
 async function resolveRenderer() {
   const key = platformKey();
-  const configured = process.env.MEMMY_DOCX_RENDERING_ROOT?.trim();
+  const configured = process.env.CUBY_DOCX_RENDERING_ROOT?.trim();
   const roots = [];
-  const officeConfigured = process.env.MEMMY_OFFICE_RENDERING_ROOT?.trim();
+  const officeConfigured = process.env.CUBY_OFFICE_RENDERING_ROOT?.trim();
   if (officeConfigured) roots.push(path.resolve(officeConfigured));
   if (configured) roots.push(path.resolve(configured));
   roots.push(DIST_RENDERING_ROOT, SOURCE_RENDERING_ROOT);
@@ -113,7 +113,7 @@ async function resolveRenderer() {
     const unpacked = asarUnpackedRoot(root);
     if (unpacked) roots.push(unpacked);
   }
-  const allowSystem = process.env.MEMMY_DOCX_ALLOW_SYSTEM_RENDERER === "1";
+  const allowSystem = process.env.CUBY_DOCX_ALLOW_SYSTEM_RENDERER === "1";
   const attempted = [];
   for (const root of roots) {
     const directory = path.join(root, key);
@@ -148,7 +148,7 @@ async function resolveRenderer() {
       pdftoppm: process.platform === "win32" ? "pdftoppm.exe" : "pdftoppm",
     };
   throw new Error(
-    `Office renderer bundle is unavailable for platform=${process.platform} arch=${process.arch}. Tried roots: ${attempted.join(", ") || "(none)"}. Missing soffice, pdfinfo or pdftoppm. Set MEMMY_OFFICE_RENDERING_ROOT (or the legacy MEMMY_DOCX_RENDERING_ROOT during migration) for a bundled parent directory, or MEMMY_DOCX_ALLOW_SYSTEM_RENDERER=1 only for development diagnostics.`,
+    `Office renderer bundle is unavailable for platform=${process.platform} arch=${process.arch}. Tried roots: ${attempted.join(", ") || "(none)"}. Missing soffice, pdfinfo or pdftoppm. Set CUBY_OFFICE_RENDERING_ROOT (or the legacy CUBY_DOCX_RENDERING_ROOT during migration) for a bundled parent directory, or CUBY_DOCX_ALLOW_SYSTEM_RENDERER=1 only for development diagnostics.`,
   );
 }
 function rendererEnv(profile) {

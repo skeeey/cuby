@@ -31,7 +31,7 @@ describe("bundled Memory installation", () => {
 
     // A fresh Desktop prepares config defaults before invoking the installer.
     const runtimeConfig = await preparePackagedRuntimeConfig({
-      env: { MEMMY_HOME: join(root, "memmy") },
+      env: { CUBY_HOME: join(root, "memmy") },
       fillMissingAgentSecret: false
     });
     const existingData = "existing Memmy database must not be opened by installation";

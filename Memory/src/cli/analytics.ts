@@ -65,13 +65,13 @@ const INSTALLATION_ID_FILENAME = "installation-id";
 const CLI_ANALYTICS_SOURCE = "memmy-memory";
 
 export function resolveAnalyticsBaseUrl(env: NodeJS.ProcessEnv = process.env): string | null {
-  const raw = env.MEMMY_CLOUD_SERVICE?.trim();
+  const raw = env.CUBY_CLOUD_SERVICE?.trim();
   if (!raw) return null;
   return raw.replace(/\/+$/, "");
 }
 
 export function resolveAnalyticsAppEnv(env: NodeJS.ProcessEnv = process.env): AnalyticsAppEnv {
-  const explicit = env.MEMMY_APP_ENV?.trim().toLowerCase();
+  const explicit = env.CUBY_APP_ENV?.trim().toLowerCase();
   if (explicit === "dev" || explicit === "prod") return explicit;
   return env.NODE_ENV === "production" ? "prod" : "dev";
 }
@@ -81,8 +81,8 @@ export function resolveAnalyticsDebugMode(
   appEnv: AnalyticsAppEnv = resolveAnalyticsAppEnv(env),
 ): boolean {
   const explicit =
-    env.MEMMY_GA4_DEBUG === "true" ||
-    env.MEMMY_GA4_DEBUG === "1" ||
+    env.CUBY_GA4_DEBUG === "true" ||
+    env.CUBY_GA4_DEBUG === "1" ||
     env.VITE_GA4_DEBUG === "true";
   return appEnv === "dev" || explicit;
 }
@@ -117,7 +117,7 @@ export function getAnalyticsClientIdPath(
   env: NodeJS.ProcessEnv = process.env,
   homeDir = nodeHomedir(),
 ): string {
-  const memmyHome = (env.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
+  const memmyHome = (env.CUBY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
     /^~(?=$|[/\\])/,
     homeDir,
   );
@@ -147,7 +147,7 @@ export function getOrCreateInstallationId(options: {
   homeDir?: string;
 } = {}): string {
   const homeDir = options.homeDir ?? nodeHomedir();
-  const memmyHome = (options.env?.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
+  const memmyHome = (options.env?.CUBY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
     /^~(?=$|[/\\])/,
     homeDir,
   );
@@ -377,7 +377,7 @@ export function resolveInstallChannel(
   env: NodeJS.ProcessEnv = process.env,
   argvPath = process.argv[1],
 ): InstallChannel {
-  const explicit = env.MEMMY_INSTALL_CHANNEL?.trim();
+  const explicit = env.CUBY_INSTALL_CHANNEL?.trim();
   if (explicit) return explicit;
 
   const normalized = (argvPath ?? "").replace(/\\/g, "/").toLowerCase();
@@ -497,7 +497,7 @@ export function isInfrastructureCliInvocation(
   argv: string[],
   env: NodeJS.ProcessEnv = process.env,
 ): boolean {
-  if (env.MEMMY_CLI_ANALYTICS_SKIP === "1" || env.MEMMY_CLI_ANALYTICS_SKIP === "true") {
+  if (env.CUBY_CLI_ANALYTICS_SKIP === "1" || env.CUBY_CLI_ANALYTICS_SKIP === "true") {
     return true;
   }
 

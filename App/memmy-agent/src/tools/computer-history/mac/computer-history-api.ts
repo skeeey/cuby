@@ -371,7 +371,7 @@ export class ComputerHistoryDemoService {
     this.applicationIcons = new ApplicationIconReader();
     this.permissionReader = input.permissionReader ?? readHistoryPermissions;
     this.liveSummaryIntervalMs = boundedInterval(
-      process.env.MEMMY_COMPUTER_HISTORY_LIVE_SUMMARY_INTERVAL_MS,
+      process.env.CUBY_COMPUTER_HISTORY_LIVE_SUMMARY_INTERVAL_MS,
       60_000,
       15_000,
       10 * 60_000,

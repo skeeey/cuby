@@ -122,7 +122,7 @@ export const PROTOCOL_OPTIONS: ProtocolOption[] = [
   { value: "xiaomi", labelKey: "apiKey.provider.xiaomi" }
 ];
 
-const MEMMY_ACCOUNT_PROVIDER = "memmy_account";
+const CUBY_ACCOUNT_PROVIDER = "memmy_account";
 
 export const DEFAULT_ENDPOINTS: Record<Protocol, string> = {
   openai: "https://api.openai.com/v1",
@@ -637,7 +637,7 @@ export function toProtocol(provider: string): Protocol {
 }
 
 export function resolveTextProviderOption(provider: string): TextProviderOption | null {
-  if (provider === MEMMY_ACCOUNT_PROVIDER) {
+  if (provider === CUBY_ACCOUNT_PROVIDER) {
     return {
       protocol: null,
       labelKey: "apiKey.provider.memmy"

@@ -21,7 +21,7 @@ const PROBE_TIMEOUT_MS = 1_500;
 const POLL_INTERVAL_MS = 150;
 const SERVICE_STABILITY_MS = 500;
 const MEMORY_SERVICE_NAME = "memmy-memory.service";
-const SYSTEMD_GATEWAY_ENV = "MEMMY_LINUX_SYSTEMD_GATEWAY";
+const SYSTEMD_GATEWAY_ENV = "CUBY_LINUX_SYSTEMD_GATEWAY";
 
 const PERSISTED_GATEWAY_ENV_KEYS = [
   "PATH",
@@ -69,10 +69,10 @@ const PERSISTED_GATEWAY_ENV_KEYS = [
   "CHATGPT_ACCESS_TOKEN",
   "OPENAI_CODEX_ACCOUNT_ID",
   "CHATGPT_ACCOUNT_ID",
-  "MEMMY_AGENT_PATH_APPEND",
-  "MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S",
-  "MEMMY_CLOUD_SERVICE",
-  "MEMMY_APP_EDITION",
+  "CUBY_AGENT_PATH_APPEND",
+  "CUBY_AGENT_STREAM_IDLE_TIMEOUT_S",
+  "CUBY_CLOUD_SERVICE",
+  "CUBY_APP_EDITION",
 ] as const;
 
 export class LinuxSystemdGatewayError extends Error {
@@ -310,7 +310,7 @@ export async function prepareLinuxGatewayConfig(
 }
 
 function environmentFilePath(): string {
-  const configured = process.env.MEMMY_GATEWAY_ENV_FILE?.trim();
+  const configured = process.env.CUBY_GATEWAY_ENV_FILE?.trim();
   return configured ? path.resolve(configured) : path.join(getRuntimeSubdir("systemd"), "gateway.env");
 }
 

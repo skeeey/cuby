@@ -41,16 +41,16 @@ function makeRecord(overrides: Partial<SessionDagBuildAuditRecord> = {}): Sessio
 
 afterEach(() => {
   vi.restoreAllMocks();
-  if (oldDagDir === undefined) delete process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-  else process.env.MEMMY_AGENT_SESSION_DAG_DIR = oldDagDir;
+  if (oldDagDir === undefined) delete process.env.CUBY_AGENT_SESSION_DAG_DIR;
+  else process.env.CUBY_AGENT_SESSION_DAG_DIR = oldDagDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
 describe("SessionDagDebugLogger", () => {
   it("does not create a log file when disabled", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = root;
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = root;
     const logger = new SessionDagDebugLogger(false);
 
     await logger.writeAttempt(makeRecord());
@@ -60,8 +60,8 @@ describe("SessionDagDebugLogger", () => {
 
   it("appends complete attempt records to one session JSONL file", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = root;
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = root;
     const logger = new SessionDagDebugLogger(true);
 
     await logger.writeAttempt(makeRecord());
@@ -89,8 +89,8 @@ describe("SessionDagDebugLogger", () => {
 
   it("surfaces filesystem errors to the builder caller", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = root;
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = root;
     const logger = new SessionDagDebugLogger(true);
     vi.spyOn(fsPromises, "appendFile").mockRejectedValueOnce(new Error("disk full"));
 

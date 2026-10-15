@@ -602,7 +602,7 @@ async function writeStableLauncher(home: string, serviceHome: string, nodeExecut
     "try {",
     "if (windows) mkdirSync(logs, { recursive: true });",
     `const pointer = JSON.parse(readFileSync(${JSON.stringify(join(serviceHome, "current.json"))}, "utf8"));`,
-    `const env = { ...process.env, MEMMY_HOME: ${JSON.stringify(home)}, MEMMY_CONFIG: ${JSON.stringify(join(home, "config.yaml"))}, MEMMY_EMBEDDING_MODEL_ROOT: path.join(pointer.runtimeDir, "embedding-models") };`,
+    `const env = { ...process.env, CUBY_HOME: ${JSON.stringify(home)}, CUBY_CONFIG: ${JSON.stringify(join(home, "config.yaml"))}, CUBY_EMBEDDING_MODEL_ROOT: path.join(pointer.runtimeDir, "embedding-models") };`,
     "const handles = [];",
     "let child;",
     "try {",

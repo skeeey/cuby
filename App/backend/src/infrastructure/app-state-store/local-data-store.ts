@@ -68,7 +68,7 @@ function resolveMemoryDatabasePath(options: CreateFilesystemLocalDataStoreOption
   }
 
   const env = options.env ?? process.env;
-  const explicitPath = (env.MEMMY_MEMORY_DB_PATH ?? env.MEMMY_MEMOS_DB_PATH ?? "").trim();
+  const explicitPath = (env.CUBY_MEMORY_DB_PATH ?? env.CUBY_MEMOS_DB_PATH ?? "").trim();
   if (explicitPath) {
     return resolve(expandHome(explicitPath));
   }
@@ -79,11 +79,11 @@ function resolveMemoryDatabasePath(options: CreateFilesystemLocalDataStoreOption
     return resolve(expandHome(configuredPath));
   }
 
-  return join(resolve(expandHome(env.MEMMY_HOME ?? DEFAULT_MEMORY_HOME)), "memory-service", "memory.sqlite");
+  return join(resolve(expandHome(env.CUBY_HOME ?? DEFAULT_MEMORY_HOME)), "memory-service", "memory.sqlite");
 }
 
 function resolveMemmyConfigPath(options: CreateFilesystemLocalDataStoreOptions, env: NodeJS.ProcessEnv): string {
-  return resolve(expandHome(options.memmyConfigPath ?? env.MEMMY_CONFIG ?? join(DEFAULT_MEMORY_HOME, "config.yaml")));
+  return resolve(expandHome(options.memmyConfigPath ?? env.CUBY_CONFIG ?? join(DEFAULT_MEMORY_HOME, "config.yaml")));
 }
 
 function readMemoryDatabasePathFromConfig(configPath: string): string | null {

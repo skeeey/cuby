@@ -18,19 +18,19 @@ describe("packaged memmy-memory cloud-service loading", () => {
     const manifestPath = resolve(moduleDir, "../../../../main/desktop-edition.json");
     mkdirSync(resolve(moduleDir, "../../../../main"), { recursive: true });
     writeFileSync(manifestPath, JSON.stringify({ cloudService: "https://manifest.example.test" }));
-    writeFileSync(join(root, ".env"), "MEMMY_CLOUD_SERVICE=https://dev.example.test\n");
+    writeFileSync(join(root, ".env"), "CUBY_CLOUD_SERVICE=https://dev.example.test\n");
 
     const externalEnv = {
-      MEMMY_CLOUD_SERVICE: "https://external.example.test",
-      MEMMY_CLOUD_URL: "https://stale.example.test"
+      CUBY_CLOUD_SERVICE: "https://external.example.test",
+      CUBY_CLOUD_URL: "https://stale.example.test"
     };
     expect(loadCloudServiceEnv({ cwd: root, moduleDir, env: externalEnv })).toBe(manifestPath);
-    expect(externalEnv.MEMMY_CLOUD_SERVICE).toBe("https://manifest.example.test");
-    expect(externalEnv.MEMMY_CLOUD_URL).toBeUndefined();
+    expect(externalEnv.CUBY_CLOUD_SERVICE).toBe("https://manifest.example.test");
+    expect(externalEnv.CUBY_CLOUD_URL).toBeUndefined();
 
     const packagedEnv: NodeJS.ProcessEnv = {};
     expect(loadCloudServiceEnv({ cwd: root, moduleDir, env: packagedEnv })).toBe(manifestPath);
-    expect(packagedEnv.MEMMY_CLOUD_SERVICE).toBe("https://manifest.example.test");
+    expect(packagedEnv.CUBY_CLOUD_SERVICE).toBe("https://manifest.example.test");
 
     rmSync(manifestPath);
     expect(() => loadCloudServiceEnv({ cwd: root, moduleDir, env: {} }))
@@ -41,12 +41,12 @@ describe("packaged memmy-memory cloud-service loading", () => {
     const developmentEnv: NodeJS.ProcessEnv = {};
     expect(loadCloudServiceEnv({ cwd: root, moduleDir: developmentModuleDir, env: developmentEnv }))
       .toBe(join(root, ".env"));
-    expect(developmentEnv.MEMMY_CLOUD_SERVICE).toBe("https://dev.example.test");
+    expect(developmentEnv.CUBY_CLOUD_SERVICE).toBe("https://dev.example.test");
   });
 
   it("fails closed for a staged runtime and ignores a decoy manifest in source", () => {
     const root = fixtureRoot();
-    writeFileSync(join(root, ".env"), "MEMMY_CLOUD_SERVICE=https://dev.example.test\n");
+    writeFileSync(join(root, ".env"), "CUBY_CLOUD_SERVICE=https://dev.example.test\n");
     const stagedModuleDir = join(root, "dist", "runtime", "memory", "src", "cli");
     mkdirSync(stagedModuleDir, { recursive: true });
     expect(() => loadCloudServiceEnv({ cwd: root, moduleDir: stagedModuleDir, env: {} }))
@@ -59,7 +59,7 @@ describe("packaged memmy-memory cloud-service loading", () => {
     writeFileSync(decoyPath, JSON.stringify({ cloudService: "https://decoy.example.test" }));
     const env: NodeJS.ProcessEnv = {};
     expect(loadCloudServiceEnv({ cwd: root, moduleDir: sourceModuleDir, env })).toBe(join(root, ".env"));
-    expect(env.MEMMY_CLOUD_SERVICE).toBe("https://dev.example.test");
+    expect(env.CUBY_CLOUD_SERVICE).toBe("https://dev.example.test");
   });
 
   it("loads the desktop manifest from the app ASAR for the standalone runtime", () => {
@@ -72,7 +72,7 @@ describe("packaged memmy-memory cloud-service loading", () => {
 
     const env: NodeJS.ProcessEnv = {};
     expect(loadCloudServiceEnv({ cwd: root, moduleDir, env })).toBe(manifestPath);
-    expect(env.MEMMY_CLOUD_SERVICE).toBe("https://standalone.example.test");
+    expect(env.CUBY_CLOUD_SERVICE).toBe("https://standalone.example.test");
   });
 
   it("fails closed for an invalid packaged manifest", () => {

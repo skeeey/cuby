@@ -73,7 +73,7 @@ function stubRestartRuntime(runScheduled = false): {
     execPath: "/usr/bin/node",
     argv: ["/usr/bin/node", "/app/dist/main.js", "agent", "--config", "config.yaml"],
     cwd: "/workspace",
-    env: { MEMMY_TEST: "1" },
+    env: { CUBY_TEST: "1" },
   });
   return { callbacks, scheduler, launcher, exit, warn, unref };
 }
@@ -122,7 +122,7 @@ describe("/restart command", () => {
       ["/app/dist/main.js", "agent", "--config", "config.yaml"],
       {
         cwd: "/workspace",
-        env: { MEMMY_TEST: "1" },
+        env: { CUBY_TEST: "1" },
         stdio: "inherit",
         detached: true,
       },

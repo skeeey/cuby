@@ -6,18 +6,18 @@ import { deleteWebuiThread, webuiThreadFilePath } from "../../../src/entrypoints
 import { appendTranscriptObject, webuiTranscriptPath } from "../../../src/entrypoints/frontend-bridge/transcript.js";
 
 const roots: string[] = [];
-const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function useDataDir(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-thread-disk-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
+  process.env.CUBY_AGENT_DATA_DIR = root;
   return root;
 }
 
 afterEach(() => {
-  if (oldDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+  if (oldDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

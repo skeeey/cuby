@@ -320,8 +320,8 @@ describe("tool schema validation", () => {
 
   it("allows media paths outside the guarded workspace", async () => {
     const root = makeTempDir();
-    const previous = process.env.MEMMY_AGENT_DATA_DIR;
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    const previous = process.env.CUBY_AGENT_DATA_DIR;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     try {
       const mediaDir = path.join(root, "media");
       fs.mkdirSync(mediaDir, { recursive: true });
@@ -334,8 +334,8 @@ describe("tool schema validation", () => {
       );
       expect(error).toBeNull();
     } finally {
-      if (previous === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-      else process.env.MEMMY_AGENT_DATA_DIR = previous;
+      if (previous === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+      else process.env.CUBY_AGENT_DATA_DIR = previous;
       fs.rmSync(root, { recursive: true, force: true });
     }
   });

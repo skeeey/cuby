@@ -35,9 +35,9 @@ describe("packaged desktop runtime configuration", () => {
     const envFile = join(root, ".env");
     const output = join(root, "dist", "main", "desktop-edition.json");
     writeFileSync(envFile, [
-      "MEMMY_CLOUD_SERVICE=https://manifest.example.test/",
-      "MEMMY_PRIVATE_TOKEN=must-not-be-packaged",
-      "MEMMY_LEGAL_CN_BASE_URL=https://legal.example.test",
+      "CUBY_CLOUD_SERVICE=https://manifest.example.test/",
+      "CUBY_PRIVATE_TOKEN=must-not-be-packaged",
+      "CUBY_LEGAL_CN_BASE_URL=https://legal.example.test",
     ].join("\n"));
 
     await writeDesktopEditionManifest({
@@ -57,23 +57,23 @@ describe("packaged desktop runtime configuration", () => {
       signing: "signed",
       cloudService: "https://manifest.example.test",
     });
-    expect(manifestText).not.toContain("MEMMY_PRIVATE_TOKEN");
+    expect(manifestText).not.toContain("CUBY_PRIVATE_TOKEN");
     expect(manifestText).not.toContain("must-not-be-packaged");
-    expect(manifestText).not.toContain("MEMMY_LEGAL_CN_BASE_URL");
+    expect(manifestText).not.toContain("CUBY_LEGAL_CN_BASE_URL");
   });
 
   it("uses an explicit environment origin before the root env file", async () => {
     const root = fixtureRoot();
     const envFile = join(root, ".env");
     const output = join(root, "desktop-edition.json");
-    writeFileSync(envFile, "MEMMY_CLOUD_SERVICE=https://file.example.test\n");
+    writeFileSync(envFile, "CUBY_CLOUD_SERVICE=https://file.example.test\n");
 
     await writeDesktopEditionManifest({
       output,
       edition: "intl",
       accountChannel: "email",
       signing: "unsigned",
-      environment: { MEMMY_CLOUD_SERVICE: "https://external.example.test" },
+      environment: { CUBY_CLOUD_SERVICE: "https://external.example.test" },
       envFile,
     });
 
@@ -89,7 +89,7 @@ describe("packaged desktop runtime configuration", () => {
     "https://api.example.test?token=value",
     "https://api.example.test/#fragment",
   ])("rejects a non-public cloud-service value: %s", (value) => {
-    expect(() => normalizePublicCloudService(value)).toThrow(/MEMMY_CLOUD_SERVICE/);
+    expect(() => normalizePublicCloudService(value)).toThrow(/CUBY_CLOUD_SERVICE/);
   });
 
   it.each([
@@ -142,7 +142,7 @@ describe("packaged desktop runtime configuration", () => {
       "--signing", "unsigned",
     ], {
       encoding: "utf8",
-      env: { ...process.env, MEMMY_CLOUD_SERVICE: "https://cli.example.test" },
+      env: { ...process.env, CUBY_CLOUD_SERVICE: "https://cli.example.test" },
     });
     expect(writerResult.status, writerResult.stderr).toBe(0);
     expect(JSON.parse(readFileSync(output, "utf8")).cloudService).toBe("https://cli.example.test");
@@ -542,10 +542,10 @@ describe("packaged desktop runtime configuration", () => {
     };
 
     expect(readMirrors({})).toBe("|");
-    expect(readMirrors({ MEMMY_PACKAGE_MIRROR: "cn" })).toBe(
+    expect(readMirrors({ CUBY_PACKAGE_MIRROR: "cn" })).toBe(
       "https://npmmirror.com/mirrors/electron/|https://npmmirror.com/mirrors/electron-builder-binaries/",
     );
-    expect(readMirrors({ MEMMY_PACKAGE_MIRROR: "cn", ELECTRON_MIRROR: "https://mirror.example.test/electron/" }))
+    expect(readMirrors({ CUBY_PACKAGE_MIRROR: "cn", ELECTRON_MIRROR: "https://mirror.example.test/electron/" }))
       .toContain("https://mirror.example.test/electron/");
   });
 

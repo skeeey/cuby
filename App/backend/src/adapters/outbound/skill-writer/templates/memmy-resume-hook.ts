@@ -589,13 +589,13 @@ function parseResumeQuery(prompt) {
 
 function isResumeCommand(prompt) {
   const text = normalizeText(prompt);
-  return /MEMMY_RESUME_COMMAND_ARGUMENTS:/u.test(text) ||
+  return /CUBY_RESUME_COMMAND_ARGUMENTS:/u.test(text) ||
     text === "/memmy-resume" || text === "memmy-resume" ||
     text.startsWith("/memmy-resume ") || text.startsWith("memmy-resume ");
 }
 
 function parseResumeCommandArguments(text) {
-  const match = normalizeText(text).match(/MEMMY_RESUME_COMMAND_ARGUMENTS:\s*([\s\S]*?)\s*MEMMY_RESUME_COMMAND_END/u);
+  const match = normalizeText(text).match(/CUBY_RESUME_COMMAND_ARGUMENTS:\s*([\s\S]*?)\s*CUBY_RESUME_COMMAND_END/u);
   return match ? normalizeText(match[1]) : "";
 }
 
@@ -760,7 +760,7 @@ function writeResumeContextOutput(context) {
 
 async function createMemmyClient() {
   const localConfig = await readLocalConfig();
-  const memmyConfigPath = normalizeText(process.env.MEMMY_CONFIG) ||
+  const memmyConfigPath = normalizeText(process.env.CUBY_CONFIG) ||
     normalizeText(localConfig.memmy_config_path) ||
     DEFAULT_MEMMY_CONFIG_PATH;
   const resolved = await readMemmyConfig(memmyConfigPath).catch(() => ({}));

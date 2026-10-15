@@ -202,7 +202,7 @@ describe("memmy resume hook stop capture", () => {
 
       const result = await new Promise<{ status: number | null; stderr: string }>((resolve) => {
         const child = spawn(process.execPath, [hookScriptPath], {
-          env: { ...process.env, MEMMY_CONFIG: join(tempDir, "missing-config.yaml") }
+          env: { ...process.env, CUBY_CONFIG: join(tempDir, "missing-config.yaml") }
         });
         let stderr = "";
         child.stderr.on("data", (chunk) => {
@@ -450,7 +450,7 @@ async function runHook(scriptPath: string, payload: Record<string, unknown>, hom
     const child = spawn(process.execPath, [scriptPath], {
       env: {
         ...process.env,
-        MEMMY_CONFIG: join(dirname(scriptPath), "missing-config.yaml"),
+        CUBY_CONFIG: join(dirname(scriptPath), "missing-config.yaml"),
         ...(homeDirectory ? { HOME: homeDirectory, USERPROFILE: homeDirectory, XDG_CONFIG_HOME: join(homeDirectory, ".config") } : {}),
       },
     });

@@ -12,7 +12,7 @@ export function resolveSharedAnalyticsClientIdPath(
   env: NodeJS.ProcessEnv = process.env,
   home = homedir()
 ): string {
-  const memmyHome = (env.MEMMY_HOME?.trim() || join(home, ".cuby")).replace(/^~(?=$|[/\\])/, home);
+  const memmyHome = (env.CUBY_HOME?.trim() || join(home, ".cuby")).replace(/^~(?=$|[/\\])/, home);
   return join(memmyHome, ANALYTICS_CLIENT_ID_FILENAME);
 }
 

@@ -94,7 +94,7 @@ export async function installMemmyMemorySkillForAgents(
   agents: string[],
   options: AgentSkillBatchInstallOptions = {}
 ): Promise<AgentSkillInstallResult[]> {
-  if (process.env.MEMMY_AGENT_INTEGRATION_ROOT?.trim() && options.agentRoot && !options.dryRun) {
+  if (process.env.CUBY_AGENT_INTEGRATION_ROOT?.trim() && options.agentRoot && !options.dryRun) {
     throw new Error(
       "--agent-root cannot be combined with packaged Hook/plugin integration; use the agent's configured home",
     );
@@ -128,7 +128,7 @@ async function installPackagedAgentIntegrations(
   installed: AgentSkillInstallResult[],
   options: AgentSkillBatchInstallOptions,
 ): Promise<void> {
-  const integrationRoot = process.env.MEMMY_AGENT_INTEGRATION_ROOT?.trim();
+  const integrationRoot = process.env.CUBY_AGENT_INTEGRATION_ROOT?.trim();
   if (!integrationRoot || options.dryRun || installed.length === 0) return;
 
   const modulePath = join(

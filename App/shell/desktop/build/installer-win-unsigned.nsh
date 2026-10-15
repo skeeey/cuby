@@ -3,12 +3,12 @@
 !include "LogicLib.nsh"
 !include "nsDialogs.nsh"
 
-!ifndef MEMMY_WM_SETTINGCHANGE
-  !define MEMMY_WM_SETTINGCHANGE 0x001A
+!ifndef CUBY_WM_SETTINGCHANGE
+  !define CUBY_WM_SETTINGCHANGE 0x001A
 !endif
 
-!ifndef MEMMY_LANG_SIMPCHINESE
-  !define MEMMY_LANG_SIMPCHINESE 2052
+!ifndef CUBY_LANG_SIMPCHINESE
+  !define CUBY_LANG_SIMPCHINESE 2052
 !endif
 
 !macro customHeader
@@ -263,7 +263,7 @@ Function MemmyShowPreviousInstallDirectoryNotice
   ${EndIf}
 
   StrCpy $R8 "Cuby is already installed at $\"$MemmyPreviousInstallDir$\".$\r$\nUse this directory to install the update. If you want to move Cuby, manually migrate your files before installing in another directory."
-  StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_previous_notice_show
+  StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_previous_notice_show
   StrCpy $R8 "Cuby 之前安装在“$MemmyPreviousInstallDir”。$\r$\n请使用此目录安装更新；如果要更换目录，请先手动迁移 Cuby 文件。"
 
   memmy_previous_notice_show:
@@ -351,7 +351,7 @@ Function MemmyValidateSelectedDirectories
   GetFullPathName $R7 "$MemmyPreviousInstallDir"
   StrCmp $R6 $R7 memmy_validate_resolve_paths
   StrCpy $R8 "Cuby is already installed at $\"$MemmyPreviousInstallDir$\". Choose that directory to continue. If you want to move Cuby, manually migrate your files before installing in another directory."
-  StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_previous_directory_failed
+  StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_previous_directory_failed
   StrCpy $R8 "Cuby 之前安装在“$MemmyPreviousInstallDir”。请返回并选择此目录继续安装；如果要更换目录，请先手动迁移 Cuby 文件。"
   Goto memmy_validate_previous_directory_failed
 
@@ -366,7 +366,7 @@ Function MemmyValidateSelectedDirectories
   Pop $0
   StrCmp $0 "1" memmy_validate_user_data
   StrCpy $R8 "The selected installation folder $\"$INSTDIR$\" does not have permission. Choose another folder."
-  StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_failed
+  StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_failed
   StrCpy $R8 "当前选择的安装文件夹“$INSTDIR”没有权限，请选择其它目录。"
   Goto memmy_validate_failed
 
@@ -376,7 +376,7 @@ Function MemmyValidateSelectedDirectories
     Pop $0
     StrCmp $0 "1" memmy_validate_runtime
     StrCpy $R8 "The Cuby account data folder $\"$MemmyTargetUserDataPath$\" is not writable."
-    StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_failed
+    StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_failed
     StrCpy $R8 "Cuby 登录数据目录“$MemmyTargetUserDataPath”没有写入权限，无法继续安装。"
     Goto memmy_validate_failed
 
@@ -386,7 +386,7 @@ Function MemmyValidateSelectedDirectories
     Pop $0
     StrCmp $0 "1" memmy_validate_succeeded
     StrCpy $R8 "The Cuby data folder $\"$MemmyTargetRuntimeHomePath$\" does not have permission. Choose another installation folder."
-    StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_failed
+    StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_failed
     StrCpy $R8 "当前安装位置对应的数据文件夹“$MemmyTargetRuntimeHomePath”没有权限，请选择其它安装目录。"
     Goto memmy_validate_failed
 
@@ -592,7 +592,7 @@ Function MemmyValidateInstallPage
 
   memmy_validate_page_relayed_target_failed:
     StrCpy $R8 "The relayed upgrade target changed after compatibility migration started. Go back and select $\"$MemmyUpgradeTargetInstallDir$\"."
-    StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_page_show_error
+    StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_page_show_error
     StrCpy $R8 "兼容迁移开始后安装目录发生了变化。请返回并选择“$MemmyUpgradeTargetInstallDir”。"
     Goto memmy_validate_page_show_error
 
@@ -741,11 +741,11 @@ FunctionEnd
 
 Function MemmyReadRelayedUpgradeContext
   StrCpy $MemmyIsRelayedUpgrade "0"
-  ReadEnvStr $MemmyUpgradeWorkDir "MEMMY_UPGRADE_WORK_DIR"
-  ReadEnvStr $MemmyUpgradeBackupRoot "MEMMY_UPGRADE_BACKUP_ROOT"
-  ReadEnvStr $MemmyUpgradeReopenAfterInstall "MEMMY_UPGRADE_REOPEN_AFTER_INSTALL"
-  ReadEnvStr $MemmyUpgradeSourceInstallDir "MEMMY_UPGRADE_SOURCE_INSTALL_DIR"
-  ReadEnvStr $MemmyUpgradeTargetInstallDir "MEMMY_UPGRADE_TARGET_INSTALL_DIR"
+  ReadEnvStr $MemmyUpgradeWorkDir "CUBY_UPGRADE_WORK_DIR"
+  ReadEnvStr $MemmyUpgradeBackupRoot "CUBY_UPGRADE_BACKUP_ROOT"
+  ReadEnvStr $MemmyUpgradeReopenAfterInstall "CUBY_UPGRADE_REOPEN_AFTER_INSTALL"
+  ReadEnvStr $MemmyUpgradeSourceInstallDir "CUBY_UPGRADE_SOURCE_INSTALL_DIR"
+  ReadEnvStr $MemmyUpgradeTargetInstallDir "CUBY_UPGRADE_TARGET_INSTALL_DIR"
   StrCmp $MemmyUpgradeWorkDir "" memmy_relay_context_failed
   StrCmp $MemmyUpgradeBackupRoot "" memmy_relay_context_failed
   StrCmp $MemmyUpgradeSourceInstallDir "" memmy_relay_context_failed
@@ -844,7 +844,7 @@ Function MemmyAddCliToUserPath
     WriteRegExpandStr HKCU "Environment" "Path" "$0"
 
   memmy_add_cli_broadcast:
-    System::Call 'user32::SendMessageTimeout(i 0xffff, i ${MEMMY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
+    System::Call 'user32::SendMessageTimeout(i 0xffff, i ${CUBY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
 
   memmy_add_cli_done:
 FunctionEnd
@@ -974,7 +974,7 @@ Function un.MemmyRemoveCliFromUserPath
   Call un.MemmyRemovePathSegment
   Pop $1
   WriteRegExpandStr HKCU "Environment" "Path" "$1"
-  System::Call 'user32::SendMessageTimeout(i 0xffff, i ${MEMMY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
+  System::Call 'user32::SendMessageTimeout(i 0xffff, i ${CUBY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
 
   memmy_remove_cli_done:
 FunctionEnd

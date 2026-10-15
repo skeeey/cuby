@@ -22,19 +22,19 @@ function request(body: unknown, init: RequestInit = {}): Request {
   });
 }
 
-const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const roots: string[] = [];
 
 function tempDataDir(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-api-test-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
+  process.env.CUBY_AGENT_DATA_DIR = root;
   return root;
 }
 
 afterEach(() => {
-  if (oldDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+  if (oldDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

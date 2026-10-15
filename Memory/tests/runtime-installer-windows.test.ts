@@ -225,7 +225,7 @@ describe("Windows standalone Memory service", () => {
     fs.writeFileSync(join(logs, "service.log"), "previous output\n");
     const child = new EventEmitter();
     const spawn = vi.fn((_executable, _args, options) => {
-      expect(options).toMatchObject({ windowsHide: true, env: { MEMMY_HOME: home } });
+      expect(options).toMatchObject({ windowsHide: true, env: { CUBY_HOME: home } });
       expect(options.detached).not.toBe(true);
       expect(options.stdio[0]).toBe("ignore");
       fs.writeSync(options.stdio[1], "background output\n");

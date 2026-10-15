@@ -4,16 +4,16 @@ import type { LlmConfig } from "../src/config/index.js";
 import { createLlmClient } from "../src/model/llm.js";
 import type { LlmMessage } from "../src/model/types.js";
 
-const originalLogLevel = process.env.MEMMY_LOG_LEVEL;
+const originalLogLevel = process.env.CUBY_LOG_LEVEL;
 const encoding = get_encoding("cl100k_base");
 
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
   if (originalLogLevel === undefined) {
-    delete process.env.MEMMY_LOG_LEVEL;
+    delete process.env.CUBY_LOG_LEVEL;
   } else {
-    process.env.MEMMY_LOG_LEVEL = originalLogLevel;
+    process.env.CUBY_LOG_LEVEL = originalLogLevel;
   }
 });
 
@@ -301,7 +301,7 @@ describe("memory LLM JSON length retry", () => {
   });
 
   it("logs truncation recovery with timestamps and token budgets", async () => {
-    process.env.MEMMY_LOG_LEVEL = "info";
+    process.env.CUBY_LOG_LEVEL = "info";
     const stdout: string[] = [];
     const stderr: string[] = [];
     vi.spyOn(process.stdout, "write").mockImplementation((chunk) => {
@@ -340,7 +340,7 @@ describe("memory LLM JSON length retry", () => {
   });
 
   it("logs terminal JSON failures and exposes the latest parse error in model status", async () => {
-    process.env.MEMMY_LOG_LEVEL = "error";
+    process.env.CUBY_LOG_LEVEL = "error";
     const stderr: string[] = [];
     vi.spyOn(process.stderr, "write").mockImplementation((chunk) => {
       stderr.push(String(chunk));

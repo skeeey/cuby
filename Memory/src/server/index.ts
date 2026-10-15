@@ -56,10 +56,10 @@ async function runMemoryService(argv: string[], lifecycle: {
 }): Promise<boolean> {
     const options = parseServeArgs(argv);
     const { config, path: configPath } = loadMemmyConfig(options.configPath);
-    const host = options.host ?? process.env.MEMMY_MEMORY_HOST ?? process.env.MEMORY_SERVICE_HOST ?? "127.0.0.1";
+    const host = options.host ?? process.env.CUBY_MEMORY_HOST ?? process.env.MEMORY_SERVICE_HOST ?? "127.0.0.1";
     assertLoopbackBindHost(host);
     const port = options.port ??
-        numberEnv("MEMMY_MEMORY_PORT") ??
+        numberEnv("CUBY_MEMORY_PORT") ??
         numberEnv("MEMORY_SERVICE_PORT") ??
         18960;
     const sqlitePath = options.dbPath ?? config.storage.sqlitePath;

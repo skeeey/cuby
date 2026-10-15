@@ -14,7 +14,7 @@ RUNTIME_DIR="$DESKTOP_DIR/dist/runtime"
 MIGRATIONS_STAGING_DIR="$DESKTOP_DIR/dist/Migrations"
 CLI_BIN_DIR="$RUNTIME_DIR/bin"
 EMBEDDING_MODELS_DIR="$DESKTOP_DIR/dist/embedding-models"
-EMBEDDING_MODEL_ID="${MEMMY_EMBEDDING_MODEL:-Xenova/all-MiniLM-L6-v2}"
+EMBEDDING_MODEL_ID="${CUBY_EMBEDDING_MODEL:-Xenova/all-MiniLM-L6-v2}"
 PACKAGE_ARCH="x64"
 WINDOWS_SIGNING_BUILDER_ARGS=()
 
@@ -54,7 +54,7 @@ configure_npm_script_shell() {
     return
   fi
 
-  export npm_config_script_shell="${MEMMY_NPM_SCRIPT_SHELL:-$(to_node_readable_path "$bash_path")}"
+  export npm_config_script_shell="${CUBY_NPM_SCRIPT_SHELL:-$(to_node_readable_path "$bash_path")}"
   export NPM_CONFIG_SCRIPT_SHELL="$npm_config_script_shell"
 }
 
@@ -68,7 +68,7 @@ npm_with_configured_script_shell() {
 }
 
 resolve_electron_dist() {
-  local electron_dist="${MEMMY_ELECTRON_DIST:-}"
+  local electron_dist="${CUBY_ELECTRON_DIST:-}"
 
   if [ -z "$electron_dist" ] && [ -f "$DESKTOP_DIR/node_modules/electron/dist/electron.exe" ]; then
     electron_dist="$DESKTOP_DIR/node_modules/electron/dist"
@@ -79,14 +79,14 @@ resolve_electron_dist() {
   fi
 }
 
-if [ -n "${MEMMY_DESKTOP_VERSION:-}" ]; then
-  DESKTOP_VERSION="$MEMMY_DESKTOP_VERSION"
+if [ -n "${CUBY_DESKTOP_VERSION:-}" ]; then
+  DESKTOP_VERSION="$CUBY_DESKTOP_VERSION"
 else
   DESKTOP_VERSION="$(read_package_version "$DESKTOP_DIR/package.json")"
 fi
 MEMORY_VERSION="$(read_package_version "$MEMORY_DIR/package.json")"
 node "$ROOT_DIR/scripts/internal/shared/verify-package-version.mjs" --expected "$DESKTOP_VERSION"
-export MEMMY_VERSION_SYNC_CHECK_ONLY=1
+export CUBY_VERSION_SYNC_CHECK_ONLY=1
 for builder_arg in "$@"; do
   case "$builder_arg" in
     --config.extraMetadata.version="$DESKTOP_VERSION")
@@ -103,7 +103,7 @@ for builder_arg in "$@"; do
 done
 configure_npm_script_shell
 
-if [ "${MEMMY_SKIP_CODESIGN:-}" = "1" ]; then
+if [ "${CUBY_SKIP_CODESIGN:-}" = "1" ]; then
   BUILDER_CONFIG="electron-builder.win.unsigned.yml"
   PACKAGE_SIGNING="unsigned"
 else
@@ -111,7 +111,7 @@ else
   PACKAGE_SIGNING="signed"
 fi
 
-case "${MEMMY_ACCOUNT_CHANNEL:-phone}" in
+case "${CUBY_ACCOUNT_CHANNEL:-phone}" in
   email)
     PACKAGE_EDITION="intl"
     ;;
@@ -119,7 +119,7 @@ case "${MEMMY_ACCOUNT_CHANNEL:-phone}" in
     PACKAGE_EDITION="cn"
     ;;
   *)
-    echo "Unsupported MEMMY_ACCOUNT_CHANNEL: ${MEMMY_ACCOUNT_CHANNEL:-}" >&2
+    echo "Unsupported CUBY_ACCOUNT_CHANNEL: ${CUBY_ACCOUNT_CHANNEL:-}" >&2
     exit 1
     ;;
 esac
@@ -194,9 +194,9 @@ verify_migration_state_compatibility_module() {
   local module_path
   module_path="$(to_node_readable_path "$1")"
 
-  MEMMY_MIGRATION_STATE_MODULE_PATH="$module_path" node --input-type=module --eval '
+  CUBY_MIGRATION_STATE_MODULE_PATH="$module_path" node --input-type=module --eval '
     import { pathToFileURL } from "node:url";
-    const modulePath = process.env.MEMMY_MIGRATION_STATE_MODULE_PATH;
+    const modulePath = process.env.CUBY_MIGRATION_STATE_MODULE_PATH;
     if (!modulePath) throw new Error("Migrations state-store path is unavailable");
     const stateStore = await import(pathToFileURL(modulePath).href);
     if (stateStore.CURRENT_MIGRATION_STATE_FORMAT_VERSION !== 2 || JSON.stringify(stateStore.SUPPORTED_MIGRATION_STATE_FORMAT_VERSIONS) !== "[1,2]") {
@@ -313,7 +313,7 @@ create_memory_runtime_manifest() {
 }
 
 write_desktop_edition_manifest() {
-  local account_channel="${MEMMY_ACCOUNT_CHANNEL:-phone}"
+  local account_channel="${CUBY_ACCOUNT_CHANNEL:-phone}"
   local edition="cn"
 
   case "$account_channel" in
@@ -324,7 +324,7 @@ write_desktop_edition_manifest() {
       account_channel="phone"
       ;;
     *)
-      echo "Unsupported MEMMY_ACCOUNT_CHANNEL: $account_channel" >&2
+      echo "Unsupported CUBY_ACCOUNT_CHANNEL: $account_channel" >&2
       exit 1
       ;;
   esac
@@ -359,7 +359,7 @@ if not exist "%APP_EXEC%" (
   exit /b 1
 )
 
-if not defined MEMMY_CONFIG if exist "%USERPROFILE%\.cuby\config.yaml" set "MEMMY_CONFIG=%USERPROFILE%\.cuby\config.yaml"
+if not defined CUBY_CONFIG if exist "%USERPROFILE%\.cuby\config.yaml" set "CUBY_CONFIG=%USERPROFILE%\.cuby\config.yaml"
 set "ELECTRON_RUN_AS_NODE=1"
 if not defined NODE_ENV set "NODE_ENV=production"
 
@@ -452,13 +452,13 @@ verify_windows_better_sqlite3_runtime() {
 
   ensure_electron_dist "$DESKTOP_DIR"
   require_packaged_runtime_file "$electron_executable"
-  MEMMY_BETTER_SQLITE_RUNTIME_DIR="$node_runtime_dir" \
+  CUBY_BETTER_SQLITE_RUNTIME_DIR="$node_runtime_dir" \
     ELECTRON_RUN_AS_NODE=1 \
     "$electron_executable" --input-type=module --eval '
       import { createRequire } from "node:module";
       import path from "node:path";
       import { pathToFileURL } from "node:url";
-      const runtimeDir = process.env.MEMMY_BETTER_SQLITE_RUNTIME_DIR;
+      const runtimeDir = process.env.CUBY_BETTER_SQLITE_RUNTIME_DIR;
       if (!runtimeDir) throw new Error("better-sqlite3 runtime directory is unavailable");
       const require = createRequire(pathToFileURL(path.join(runtimeDir, "package.json")));
       const Database = require("better-sqlite3");
@@ -670,7 +670,7 @@ npm_ci_win_x64() {
 install_better_sqlite3_win_x64() {
   local runtime_dir="$1"
   local electron_version
-  electron_version="${MEMMY_ELECTRON_VERSION:-$(read_package_version "$DESKTOP_DIR/node_modules/electron/package.json")}"
+  electron_version="${CUBY_ELECTRON_VERSION:-$(read_package_version "$DESKTOP_DIR/node_modules/electron/package.json")}"
 
   (
     cd "$runtime_dir/node_modules/better-sqlite3"
@@ -696,10 +696,10 @@ detach_packaged_runtime_links() {
 }
 
 package_step_start "Validate Windows signing configuration"
-if [ "${MEMMY_SKIP_CODESIGN:-}" != "1" ]; then
+if [ "${CUBY_SKIP_CODESIGN:-}" != "1" ]; then
   require_windows_signing_env
 else
-  log "MEMMY_SKIP_CODESIGN=1, building unsigned Windows smoke package"
+  log "CUBY_SKIP_CODESIGN=1, building unsigned Windows smoke package"
 fi
 
 package_step_start "Install root workspace dependencies if needed"

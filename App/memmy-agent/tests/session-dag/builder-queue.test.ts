@@ -48,8 +48,8 @@ async function waitForQueueDrain(): Promise<void> {
 
 afterEach(() => {
   vi.restoreAllMocks();
-  if (oldDagDir === undefined) delete process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-  else process.env.MEMMY_AGENT_SESSION_DAG_DIR = oldDagDir;
+  if (oldDagDir === undefined) delete process.env.CUBY_AGENT_SESSION_DAG_DIR;
+  else process.env.CUBY_AGENT_SESSION_DAG_DIR = oldDagDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -75,8 +75,8 @@ describe("Session DAG builder and queue", () => {
 
   it("retries asynchronously when the configured backoff is zero", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "cli:zero-retry-backoff";
     const { sessions, session } = makeSession(root, sessionKey);
     const provider: any = {
@@ -135,8 +135,8 @@ describe("Session DAG builder and queue", () => {
 
   it("builds a patch from turn messages and DAG context", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:builder";
     const { sessions, session } = makeSession(root, sessionKey, { webui: true });
     const store = new SessionDagStore({ sessionKey, dbPath: sessionDagDbPath(sessionKey) });
@@ -278,8 +278,8 @@ describe("Session DAG builder and queue", () => {
 
   it("passes the persisted Goal snapshot to the Builder and assigns goal_id only in the Store", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:goal-builder-context";
     const { sessions, session } = makeSession(root, sessionKey);
     const store = new SessionDagStore({ sessionKey });
@@ -337,8 +337,8 @@ describe("Session DAG builder and queue", () => {
 
   it("replaces the internal continuation contract with the persisted objective summary for the Builder", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:goal-builder-internal";
     const sessions = new SessionManager(path.join(root, "sessions"));
     const session = new Session({ key: sessionKey });
@@ -396,8 +396,8 @@ describe("Session DAG builder and queue", () => {
 
   it("deterministic fallback keeps the locked Goal task and uses ordinary transition semantics after completion", () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:goal-builder-fallback";
     const sessions = new SessionManager(path.join(root, "sessions"));
     const store = new SessionDagStore({ sessionKey });
@@ -465,8 +465,8 @@ describe("Session DAG builder and queue", () => {
 
   it("normalizes an omitted old-task closure and transition without an extra provider call", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:normalize-task-switch";
     const { sessions, session } = makeSession(root, sessionKey);
     const store = new SessionDagStore({ sessionKey });
@@ -551,8 +551,8 @@ describe("Session DAG builder and queue", () => {
 
   it("retries explicit task-transition conflicts and falls back without creating a second task", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "cli:conflicting-task-switch";
     const { sessions, session } = makeSession(root, sessionKey);
     const seedStore = new SessionDagStore({ sessionKey });
@@ -656,8 +656,8 @@ describe("Session DAG builder and queue", () => {
     },
   ])("passes the previous schema error into a retry so the patch can be corrected: $name", async ({ rejectedPatch, errorPattern }) => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "cli:retry-error";
     const { sessions, session } = makeSession(root, sessionKey);
     let callNumber = 0;
@@ -747,8 +747,8 @@ describe("Session DAG builder and queue", () => {
 
   it("rejects retry patches that drop edges for newly added subtasks", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "cli:retry-dropped-edge";
     const { sessions, session } = makeSession(root, sessionKey);
     let callNumber = 0;
@@ -836,8 +836,8 @@ describe("Session DAG builder and queue", () => {
 
   it("writes an audit record for an empty but valid patch", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:empty-patch";
     const { sessions, session } = makeSession(root, sessionKey);
     const store = new SessionDagStore({ sessionKey });
@@ -881,8 +881,8 @@ describe("Session DAG builder and queue", () => {
 
   it("writes unified reasoning fields to the builder audit record", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:reasoning";
     const { sessions, session } = makeSession(root, sessionKey);
     const store = new SessionDagStore({ sessionKey });
@@ -928,8 +928,8 @@ describe("Session DAG builder and queue", () => {
 
   it("does not read provider raw response fields for builder audit records", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:raw-response-fields";
     const { sessions, session } = makeSession(root, sessionKey);
     const store = new SessionDagStore({ sessionKey });
@@ -971,8 +971,8 @@ describe("Session DAG builder and queue", () => {
 
   it("does not fail the builder when the debug log cannot be written", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "websocket:debug-write-failure";
     const { sessions, session } = makeSession(root, sessionKey);
     const store = new SessionDagStore({ sessionKey });
@@ -1007,8 +1007,8 @@ describe("Session DAG builder and queue", () => {
 
   it("queue falls back deterministically after the retry budget and keeps turn order", async () => {
     const root = tmpRoot();
-    oldDagDir = process.env.MEMMY_AGENT_SESSION_DAG_DIR;
-    process.env.MEMMY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
     const sessionKey = "cli:fallback";
     const { sessions, session } = makeSession(root, sessionKey);
     const provider: any = {

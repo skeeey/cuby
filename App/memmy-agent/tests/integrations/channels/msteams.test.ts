@@ -33,7 +33,7 @@ const botbuilderMock = vi.hoisted(() => {
 
 vi.mock("botbuilder", () => ({ BotFrameworkAdapter: botbuilderMock.BotFrameworkAdapter }));
 
-const originalWorkspace = process.env.MEMMY_AGENT_WORKSPACE;
+const originalWorkspace = process.env.CUBY_AGENT_WORKSPACE;
 const roots: string[] = [];
 
 class FakeResponse {
@@ -75,7 +75,7 @@ class FakeHttpClient {
 function tmpWorkspace(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-msteams-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_WORKSPACE = root;
+  process.env.CUBY_AGENT_WORKSPACE = root;
   return root;
 }
 
@@ -135,8 +135,8 @@ afterEach(() => {
   setMsteamsAvailableForTest(true);
   vi.restoreAllMocks();
   botbuilderMock.reset();
-  if (originalWorkspace == null) delete process.env.MEMMY_AGENT_WORKSPACE;
-  else process.env.MEMMY_AGENT_WORKSPACE = originalWorkspace;
+  if (originalWorkspace == null) delete process.env.CUBY_AGENT_WORKSPACE;
+  else process.env.CUBY_AGENT_WORKSPACE = originalWorkspace;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -157,7 +157,7 @@ describe("MSTeams inbound activity handling", () => {
   it("publishes personal messages and stores conversation refs", async () => {
     const bus = new MessageBus();
     const channel = makeChannel({}, bus);
-    const root = process.env.MEMMY_AGENT_WORKSPACE!;
+    const root = process.env.CUBY_AGENT_WORKSPACE!;
 
     await channel.handleActivity(personalActivity());
 
@@ -186,7 +186,7 @@ describe("MSTeams inbound activity handling", () => {
 
   it("does not store refs for denied senders", async () => {
     const channel = makeChannel({ allowFrom: ["allowed-user"] });
-    const root = process.env.MEMMY_AGENT_WORKSPACE!;
+    const root = process.env.CUBY_AGENT_WORKSPACE!;
 
     await channel.handleActivity(personalActivity({ conversation: { id: "conv-denied", conversationType: "personal" } }));
 
@@ -259,7 +259,7 @@ describe("MSTeams conversation ref persistence", () => {
     channel.saveRefs();
 
     expect(Object.keys(channel.conversationRefs)).toEqual(["conv-valid"]);
-    const saved = JSON.parse(fs.readFileSync(stateFile(process.env.MEMMY_AGENT_WORKSPACE!, "msteams_conversations.json"), "utf8"));
+    const saved = JSON.parse(fs.readFileSync(stateFile(process.env.CUBY_AGENT_WORKSPACE!, "msteams_conversations.json"), "utf8"));
     expect(Object.keys(saved)).toEqual(["conv-valid"]);
   });
 
@@ -291,9 +291,9 @@ describe("MSTeams conversation ref persistence", () => {
     channel.saveRefs();
 
     expect(Object.keys(channel.conversationRefs)).toEqual(["teams-good"]);
-    const saved = JSON.parse(fs.readFileSync(stateFile(process.env.MEMMY_AGENT_WORKSPACE!, "msteams_conversations.json"), "utf8"));
+    const saved = JSON.parse(fs.readFileSync(stateFile(process.env.CUBY_AGENT_WORKSPACE!, "msteams_conversations.json"), "utf8"));
     expect(Object.keys(saved)).toEqual(["teams-good"]);
-    const meta = JSON.parse(fs.readFileSync(stateFile(process.env.MEMMY_AGENT_WORKSPACE!, MSTEAMS_REF_META_FILENAME), "utf8"));
+    const meta = JSON.parse(fs.readFileSync(stateFile(process.env.CUBY_AGENT_WORKSPACE!, MSTEAMS_REF_META_FILENAME), "utf8"));
     expect(meta["teams-good"].updated_at).toBe(now);
   });
 
@@ -352,7 +352,7 @@ describe("MSTeams conversation ref persistence", () => {
 
   it("keeps the existing refs file when atomic replace fails", () => {
     const channel = makeChannel();
-    const root = process.env.MEMMY_AGENT_WORKSPACE!;
+    const root = process.env.CUBY_AGENT_WORKSPACE!;
     writeRefs(root, {
       "conv-old": { service_url: "https://smba.trafficmanager.net/amer/", conversation_id: "conv-old", conversation_type: "personal", updated_at: 1_700_000_000 },
     });
@@ -514,7 +514,7 @@ describe("MSTeams outbound delivery", () => {
   it("refreshes updatedAt and persists metadata after successful sends", async () => {
     const channel = makeChannel({ refTouchIntervalS: 0 });
     const fakeHttp = new FakeHttpClient();
-    const root = process.env.MEMMY_AGENT_WORKSPACE!;
+    const root = process.env.CUBY_AGENT_WORKSPACE!;
     channel.http = fakeHttp;
     channel.token = "tok";
     channel.tokenExpiresAt = 9_999_999_999;

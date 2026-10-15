@@ -16,7 +16,7 @@ describe("bundled Open Computer Use command", () => {
     const binary = path.join(root, "Applications", "Open Computer Use.app", "Contents", "MacOS", "OpenComputerUse");
     fs.mkdirSync(path.dirname(binary), { recursive: true });
     fs.writeFileSync(binary, "fixture", { mode: 0o755 });
-    const environment = { MEMMY_DEV_COMPUTER_USE_BINARY: binary };
+    const environment = { CUBY_DEV_COMPUTER_USE_BINARY: binary };
     expect(resolveOpenComputerUseCommand("open-computer-use", { platform: "darwin", packageRoot: root, environment })).toBe(binary);
     expect(resolveOpenComputerUseCommand("/custom/helper", { environment })).toBe("/custom/helper");
     expect(resolveOpenComputerUseCommand("open-computer-use", { platform: "linux", packageRoot: root, environment })).toBe("open-computer-use");
@@ -30,7 +30,7 @@ describe("bundled Open Computer Use command", () => {
     fs.mkdirSync(path.dirname(binary), { recursive: true });
     fs.writeFileSync(binary, "fixture", { mode: 0o755 });
     expect(resolveOpenComputerUseCommand("open-computer-use", {
-      platform: "darwin", packageRoot, environment: { MEMMY_DEV_COMPUTER_USE_BINARY: "/missing/dev-helper" },
+      platform: "darwin", packageRoot, environment: { CUBY_DEV_COMPUTER_USE_BINARY: "/missing/dev-helper" },
     })).toBe(binary);
   });
 
@@ -38,7 +38,7 @@ describe("bundled Open Computer Use command", () => {
     for (const binary of ["/missing/dev-helper", "relative/helper"]) {
       expect(() => resolveOpenComputerUseCommand("open-computer-use", {
         platform: "darwin", packageRoot: "/tmp/dev-package",
-        environment: { MEMMY_DEV_COMPUTER_USE_BINARY: binary },
+        environment: { CUBY_DEV_COMPUTER_USE_BINARY: binary },
       })).toThrow(/Development Computer Use helper is missing|must be an absolute path/);
     }
   });

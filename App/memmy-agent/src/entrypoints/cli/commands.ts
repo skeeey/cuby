@@ -1130,7 +1130,7 @@ export async function gateway({
   const loaded = loadRuntimeConfig(config, workspace);
   const workspacePath = syncRuntimeWorkspaceTemplates(loaded);
   setCliRuntimeLogs(Boolean(verbose));
-  // Gateway daemon mode: filter console output by the MEMMY_LOG_LEVEL injected by the desktop app.
+  // Gateway daemon mode: filter console output by the CUBY_LOG_LEVEL injected by the desktop app.
   installConsoleLevelGate();
   const canonicalWorkspace = fs.realpathSync(workspacePath);
   const bus = new MessageBus();

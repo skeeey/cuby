@@ -138,7 +138,7 @@ afterEach(() => {
 
 describe("MCP connection helpers", () => {
   it.runIf(process.platform === 'darwin')('uses the private Desktop guide instead of doctor through the real MCP registration', async () => {
-    vi.stubEnv('MEMMY_DESKTOP_MANAGED_GATEWAY', '1');
+    vi.stubEnv('CUBY_DESKTOP_MANAGED_GATEWAY', '1');
     const prepare = vi.spyOn(desktopOnboardingClient, 'prepare').mockResolvedValue({ app: 'com.example.Memmy', pid: 42 });
     const guide = vi.spyOn(desktopOnboardingClient, 'guide').mockResolvedValue(false);
     const doctor = vi.spyOn(permissionChecks, 'nativePermissionDoctor');

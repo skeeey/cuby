@@ -7,8 +7,8 @@ import { describe, expect, it } from "vitest";
 const root = path.resolve(import.meta.dirname, "../..");
 const buildEnv = {
   ...process.env,
-  MEMMY_LEGAL_CN_BASE_URL: "https://memmy.cn",
-  MEMMY_LEGAL_INTL_BASE_URL: "https://memmy.bot",
+  CUBY_LEGAL_CN_BASE_URL: "https://memmy.cn",
+  CUBY_LEGAL_INTL_BASE_URL: "https://memmy.bot",
 };
 const pptxScripts = path.join(root, "src/skills/pptx/scripts");
 const xlsxScripts = path.join(root, "src/skills/xlsx/scripts");

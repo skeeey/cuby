@@ -1,7 +1,7 @@
 import type { SkillManifest } from "../types.js";
 
-export const MEMMY_SKILL_DIRECTORY_NAME = "memmy-memory";
-export const MEMMY_RESUME_SKILL_DIRECTORY_NAME = "memmy-resume";
+export const CUBY_SKILL_DIRECTORY_NAME = "memmy-memory";
+export const CUBY_RESUME_SKILL_DIRECTORY_NAME = "memmy-resume";
 
 export interface RenderedSkillDirectoryFile {
   relativePath: string;

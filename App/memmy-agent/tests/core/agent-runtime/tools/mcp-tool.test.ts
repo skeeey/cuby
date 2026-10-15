@@ -91,7 +91,7 @@ function runtimeFor(sessions: Record<string, any>, capture?: (params: any) => vo
 }
 
 const roots: string[] = [];
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function useConfig(config: Config): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-mcp-tool-"));
@@ -105,8 +105,8 @@ afterEach(() => {
   setMcpRuntimeForTest(null);
   vi.restoreAllMocks();
   setConfigPath(path.join(os.tmpdir(), "memmy-agent-empty-config.yaml"));
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -193,7 +193,7 @@ describe("MCPToolWrapper execution", () => {
 
   it("preserves images and structured content returned by MCP tools", async () => {
     const root = useConfig(new Config());
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const session = {
       async callTool() {
         return {
@@ -263,7 +263,7 @@ describe("MCPToolWrapper execution", () => {
 describe("MCP structured content conversion", () => {
   it("preserves text and saves image blocks for multimodal tool results", () => {
     const root = useConfig(new Config());
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const result = convertMcpToolContent(
       {
         content: [

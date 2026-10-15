@@ -9,15 +9,15 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:18980";
 const RUNTIME_CONFIG_ENDPOINT = "/__memmy_runtime_config";
 const LOCAL_API_CONTRACTS_SOURCE = fileURLToPath(new URL("../../backend/local-api-contracts/src/index.ts", import.meta.url));
-const LEGAL_BASE_URL_ENV_KEYS = ["MEMMY_LEGAL_CN_BASE_URL", "MEMMY_LEGAL_INTL_BASE_URL"] as const;
+const LEGAL_BASE_URL_ENV_KEYS = ["CUBY_LEGAL_CN_BASE_URL", "CUBY_LEGAL_INTL_BASE_URL"] as const;
 export const PUBLIC_MEMMY_RENDERER_ENV_KEYS = [
-  "MEMMY_ACCOUNT_BACKEND",
-  "MEMMY_APP_EDITION",
-  "MEMMY_CLOUD_SERVICE",
-  "MEMMY_GA4_MEASUREMENT_ID",
-  "MEMMY_LEGAL_CN_BASE_URL",
-  "MEMMY_LEGAL_INTL_BASE_URL",
-  "MEMMY_PACKAGE_SIGNING",
+  "CUBY_ACCOUNT_BACKEND",
+  "CUBY_APP_EDITION",
+  "CUBY_CLOUD_SERVICE",
+  "CUBY_GA4_MEASUREMENT_ID",
+  "CUBY_LEGAL_CN_BASE_URL",
+  "CUBY_LEGAL_INTL_BASE_URL",
+  "CUBY_PACKAGE_SIGNING",
 ] as const;
 // Definition for repo root dir.
 const REPO_ROOT_DIR = fileURLToPath(new URL("../../../", import.meta.url));
@@ -39,12 +39,12 @@ export const validateLegalEnv = (env: Record<string, string | undefined>): void 
 /** Vite configuration. */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, REPO_ROOT_DIR, "");
-  const stableElectronDemo = process.env.MEMMY_STABLE_ELECTRON_DEMO?.trim() === "1";
+  const stableElectronDemo = process.env.CUBY_STABLE_ELECTRON_DEMO?.trim() === "1";
   const validationEnv = mode === "test"
     ? {
         ...env,
-        MEMMY_LEGAL_CN_BASE_URL: "https://test.memmy.cn",
-        MEMMY_LEGAL_INTL_BASE_URL: "https://test.memmy.bot"
+        CUBY_LEGAL_CN_BASE_URL: "https://test.memmy.cn",
+        CUBY_LEGAL_INTL_BASE_URL: "https://test.memmy.bot"
       }
     : env;
   validateLegalEnv(validationEnv);
@@ -127,5 +127,5 @@ function memmyRuntimeConfigPlugin(): Plugin {
 
 /** Handles resolve runtime config path. */
 function resolveRuntimeConfigPath(): string {
-  return process.env.MEMMY_RUNTIME_CONFIG_PATH?.trim() || join(homedir(), ".cuby", "runtime.json");
+  return process.env.CUBY_RUNTIME_CONFIG_PATH?.trim() || join(homedir(), ".cuby", "runtime.json");
 }

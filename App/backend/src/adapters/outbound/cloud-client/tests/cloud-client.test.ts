@@ -253,7 +253,7 @@ describe("cloud client", () => {
 
   it("sends the international edition through X-Agent-Region", async () => {
     let receivedRegion: string | undefined;
-    vi.stubEnv("MEMMY_APP_EDITION", "intl");
+    vi.stubEnv("CUBY_APP_EDITION", "intl");
     server = createServer((request, response) => {
       receivedRegion = request.headers["x-agent-region"] as string | undefined;
       sendJson(response, { code: 0, message: "ok", data: true });
