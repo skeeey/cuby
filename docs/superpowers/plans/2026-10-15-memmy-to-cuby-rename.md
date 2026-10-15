@@ -526,19 +526,25 @@ git commit -m "refactor: rename MEMMY_* environment variables to CUBY_*"
 
 ```bash
 grep -rl 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^(\./)?docs/' | grep -vE '^(\./)?README' \
+  | grep -vE '^(\./)?docs/' | grep -viE 'readme' \
   > /tmp/cuby-header-files.txt
+wc -l /tmp/cuby-header-files.txt   # 实测基线：78 个文件；其中不应出现 README/docs
 xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/g'
 ```
+
+> 排除用 `-viE 'readme'`（大小写不敏感），不要用锚定的 `^(\./)?README`——后者匹配不到 `App/backend/README.md` 这类嵌套 README（实测会混进来）。
 
 - [ ] **Step 2: 验证头名齐全且无漏网**
 
 ```bash
-grep -rho 'x-cuby-[a-z-]*' --exclude-dir=node_modules --exclude-dir=dist . | sort -u | wc -l   # 期望 17
-grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist . | grep -vE '^(\./)?(docs/|README|Memory/installers/|.github/workflows/linux-cli-installer.yml)'
+grep -rho 'x-cuby-[a-z-]*' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=docs . | sort -u | wc -l   # 期望 17
+grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.superpowers . \
+  | grep -vE '^(\./)?(docs/|\.github/release-notes/)' | grep -viE 'readme'
 ```
 
-Expected: 17，且第二条无输出。
+Expected: 第一条 **17**，第二条无输出。
+
+> 计数必须排除 `docs/`：spec 与计划正文里写着 `x-memmy-*` 这个通配（裸前缀 `x-memmy-`），不排除会数出 18。
 
 - [ ] **Step 3: 跑测试**
 
