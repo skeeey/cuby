@@ -67,12 +67,12 @@ export async function runCommand(context: CommandContext): Promise<unknown> {
   }
 
   if (words[0] === "stop") {
-    const home = optionString(options, "home") ?? "~/.memmy";
+    const home = optionString(options, "home") ?? "~/.cuby";
     return (context.stopInstalledService ?? stopInstalledMemoryService)(home);
   }
 
   if (words[0] === "service") {
-    const home = optionString(options, "home") ?? "~/.memmy";
+    const home = optionString(options, "home") ?? "~/.cuby";
     if (words[1] === "start") return startInstalledMemoryService(home);
     if (words[1] === "stop") return (context.stopInstalledService ?? stopInstalledMemoryService)(home);
     if (words[1] === "repair-launcher") return (context.repairInstalledService ?? repairInstalledWindowsMemoryService)(home);

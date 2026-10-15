@@ -32,7 +32,7 @@ function file(initial?: Record<string, unknown> | string, name = "config.yaml"):
 
 describe("memmy runtime config current contract", () => {
   it("resolves the default file path", () => {
-    expect(resolveDefaultMemmyConfigPath("C:/Users/tester")).toBe(join("C:/Users/tester", ".memmy", "config.yaml"));
+    expect(resolveDefaultMemmyConfigPath("C:/Users/tester")).toBe(join("C:/Users/tester", ".cuby", "config.yaml"));
   });
 
   it("reads current timezone and websocket bootstrap secrets", async () => {

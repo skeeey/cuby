@@ -255,7 +255,7 @@ describe("embedder", () => {
 
     await expect(embedder.embedOne("local memory")).resolves.toEqual([3, 4]);
     expect(transformerMocks.env.cacheDir).toBe(
-      join(homedir(), ".memmy", "memory-service", "model-cache")
+      join(homedir(), ".cuby", "memory-service", "model-cache")
     );
     expect(transformerMocks.extractor).toHaveBeenCalledWith("local memory", {
       pooling: "mean",
@@ -283,7 +283,7 @@ describe("embedder", () => {
     }
 
     expect(transformerMocks.env.cacheDir).toBe(
-      join(homedir(), ".memmy", "memory-service", "model-cache")
+      join(homedir(), ".cuby", "memory-service", "model-cache")
     );
     expect(transformerMocks.env.allowLocalModels).toBe(true);
     expect(transformerMocks.env.allowRemoteModels).toBe(false);

@@ -40,7 +40,7 @@ export interface CreateClaudeCodeSkillTargetDeps {
 /** Creates create claude code skill target. */
 export function createClaudeCodeSkillTarget(deps: CreateClaudeCodeSkillTargetDeps = {}): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveClaudeCodeHomeDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
 
   return {
     targetId: CLAUDE_CODE_TARGET_ID,

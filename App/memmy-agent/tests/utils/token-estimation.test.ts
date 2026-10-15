@@ -123,7 +123,7 @@ describe("estimatePromptTokensChain", () => {
     });
     expect(reference).toContain("[tool output persisted]");
     expect(reference).toContain("call-1.txt");
-    expect(fs.existsSync(path.join(workspace, ".memmy", "tool-results", safeFilename("chat:one"), "call-1.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(workspace, ".cuby", "tool-results", safeFilename("chat:one"), "call-1.txt"))).toBe(true);
 
     fs.writeFileSync(path.join(workspace, "AGENTS.md"), "custom", "utf8");
     const added = syncWorkspaceTemplates(workspace);

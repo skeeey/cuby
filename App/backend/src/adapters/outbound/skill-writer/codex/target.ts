@@ -45,7 +45,7 @@ export interface CreateCodexSkillTargetDeps {
 /** Creates create codex skill target. */
 export function createCodexSkillTarget(deps: CreateCodexSkillTargetDeps = {}): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveCodexHomeDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
   const trustHooks = deps.trustHooks ?? trustMemmyCodexHooks;
 
   return {

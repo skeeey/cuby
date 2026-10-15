@@ -25,7 +25,7 @@ export interface CreateFilesystemLocalDataStoreOptions {
   revealPath?: (dataPath: string) => void;
 }
 
-const DEFAULT_MEMORY_HOME = join(homedir(), ".memmy");
+const DEFAULT_MEMORY_HOME = join(homedir(), ".cuby");
 /** Creates create filesystem local data store. */
 export function createFilesystemLocalDataStore(options: CreateFilesystemLocalDataStoreOptions): LocalDataStore {
   const memoryDatabasePath = resolveMemoryDatabasePath(options);

@@ -2049,7 +2049,7 @@ describe("AgentThreadMessages", () => {
             {
               id: "answer",
               role: "assistant",
-              content: "文件 /Users/yuan/deck.pptx\n目录 /Users/yuan/.memmy/workspace\n普通文本 foo/bar"
+              content: "文件 /Users/yuan/deck.pptx\n目录 /Users/yuan/.cuby/workspace\n普通文本 foo/bar"
             }
           ]}
         />
@@ -2057,10 +2057,10 @@ describe("AgentThreadMessages", () => {
     );
 
     expect(html).toContain("/Users/yuan/deck.pptx");
-    expect(html).toContain("/Users/yuan/.memmy/workspace");
+    expect(html).toContain("/Users/yuan/.cuby/workspace");
     expect(html).toContain("foo/bar");
     expect(html).not.toContain('href="file:///Users/yuan/deck.pptx"');
-    expect(html).not.toContain('href="file:///Users/yuan/.memmy/workspace"');
+    expect(html).not.toContain('href="file:///Users/yuan/.cuby/workspace"');
     expect(html).not.toContain('href="file://foo/bar"');
     expect(html).not.toContain('href="file:///bar"');
     expect(html).not.toContain("agent-message-content__file-chip");

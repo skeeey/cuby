@@ -164,7 +164,7 @@ describe("memmy memory config", () => {
       memmyMemory: {
         version: 1,
         storage: {
-          sqlitePath: "~/.memmy/memory-service/memory.sqlite",
+          sqlitePath: "~/.cuby/memory-service/memory.sqlite",
           endpoint: "http://127.0.0.1:18960"
         },
         embedding: {
@@ -175,7 +175,7 @@ describe("memmy memory config", () => {
 
     const { config } = loadMemmyConfig(configPath);
 
-    expect(config.storage.sqlitePath).toBe(join(homedir(), ".memmy", "memory-service", "memory.sqlite"));
+    expect(config.storage.sqlitePath).toBe(join(homedir(), ".cuby", "memory-service", "memory.sqlite"));
   });
 
   it("reads user id from memmyMemory config and environment aliases", () => {
@@ -813,7 +813,7 @@ describe("memmy memory config", () => {
 
     expect(defaultConfigPaths()).toEqual([
       join(root, "custom.yaml"),
-      join(homedir(), ".memmy", "config.yaml")
+      join(homedir(), ".cuby", "config.yaml")
     ]);
   });
 });

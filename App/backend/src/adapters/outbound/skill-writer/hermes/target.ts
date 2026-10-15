@@ -33,7 +33,7 @@ export interface CreateHermesSkillTargetDeps {
 /** Creates create hermes skill target. */
 export function createHermesSkillTarget(deps: CreateHermesSkillTargetDeps = {}): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveHermesHomeDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
 
   return {
     targetId: HERMES_TARGET_ID,
@@ -333,7 +333,7 @@ from urllib.request import Request, urlopen
 
 
 PLUGIN_DIR = Path(__file__).resolve().parent
-DEFAULT_MEMMY_CONFIG_PATH = Path.home() / ".memmy" / "config.yaml"
+DEFAULT_MEMMY_CONFIG_PATH = Path.home() / ".cuby" / "config.yaml"
 STATE_PATH = PLUGIN_DIR / "memmy_resume_state.json"
 SEARCH_LIMIT = 20
 DISPLAY_LIMIT = 5
@@ -931,7 +931,7 @@ except Exception:
 
 logger = logging.getLogger(__name__)
 PLUGIN_DIR = Path(__file__).resolve().parent
-DEFAULT_MEMMY_CONFIG_PATH = Path.home() / ".memmy" / "config.yaml"
+DEFAULT_MEMMY_CONFIG_PATH = Path.home() / ".cuby" / "config.yaml"
 HTTP_TIMEOUT_SECONDS = 45.0
 SHUTDOWN_THREAD_TIMEOUT_SECONDS = 60.0
 MEMMY_SEARCH_SCHEMA = {

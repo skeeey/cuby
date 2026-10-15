@@ -357,7 +357,7 @@ describe("AgentRunner governance", () => {
     const messages = [
       { role: "system", content: "system" },
       { role: "assistant", content: "previous reply" },
-      { role: "user", content: ".memmy-agent sibling directory" },
+      { role: "user", content: ".cuby-agent sibling directory" },
       {
         role: "assistant",
         content: null,

@@ -174,7 +174,7 @@ export interface CreateMemmyConfigWriterOptions {
    * Path to the Memmy main config file.
    *
    * Field semantics:
-   * - configPath: defaults to ~/.memmy/config.yaml; tests can inject a temporary path.
+   * - configPath: defaults to ~/.cuby/config.yaml; tests can inject a temporary path.
    */
   configPath?: string;
   /** Package login channel. Resolves the `system` language to zh-CN or en-US. */
@@ -292,10 +292,10 @@ async function readCurrentRuntimeConfig(configPath: string): Promise<Record<stri
  * Resolve the default Memmy main config path.
  *
  * @param homeDirectory the user's home directory; tests can pass a temporary directory.
- * @returns the absolute path to ~/.memmy/config.yaml.
+ * @returns the absolute path to ~/.cuby/config.yaml.
  */
 export function resolveDefaultMemmyConfigPath(homeDirectory = homedir()): string {
-  return join(homeDirectory, ".memmy", "config.yaml");
+  return join(homeDirectory, ".cuby", "config.yaml");
 }
 
 /**

@@ -9,16 +9,16 @@ import {
 describe("desktop edition identity", () => {
   it("defaults to the China package identity", () => {
     expect(resolveDesktopEdition(null)).toBe("cn");
-    expect(desktopUserDataDirectoryName("cn")).toBe("Memmy");
-    expect(desktopRuntimeHomeDirectoryName("cn")).toBe(".memmy");
+    expect(desktopUserDataDirectoryName("cn")).toBe("Cuby");
+    expect(desktopRuntimeHomeDirectoryName("cn")).toBe(".cuby");
   });
 
   it("resolves the international package identity from the packaged manifest", () => {
     const manifest = JSON.stringify({ edition: "intl", accountChannel: "email" });
 
     expect(resolveDesktopEdition(manifest)).toBe("intl");
-    expect(desktopUserDataDirectoryName("intl")).toBe("Memmy");
-    expect(desktopRuntimeHomeDirectoryName("intl")).toBe(".memmy");
+    expect(desktopUserDataDirectoryName("intl")).toBe("Cuby");
+    expect(desktopRuntimeHomeDirectoryName("intl")).toBe(".cuby");
   });
 
   it("prefers edition when both manifest identity fields are present", () => {

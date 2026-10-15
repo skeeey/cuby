@@ -24,7 +24,7 @@ export function setConfigPath(configPath: string | null): void {
 
 export function getConfigPath(): string {
   if (configPathOverride) return expandHome(configPathOverride);
-  return expandHome(process.env.MEMMY_CONFIG || "~/.memmy/config.yaml");
+  return expandHome(process.env.MEMMY_CONFIG || "~/.cuby/config.yaml");
 }
 
 export function resolveConfigEnvVars(config: Config): Config {

@@ -90,12 +90,12 @@ const createRelayFixture = async (
   const targetInstallDir = options.relocate ? join(root, "relocated Memmy") : installDir;
   const dataDir = join(installDir, "data", "Memmy");
   const workDir = join(root, "relay-work");
-  const backupRoot = join(`${installDir}.memmy-upgrade-backup`, basename(workDir));
+  const backupRoot = join(`${installDir}.cuby-upgrade-backup`, basename(workDir));
   const backupPath = join(backupRoot, "data-backup");
   const logPath = join(root, "logs", "windows-upgrade.log");
   const targetUserDataPath = join(root, "roaming", "Memmy");
-  const targetRuntimeHomePath = join(root, "new-runtime", ".memmy");
-  const legacyRuntimeHomePath = join(root, "legacy-profile", ".memmy");
+  const targetRuntimeHomePath = join(root, "new-runtime", ".cuby");
+  const legacyRuntimeHomePath = join(root, "legacy-profile", ".cuby");
   const migrationStatePath = join(root, "local", "Memmy", "data-migration", "state.json");
   const migrationLogPath = join(root, "logs", "data-migration.log");
   const installationRecordPath = join(root, "local", "Memmy", "data-layout", "last-install.json");
@@ -457,7 +457,7 @@ describeOnWindows("Windows upgrade relay", () => {
   it("migrates install-local data outside the installation directory before a verified upgrade", async () => {
     expect(existsSync(relayScriptPath)).toBe(true);
     const fixture = await createRelayFixture(0);
-    const sourceRuntimeHomePath = join(fixture.installDir, "data", ".memmy");
+    const sourceRuntimeHomePath = join(fixture.installDir, "data", ".cuby");
     const sourceWorkspacePath = join(sourceRuntimeHomePath, "workspace");
     const sourceSessionPath = join(sourceWorkspacePath, "sessions", "websocket_default.jsonl");
     await mkdir(dirname(sourceSessionPath), { recursive: true });
@@ -639,7 +639,7 @@ describeOnWindows("Windows upgrade relay", () => {
   it("recovers a persisted install-local backup when the executable and install data are gone", async () => {
     const fixture = await createRelayFixture(0);
     const failedBackup = join(
-      `${fixture.installDir}.memmy-migration-failed`,
+      `${fixture.installDir}.cuby-migration-failed`,
       "20260825120000-0123456789abcdef0123456789abcdef",
       "data-backup",
     );
@@ -678,12 +678,12 @@ describeOnWindows("Windows upgrade relay", () => {
     await Promise.all([
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true }),
-      mkdir(join(fixture.installDir, "data", ".memmy"), { recursive: true })
+      mkdir(join(fixture.installDir, "data", ".cuby"), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "stale-appdata-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "stale-profile-runtime", "utf8"),
-      writeFile(join(fixture.installDir, "data", ".memmy", "config.yaml"), "current-install-runtime", "utf8")
+      writeFile(join(fixture.installDir, "data", ".cuby", "config.yaml"), "current-install-runtime", "utf8")
     ]);
 
     await runRelay(fixture, { installedVersion: "" });

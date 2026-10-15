@@ -714,7 +714,7 @@ describe("memmy-memory CLI setup commands", () => {
 
   it("keeps the pre-startup config state when Desktop created defaults before installation", async () => {
     const root = tempRoot();
-    const configPath = join(root, ".memmy", "config.yaml");
+    const configPath = join(root, ".cuby", "config.yaml");
     const pluginRoot = join(root, ".openclaw", "memos-plugin");
     const source = join(root, "dist", "src", "cli", "index.js");
     const binPath = join(root, "bin", "memmy-memory");
@@ -736,7 +736,7 @@ describe("memmy-memory CLI setup commands", () => {
     await runCommand({
       argv: [
         "install",
-        "--home", join(root, ".memmy"),
+        "--home", join(root, ".cuby"),
         "--config", configPath,
         "--source-path", source,
         "--bin", binPath,

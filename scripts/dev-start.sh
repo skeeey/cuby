@@ -7,12 +7,12 @@ MEMMY_AGENT_DIR="$ROOT_DIR/App/memmy-agent"
 DESKTOP_DIR="$ROOT_DIR/App/shell/desktop"
 ELECTRON_PACKAGE_DIR="$DESKTOP_DIR/node_modules/electron"
 MEMORY_CLI_ENTRY="$ROOT_DIR/Memory/dist/src/cli/index.js"
-MEMMY_CONFIG_PATH="${MEMMY_CONFIG:-$HOME/.memmy/config.yaml}"
+MEMMY_CONFIG_PATH="${MEMMY_CONFIG:-$HOME/.cuby/config.yaml}"
 MEMMY_WORKSPACE_IS_EXPLICIT=0
 if [[ -n "${MEMMY_WORKSPACE:-}" ]]; then
   MEMMY_WORKSPACE_IS_EXPLICIT=1
 fi
-MEMMY_WORKSPACE_DIR="${MEMMY_WORKSPACE:-$HOME/.memmy/workspace}"
+MEMMY_WORKSPACE_DIR="${MEMMY_WORKSPACE:-$HOME/.cuby/workspace}"
 MEMMY_APP_DATABASE_FILE="${MEMMY_APP_DATABASE:-}"
 MEMMY_BIN_DIR="$HOME/.local/bin"
 MEMMY_MEMORY_BIND_HOST="${MEMMY_MEMORY_HOST:-${MEMORY_SERVICE_HOST:-127.0.0.1}}"
@@ -646,7 +646,7 @@ run_main() {
   fi
   "$MEMMY_RUNTIME_NODE_PATH" "${migration_args[@]}"
 
-  MEMMY_WORKSPACE_DIR="$("$MEMMY_RUNTIME_NODE_PATH" - "$MEMMY_CONFIG_PATH" "$HOME/.memmy/workspace" <<'NODE'
+  MEMMY_WORKSPACE_DIR="$("$MEMMY_RUNTIME_NODE_PATH" - "$MEMMY_CONFIG_PATH" "$HOME/.cuby/workspace" <<'NODE'
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");

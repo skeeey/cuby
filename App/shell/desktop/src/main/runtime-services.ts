@@ -350,7 +350,7 @@ export async function preparePackagedRuntimeConfig(
   const shouldWriteConfig = options.writeConfig ?? true;
   const shouldEnsureDirectories = options.ensureDirectories ?? true;
   const shouldFillMissingAgentSecret = options.fillMissingAgentSecret ?? true;
-  const memmyHome = resolvePath(env.MEMMY_HOME ?? "~/.memmy");
+  const memmyHome = resolvePath(env.MEMMY_HOME ?? "~/.cuby");
   const configPath = resolvePath(env.MEMMY_CONFIG ?? join(memmyHome, "config.yaml"));
   const secretFactory = options.secretFactory ?? createPersistentSecret;
   const defaultWorkspace = join(memmyHome, "workspace");
@@ -467,7 +467,7 @@ export async function preparePackagedRuntimeConfig(
 export async function resolvePackagedRuntimeMigrationTargets(
   env: RuntimeEnv = process.env
 ): Promise<{ configPath: string; agentWorkspace?: string }> {
-  const memmyHome = resolvePath(env.MEMMY_HOME ?? "~/.memmy");
+  const memmyHome = resolvePath(env.MEMMY_HOME ?? "~/.cuby");
   const configPath = resolvePath(env.MEMMY_CONFIG ?? join(memmyHome, "config.yaml"));
   const explicitWorkspace = stringValue(env.MEMMY_AGENT_WORKSPACE);
   if (!explicitWorkspace) return { configPath };

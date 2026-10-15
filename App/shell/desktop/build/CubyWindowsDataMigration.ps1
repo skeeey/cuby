@@ -143,7 +143,7 @@ function Get-CanonicalExternalRuntimeHomePath {
     $legacyHome = if ($LegacyRuntimeHomePath) {
       $LegacyRuntimeHomePath
     } else {
-      Join-Path $env:USERPROFILE '.memmy'
+      Join-Path $env:USERPROFILE '.cuby'
     }
     return Get-NormalizedPath -Path $legacyHome
   }
@@ -256,7 +256,7 @@ function Resolve-TrustedInstallDataPath {
     }
     $backupRoot = Split-Path -Parent $normalizedSourceDataPath
     $backupParent = Split-Path -Parent $backupRoot
-    $expectedBackupParent = "$normalizedSourceInstallDir.memmy-upgrade-backup"
+    $expectedBackupParent = "$normalizedSourceInstallDir.cuby-upgrade-backup"
     if (-not (Test-SamePath -Left $backupParent -Right $expectedBackupParent) -or
         -not (Split-Path -Leaf $backupRoot)) {
       throw "Relay source data is outside the validated installation backup directory."
@@ -270,7 +270,7 @@ function Resolve-TrustedInstallDataPath {
   $expectedPersistedDataPath = Get-NormalizedPath -Path (Join-Path $normalizedSourceInstallDir "data")
   $failedBackupRoot = Split-Path -Parent $normalizedSourceDataPath
   $failedBackupParent = Split-Path -Parent $failedBackupRoot
-  $expectedFailedBackupParent = Get-NormalizedPath -Path "$normalizedSourceInstallDir.memmy-migration-failed"
+  $expectedFailedBackupParent = Get-NormalizedPath -Path "$normalizedSourceInstallDir.cuby-migration-failed"
   $isValidatedFailedBackup = [string]::Equals(
       (Split-Path -Leaf $normalizedSourceDataPath),
       "data-backup",
@@ -502,7 +502,7 @@ function Record-TrustedInstallLocalGeneration {
     return
   }
   $userDataPath = Join-Path $effectiveSourceDataPath "Memmy"
-  $runtimePath = Join-Path $effectiveSourceDataPath ".memmy"
+  $runtimePath = Join-Path $effectiveSourceDataPath ".cuby"
   if (-not (Test-CompleteInstallUserData -Path $userDataPath) -and
       -not (Test-CompleteInstallRuntimeData -Path $runtimePath)) {
     return
@@ -528,7 +528,7 @@ function Preserve-FailedDirectMigrationSource {
   }
 
   $backupToken = "{0}-{1}" -f [DateTime]::UtcNow.ToString("yyyyMMddHHmmss"), ([Guid]::NewGuid().ToString("N"))
-  $backupRoot = Join-Path "$effectiveSourceInstallDir.memmy-migration-failed" $backupToken
+  $backupRoot = Join-Path "$effectiveSourceInstallDir.cuby-migration-failed" $backupToken
   $backupPath = Join-Path $backupRoot "data-backup"
   try {
     New-Item -ItemType Directory -Path $backupPath -Force -ErrorAction Stop | Out-Null
@@ -1180,7 +1180,7 @@ function Resume-PreservedMigrationForRetry {
   $currentTrustedDataPath = Resolve-TrustedInstallDataPath
   if ($currentTrustedDataPath -and (
       (Test-CompleteInstallUserData -Path (Join-Path $currentTrustedDataPath "Memmy")) -or
-      (Test-CompleteInstallRuntimeData -Path (Join-Path $currentTrustedDataPath ".memmy"))
+      (Test-CompleteInstallRuntimeData -Path (Join-Path $currentTrustedDataPath ".cuby"))
     )) {
     Write-MigrationLog -Message "A current trusted install source supersedes the preserved migration state; rolling the preserved target back before preparing it."
     Rollback-PreparedMigration
@@ -1374,7 +1374,7 @@ try {
           $null
         }
         $installRuntimeHomePath = if ($trustedInstallDataPath) {
-          Join-Path $trustedInstallDataPath ".memmy"
+          Join-Path $trustedInstallDataPath ".cuby"
         } else {
           $null
         }
@@ -1450,7 +1450,7 @@ try {
         if ($runtimeSourcePath) {
           $runtimeRebaseSourceHomePaths = @($runtimeSourcePath)
           if ($installRuntimeHomePath -and (Test-SamePath -Left $runtimeSourcePath -Right $installRuntimeHomePath)) {
-            $runtimeRebaseSourceHomePaths += Join-Path $effectiveSourceInstallDir "data\.memmy"
+            $runtimeRebaseSourceHomePaths += Join-Path $effectiveSourceInstallDir "data\.cuby"
           }
           if ($LegacyRuntimeHomePath) {
             $runtimeRebaseSourceHomePaths += $LegacyRuntimeHomePath

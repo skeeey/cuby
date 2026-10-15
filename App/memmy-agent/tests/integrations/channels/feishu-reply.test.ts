@@ -566,7 +566,7 @@ describe("Feishu inbound media", () => {
     const channel = makeFeishuChannel();
     channel.bus = bus;
     channel.downloadAndSaveMedia = vi.fn(async () => [
-      String.raw`C:\Users\dodre\.memmy\media\feishu\voice.ogg`,
+      String.raw`C:\Users\dodre\.cuby\media\feishu\voice.ogg`,
       "[audio: voice.ogg]",
     ]) as any;
     channel.transcribeAudio = vi.fn(async () => "hello from voice");
@@ -586,9 +586,9 @@ describe("Feishu inbound media", () => {
       "om_audio",
     );
     expect(channel.transcribeAudio).toHaveBeenCalledWith(
-      String.raw`C:\Users\dodre\.memmy\media\feishu\voice.ogg`,
+      String.raw`C:\Users\dodre\.cuby\media\feishu\voice.ogg`,
     );
-    expect(inbound.media).toEqual([String.raw`C:\Users\dodre\.memmy\media\feishu\voice.ogg`]);
+    expect(inbound.media).toEqual([String.raw`C:\Users\dodre\.cuby\media\feishu\voice.ogg`]);
     expect(inbound.content).toBe("[transcription: hello from voice]");
   });
 

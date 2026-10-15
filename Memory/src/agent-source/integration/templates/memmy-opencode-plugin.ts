@@ -18,7 +18,7 @@ import {
 
 const SOURCE = "opencode";
 const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
-const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".memmy", "config.yaml");
+const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const FETCH_TIMEOUT_MS = 45000;
 const SEARCH_LIMIT = 20;
 const DISPLAY_LIMIT = 5;

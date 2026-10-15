@@ -74,7 +74,7 @@ export interface LoadedRuntimeSession extends RuntimeSession {
 
 export async function readRuntimeConfig(configUrl: URL, pinnedOwner = false): Promise<RuntimeConfig> {
   const snapshot = objectValue(await readJson(configUrl));
-  const configPath = text(snapshot.memmy_config_path) || resolve(homedir(), ".memmy", "config.yaml");
+  const configPath = text(snapshot.memmy_config_path) || resolve(homedir(), ".cuby", "config.yaml");
   const yaml = objectValue(YAML.parse(await readFile(configPath, "utf8").catch(() => "{}")));
   const memory = objectValue(yaml.memmyMemory);
   const storage = objectValue(memory.storage);

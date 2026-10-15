@@ -127,5 +127,5 @@ function memmyRuntimeConfigPlugin(): Plugin {
 
 /** Handles resolve runtime config path. */
 function resolveRuntimeConfigPath(): string {
-  return process.env.MEMMY_RUNTIME_CONFIG_PATH?.trim() || join(homedir(), ".memmy", "runtime.json");
+  return process.env.MEMMY_RUNTIME_CONFIG_PATH?.trim() || join(homedir(), ".cuby", "runtime.json");
 }

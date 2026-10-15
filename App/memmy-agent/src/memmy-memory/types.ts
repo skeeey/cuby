@@ -93,7 +93,7 @@ export type MemmyMemoryHookOptions = {
   userId?: string;
   /** Optional per-run upper bound on layers eligible for automatic turn-start retrieval. */
   retrievalLayers?: MemmyMemoryLayer[];
-  /** Optional override for GA4 client_id; defaults to reading desktop-written ~/.memmy/analytics-client-id. */
+  /** Optional override for GA4 client_id; defaults to reading desktop-written ~/.cuby/analytics-client-id. */
   getAnalyticsClientId?: () => string | null | undefined;
   /** Optional logged-in account id for GA4 user_id; omitted when anonymous. */
   getAnalyticsUserId?: () => string | null | undefined;

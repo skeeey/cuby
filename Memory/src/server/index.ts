@@ -161,7 +161,7 @@ const SERVER_USAGE = `Usage: memmy-memory [options]
 Start the local Memory HTTP service.
 
 Options:
-  --config <path>       Configuration file (default: ~/.memmy/config.yaml)
+  --config <path>       Configuration file (default: ~/.cuby/config.yaml)
   --db <path>           SQLite database path
   --sqlite-path <path>  Alias for --db
   --host <host>         Loopback listen address (default: 127.0.0.1)

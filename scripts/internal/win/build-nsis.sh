@@ -359,7 +359,7 @@ if not exist "%APP_EXEC%" (
   exit /b 1
 )
 
-if not defined MEMMY_CONFIG if exist "%USERPROFILE%\.memmy\config.yaml" set "MEMMY_CONFIG=%USERPROFILE%\.memmy\config.yaml"
+if not defined MEMMY_CONFIG if exist "%USERPROFILE%\.cuby\config.yaml" set "MEMMY_CONFIG=%USERPROFILE%\.cuby\config.yaml"
 set "ELECTRON_RUN_AS_NODE=1"
 if not defined NODE_ENV set "NODE_ENV=production"
 

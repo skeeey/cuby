@@ -750,7 +750,7 @@ function createContext(): {
 } {
   tempDir = mkdtempSync(join(tmpdir(), "memmy-runtime-sync-"));
   store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
-  const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
+  const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
   const writeRaw = (content: string): void => {
     mkdirSync(dirname(memmyConfigPath), { recursive: true });
     writeFileSync(memmyConfigPath, content, "utf8");

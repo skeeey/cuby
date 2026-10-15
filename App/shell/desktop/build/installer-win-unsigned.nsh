@@ -232,7 +232,7 @@ Function MemmyResolveMigrationPaths
   Goto memmy_resolve_runtime_done
 
   memmy_resolve_use_profile:
-    StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\.memmy"
+    StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\.cuby"
 
   memmy_resolve_runtime_done:
     StrCpy $MemmyTargetUserDataPath "$APPDATA\Cuby"
@@ -776,7 +776,7 @@ Function MemmyReadRelayedUpgradeContext
     StrCmp $4 "" memmy_relay_context_failed
     ${GetFileName} "$MemmyUpgradeWorkDir" $5
     StrCmp $4 $5 0 memmy_relay_context_failed
-    StrCpy $0 "$MemmyUpgradeSourceInstallDir.memmy-upgrade-backup\$4"
+    StrCpy $0 "$MemmyUpgradeSourceInstallDir.cuby-upgrade-backup\$4"
     StrCmp $MemmyUpgradeBackupRoot $0 0 memmy_relay_context_failed
     StrCpy $MemmyIsRelayedUpgrade "1"
     Return

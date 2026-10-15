@@ -92,7 +92,7 @@ describe("installByokTokenUsage", () => {
 
   it("keeps the default user-home runtime path when MEMMY_HOME is not set", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-default-home-"));
-    const runtimeHome = join(tempDir, ".memmy");
+    const runtimeHome = join(tempDir, ".cuby");
     mkdirSync(runtimeHome, { recursive: true });
     writeFileSync(join(runtimeHome, "runtime.json"), JSON.stringify({
       baseUrl: "http://127.0.0.1:63003",
@@ -125,8 +125,8 @@ describe("installByokTokenUsage", () => {
 
   it("does not install a hook in Vitest runtime", () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(runtimeConfigPath, JSON.stringify({
       baseUrl: "http://127.0.0.1:62934",
       localToken: "runtime-token",
@@ -145,8 +145,8 @@ describe("installByokTokenUsage", () => {
 
   it("installs a hook using the latest runtime.json and resolves provider names from config", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(runtimeConfigPath, JSON.stringify({
       baseUrl: "http://127.0.0.1:62934",
       localToken: "runtime-token",
@@ -197,8 +197,8 @@ describe("installByokTokenUsage", () => {
 
   it("creates a standalone recorder that uses the existing agent_chat usage event shape", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-recorder-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(runtimeConfigPath, JSON.stringify({
       baseUrl: "http://127.0.0.1:63001",
       localToken: "runtime-token",

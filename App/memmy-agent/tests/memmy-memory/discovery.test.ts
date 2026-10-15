@@ -52,7 +52,7 @@ describe("memmy memory discovery", () => {
 
   it("can read future runtime discovery token files", () => {
     const root = tempRoot();
-    const runtimeDir = path.join(root, ".memmy", "memory-service");
+    const runtimeDir = path.join(root, ".cuby", "memory-service");
     fs.mkdirSync(runtimeDir, { recursive: true });
     const tokenFile = path.join(runtimeDir, "service-token");
     fs.writeFileSync(tokenFile, "runtime-token\n", "utf8");
@@ -69,7 +69,7 @@ describe("memmy memory discovery", () => {
     const explicit = path.join(root, "custom-config.yaml");
     expect(memmyMemoryConfigPaths({ env: { MEMMY_CONFIG: explicit }, homeDir: root })).toEqual([
       explicit,
-      path.join(root, ".memmy", "config.yaml"),
+      path.join(root, ".cuby", "config.yaml"),
     ]);
   });
 

@@ -117,7 +117,7 @@ export function getAnalyticsClientIdPath(
   env: NodeJS.ProcessEnv = process.env,
   homeDir = nodeHomedir(),
 ): string {
-  const memmyHome = (env.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".memmy")).replace(
+  const memmyHome = (env.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
     /^~(?=$|[/\\])/,
     homeDir,
   );
@@ -147,7 +147,7 @@ export function getOrCreateInstallationId(options: {
   homeDir?: string;
 } = {}): string {
   const homeDir = options.homeDir ?? nodeHomedir();
-  const memmyHome = (options.env?.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".memmy")).replace(
+  const memmyHome = (options.env?.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
     /^~(?=$|[/\\])/,
     homeDir,
   );

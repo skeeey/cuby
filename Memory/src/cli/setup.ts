@@ -146,7 +146,7 @@ export async function installMemoryCli(options: MemoryCliSetupOptions = {}): Pro
     };
   }
 
-  const home = resolve(expandHome(options.home ?? "~/.memmy"));
+  const home = resolve(expandHome(options.home ?? "~/.cuby"));
   const binPath = resolve(expandHome(options.binPath ?? join(home, "bin", "memmy-memory")));
   const source = resolve(expandHome(options.sourcePath ?? join(process.cwd(), "dist", "src", "cli", "index.js")));
 
@@ -234,7 +234,7 @@ function setupPaths(options: MemoryCliSetupOptions): {
   dbPath: string;
   endpoint: string;
 } {
-  const home = resolve(expandHome(options.home ?? "~/.memmy"));
+  const home = resolve(expandHome(options.home ?? "~/.cuby"));
   const configPath = resolve(expandHome(options.configPath ?? join(home, "config.yaml")));
   const storage = existingMemoryStorage(configPath);
   return {

@@ -36,7 +36,7 @@ export const resolveWindowsDataLayout = (
   }
 
   const userDataPath = win32.join(options.appDataPath, "Cuby");
-  const legacyRuntimeHomePath = win32.join(options.homeDirectory, ".memmy");
+  const legacyRuntimeHomePath = win32.join(options.homeDirectory, ".cuby");
   const installationRoot = win32.parse(options.executablePath).root;
   const useLegacyRuntimeHome = options.isWindowsStore
     || !installationRoot
@@ -364,7 +364,7 @@ const resolveValidatedRelayBackupRoot = (
   const backupParent = win32.dirname(backupRoot);
   const workLeaf = win32.basename(backupRoot);
   const sourceInstallDir = win32.normalize(state.sourceInstallDir);
-  const expectedBackupParent = `${sourceInstallDir}.memmy-upgrade-backup`;
+  const expectedBackupParent = `${sourceInstallDir}.cuby-upgrade-backup`;
   if (!/^\d+$/u.test(workLeaf) || !sameWindowsPath(backupParent, expectedBackupParent)) return null;
   const copiedFromRelayBackup = state.preparedCopies.some((copy) => {
     if (!copy || typeof copy !== "object") return false;
@@ -375,7 +375,7 @@ const resolveValidatedRelayBackupRoot = (
       && (
         (sameWindowsPath(sourcePath, win32.join(normalizedSourcePath, "Memmy"))
           && sameWindowsPath(destinationPath, layout.userDataPath))
-        || (sameWindowsPath(sourcePath, win32.join(normalizedSourcePath, ".memmy"))
+        || (sameWindowsPath(sourcePath, win32.join(normalizedSourcePath, ".cuby"))
           && sameWindowsPath(destinationPath, layout.runtimeHomePath))
       );
   });
@@ -459,7 +459,7 @@ const cleanupValidatedInstallSources = async (
   const failedBackupRoot = win32.dirname(sourceDataPath);
   const failedBackupParent = win32.dirname(failedBackupRoot);
   const isFailedBackup = win32.basename(sourceDataPath).toLowerCase() === "data-backup"
-    && sameWindowsPath(failedBackupParent, `${sourceInstallDir}.memmy-migration-failed`)
+    && sameWindowsPath(failedBackupParent, `${sourceInstallDir}.cuby-migration-failed`)
     && /^[0-9]{14}-[a-f0-9]{32}$/iu.test(win32.basename(failedBackupRoot));
   if (!sameWindowsPath(sourceDataPath, directDataPath) && !isFailedBackup) return;
 
@@ -471,7 +471,7 @@ const cleanupValidatedInstallSources = async (
     if (typeof sourcePath !== "string" || typeof destinationPath !== "string") continue;
     const isAccountCopy = sameWindowsPath(sourcePath, win32.join(sourceDataPath, "Memmy"))
       && sameWindowsPath(destinationPath, layout.userDataPath);
-    const isRuntimeCopy = sameWindowsPath(sourcePath, win32.join(sourceDataPath, ".memmy"))
+    const isRuntimeCopy = sameWindowsPath(sourcePath, win32.join(sourceDataPath, ".cuby"))
       && sameWindowsPath(destinationPath, layout.runtimeHomePath);
     if ((isAccountCopy || isRuntimeCopy) && !validatedSources.some((path) => sameWindowsPath(path, sourcePath))) {
       validatedSources.push(sourcePath);

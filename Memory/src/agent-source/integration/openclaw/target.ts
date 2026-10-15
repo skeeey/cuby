@@ -43,7 +43,7 @@ export function createOpenclawSkillTarget(deps: CreateOpenclawSkillTargetDeps = 
   const configPath = deps.configPath ?? (
     deps.rootDirectory ? join(rootDirectory, "openclaw.json") : resolveOpenclawConfigPath(rootDirectory)
   );
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
 
   return {
     targetId: OPENCLAW_TARGET_ID,
@@ -458,7 +458,7 @@ import {
 } from "./memmy-workspace-bridge.mjs";
 
 const PLUGIN_ID = "memmy-memory";
-const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".memmy", "config.yaml");
+const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const pendingTurns = new Map();
 const pendingResumeSelections = new Map();
 const sessionCache = new Map();

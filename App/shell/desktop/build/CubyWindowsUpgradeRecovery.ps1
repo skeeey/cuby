@@ -14,7 +14,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $normalizedInstallDir = [System.IO.Path]::GetFullPath($InstallDir).TrimEnd('\')
 $dataPath = Join-Path $normalizedInstallDir 'data'
-$expectedBackupParent = "$normalizedInstallDir.memmy-upgrade-backup"
+$expectedBackupParent = "$normalizedInstallDir.cuby-upgrade-backup"
 $normalizedLockPath = [System.IO.Path]::GetFullPath($LockPath).TrimEnd('\')
 $expectedStagingRoot = Split-Path -Parent $normalizedLockPath
 $statePath = Join-Path $LockPath 'state.json'
@@ -27,7 +27,7 @@ $expectedTargetUserDataPath = [System.IO.Path]::GetFullPath([string]$expectedTar
 $expectedLegacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) {
   [System.IO.Path]::GetFullPath($LegacyRuntimeHomePathOverride).TrimEnd('\')
 } else {
-  [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.memmy')).TrimEnd('\')
+  [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE '.cuby')).TrimEnd('\')
 }
 $installDriveRoot = [System.IO.Path]::GetPathRoot($normalizedInstallDir)
 $expectedTargetRuntimeHomePath = if ($TargetRuntimeHomePathOverride) {
@@ -370,7 +370,7 @@ try {
       throw "recovery state compatibility install directory does not match sourceInstallDir"
     }
     $dataPath = Join-Path $stateSourceInstallDir 'data'
-    $expectedBackupParent = "$stateSourceInstallDir.memmy-upgrade-backup"
+    $expectedBackupParent = "$stateSourceInstallDir.cuby-upgrade-backup"
     if (-not $TargetRuntimeHomePathOverride) {
       $targetInstallRoot = [System.IO.Path]::GetPathRoot($stateTargetInstallDir)
       $expectedTargetRuntimeHomePath = if ([string]::Equals($targetInstallRoot, 'C:\', [System.StringComparison]::OrdinalIgnoreCase)) {

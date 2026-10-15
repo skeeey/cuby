@@ -1115,7 +1115,7 @@ export const EffectiveModelCandidatesSchema = z.object({
 });
 export type EffectiveModelCandidates = z.infer<typeof EffectiveModelCandidatesSchema>;
 
-/** Runtime ownership switches stored under ~/.memmy/config.yaml#memmyMemory. */
+/** Runtime ownership switches stored under ~/.cuby/config.yaml#memmyMemory. */
 export const MemoryRuntimeModelSettingsSchema = z.object({
     roleRouting: z.object({
         summary: z.enum(["follow", "fixed"]),

@@ -70,6 +70,6 @@ test("a failed development compile leaves no cached binary and can be retried", 
   fs.writeFileSync(source, "source");
   compiler.run.mockRejectedValueOnce(new Error("syntax error"));
   await expect(ensureNativeHistoryHelper(source, "app-icon")).rejects.toThrow("syntax error");
-  expect(fs.readdirSync(path.join(root, "home", ".memmy", "tools", "app-icon"))).toEqual([]);
+  expect(fs.readdirSync(path.join(root, "home", ".cuby", "tools", "app-icon"))).toEqual([]);
   expect(fs.existsSync(await ensureNativeHistoryHelper(source, "app-icon"))).toBe(true);
 });

@@ -47,7 +47,7 @@ describe("config path helpers", () => {
   it("defaults config path to the user config directory", () => {
     delete process.env.MEMMY_CONFIG;
 
-    expect(getConfigPath()).toBe(path.join(os.homedir(), ".memmy", "config.yaml"));
+    expect(getConfigPath()).toBe(path.join(os.homedir(), ".cuby", "config.yaml"));
   });
 
   it("derives runtime dirs from the config path", () => {
@@ -110,8 +110,8 @@ describe("config path helpers", () => {
   });
 
   it("keeps shared paths global", () => {
-    expect(getCliHistoryPath()).toBe(path.join(os.homedir(), ".memmy", "history", "cli_history"));
-    expect(getBridgeInstallDir()).toBe(path.join(os.homedir(), ".memmy", "bridge"));
+    expect(getCliHistoryPath()).toBe(path.join(os.homedir(), ".cuby", "history", "cli_history"));
+    expect(getBridgeInstallDir()).toBe(path.join(os.homedir(), ".cuby", "bridge"));
   });
 
   it("resolves workspace paths explicitly", () => {

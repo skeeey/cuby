@@ -381,7 +381,7 @@ async function ensureLocalExtractor(model: string): Promise<FeatureExtractor> {
       ? createRequire(import.meta.url)("@huggingface/transformers")
       : await import("@huggingface/transformers");
     const transformers = mod as unknown as TransformersModule;
-    transformers.env.cacheDir = join(homedir(), ".memmy", "memory-service", "model-cache");
+    transformers.env.cacheDir = join(homedir(), ".cuby", "memory-service", "model-cache");
     transformers.env.allowLocalModels = true;
     transformers.env.allowRemoteModels = true;
     const pipelineOptions: Record<string, unknown> = {

@@ -15,7 +15,7 @@ describe("default test Memory connection", () => {
   it.each(["process environment", "config file", "legacy environment aliases"])("isolates default test requests from developer Memory in the %s", async (source) => {
     const root = mkdtempSync(join(tmpdir(), "memmy-test-isolation-"));
     roots.push(root);
-    const home = join(root, ".memmy");
+    const home = join(root, ".cuby");
     mkdirSync(home);
     const configPath = join(home, "config.yaml");
     writeFileSync(configPath, [

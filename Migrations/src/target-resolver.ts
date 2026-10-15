@@ -68,7 +68,7 @@ export function resolveMigrationTargets(
   const workspace = explicitWorkspace
     || configuredWorkspace(runtimeConfigFile)
     || options.defaultAgentWorkspace
-    || "~/.memmy/workspace";
+    || "~/.cuby/workspace";
   const workspacePath = absolutePath(workspace, env);
   try {
     fs.mkdirSync(workspacePath, { recursive: true });

@@ -43,15 +43,15 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
   it("prefers install-local runtime data without merging legacy-home data", async () => {
     const fixture = await createFixture();
     await mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true });
-    await mkdir(join(fixture.sourceDataPath, ".memmy", "memory-service"), { recursive: true });
+    await mkdir(join(fixture.sourceDataPath, ".cuby", "memory-service"), { recursive: true });
     await mkdir(fixture.legacyRuntimeHomePath, { recursive: true });
     await writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "login-state", "utf8");
     await writeFile(
-      join(fixture.sourceDataPath, ".memmy", "memory-service", "memory.sqlite"),
+      join(fixture.sourceDataPath, ".cuby", "memory-service", "memory.sqlite"),
       "memory-state",
       "utf8"
     );
-    await writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "current-runtime", "utf8");
+    await writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "current-runtime", "utf8");
     await writeFile(join(fixture.legacyRuntimeHomePath, "config.yaml"), "stale-runtime", "utf8");
 
     const prepared = runMigration("Prepare", fixture, false, "", "current-install-authority", "1.1.0");
@@ -77,7 +77,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
       targetRuntimeHomePath: fixture.targetRuntimeHomePath
     });
     expect(state.runtimeSourcePaths).toEqual([
-      join(fixture.sourceDataPath, ".memmy")
+      join(fixture.sourceDataPath, ".cuby")
     ]);
     expect(existsSync(fixture.lockPath)).toBe(true);
   });
@@ -88,12 +88,12 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const targetDrive = dirname(dirname(fixture.targetRuntimeHomePath));
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(redirectedDrive, { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "login-state", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "runtime-state", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "runtime-state", "utf8"),
       symlink(redirectedDrive, targetDrive, "junction")
     ]);
 
@@ -102,12 +102,12 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     expect(prepared.status).toBe(1);
     expect(prepared.stdout + prepared.stderr)
       .toMatch(/target runtimeHomePath cr\s*osses a reparse point/u);
-    expect(existsSync(join(redirectedDrive, "MemmyData", ".memmy", "config.yaml"))).toBe(false);
+    expect(existsSync(join(redirectedDrive, "MemmyData", ".cuby", "config.yaml"))).toBe(false);
   });
 
   it("rebases only staged Windows runtime defaults and standalone session bindings", async () => {
     const fixture = await createFixture();
-    const sourceRuntimeHomePath = join(fixture.sourceDataPath, ".memmy");
+    const sourceRuntimeHomePath = join(fixture.sourceDataPath, ".cuby");
     const sourceWorkspacePath = join(sourceRuntimeHomePath, "workspace");
     const targetWorkspacePath = join(fixture.targetRuntimeHomePath, "workspace");
     const sourceMemoryDatabasePath = join(sourceRuntimeHomePath, "memory-service", "memory.sqlite");
@@ -187,7 +187,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
 
   it("uses the remembered runtime root before legacy-home data without merging", async () => {
     const fixture = await createFixture();
-    const rememberedRuntimeHomePath = join(fixture.root, "previous-drive", "MemmyData", ".memmy");
+    const rememberedRuntimeHomePath = join(fixture.root, "previous-drive", "MemmyData", ".cuby");
     const relativeSessionPath = join("workspace", "sessions");
     await Promise.all([
       mkdir(join(rememberedRuntimeHomePath, relativeSessionPath), { recursive: true }),
@@ -226,8 +226,8 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
 
   it("skips every legacy runtime source when the target already contains data", async () => {
     const fixture = await createFixture();
-    const installRuntimeHomePath = join(fixture.sourceDataPath, ".memmy");
-    const rememberedRuntimeHomePath = join(fixture.root, "previous-drive", "MemmyData", ".memmy");
+    const installRuntimeHomePath = join(fixture.sourceDataPath, ".cuby");
+    const rememberedRuntimeHomePath = join(fixture.root, "previous-drive", "MemmyData", ".cuby");
     await Promise.all([
       mkdir(join(installRuntimeHomePath, "workspace", "sessions"), { recursive: true }),
       mkdir(join(rememberedRuntimeHomePath, "workspace", "sessions"), { recursive: true }),
@@ -270,7 +270,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
   it("falls back to the legacy user-profile runtime home when install-local runtime data is absent", async () => {
     const fixture = await createFixture();
     await mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true });
-    await mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true });
+    await mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true });
     await mkdir(join(fixture.legacyRuntimeHomePath, "memory-service"), { recursive: true });
     await mkdir(join(fixture.legacyRuntimeHomePath, "updates"), { recursive: true });
     await writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "login-state", "utf8");
@@ -352,7 +352,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
   it("preserves a verified same-volume recovery copy when direct migration fails before uninstall", async () => {
     const fixture = await createFixture();
     const sourceUserDataPath = join(fixture.sourceDataPath, "Memmy");
-    const sourceRuntimePath = join(fixture.sourceDataPath, ".memmy");
+    const sourceRuntimePath = join(fixture.sourceDataPath, ".cuby");
     const blockedStateParent = dirname(fixture.statePath);
     await Promise.all([
       mkdir(sourceUserDataPath, { recursive: true }),
@@ -376,7 +376,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     expect(failedRecord.migrationFailed).toBe(true);
     await expect(readFile(join(failedRecord.sourceDataPath, "Memmy", "app.sqlite"), "utf8"))
       .resolves.toBe("recoverable-login");
-    await expect(readFile(join(failedRecord.sourceDataPath, ".memmy", "config.yaml"), "utf8"))
+    await expect(readFile(join(failedRecord.sourceDataPath, ".cuby", "config.yaml"), "utf8"))
       .resolves.toBe("recoverable-runtime");
 
     await rm(fixture.sourceDataPath, { recursive: true, force: true });
@@ -393,13 +393,13 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await mkdir(join(fixture.sourceDataPath, "Memmy", "prepared-required-update.json.lock"), { recursive: true });
     await mkdir(join(fixture.sourceDataPath, "Memmy", "updates"), { recursive: true });
-    await mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true });
+    await mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true });
     await mkdir(fixture.targetUserDataPath, { recursive: true });
     await mkdir(fixture.targetRuntimeHomePath, { recursive: true });
     await writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "new-login", "utf8");
     await writeFile(join(fixture.sourceDataPath, "Memmy", "prepared-required-update.json"), "{}", "utf8");
     await writeFile(join(fixture.sourceDataPath, "Memmy", "updates", "old-installer.exe"), "cache", "utf8");
-    await writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "new-runtime", "utf8");
+    await writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "new-runtime", "utf8");
     await writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "old-login", "utf8");
     await writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "old-runtime", "utf8");
     await writeFile(join(fixture.targetUserDataPath, "historical-only.txt"), "do-not-merge", "utf8");
@@ -441,13 +441,13 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "residual-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "residual-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "residual-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "verified-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "verified-runtime", "utf8")
     ]);
@@ -468,13 +468,13 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true })
     ]);
     await Promise.all([
       writeFileRaw(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "not-a-sqlite-database", "utf8"),
-      writeFileRaw(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "", "utf8"),
+      writeFileRaw(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "verified-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "verified-runtime", "utf8")
     ]);
@@ -496,13 +496,13 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "selected-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "selected-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "selected-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "historical-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "historical-runtime", "utf8")
     ]);
@@ -523,14 +523,14 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true }),
       mkdir(dirname(fixture.installationRecordPath), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "residual-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "residual-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "residual-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "verified-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "verified-runtime", "utf8"),
       writeFile(fixture.installationRecordPath, JSON.stringify({
@@ -551,14 +551,14 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true }),
       mkdir(dirname(fixture.installationRecordPath), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "residual-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "residual-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "residual-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "verified-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "verified-runtime", "utf8")
     ]);
@@ -585,7 +585,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true }),
       mkdir(dirname(fixture.installationRecordPath), { recursive: true })
@@ -598,7 +598,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     }), "utf8");
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "newer-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "newer-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "newer-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "old-target-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "old-target-runtime", "utf8")
     ]);
@@ -619,14 +619,14 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true }),
       mkdir(dirname(fixture.installationRecordPath), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "persisted-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "persisted-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "persisted-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "historical-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "historical-runtime", "utf8"),
       writeFile(fixture.installationRecordPath, JSON.stringify({
@@ -656,16 +656,16 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const olderDataPath = join(olderInstallDir, "data");
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(join(olderDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(olderDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(olderDataPath, ".cuby"), { recursive: true }),
       mkdir(dirname(fixture.installationRecordPath), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "selected-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "selected-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "selected-runtime", "utf8"),
       writeFile(join(olderDataPath, "Memmy", "app.sqlite"), "older-login", "utf8"),
-      writeFile(join(olderDataPath, ".memmy", "config.yaml"), "older-runtime", "utf8"),
+      writeFile(join(olderDataPath, ".cuby", "config.yaml"), "older-runtime", "utf8"),
       writeFile(fixture.installationRecordPath, JSON.stringify({
         schemaVersion: 1,
         dataLayoutGeneration: "install-local-v1",
@@ -725,11 +725,11 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
 
   it("rolls back newly copied destinations and the previous data-root pointer after an installer failure", async () => {
     const fixture = await createFixture();
-    const previousRuntimeHomePath = join(fixture.root, "previous-runtime", ".memmy");
+    const previousRuntimeHomePath = join(fixture.root, "previous-runtime", ".cuby");
     await mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true });
-    await mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true });
+    await mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true });
     await writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "new-login", "utf8");
-    await writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "new-runtime", "utf8");
+    await writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "new-runtime", "utf8");
     await mkdir(fixture.targetUserDataPath, { recursive: true });
     await writeFile(fixture.pointerPath, `${previousRuntimeHomePath}\r\n`, "utf16le");
 
@@ -749,13 +749,13 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true }),
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true }),
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "new-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "new-runtime", "utf8"),
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "new-runtime", "utf8"),
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "old-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "old-runtime", "utf8")
     ]);
@@ -817,7 +817,7 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
 
   it("cleans verified state through the trusted pointer before switching runtime drives", async () => {
     const fixture = await createFixture();
-    const previousRuntimeHomePath = join(fixture.root, "previous-drive", "MemmyData", ".memmy");
+    const previousRuntimeHomePath = join(fixture.root, "previous-drive", "MemmyData", ".cuby");
     const previousBackup = `${previousRuntimeHomePath}.migration-backup-0123456789abcdef0123456789abcdef`;
     await mkdir(fixture.targetUserDataPath, { recursive: true });
     await mkdir(previousRuntimeHomePath, { recursive: true });
@@ -852,9 +852,9 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
   it("recovers a failed direct install by rolling back while the old source still exists", async () => {
     const fixture = await createFixture();
     await mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true });
-    await mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true });
+    await mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true });
     await writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "login-state", "utf8");
-    await writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "runtime-state", "utf8");
+    await writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "runtime-state", "utf8");
 
     const prepared = runMigration("Prepare", fixture);
     expect(prepared.status, prepared.stderr || prepared.stdout).toBe(0);
@@ -869,9 +869,9 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
   it("preserves migrated data for retry when the failed installer already removed the old source", async () => {
     const fixture = await createFixture();
     await mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true });
-    await mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true });
+    await mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true });
     await writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "login-state", "utf8");
-    await writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "runtime-state", "utf8");
+    await writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "runtime-state", "utf8");
 
     const prepared = runMigration("Prepare", fixture);
     expect(prepared.status, prepared.stderr || prepared.stdout).toBe(0);
@@ -903,22 +903,22 @@ describe.runIf(process.platform === "win32")("Windows data migration helper", ()
     const fixture = await createFixture();
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true })
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "first-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "first-runtime", "utf8")
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "first-runtime", "utf8")
     ]);
     expect(runMigration("Prepare", fixture).status).toBe(0);
     await rm(fixture.sourceDataPath, { recursive: true, force: true });
     expect(runMigration("Recover", fixture).status).toBe(0);
     await Promise.all([
       mkdir(join(fixture.sourceDataPath, "Memmy"), { recursive: true }),
-      mkdir(join(fixture.sourceDataPath, ".memmy"), { recursive: true })
+      mkdir(join(fixture.sourceDataPath, ".cuby"), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.sourceDataPath, "Memmy", "app.sqlite"), "newest-login", "utf8"),
-      writeFile(join(fixture.sourceDataPath, ".memmy", "config.yaml"), "newest-runtime", "utf8")
+      writeFile(join(fixture.sourceDataPath, ".cuby", "config.yaml"), "newest-runtime", "utf8")
     ]);
     await rm(fixture.lockPath, { recursive: true, force: true });
 
@@ -1004,9 +1004,9 @@ async function createFixture(): Promise<MigrationFixture> {
   return {
     root,
     sourceDataPath: join(root, "old-install", "data"),
-    legacyRuntimeHomePath: join(root, "Users", "tester", ".memmy"),
+    legacyRuntimeHomePath: join(root, "Users", "tester", ".cuby"),
     targetUserDataPath: join(root, "AppData", "Roaming", "Memmy"),
-    targetRuntimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
+    targetRuntimeHomePath: join(root, "new-drive", "MemmyData", ".cuby"),
     pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
     statePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),
     installationRecordPath: join(root, "AppData", "Local", "Memmy", "data-layout", "last-install.json"),

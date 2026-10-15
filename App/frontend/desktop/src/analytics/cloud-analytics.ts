@@ -17,7 +17,7 @@ const ANALYTICS_PATH = "/api/analytics/events";
 const DEFAULT_ENGAGEMENT_TIME_MSEC = 100;
 const DESKTOP_ANALYTICS_SOURCE = "memmy-desktop";
 
-/** Session-scoped gtag client_id. Never read ~/.memmy/analytics-client-id here. */
+/** Session-scoped gtag client_id. Never read ~/.cuby/analytics-client-id here. */
 let sessionClientId: string | null = null;
 let installationId: string | null = null;
 let appVersion: string | null = null;

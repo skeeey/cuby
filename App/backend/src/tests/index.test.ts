@@ -368,7 +368,7 @@ describe("local api", () => {
   it("hydrates app-state from runtime YAML before the first bootstrap response", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
     const databasePath = join(tempDir, "app.sqlite");
-    const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
+    const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
     const store = createAppStateStore({ databasePath });
     store.repositories.bootstrap.updateAppSettings({ userMode: "byok" });
     store.repositories.accountSession.upsert({
@@ -388,7 +388,7 @@ describe("local api", () => {
       cloudUuid: "cloud.login.uuid"
     });
     store.close();
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(
       memmyConfigPath,
       [
@@ -456,8 +456,8 @@ describe("local api", () => {
   it("uses MEMMY_CONFIG as the shared startup sync and settings writer path", async () => {
     const previousMemmyConfig = process.env.MEMMY_CONFIG;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
-    const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(
       memmyConfigPath,
       [

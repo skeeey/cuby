@@ -34,7 +34,7 @@ export interface CreateOpencodeSkillTargetDeps {
 /** Creates create opencode skill target. */
 export function createOpencodeSkillTarget(deps: CreateOpencodeSkillTargetDeps = {}): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveOpencodeConfigDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
 
   return {
     targetId: OPENCODE_TARGET_ID,

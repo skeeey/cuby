@@ -83,7 +83,7 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
 
   it("requires relay when no executable remains but an install-local backup record is authoritative", () => {
     const fixture = createFixture();
-    const failedBackup = join(`${fixture.installDir}.memmy-migration-failed`, "20260825120000-0123456789abcdef0123456789abcdef", "data-backup");
+    const failedBackup = join(`${fixture.installDir}.cuby-migration-failed`, "20260825120000-0123456789abcdef0123456789abcdef", "data-backup");
     rmSync(fixture.installedExePath);
     writeFile(join(failedBackup, "Memmy", "app.sqlite"), "legacy");
     updateRecord(fixture, {
@@ -103,7 +103,7 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
     ["damaged installation record", (fixture: Fixture) => writeFileSync(fixture.installationRecordPath, "{broken", "utf8")],
     ["mismatched install directory", (fixture: Fixture) => updateRecord(fixture, { installDir: join(fixture.root, "other-install") })],
     ["account data inside the install directory", (fixture: Fixture) => updateRecord(fixture, { userDataPath: join(fixture.installDir, "data", "Memmy") })],
-    ["runtime data inside the install directory", (fixture: Fixture) => updateRecord(fixture, { runtimeHomePath: join(fixture.installDir, "data", ".memmy") })],
+    ["runtime data inside the install directory", (fixture: Fixture) => updateRecord(fixture, { runtimeHomePath: join(fixture.installDir, "data", ".cuby") })],
     ["unfinished migration state", (fixture: Fixture) => writeJson(fixture.migrationStatePath, { phase: "prepared" })],
     ["installer inside the install directory", (fixture: Fixture) => {
       fixture.installerPath = join(fixture.installDir, "data", "update.exe");
@@ -126,7 +126,7 @@ describeOnWindows("Windows standard upgrade safety check", { timeout: 60_000 }, 
 
   it("requires both recorded external paths to be absolute", () => {
     const fixture = createFixture();
-    updateRecord(fixture, { runtimeHomePath: ".memmy" });
+    updateRecord(fixture, { runtimeHomePath: ".cuby" });
 
     expect(runCheck(fixture).status).toBe(1);
   });
@@ -224,7 +224,7 @@ function createFixture(): Fixture {
   const installationRecordPath = join(root, "local", "Memmy", "data-layout", "last-install.json");
   const migrationStatePath = join(root, "local", "Memmy", "data-migration", "state.json");
   const userDataPath = join(root, "roaming", "Memmy");
-  const runtimeHomePath = join(root, "runtime", ".memmy");
+  const runtimeHomePath = join(root, "runtime", ".cuby");
   mkdirSync(installDir, { recursive: true });
   copyFileSync(process.env.ComSpec ?? join(process.env.SystemRoot ?? "C:\\Windows", "System32", "cmd.exe"), installedExePath);
   writeFile(installerPath, "installer");

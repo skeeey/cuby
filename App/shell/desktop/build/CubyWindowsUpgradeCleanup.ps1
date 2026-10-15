@@ -7,7 +7,7 @@ Start-Sleep -Seconds 3
 Remove-Item -LiteralPath $WorkDir -Recurse -Force -ErrorAction SilentlyContinue
 if ($BackupRoot) {
   $backupParent = Split-Path -Parent $BackupRoot
-  if ((Split-Path -Leaf $backupParent).EndsWith('.memmy-upgrade-backup', [System.StringComparison]::OrdinalIgnoreCase)) {
+  if ((Split-Path -Leaf $backupParent).EndsWith('.cuby-upgrade-backup', [System.StringComparison]::OrdinalIgnoreCase)) {
     Remove-Item -LiteralPath $BackupRoot -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $backupParent -Force -ErrorAction SilentlyContinue
   }

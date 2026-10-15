@@ -249,7 +249,7 @@ describe("memmy-agent client", () => {
               updatedAt: "2026-06-06T08:00:00.000Z",
               run_started_at: 1780732800,
               projectId: null,
-              cwd: "/Users/yuan/.memmy/workspace",
+              cwd: "/Users/yuan/.cuby/workspace",
               model_selection: modelSelectionWire
             }
           ]
@@ -484,7 +484,7 @@ describe("memmy-agent client", () => {
             preview: "继续拆解需求",
             updatedAt: "2026-06-06T08:30:00.000Z",
             projectId: null,
-            cwd: "/Users/yuan/.memmy/workspace"
+            cwd: "/Users/yuan/.cuby/workspace"
           }
         });
       }
@@ -629,8 +629,8 @@ describe("memmy-agent client", () => {
         expect(init?.method).toBe("POST");
         expect(init?.headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer agent-token" });
         const body = JSON.parse(String(init?.body));
-        if (body.path === "/Users/yuan/.memmy/workspace") {
-          return json({ ok: true, path: "/Users/yuan/.memmy/workspace", name: "workspace", kind: "directory" });
+        if (body.path === "/Users/yuan/.cuby/workspace") {
+          return json({ ok: true, path: "/Users/yuan/.cuby/workspace", name: "workspace", kind: "directory" });
         }
         expect(body).toEqual({ path: "/Users/yuan/result.png", sessionKey: "websocket:chat-1" });
         return json({ ok: true, path: "/Users/yuan/result.png", name: "result.png", kind: "image", media_url: "/api/media/signed" });
@@ -658,9 +658,9 @@ describe("memmy-agent client", () => {
       kind: "image",
       media_url: "http://127.0.0.1:18980/api/media/signed"
     });
-    await expect(client.resolveArtifact("/Users/yuan/.memmy/workspace", "websocket:chat-1")).resolves.toEqual({
+    await expect(client.resolveArtifact("/Users/yuan/.cuby/workspace", "websocket:chat-1")).resolves.toEqual({
       ok: true,
-      path: "/Users/yuan/.memmy/workspace",
+      path: "/Users/yuan/.cuby/workspace",
       name: "workspace",
       kind: "directory"
     });

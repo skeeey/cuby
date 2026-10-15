@@ -34,7 +34,7 @@ export interface CreateCursorSkillTargetDeps {
 /** Creates create cursor skill target. */
 export function createCursorSkillTarget(deps: CreateCursorSkillTargetDeps = {}): SkillTarget {
   const cursorRootDirectory = deps.rootDirectory ?? join(homedir(), ".cursor");
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
 
   return {
     targetId: CURSOR_TARGET_ID,

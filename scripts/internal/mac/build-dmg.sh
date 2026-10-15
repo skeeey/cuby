@@ -176,7 +176,7 @@ if [ ! -x "\$APP_EXEC" ]; then
   exit 1
 fi
 
-DEFAULT_CONFIG="\$HOME/.memmy/config.yaml"
+DEFAULT_CONFIG="\$HOME/.cuby/config.yaml"
 if [ -z "\${MEMMY_CONFIG:-}" ] && [ -f "\$DEFAULT_CONFIG" ]; then
   export MEMMY_CONFIG="\$DEFAULT_CONFIG"
 fi

@@ -56,11 +56,11 @@ interface AccessibilityNode {
   text: string;
 }
 
-const DEFAULT_SESSIONS_DIR = path.join(os.homedir(), ".memmy", "workspace", "sessions");
+const DEFAULT_SESSIONS_DIR = path.join(os.homedir(), ".cuby", "workspace", "sessions");
 // Where the service keeps recordings and summaries. These were once relative
 // to the script, which put them inside the repository beside the source.
-const DEFAULT_RECORDINGS_DIR = path.join(os.homedir(), ".memmy", "computer-history", "recordings");
-const DEFAULT_HISTORY_DIR = path.join(os.homedir(), ".memmy", "computer-history", "histories");
+const DEFAULT_RECORDINGS_DIR = path.join(os.homedir(), ".cuby", "computer-history", "recordings");
+const DEFAULT_HISTORY_DIR = path.join(os.homedir(), ".cuby", "computer-history", "histories");
 const SUMMARY_TEXT_LIMIT = 800;
 const EVENT_TEXT_LIMIT = 360;
 
@@ -85,9 +85,9 @@ function usage(): void {
   node dist/tools/computer-history/mac/summarize-history.js --file <session.jsonl>
 
 Options:
-  --sessions-dir <dir>       session directory (default: ~/.memmy/workspace/sessions)
-  --recordings-dir <dir>     human recording directory (default: ~/.memmy/computer-history/recordings)
-  --out <path>               output Markdown path (default: ~/.memmy/computer-history/histories/...)
+  --sessions-dir <dir>       session directory (default: ~/.cuby/workspace/sessions)
+  --recordings-dir <dir>     human recording directory (default: ~/.cuby/computer-history/recordings)
+  --out <path>               output Markdown path (default: ~/.cuby/computer-history/histories/...)
   --last <n>                 include only the last n user turns
   --title <text>             override generated title
   --description <text>       override generated description

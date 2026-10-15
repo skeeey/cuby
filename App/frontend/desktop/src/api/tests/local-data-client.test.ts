@@ -12,7 +12,7 @@ describe("local data client", () => {
   });
 
   it("gets, reveals, and clears local memory data with runtime token", async () => {
-    const dataPath = "C:\\Users\\test\\.memmy\\memory-service";
+    const dataPath = "C:\\Users\\test\\.cuby\\memory-service";
     const fetchMock = vi.fn(async (url: URL, init: RequestInit) => {
       if (url.pathname === "/api/local-data" && init.method === "GET") {
         return jsonResponse({ ok: true, dataPath });

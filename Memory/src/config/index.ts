@@ -307,7 +307,7 @@ export function defaultMemoryDatabasePath(): string {
   const baseDir =
     process.env.MEMMY_MEMORY_HOME ??
     process.env.MEMORY_SERVICE_HOME ??
-    join(homedir(), ".memmy", "memory-service");
+    join(homedir(), ".cuby", "memory-service");
   return join(baseDir, "memory.sqlite");
 }
 
@@ -536,7 +536,7 @@ export const DEFAULT_MEMMY_CONFIG: MemmyConfig = {
 export function defaultConfigPaths(): string[] {
   return [
     process.env.MEMMY_CONFIG,
-    join(homedir(), ".memmy", "config.yaml")
+    join(homedir(), ".cuby", "config.yaml")
   ].filter((value): value is string => Boolean(value));
 }
 

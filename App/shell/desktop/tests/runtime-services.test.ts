@@ -407,7 +407,7 @@ describe("packaged desktop runtime config", () => {
     expect(shutdownRequests).toBe(1);
   });
 
-  it("creates missing packaged runtime config under the shared ~/.memmy home", async () => {
+  it("creates missing packaged runtime config under the shared ~/.cuby home", async () => {
     const memmyHome = await makeTempRoot();
     const configPath = join(memmyHome, "config.yaml");
 

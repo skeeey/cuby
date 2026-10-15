@@ -442,7 +442,7 @@ export function renderFullMemorySkill(
   }
   const targetDir = path.join(
     path.resolve(workspace),
-    ".memmy-agent",
+    ".cuby-agent",
     createHash("sha256").update(sourceId).digest("hex").slice(0, 16),
     "memmy-memory"
   );
@@ -661,7 +661,7 @@ async function localApiRequest<T>(
 function readRuntimeConfig(): RuntimeConfig {
   const memmyHome = process.env.MEMMY_HOME?.trim()
     ? path.resolve(process.env.MEMMY_HOME)
-    : path.join(os.homedir(), ".memmy");
+    : path.join(os.homedir(), ".cuby");
   const configPath = path.join(memmyHome, "runtime.json");
   const parsed = JSON.parse(fs.readFileSync(configPath, "utf8")) as Record<string, unknown>;
   return {

@@ -784,7 +784,7 @@ describe("MemoryService / session / turn capture", () => {
     });
     const query = [
       "<attachments>",
-      "- hypre.txt  (application/octet-stream, 15.4MB)  /Users/test/.memmy/media/hypre.txt",
+      "- hypre.txt  (application/octet-stream, 15.4MB)  /Users/test/.cuby/media/hypre.txt",
       "",
       "请用 read_file 工具按需读取上述附件；PDF 可用 pages 参数分页读取。",
       "</attachments>",
@@ -797,7 +797,7 @@ describe("MemoryService / session / turn capture", () => {
       answer: "这个附件是一个 **HYPRE 2.31.0 源码集合**，包含并行求解器实现。",
       toolCalls: [{
         name: "read_file",
-        input: { path: "/Users/test/.memmy/media/hypre.txt" },
+        input: { path: "/Users/test/.cuby/media/hypre.txt" },
         output: "set(HYPRE_VERSION 2.31.0)",
         success: true
       }]

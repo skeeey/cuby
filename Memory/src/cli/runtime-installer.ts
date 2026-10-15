@@ -57,7 +57,7 @@ export interface InstalledRuntimePointer {
 
 export async function installMemoryRuntime(options: MemoryRuntimeInstallOptions = {}): Promise<Record<string, unknown>> {
   const healthCheckTimeoutMs = resolveHealthCheckTimeoutMs(options.healthCheckTimeoutMs);
-  const home = resolveHome(options.home ?? "~/.memmy");
+  const home = resolveHome(options.home ?? "~/.cuby");
   const serviceHome = join(home, "memory-service");
   const runtimeRoot = join(serviceHome, "runtime");
   const target = runtimeTarget(process.platform, process.arch);
@@ -180,11 +180,11 @@ export async function installMemoryRuntime(options: MemoryRuntimeInstallOptions 
   }
 }
 
-export async function currentInstalledRuntime(home = "~/.memmy"): Promise<InstalledRuntimePointer | undefined> {
+export async function currentInstalledRuntime(home = "~/.cuby"): Promise<InstalledRuntimePointer | undefined> {
   return readJsonFile<InstalledRuntimePointer>(join(resolveHome(home), "memory-service", "current.json"));
 }
 
-export async function installedAgents(home = "~/.memmy"): Promise<string[]> {
+export async function installedAgents(home = "~/.cuby"): Promise<string[]> {
   const installation = await readJsonFile<Record<string, unknown>>(
     join(resolveHome(home), "memory-service", "installation.json")
   );
@@ -193,7 +193,7 @@ export async function installedAgents(home = "~/.memmy"): Promise<string[]> {
     : [];
 }
 
-export async function startInstalledMemoryService(home = "~/.memmy"): Promise<Record<string, unknown>> {
+export async function startInstalledMemoryService(home = "~/.cuby"): Promise<Record<string, unknown>> {
   const resolvedHome = resolveHome(home);
   const serviceHome = join(resolvedHome, "memory-service");
   const installLock = await acquireInstallLock(join(serviceHome, "install.lock"));
@@ -211,7 +211,7 @@ export async function startInstalledMemoryService(home = "~/.memmy"): Promise<Re
 }
 
 /** Repair only this installation's legacy login task, leaving startup to Desktop. */
-export async function repairInstalledWindowsMemoryService(home = "~/.memmy"): Promise<Record<string, unknown>> {
+export async function repairInstalledWindowsMemoryService(home = "~/.cuby"): Promise<Record<string, unknown>> {
   const resolvedHome = resolveHome(home);
   if (process.platform !== "win32" || !(await currentInstalledRuntime(resolvedHome))) {
     return { ok: true, repaired: false };
@@ -297,7 +297,7 @@ interface MemoryRuntimeState {
 }
 
 export async function stopInstalledMemoryService(
-  home = "~/.memmy",
+  home = "~/.cuby",
   dependencies: StopInstalledMemoryServiceDependencies = {}
 ): Promise<Record<string, unknown>> {
   const resolvedHome = resolveHome(home);

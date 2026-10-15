@@ -33,7 +33,7 @@ export function createDeepseekHarnessSkillTarget(
   deps: CreateDeepseekHarnessSkillTargetDeps = {}
 ): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveDeepseekHarnessHomeDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
   const pluginDirectory = join(rootDirectory, "profiles", "node_modules", "@memmy", "memmy-memory");
   const patchPath = join(rootDirectory, "cordis.patch.yml");
 

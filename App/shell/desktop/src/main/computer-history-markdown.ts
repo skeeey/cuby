@@ -18,7 +18,7 @@ export function resolveComputerHistoryMarkdownPath(
   if (typeof rawPath !== "string" || !rawPath.trim() || /[\0\r\n]/u.test(rawPath)) {
     throw new Error("invalid Computer History Markdown path");
   }
-  const memmyHome = resolve(expandHome(env.MEMMY_HOME?.trim() || "~/.memmy", homeDirectory));
+  const memmyHome = resolve(expandHome(env.MEMMY_HOME?.trim() || "~/.cuby", homeDirectory));
   const historyDirectory = resolve(memmyHome, "computer-history", "histories");
   const target = resolve(rawPath.trim());
   const child = relative(historyDirectory, target);

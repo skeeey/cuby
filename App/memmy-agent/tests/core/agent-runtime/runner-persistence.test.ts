@@ -76,7 +76,7 @@ describe("AgentRunner tool result persistence", () => {
   ])("applies the %s boundary at %i chars", async (name, size, shouldPersist) => {
     const content = "x".repeat(size);
     const { workspace, toolMessage } = await runSingleToolResult({ name, content });
-    const resultFile = path.join(workspace, ".memmy", "tool-results", "test_runner", "call_result.txt");
+    const resultFile = path.join(workspace, ".cuby", "tool-results", "test_runner", "call_result.txt");
 
     if (shouldPersist) {
       expect(toolMessage.content).toContain("[tool output persisted]");
@@ -96,14 +96,14 @@ describe("AgentRunner tool result persistence", () => {
     });
 
     expect(toolMessage.content).toContain("[tool output persisted]");
-    expect(fs.existsSync(path.join(workspace, ".memmy", "tool-results", "test_runner", "call_result.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(workspace, ".cuby", "tool-results", "test_runner", "call_result.txt"))).toBe(true);
   });
 
   it("persists the full appended lint result for oversized file-tool output", async () => {
     const lintTail = "\n\nLint results:\n- /workspace/page.html: failed\n  missing </html>";
     const content = `Successfully wrote /workspace/page.html\n${"x".repeat(20_000)}${lintTail}`;
     const { workspace, toolMessage } = await runSingleToolResult({ name: "write_file", content });
-    const persisted = path.join(workspace, ".memmy", "tool-results", "test_runner", "call_result.txt");
+    const persisted = path.join(workspace, ".cuby", "tool-results", "test_runner", "call_result.txt");
 
     expect(toolMessage.content).toContain("[tool output persisted]");
     expect(fs.readFileSync(persisted, "utf8")).toBe(content);
@@ -117,7 +117,7 @@ describe("AgentRunner tool result persistence", () => {
     const { workspace, toolMessage } = await runSingleToolResult({ name: "exec", content });
 
     expect(toolMessage.content).toContain("[tool output persisted]");
-    expect(fs.readFileSync(path.join(workspace, ".memmy", "tool-results", "test_runner", "call_result.txt"), "utf8")).toBe(content);
+    expect(fs.readFileSync(path.join(workspace, ".cuby", "tool-results", "test_runner", "call_result.txt"), "utf8")).toBe(content);
   });
 
   it("uses per-tool budgets for historical request snapshots without rewriting source messages", async () => {
@@ -161,7 +161,7 @@ describe("AgentRunner tool result persistence", () => {
     expect(readMessage?.content).toContain("[tool output persisted]");
     expect(messages[2].content).toBe(execContent);
     expect(messages[3].content).toBe(readContent);
-    expect(fs.readFileSync(path.join(workspace, ".memmy", "tool-results", "history_runner", "read_history.txt"), "utf8")).toBe(readContent);
+    expect(fs.readFileSync(path.join(workspace, ".cuby", "tool-results", "history_runner", "read_history.txt"), "utf8")).toBe(readContent);
   });
 
   it("persists large tool results for follow-up model calls", async () => {
@@ -203,12 +203,12 @@ describe("AgentRunner tool result persistence", () => {
     const toolMessage = capturedSecondCall[0].find((message) => message.role === "tool");
     expect(toolMessage?.content).toContain("[tool output persisted]");
     expect(toolMessage?.content).toContain("tool-results");
-    expect(fs.existsSync(path.join(workspace, ".memmy", "tool-results", "test_runner", "call_big.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(workspace, ".cuby", "tool-results", "test_runner", "call_big.txt"))).toBe(true);
   });
 
   it("prunes stale tool result buckets when persisting a new result", () => {
     const workspace = tempRoot();
-    const root = path.join(workspace, ".memmy", "tool-results");
+    const root = path.join(workspace, ".cuby", "tool-results");
     const oldBucket = path.join(root, "old_session");
     const recentBucket = path.join(root, "recent_session");
     fs.mkdirSync(oldBucket, { recursive: true });
@@ -229,7 +229,7 @@ describe("AgentRunner tool result persistence", () => {
 
   it("leaves no temp files after persisting tool results", () => {
     const workspace = tempRoot();
-    const root = path.join(workspace, ".memmy", "tool-results");
+    const root = path.join(workspace, ".cuby", "tool-results");
 
     maybePersistToolResult(workspace, "current:session", "call_big", "x".repeat(5000), { maxChars: 64 });
 

@@ -79,7 +79,7 @@ const RUNTIME_TOKEN_HEADER = "x-memmy-local-token";
 const logger = createMemoryLogger("token-usage");
 
 export function resolveDefaultRuntimeConfigPath(): string {
-  return join(homedir(), ".memmy", "runtime.json");
+  return join(homedir(), ".cuby", "runtime.json");
 }
 
 export function extractModelTokenUsage(response: unknown): ModelTokenUsage {

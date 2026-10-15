@@ -20,7 +20,7 @@ describe("local data routes", () => {
       localData: {
         async getPath() {
           calls.push("getPath");
-          return { ok: true, dataPath: "C:\\Users\\memmy-user\\.memmy\\memory-service" };
+          return { ok: true, dataPath: "C:\\Users\\memmy-user\\.cuby\\memory-service" };
         },
         async reveal() {
           calls.push("reveal");
@@ -42,7 +42,7 @@ describe("local data routes", () => {
     const exported = await injectJson("POST", "/api/local-data/export", { targetPath: "/tmp/export" });
     const cleared = await injectJson("DELETE", "/api/local-data", { confirm: true });
 
-    expect(path.json()).toEqual({ ok: true, dataPath: "C:\\Users\\memmy-user\\.memmy\\memory-service" });
+    expect(path.json()).toEqual({ ok: true, dataPath: "C:\\Users\\memmy-user\\.cuby\\memory-service" });
     expect(reveal.json()).toEqual({ ok: true, dataPath: "/tmp/memmy-data" });
     expect(exported.json()).toEqual({ exportPath: "/tmp/export/memmy-export-1", bytes: 128 });
     expect(cleared.json()).toEqual({ ok: true, clearedAt: "2026-06-02T10:00:00.000Z" });

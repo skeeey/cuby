@@ -360,7 +360,7 @@ export class ModelAssignmentsConfig extends Base {
 }
 
 export class AgentDefaults extends Base {
-  workspace = "~/.memmy/workspace";
+  workspace = "~/.cuby/workspace";
   modelPreset: string | null = null;
   model = "anthropic/claude-opus-4-5";
   provider = "auto";

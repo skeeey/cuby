@@ -453,7 +453,7 @@ async function boot(): Promise<void> {
       });
       await advanceWindowsDataMigrationAfterBoot(
         windowsDataLayout,
-        [join(homedir(), ".memmy")]
+        [join(homedir(), ".cuby")]
       ).catch(async (error: unknown) => {
         console.warn("Windows data migration cleanup deferred:", error);
         await writePackagedStartupLog(`boot:data-migration-cleanup-deferred\n${formatStartupError(error)}`);
@@ -5292,7 +5292,7 @@ async function fetchDesktopImage(request: DesktopImageActionRequest, senderUrl: 
 }
 
 function resolveAgentMediaDir(): string {
-  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.memmy/config.yaml");
+  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.cuby/config.yaml");
   const dataDir = process.env.MEMMY_AGENT_DATA_DIR?.trim()
     ? resolvePathValue(process.env.MEMMY_AGENT_DATA_DIR)
     : dirname(configPath);
@@ -5642,9 +5642,9 @@ async function exportDiagnosticsReport(owner: BrowserWindow | null): Promise<Dia
  */
 function buildDiagnosticsReport(): string {
   const logsDirectory = resolveLogsDirectory();
-  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.memmy/config.yaml");
+  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.cuby/config.yaml");
   const agentWorkspace = process.env.MEMMY_AGENT_WORKSPACE ??
-    join(resolvePathValue(process.env.MEMMY_HOME ?? "~/.memmy"), "workspace");
+    join(resolvePathValue(process.env.MEMMY_HOME ?? "~/.cuby"), "workspace");
   const memoryDatabasePath = runtimeServices?.memory.databasePath ?? "<not-started>";
   const runtimeBaseUrl = runtimeConfig?.baseUrl ?? "<not-ready>";
   const agentGatewayBaseUrl = runtimeConfig?.agentGateway?.baseUrl ?? "<not-ready>";

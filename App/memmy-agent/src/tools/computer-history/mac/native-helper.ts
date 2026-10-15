@@ -24,7 +24,7 @@ export async function ensureNativeHistoryHelper(source: string, cacheDirectory: 
 
   const contents = fs.readFileSync(source);
   const hash = crypto.createHash("sha256").update(process.arch).update(contents).digest("hex").slice(0, 12);
-  const cache = path.join(os.homedir(), ".memmy", "tools", cacheDirectory);
+  const cache = path.join(os.homedir(), ".cuby", "tools", cacheDirectory);
   const cachedBinary = path.join(cache, `${name}-${hash}`);
   try {
     fs.accessSync(cachedBinary, fs.constants.X_OK);

@@ -121,7 +121,7 @@ export function getAnalyticsClientIdPath(
   env: NodeJS.ProcessEnv = process.env,
   homeDir = nodeHomedir(),
 ): string {
-  const memmyHome = (env.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".memmy")).replace(
+  const memmyHome = (env.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
     /^~(?=$|[/\\])/,
     homeDir,
   );
@@ -151,7 +151,7 @@ export function getOrCreateInstallationId(options: {
   homeDir?: string;
 } = {}): string {
   const homeDir = options.homeDir ?? nodeHomedir();
-  const memmyHome = (options.env?.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".memmy")).replace(
+  const memmyHome = (options.env?.MEMMY_HOME?.trim() || nodeJoin(homeDir, ".cuby")).replace(
     /^~(?=$|[/\\])/,
     homeDir,
   );
@@ -247,7 +247,7 @@ export function resolveAnalyticsUserModeFromConfig(
 }
 
 /**
- * Reads ~/.memmy/config.yaml (or MEMMY_CONFIG) so mode switches written by
+ * Reads ~/.cuby/config.yaml (or MEMMY_CONFIG) so mode switches written by
  * the desktop backend are reflected without restarting the agent process.
  * AgentLoop installs memory with a cloned in-memory Config that is not updated
  * when the YAML projection changes.

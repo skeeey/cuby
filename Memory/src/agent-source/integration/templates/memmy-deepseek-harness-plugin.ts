@@ -17,7 +17,7 @@ export const name = "memmy-memory";
 export const inject = ["agents", "sessions", "tools", "systemPrompt"];
 
 const SOURCE = "deepseek_harness";
-const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".memmy", "config.yaml");
+const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
 const HTTP_TIMEOUT_MS = 45000;
 
