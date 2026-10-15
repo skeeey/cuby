@@ -1123,7 +1123,7 @@ describe("desktop packaged runtime boundaries", () => {
     // Handles expect.
     expect(mainSource).toContain("async function ensureAgentGatewayToken");
     expect(mainSource).toContain('new URL("/webui/bootstrap", gateway.baseUrl)');
-    expect(mainSource).toContain('"X-Memmy-Agent-Auth": gateway.bootstrapSecret');
+    expect(mainSource).toContain('"X-Cuby-Agent-Auth": gateway.bootstrapSecret');
     expect(mainSource).toContain("Authorization: `Bearer ${bearer}`");
     expect(mainSource).toContain("if (response.status === 401)");
   });

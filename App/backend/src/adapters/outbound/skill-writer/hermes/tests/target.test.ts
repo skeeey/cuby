@@ -119,7 +119,7 @@ describe("hermes skill target", () => {
     expect(commandPluginYaml).toContain(`version: ${CUBY_VERSION}`);
     expect(commandPluginYaml).toContain("kind: standalone");
     expect(pluginInit).toContain("class MemmyMemoryProvider");
-    expect(pluginInit).not.toContain("x-memmy-agent-kind");
+    expect(pluginInit).not.toContain("x-cuby-agent-kind");
     expect(pluginInit).not.toContain("agentKind");
     expect(pluginInit).toContain('return "memmy-memory"');
     expect(pluginInit).not.toContain("ctx.register_command");

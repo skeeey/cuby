@@ -83,7 +83,7 @@ async function injectJson(method: string, url: string, payload?: unknown) {
     method,
     url,
     headers: {
-      "x-memmy-local-token": "test-token"
+      "x-cuby-local-token": "test-token"
     },
     payload
   });

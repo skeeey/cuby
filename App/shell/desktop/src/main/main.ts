@@ -4547,7 +4547,7 @@ function triggerAgentSourceAutoInject(reason: string): void {
   void fetch(url, {
     method: "POST",
     headers: {
-      "x-memmy-local-token": config.localToken
+      "x-cuby-local-token": config.localToken
     }
   }).catch((error) => {
     void writePackagedStartupLog(`agent-source-auto-inject-failed:${reason}:${String(error)}`);
@@ -5395,7 +5395,7 @@ async function ensureAgentGatewayToken(options: { force?: boolean } = {}): Promi
       const bootstrapUrl = new URL("/webui/bootstrap", gateway.baseUrl).toString();
       const response = await fetch(bootstrapUrl, {
         cache: "no-store",
-        headers: gateway.bootstrapSecret ? { "X-Memmy-Agent-Auth": gateway.bootstrapSecret } : undefined
+        headers: gateway.bootstrapSecret ? { "X-Cuby-Agent-Auth": gateway.bootstrapSecret } : undefined
       });
       if (!response.ok) {
         return null;
@@ -5563,7 +5563,7 @@ async function exportMemoryDatabase(owner: BrowserWindow | null): Promise<Memory
   const response = await fetch(`${service.baseUrl.replace(/\/$/u, "")}/api/v1/admin/export`, {
     cache: "no-store",
     headers: {
-      "x-memmy-time-zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+      "x-cuby-time-zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
       ...(service.token ? { authorization: `Bearer ${service.token}` } : {})
     }
   });

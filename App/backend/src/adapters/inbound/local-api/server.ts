@@ -21,9 +21,9 @@ import { registerOnboardingInsightRoutes } from "./routes/onboarding-insight.js"
 
 const DEFAULT_HEARTBEAT_INTERVAL_MS = 15_000;
 const LOCAL_API_SERVICE_NAME = "memmy-local-api";
-const RUNTIME_TOKEN_HEADER = "x-memmy-local-token";
+const RUNTIME_TOKEN_HEADER = "x-cuby-local-token";
 const CORS_ALLOWED_METHODS = "GET,POST,PUT,PATCH,DELETE,OPTIONS";
-const CORS_ALLOWED_HEADERS = `content-type,${RUNTIME_TOKEN_HEADER},x-memmy-time-zone`;
+const CORS_ALLOWED_HEADERS = `content-type,${RUNTIME_TOKEN_HEADER},x-cuby-time-zone`;
 const DEFAULT_ALLOWED_LOCAL_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
 const OPAQUE_ORIGIN = "null";
 const FILE_ORIGIN = "file://";
@@ -115,7 +115,7 @@ export function createLocalApiServer(options: CreateLocalApiServerOptions): Fast
     integrations: options.services.integrations,
     authenticateRuntimeToken
   });
-  // The MCP bridge validates with its own x-memmy-mcp-token (the agent has no runtime token), so authenticateRuntimeToken is not attached.
+  // The MCP bridge validates with its own x-cuby-mcp-token (the agent has no runtime token), so authenticateRuntimeToken is not attached.
   registerComposioMcpRoutes(app, {
     integrations: options.services.integrations,
     mcpToken: options.composioMcpToken

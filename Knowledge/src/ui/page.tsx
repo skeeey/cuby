@@ -335,7 +335,7 @@ export function KnowledgePage({
               method,
               signal,
               headers: {
-                "x-memmy-local-token": connection.localToken,
+                "x-cuby-local-token": connection.localToken,
                 ...encoded.headers,
               },
               body: encoded.payload,

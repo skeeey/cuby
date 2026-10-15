@@ -21,7 +21,7 @@ describe("HttpByokTokenUsageClient", () => {
     expect(init.method).toBe("POST");
     expect(init.headers).toMatchObject({
       "content-type": "application/json",
-      "x-memmy-local-token": "runtime-token",
+      "x-cuby-local-token": "runtime-token",
     });
     expect(JSON.parse(String(init.body))).toMatchObject({
       id: "event-1",
@@ -70,11 +70,11 @@ describe("HttpByokTokenUsageClient", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     expect(String(fetchImpl.mock.calls[0]?.[0])).toBe("http://127.0.0.1:62934/api/app/byok-token-usage/events");
     expect(fetchImpl.mock.calls[0]?.[1]?.headers).toMatchObject({
-      "x-memmy-local-token": "runtime-token-a",
+      "x-cuby-local-token": "runtime-token-a",
     });
     expect(String(fetchImpl.mock.calls[1]?.[0])).toBe("http://127.0.0.1:63000/api/app/byok-token-usage/events");
     expect(fetchImpl.mock.calls[1]?.[1]?.headers).toMatchObject({
-      "x-memmy-local-token": "runtime-token-b",
+      "x-cuby-local-token": "runtime-token-b",
     });
   });
 });

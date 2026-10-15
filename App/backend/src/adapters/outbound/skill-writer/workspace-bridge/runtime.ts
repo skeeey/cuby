@@ -584,10 +584,10 @@ function envelopeGetTransport(
   const query = { adapterId: envelope.adapterId, source: envelope.namespace.source };
   const headers: Record<string, string> = { "x-request-id": envelope.requestId };
   const pairs = [
-    ["x-memmy-user-id", envelope.namespace.userId],
-    ["x-memmy-project-id", envelope.namespace.projectId],
-    ["x-memmy-profile-id", envelope.namespace.profileId],
-    ["x-memmy-session-key", envelope.namespace.sessionKey],
+    ["x-cuby-user-id", envelope.namespace.userId],
+    ["x-cuby-project-id", envelope.namespace.projectId],
+    ["x-cuby-profile-id", envelope.namespace.profileId],
+    ["x-cuby-session-key", envelope.namespace.sessionKey],
   ];
   for (const [key, value] of pairs) if (value) headers[key!] = value;
   return { query, headers };

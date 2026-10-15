@@ -1729,7 +1729,7 @@ describe("WebSocket channel", () => {
   });
 
   it("matches token issue route secrets from legacy headers", () => {
-    expect(issueRouteSecretMatches({ "x-memmy-agent-auth": "secret" }, "secret")).toBe(true);
+    expect(issueRouteSecretMatches({ "x-cuby-agent-auth": "secret" }, "secret")).toBe(true);
   });
 
   it("allows token issue routes when no secret is configured", () => {

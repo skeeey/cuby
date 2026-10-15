@@ -233,7 +233,7 @@ describe("memmy-agent client", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
       if (url.pathname === "/webui/bootstrap") {
-        expect(init?.headers).toEqual({ "X-Memmy-Agent-Auth": "bootstrap-secret" });
+        expect(init?.headers).toEqual({ "X-Cuby-Agent-Auth": "bootstrap-secret" });
         return json(bootstrap);
       }
       if (url.pathname === "/api/sessions") {
@@ -2209,7 +2209,7 @@ describe("memmy-agent client", () => {
         expect(url.pathname).toBe("/api/settings/mcp-presets/enable");
         expect(init?.method).toBe("POST");
         const headers = new Headers(init?.headers);
-        expect(headers.get("x-memmy-agent-mcp-values")).toBe(
+        expect(headers.get("x-cuby-agent-mcp-values")).toBe(
           JSON.stringify({ name: "brave-search", brave_api_key: " BSA_test " })
         );
         return json({ presets: [], installed_count: 1 });
@@ -2228,7 +2228,7 @@ describe("memmy-agent client", () => {
         if (url.pathname === "/webui/bootstrap") return json(bootstrap);
         expect(url.pathname).toBe("/api/settings/mcp-presets/custom");
         const headers = new Headers(init?.headers);
-        expect(JSON.parse(String(headers.get("x-memmy-agent-mcp-values")))).toEqual({
+        expect(JSON.parse(String(headers.get("x-cuby-agent-mcp-values")))).toEqual({
           name: "my-server",
           transport: "stdio",
           command: "npx",
@@ -2247,7 +2247,7 @@ describe("memmy-agent client", () => {
       const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = new URL(String(input));
         if (url.pathname === "/webui/bootstrap") return json(bootstrap);
-        const raw = String(new Headers(init?.headers).get("x-memmy-agent-mcp-values"));
+        const raw = String(new Headers(init?.headers).get("x-cuby-agent-mcp-values"));
         expect(raw).toMatch(/^[\x20-\x7e]*$/);
         expect(JSON.parse(raw)).toEqual({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" });
         return json(emptyPayload);
@@ -2269,7 +2269,7 @@ describe("memmy-agent client", () => {
         expect(url.pathname).toBe(path);
         expect(init?.method).toBe("POST");
         const headers = new Headers(init?.headers);
-        expect(JSON.parse(String(headers.get("x-memmy-agent-mcp-values")))).toEqual({ name: "exa" });
+        expect(JSON.parse(String(headers.get("x-cuby-agent-mcp-values")))).toEqual({ name: "exa" });
         return json(emptyPayload);
       });
       const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });

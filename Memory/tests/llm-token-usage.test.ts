@@ -93,7 +93,7 @@ describe("memory LLM token usage recording", () => {
     expect(init.method).toBe("POST");
     expect(init.headers).toMatchObject({
       "content-type": "application/json",
-      "x-memmy-local-token": "runtime-token"
+      "x-cuby-local-token": "runtime-token"
     });
     expect(JSON.parse(String(init.body))).toMatchObject({
       kind: "memory_summary",

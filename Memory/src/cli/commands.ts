@@ -469,7 +469,7 @@ function requestOptions(parsed: ParsedArgs, fetchImpl?: typeof fetch): CliReques
   const configPath = optionString(parsed.options, "config");
   const userId = userIdOption(parsed) ?? loadCliMemoryConfig(configPath).config.userId;
   const headers: Record<string, string> = {};
-  if (userId) headers["x-memmy-user-id"] = userId;
+  if (userId) headers["x-cuby-user-id"] = userId;
   return {
     url: optionString(parsed.options, "url"),
     token: optionString(parsed.options, "token"),

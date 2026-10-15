@@ -32,7 +32,7 @@ export class HttpByokTokenUsageClient implements ByokTokenUsageClient {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": runtime.localToken,
+        "x-cuby-local-token": runtime.localToken,
       },
       body: JSON.stringify(event),
       signal: AbortSignal.timeout(this.timeoutMs),

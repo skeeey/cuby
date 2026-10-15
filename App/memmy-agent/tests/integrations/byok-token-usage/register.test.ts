@@ -182,7 +182,7 @@ describe("installByokTokenUsage", () => {
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [URL, RequestInit];
     expect(url.toString()).toBe("http://127.0.0.1:63000/api/app/byok-token-usage/events");
     expect(init.headers).toMatchObject({
-      "x-memmy-local-token": "runtime-token-2",
+      "x-cuby-local-token": "runtime-token-2",
     });
     expect(JSON.parse(String(init.body))).toMatchObject({
       kind: "agent_chat",

@@ -32,7 +32,7 @@ describe("memmy memory server entrypoint", () => {
       const endpoint = await waitForWrittenEndpoint(configPath);
       const response = await fetch(`${endpoint}/api/v1/system/restart`, {
         method: "POST",
-        headers: { "x-memmy-viewer": "1", "content-type": "application/json" },
+        headers: { "x-cuby-viewer": "1", "content-type": "application/json" },
         body: "{}",
       });
       expect(response.status).toBe(202);

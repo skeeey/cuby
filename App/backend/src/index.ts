@@ -185,7 +185,7 @@ export async function createLocalBackend(options: CreateLocalBackendOptions): Pr
     await memmyConfigWriter.patchMcpServerConfig("composio", {
       type: "streamableHttp",
       url: `http://127.0.0.1:${(address as AddressInfo).port}/mcp/composio`,
-      headers: { "x-memmy-mcp-token": composioMcpToken },
+      headers: { "x-cuby-mcp-token": composioMcpToken },
       toolTimeout: 60
     });
     if (options.memmyAgentAdminClient) {

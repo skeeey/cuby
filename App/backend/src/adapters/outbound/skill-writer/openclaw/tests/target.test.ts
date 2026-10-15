@@ -181,7 +181,7 @@ describe("openclaw skill target", () => {
     expect(pluginIndex).not.toContain('name: "memmy_search"');
     expect(pluginIndex).not.toContain('name: "memmy_remember"');
     expect(pluginIndex).toContain("api.on(\"before_prompt_build\"");
-    expect(pluginIndex).not.toContain("x-memmy-agent-kind");
+    expect(pluginIndex).not.toContain("x-cuby-agent-kind");
     expect(pluginIndex).not.toContain("agentKind");
     expect(pluginIndex).toContain("api.on(\"agent_end\"");
     expect(pluginIndex).toContain("api.on(\"agent_end\", (event, ctx) => {");

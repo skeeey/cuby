@@ -244,7 +244,7 @@ const TURN_CONTENT_EVENTS = new Set([
   "user",
 ]);
 const LOCALHOSTS = new Set(["127.0.0.1", "::1", "localhost"]);
-const MCP_VALUES_HEADER = "x-memmy-agent-mcp-values";
+const MCP_VALUES_HEADER = "x-cuby-agent-mcp-values";
 const MCP_VALUES_HEADER_MAX_BYTES = 64 * 1024;
 const MCP_PRESET_ACTIONS_BY_PATH: Record<string, string> = {
   "/api/settings/mcp-presets/enable": "enable",
@@ -507,7 +507,7 @@ export function b64urlDecode(value: string): Buffer {
 
 export function issueRouteSecretMatches(headers: any, configuredSecret: string): boolean {
   if (!configuredSecret) return true;
-  const token = bearerToken(headers) ?? getHeader(headers, "x-memmy-agent-auth");
+  const token = bearerToken(headers) ?? getHeader(headers, "x-cuby-agent-auth");
   return Boolean(token) && safeCompare(token, configuredSecret);
 }
 
@@ -4997,7 +4997,7 @@ function corsHeadersForRequest(config: WebSocketConfig, request: { headers?: htt
     "access-control-allow-headers": [
       "authorization",
       "content-type",
-      "x-memmy-agent-auth",
+      "x-cuby-agent-auth",
       MCP_VALUES_HEADER,
     ].join(", "),
     "access-control-max-age": "600",

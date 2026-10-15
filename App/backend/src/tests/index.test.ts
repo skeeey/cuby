@@ -165,7 +165,7 @@ describe("local api", () => {
           composio: {
             type: "streamableHttp",
             url: `${backend.runtimeConfig.baseUrl}/mcp/composio`,
-            headers: { "x-memmy-mcp-token": expect.stringMatching(/^mmt_/) }
+            headers: { "x-cuby-mcp-token": expect.stringMatching(/^mmt_/) }
           }
         }
       }
@@ -313,7 +313,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -345,7 +345,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -444,7 +444,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -511,13 +511,13 @@ describe("local api", () => {
       const bootstrapResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const currentModelConfigResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/model-config`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const currentModelConfig = await currentModelConfigResponse.json() as any;
@@ -525,7 +525,7 @@ describe("local api", () => {
         method: "PUT",
         headers: {
           "content-type": "application/json",
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         },
         body: JSON.stringify({
           configRevision: currentModelConfig.configRevision,
@@ -609,7 +609,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -628,7 +628,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "wrong-token"
+        "x-cuby-local-token": "wrong-token"
       }
     });
 
@@ -643,13 +643,13 @@ describe("local api", () => {
       headers: {
         origin: "http://127.0.0.1:5173",
         "access-control-request-method": "GET",
-        "access-control-request-headers": "x-memmy-local-token"
+        "access-control-request-headers": "x-cuby-local-token"
       }
     });
 
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:5173");
-    expect(response.headers.get("access-control-allow-headers")).toContain("x-memmy-local-token");
+    expect(response.headers.get("access-control-allow-headers")).toContain("x-cuby-local-token");
   });
 
   it("rejects browser requests from non-local origins", async () => {
@@ -660,7 +660,7 @@ describe("local api", () => {
       headers: {
         origin: "https://example.com",
         "access-control-request-method": "GET",
-        "access-control-request-headers": "x-memmy-local-token"
+        "access-control-request-headers": "x-cuby-local-token"
       }
     });
 
@@ -692,7 +692,7 @@ describe("local api", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       body: JSON.stringify({
         adapterId: "test-cli",
@@ -720,25 +720,25 @@ describe("local api", () => {
     const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const authResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/github/authorize`, {
       method: "POST",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const listResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const deleteResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections/conn-github`, {
       method: "DELETE",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -772,7 +772,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -796,7 +796,7 @@ describe("local api", () => {
     const currentModelConfigResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/model-config`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const currentModelConfig = await currentModelConfigResponse.json() as any;
@@ -804,7 +804,7 @@ describe("local api", () => {
       method: "PUT",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       body: JSON.stringify({
         configRevision: currentModelConfig.configRevision,
@@ -830,32 +830,32 @@ describe("local api", () => {
       method: "PATCH",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       body: JSON.stringify({ userMode: "byok" })
     });
     const sessionResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/account/session`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const connectionsResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const authResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/github/authorize`, {
       method: "POST",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -924,19 +924,19 @@ describe("local api", () => {
     const sessionResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/account/session`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const connectionsResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -972,7 +972,7 @@ describe("local api", () => {
         body: await readJson(request),
         apiKey: request.headers["x-api-key"] as string | undefined,
         authorization: request.headers.authorization,
-        machineComposioToken: request.headers["x-memmy-composio-token"] as string | undefined
+        machineComposioToken: request.headers["x-cuby-composio-token"] as string | undefined
       });
 
       if (request.method === "GET" && request.url === "/api/agentUser/info") {
@@ -1073,25 +1073,25 @@ describe("local api", () => {
       const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/airtable/authorize`, {
         method: "POST",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const listResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const deleteResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections/conn-airtable`, {
         method: "DELETE",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
 
@@ -1167,7 +1167,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/agent-sources`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -1272,7 +1272,7 @@ async function postAccountCredentials(path: string, body: Record<string, unknown
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-memmy-local-token": "test-token"
+      "x-cuby-local-token": "test-token"
     },
     body: JSON.stringify(body)
   });

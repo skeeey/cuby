@@ -1492,7 +1492,7 @@ export class AgentGatewaySupervisor {
   ) {
     this.bootstrapUrl = `${runtimeConfig.agentGatewayBaseUrl}/webui/bootstrap`;
     this.bootstrapHeaders = runtimeConfig.agentGatewayBootstrapSecret
-      ? { "x-memmy-agent-auth": runtimeConfig.agentGatewayBootstrapSecret }
+      ? { "x-cuby-agent-auth": runtimeConfig.agentGatewayBootstrapSecret }
       : {};
     this.dependencies = {
       probeHttpService: dependencies.probeHttpService ?? probeHttpService,

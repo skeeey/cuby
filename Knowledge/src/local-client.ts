@@ -37,7 +37,7 @@ export function createLocalKnowledgeClient(
           signal: signal ? AbortSignal.any([signal, timeout]) : timeout,
           headers: {
             "Content-Type": "application/json",
-            "x-memmy-local-token": text(runtime.localToken),
+            "x-cuby-local-token": text(runtime.localToken),
           },
           body: JSON.stringify({ query }),
         });

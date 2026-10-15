@@ -72,7 +72,7 @@ export class MemmyMemoryClient {
     timeoutMs?: number;
   } = {}): Promise<T> {
     const headers: Record<string, string> = { accept: "application/json", ...(opts.headers ?? {}) };
-    headers["x-memmy-time-zone"] = this.timeZone;
+    headers["x-cuby-time-zone"] = this.timeZone;
     if (this.token) headers.authorization = `Bearer ${this.token}`;
     if (opts.body !== undefined) headers["content-type"] = "application/json";
     const requestId = opts.body && typeof opts.body === "object" ? opts.body.requestId : null;

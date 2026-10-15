@@ -5,7 +5,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { IntegrationService } from "../../../../services/integration-service.js";
 
-const MCP_TOKEN_HEADER = "x-memmy-mcp-token";
+const MCP_TOKEN_HEADER = "x-cuby-mcp-token";
 const MCP_ROUTE_PATH = "/mcp/composio";
 
 /** Type definition for composio mcp integrations. */

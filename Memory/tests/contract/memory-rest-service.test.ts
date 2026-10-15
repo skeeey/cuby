@@ -248,7 +248,7 @@ describe("MemoryService / REST contract", () => {
         .toBe("+08:00");
 
       const invalid = await fetch(`${endpoint}/api/v1/panel/overview`, {
-        headers: { "x-memmy-time-zone": "Mars/Base" }
+        headers: { "x-cuby-time-zone": "Mars/Base" }
       });
       expect(invalid.status).toBe(400);
       await expect(invalid.json()).resolves.toMatchObject({

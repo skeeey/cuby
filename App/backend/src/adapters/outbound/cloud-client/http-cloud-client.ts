@@ -516,8 +516,8 @@ async function requestCloudData<T>(
       ...(options.body === undefined ? {} : { "content-type": "application/json" }),
       lang: options.lang,
       ...(options.bearerCredential ? { authorization: `Bearer ${options.bearerCredential}` } : {}),
-      ...(options.composioMachineToken ? { "x-memmy-composio-token": options.composioMachineToken } : {}),
-      ...(options.deviceId ? { "x-memmy-device-id": options.deviceId } : {}),
+      ...(options.composioMachineToken ? { "x-cuby-composio-token": options.composioMachineToken } : {}),
+      ...(options.deviceId ? { "x-cuby-device-id": options.deviceId } : {}),
       "x-agent-region": normalizeAgentRegion(process.env.CUBY_APP_EDITION)
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),

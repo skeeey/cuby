@@ -93,7 +93,7 @@ it("restarts persistent Memory repeatedly after Desktop exits and reopens", asyn
       }));
       const response = await fetch(`${baseUrl}/api/v1/system/restart`, {
         method: "POST",
-        headers: { "x-memmy-viewer": "1", "content-type": "application/json" },
+        headers: { "x-cuby-viewer": "1", "content-type": "application/json" },
         body: "{}",
       });
       expect(response.status).toBe(202);
@@ -103,7 +103,7 @@ it("restarts persistent Memory repeatedly after Desktop exits and reopens", asyn
         if (current.startedAt === previous.startedAt) return false;
         const health = await fetch(`${baseUrl}/api/v1/health`);
         if (!health.ok) return false;
-        const currentConfig = await fetch(`${baseUrl}/api/v1/config`, { headers: { "x-memmy-viewer": "1" } });
+        const currentConfig = await fetch(`${baseUrl}/api/v1/config`, { headers: { "x-cuby-viewer": "1" } });
         const body = await currentConfig.json() as { config: { timeZone?: string } };
         expect(body.config.timeZone).toBe(timeZone);
         expect(current.pid).toBe(previous.pid);

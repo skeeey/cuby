@@ -47,7 +47,7 @@ describe("local Viewer API", () => {
     });
 
     const crossSite = await fetch(`${fixture.baseUrl}/api/v1/config`, {
-      headers: { "x-memmy-viewer": "1", origin: "http://evil.example" }
+      headers: { "x-cuby-viewer": "1", origin: "http://evil.example" }
     });
     expect(crossSite.status).toBe(403);
 
@@ -60,7 +60,7 @@ describe("local Viewer API", () => {
 
     const missingJsonContentType = await fetch(`${fixture.baseUrl}/api/v1/config`, {
       method: "PATCH",
-      headers: { "x-memmy-viewer": "1" },
+      headers: { "x-cuby-viewer": "1" },
       body: JSON.stringify({ config: { timeZone: "+08:00" } })
     });
     expect(missingJsonContentType.status).toBe(400);
@@ -565,7 +565,7 @@ function viewerFetch(baseUrl: string, path: string, init: RequestInit = {}): Pro
   return fetch(`${baseUrl}${path}`, {
     ...init,
     headers: {
-      "x-memmy-viewer": "1",
+      "x-cuby-viewer": "1",
       ...(init.method && init.method !== "GET" ? { "content-type": "application/json" } : {}),
       ...init.headers
     }

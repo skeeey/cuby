@@ -1479,10 +1479,10 @@ def _get_transport(envelope: Dict[str, Any], session_id: str = "") -> Dict[str, 
         query["sessionId"] = session_id
     headers = {"x-request-id": _clean_text(envelope.get("requestId"))}
     for field, header in (
-        ("userId", "x-memmy-user-id"),
-        ("projectId", "x-memmy-project-id"),
-        ("profileId", "x-memmy-profile-id"),
-        ("sessionKey", "x-memmy-session-key"),
+        ("userId", "x-cuby-user-id"),
+        ("projectId", "x-cuby-project-id"),
+        ("profileId", "x-cuby-profile-id"),
+        ("sessionKey", "x-cuby-session-key"),
     ):
         value = _clean_text(namespace.get(field))
         if value:

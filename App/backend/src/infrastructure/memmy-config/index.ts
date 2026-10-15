@@ -356,7 +356,7 @@ export async function readConfiguredAgentTimeZone(
  * Read the memmy-agent gateway's bootstrap secret.
  *
  * Once the memmy-agent gateway has a secret configured at channels.websocket.tokenIssueSecret/token,
- * `/webui/bootstrap` enforces the `x-memmy-agent-auth` header, returning 401 otherwise. The backend channel
+ * `/webui/bootstrap` enforces the `x-cuby-agent-auth` header, returning 401 otherwise. The backend channel
  * admin client must send this secret to exchange for a token, so it is read from the same config.yaml.
  *
  * @param configPath the Memmy main config file path.

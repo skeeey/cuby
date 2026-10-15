@@ -274,7 +274,7 @@ async function backendRequest<T = unknown>(
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {
-      "x-memmy-local-token": BACKEND_TOKEN,
+      "x-cuby-local-token": BACKEND_TOKEN,
       ...(body === undefined ? {} : { "content-type": "application/json" })
     },
     body: body === undefined ? undefined : JSON.stringify(body)

@@ -399,7 +399,7 @@ describe("memmy CLI command map", () => {
       "--user_id", "user_cli_1"
     ]);
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_cli_1");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_cli_1");
   });
 
   it("sends source in the request body for CLI memory commands", async () => {
@@ -436,7 +436,7 @@ describe("memmy CLI command map", () => {
       fetch: mockFetch(requests)
     });
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_from_memory");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_from_memory");
   });
 
   it("uses the flat memory userId even when obsolete profile fields remain", async () => {
@@ -464,7 +464,7 @@ describe("memmy CLI command map", () => {
       fetch: mockFetch(requests)
     });
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_from_flat_memory");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_from_flat_memory");
   });
 
   it("lets explicit user-id override memmyMemory.userId from config", async () => {
@@ -479,7 +479,7 @@ describe("memmy CLI command map", () => {
       fetch: mockFetch(requests)
     });
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_explicit");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_explicit");
   });
 
   it("rejects unknown commands", async () => {

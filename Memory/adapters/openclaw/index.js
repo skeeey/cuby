@@ -3,7 +3,7 @@ const sessions = new Map();
 const turns = new Map();
 
 async function request(path, options = {}) {
-  const headers = { "content-type": "application/json", "x-memmy-profile-id": options.profileId || "main" };
+  const headers = { "content-type": "application/json", "x-cuby-profile-id": options.profileId || "main" };
   if (process.env.CUBY_MEMORY_TOKEN) headers.authorization = `Bearer ${process.env.CUBY_MEMORY_TOKEN}`;
   const response = await fetch(`${ENDPOINT}/api/v1${path}`, {
     method: options.method || "GET",

@@ -38,7 +38,7 @@ export function AuthGate({ children }: { children: ComponentChildren }) {
     try {
       const r = await fetch("/api/v1/auth/status", {
         cache: "no-store",
-        headers: { "x-memmy-viewer": "1" },
+        headers: { "x-cuby-viewer": "1" },
       });
       if (r.status === 401) {
         setStatus({ state: "login" });

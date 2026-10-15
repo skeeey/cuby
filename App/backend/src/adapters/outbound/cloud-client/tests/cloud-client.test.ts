@@ -38,7 +38,7 @@ describe("cloud client", () => {
         path: request.url ?? "",
         body,
         lang: request.headers.lang as string | undefined,
-        deviceId: request.headers["x-memmy-device-id"] as string | undefined,
+        deviceId: request.headers["x-cuby-device-id"] as string | undefined,
         region: request.headers["x-agent-region"] as string | undefined
       });
 
@@ -127,7 +127,7 @@ describe("cloud client", () => {
   it("keeps authentication requests compatible when no device ID is available", async () => {
     let receivedDeviceId: string | undefined;
     server = createServer((request, response) => {
-      receivedDeviceId = request.headers["x-memmy-device-id"] as string | undefined;
+      receivedDeviceId = request.headers["x-cuby-device-id"] as string | undefined;
       sendJson(response, { code: 0, message: "ok", data: true });
     });
     await listen(server);
@@ -853,7 +853,7 @@ describe("cloud client", () => {
         method: request.method,
         body: await readJson(request),
         authorization: request.headers.authorization,
-        machineComposioToken: request.headers["x-memmy-composio-token"] as string | undefined
+        machineComposioToken: request.headers["x-cuby-composio-token"] as string | undefined
       });
 
       if (request.method === "GET" && request.url === "/api/composio/auth-configs?limit=100&show_disabled=false") {
@@ -1040,7 +1040,7 @@ describe("cloud client", () => {
       requests.push({
         path: request.url ?? "",
         method: request.method,
-        deviceId: request.headers["x-memmy-device-id"] as string | undefined
+        deviceId: request.headers["x-cuby-device-id"] as string | undefined
       });
       sendJson(response, { code: 0, message: "ok", data: promotions });
     });

@@ -51,7 +51,7 @@ async function injectJson(method: string, url: string, payload?: unknown) {
   return app.inject({
     method,
     url,
-    headers: { "x-memmy-local-token": "test-token" },
+    headers: { "x-cuby-local-token": "test-token" },
     payload
   });
 }

@@ -641,7 +641,7 @@ async function localApiRequest<T>(
     method,
     headers: {
       accept: "application/json",
-      "x-memmy-local-token": runtime.localToken,
+      "x-cuby-local-token": runtime.localToken,
       ...(body === undefined ? {} : { "content-type": "application/json" })
     },
     body: body === undefined ? undefined : JSON.stringify(body),

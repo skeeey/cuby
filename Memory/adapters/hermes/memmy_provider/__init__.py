@@ -123,7 +123,7 @@ class MemmyProvider(MemoryProvider):
         if body is None and method == "POST":
             method = "GET"
         payload = None if method == "GET" else json.dumps({**(body or {}), "source": "hermes"}).encode("utf-8")
-        headers = {"Content-Type": "application/json", "x-memmy-profile-id": self._profile}
+        headers = {"Content-Type": "application/json", "x-cuby-profile-id": self._profile}
         token = os.environ.get("CUBY_MEMORY_TOKEN", "")
         if token:
             headers["Authorization"] = f"Bearer {token}"

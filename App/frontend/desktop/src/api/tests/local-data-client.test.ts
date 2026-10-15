@@ -35,7 +35,7 @@ describe("local data client", () => {
       expect.objectContaining({
         method: "GET",
         body: undefined,
-        headers: expect.objectContaining({ "x-memmy-local-token": "local-token" })
+        headers: expect.objectContaining({ "x-cuby-local-token": "local-token" })
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -44,7 +44,7 @@ describe("local data client", () => {
       expect.objectContaining({
         method: "POST",
         body: JSON.stringify({}),
-        headers: expect.objectContaining({ "x-memmy-local-token": "local-token" })
+        headers: expect.objectContaining({ "x-cuby-local-token": "local-token" })
       })
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
@@ -53,7 +53,7 @@ describe("local data client", () => {
       expect.objectContaining({
         method: "DELETE",
         body: JSON.stringify({ confirm: true }),
-        headers: expect.objectContaining({ "x-memmy-local-token": "local-token" })
+        headers: expect.objectContaining({ "x-cuby-local-token": "local-token" })
       })
     );
   });

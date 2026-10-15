@@ -128,7 +128,7 @@ class HttpMemmyAgentAdminClient implements MemmyAgentAdminClient {
     if (this.token) return this.token;
 
     const response = await this.fetchFn(new URL("/webui/bootstrap", this.baseUrl), {
-      headers: this.bootstrapSecret ? { "x-memmy-agent-auth": this.bootstrapSecret } : undefined,
+      headers: this.bootstrapSecret ? { "x-cuby-agent-auth": this.bootstrapSecret } : undefined,
       signal
     });
     if (!response.ok) {

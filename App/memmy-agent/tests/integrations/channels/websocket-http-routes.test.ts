@@ -531,12 +531,12 @@ describe("WebSocket HTTP route helpers", () => {
       headers: {
         Origin: origin,
         "Access-Control-Request-Method": "PATCH",
-        "Access-Control-Request-Headers": "x-memmy-agent-auth"
+        "Access-Control-Request-Headers": "x-cuby-agent-auth"
       }
     });
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(preflight.headers.get("access-control-allow-headers")).toContain("x-memmy-agent-auth");
+    expect(preflight.headers.get("access-control-allow-headers")).toContain("x-cuby-agent-auth");
     expect(preflight.headers.get("access-control-allow-methods")).toBe(
       "GET, POST, PATCH, DELETE, OPTIONS",
     );
@@ -544,7 +544,7 @@ describe("WebSocket HTTP route helpers", () => {
     const boot = await fetch(`http://127.0.0.1:${port}/webui/bootstrap`, {
       headers: {
         Origin: origin,
-        "X-Memmy-Agent-Auth": "secret"
+        "X-Cuby-Agent-Auth": "secret"
       }
     });
     expect(boot.status).toBe(200);
@@ -660,7 +660,7 @@ describe("WebSocket HTTP route helpers", () => {
 
     const values = JSON.stringify({ browserbase_api_key: "bb_live_secret" });
     const enabled = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/enable?name=browserbase`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": values },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": values },
     });
     expect(enabled.status).toBe(200);
     expect(seen.at(-1)?.[1].browserbase_api_key).toEqual(["bb_live_secret"]);
@@ -672,25 +672,25 @@ describe("WebSocket HTTP route helpers", () => {
     expect(body.restart_required_sections).toEqual([]);
 
     const badHeader = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/enable?name=browserbase`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": "[]" },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": "[]" },
     });
     expect(badHeader.status).toBe(400);
 
     const custom = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/custom`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": JSON.stringify({ name: "docs", command: "npx" }) },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": JSON.stringify({ name: "docs", command: "npx" }) },
     });
     expect(custom.status).toBe(200);
     expect(seen.at(-1)?.[1].command).toEqual(["npx"]);
     expect(((await custom.json()) as any).last_action.message).toBe("custom:docs MCP config reloaded.");
 
     const imported = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/import`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": JSON.stringify({ config: "{}" }) },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": JSON.stringify({ config: "{}" }) },
     });
     expect(imported.status).toBe(200);
     expect(((await imported.json()) as any).last_action.message).toBe("import:config MCP config reloaded.");
 
     const tools = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/tools`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": JSON.stringify({ name: "docs", enabled_tools: [] }) },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": JSON.stringify({ name: "docs", enabled_tools: [] }) },
     });
     expect(tools.status).toBe(200);
     expect(((await tools.json()) as any).last_action.message).toBe("tools:docs MCP config reloaded.");
@@ -1304,7 +1304,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("allows wildcard IPv6 bootstrap when a secret is provided", () => {
     const channel = makeChannel({ config: { host: "::", tokenIssueSecret: "s3cret" } });
-    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Memmy-Agent-Auth": "s3cret" } });
+    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Cuby-Agent-Auth": "s3cret" } });
     expect(response.status).toBe(200);
   });
 
@@ -1363,9 +1363,9 @@ describe("WebSocket HTTP route helpers", () => {
     expect(responseJson(response).token).toMatch(/^nbwt_/);
   });
 
-  it("accepts remote bootstrap with the X-Memmy-Agent-Auth header", () => {
+  it("accepts remote bootstrap with the X-Cuby-Agent-Auth header", () => {
     const channel = makeChannel({ config: { host: "0.0.0.0", tokenIssueSecret: "s3cret" } });
-    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Memmy-Agent-Auth": "s3cret" } });
+    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Cuby-Agent-Auth": "s3cret" } });
     expect(response.status).toBe(200);
   });
 

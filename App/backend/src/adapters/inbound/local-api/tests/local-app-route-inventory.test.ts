@@ -88,7 +88,7 @@ describe("local app route inventory", () => {
       const response = await app.inject({
         method: request.method,
         url: request.url,
-        headers: { "x-memmy-local-token": "test-token" },
+        headers: { "x-cuby-local-token": "test-token" },
         payload: request.payload
       });
 
