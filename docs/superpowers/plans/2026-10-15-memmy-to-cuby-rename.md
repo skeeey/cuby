@@ -543,7 +543,7 @@ xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/gi'
 - [ ] **Step 2: 验证头名齐全且无漏网**
 
 ```bash
-grep -rho 'x-cuby-[a-z-]*' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=docs . | sort -u | wc -l   # 期望 17
+grep -rhoi 'x-cuby-[a-z-]*' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=docs . | tr 'A-Z' 'a-z' | sort -u | wc -l   # 期望 17
 grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.superpowers . \
   | grep -vE '^(\./)?(docs/|\.github/release-notes/)' | grep -viE 'readme'
 ```
@@ -551,6 +551,10 @@ grep -rn 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.
 Expected: 第一条 **17**，第二条无输出。
 
 > 计数必须排除 `docs/`：spec 与计划正文里写着 `x-memmy-*` 这个通配（裸前缀 `x-memmy-`），不排除会数出 18。
+
+**已知并有意保留**：仓里有 13 处标题式写法（`X-Cuby-Agent-Auth` / `X-Cuby-Agent-MCP-Values`，分布在 `memmy-agent-client.ts:1143`、`main.ts:5398`、两处测试与 `websocket-http-routes.test.ts` 的 8 处）。HTTP 头名大小写不敏感、本仓库的读取端也会统一转小写，所以功能上无差异；保留原大小写是为了最小改动。**但任何大小写敏感的 grep 都看不到它们**——所以本 Task 与 Task 15 的扫描一律用 `-i`，不要用朴素的大小写敏感模式。
+
+> 另有两处头名**没有仓库内的消费者**：`x-cuby-composio-token` 与 `x-cuby-device-id` 由 `App/backend/src/adapters/outbound/cloud-client/http-cloud-client.ts:519-520` 发往外部云网关（`CUBY_CLOUD_SERVICE` 指向的服务）。**服务端需同步接受新头名（或两者都接受）**，否则这两条请求头在线上会被忽略。这是本计划唯一的"仓库外需配合"的头名依赖，见 §风险。
 
 - [ ] **Step 3: 跑测试**
 
