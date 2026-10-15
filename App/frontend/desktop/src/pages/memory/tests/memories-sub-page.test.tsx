@@ -56,7 +56,7 @@ describe("MemoriesSubPage", () => {
     expect(html).toContain('id="memory-l1-agent-filter"');
     expect(html).toContain("memory-source-filter__all-icon");
     expect(html.match(/memory-source-filter__all-avatar/g)).toHaveLength(3);
-    expect(html).toContain("memmy-rice.png");
+    expect(html).toContain("cuby-neutral.png");
     expect(html).not.toContain("lucide-bot");
     expect(html).toContain("全部 Agent");
     expect(html).toContain("按来源 Agent 筛选");

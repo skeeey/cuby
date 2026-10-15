@@ -8,7 +8,7 @@ import opencodeLogoUrl from "../assets/agent-logos/opencode.svg";
 import piLogoUrl from "../assets/agent-logos/pi.svg";
 import qwenworkLogoUrl from "../assets/agent-logos/qwenwork.svg";
 import workbuddyLogoUrl from "../assets/agent-logos/workbuddy.png";
-import memmyRiceLogoUrl from "../assets/mascot/memmy-rice.png";
+import cubyNeutralLogoUrl from "../assets/mascot/cuby-neutral.png";
 
 export const MEMORY_AGENT_SOURCE_VALUES = [
   "memmy-agent",
@@ -50,8 +50,8 @@ export const AGENT_SOURCE_LOGOS: Partial<Record<string, string>> = {
   workbuddy: workbuddyLogoUrl,
   pi: piLogoUrl,
   qwenwork: qwenworkLogoUrl,
-  memmy: memmyRiceLogoUrl,
-  memmy_agent: memmyRiceLogoUrl
+  memmy: cubyNeutralLogoUrl,
+  memmy_agent: cubyNeutralLogoUrl
 };
 
 export function normalizeAgentSourceId(value: string): string {

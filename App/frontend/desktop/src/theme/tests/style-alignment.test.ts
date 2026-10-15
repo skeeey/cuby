@@ -349,15 +349,20 @@ describe("prototype style alignment", () => {
 
   it("copies mascot assets into the App source tree instead of referencing the prototype folder", () => {
     const assetNames = [
-      "memmy-rice.png",
-      "memmy-wave.png",
-      "memmy-think.png",
-      "memmy-work.png",
-      "memmy-celebrate.png",
-      "memmy-connect.png",
-      "memmy-read.png",
-      "memo-idle-alpha.webm",
-      "pet-entrance.webp"
+      "cuby-neutral.png",
+      "cuby-wave.png",
+      "cuby-think.png",
+      "cuby-celebrate.png",
+      "cuby-shield.png",
+      "cuby-read.png",
+      "cuby-connect.png",
+      "cuby-sleep.png",
+      "cuby-brain.png",
+      "cuby-chat.png",
+      "cuby-blush.png",
+      "cuby-hum.png",
+      "cuby-plead.png",
+      "cuby-sad.png"
     ];
 
     expect(assetNames.filter((assetName) => !existsSync(resolve(sourceRoot, "assets/mascot", assetName)))).toEqual([]);

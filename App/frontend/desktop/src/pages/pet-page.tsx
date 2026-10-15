@@ -13,7 +13,6 @@ import { agentActions, appActions } from "../state/app-actions.js";
 import { canUseCloudFeatures, type AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
-import memoIdleUrl from "../assets/mascot/memo-idle-alpha.webm";
 import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, Maximize, Maximize2, Mic, Pause, Send, StopSquare, X } from "./memory/memory-prototype-icons.js";
 import { MicrophonePermissionError, microphonePermissionDeniedMessageKey, useAsrRecorder } from "./asr-recorder.js";
 import { createPetAgentBridge, PetReconnectRecoveryTracker } from "./pet-agent-bridge.js";
@@ -1089,7 +1088,7 @@ export function PetPageView({ bus, mainRoute = "/main", onNavigate, onPetWindowC
   const focusedAgentText = focusedTask?.lastAgentMessage ?? focusedTask?.streamingChunks?.join("") ?? "";
   const hasTaskHistorySwitcher = miniTaskListItems.length > 0;
   const showIdle = displayState === "idle" && runningSessionCount === 0 && !isDragging;
-  const memmyPose = resolveMemmyPose(displayState, focusedTask, isSleeping);
+  const cubyPose = resolveCubyPose(displayState, focusedTask, isSleeping);
 
   const markActivity = useCallback(() => {
     setLastActivityAt(Date.now());
@@ -1913,32 +1912,7 @@ export function PetPageView({ bus, mainRoute = "/main", onNavigate, onPetWindowC
           onClick={handleMemmyClick}
           onContextMenu={handleContextMenu}
         >
-          <div
-            className="absolute inset-0 transition-opacity duration-200"
-            style={{
-              opacity: showIdle ? 1 : 0,
-              pointerEvents: "none",
-              filter: "drop-shadow(0 8px 16px rgba(17, 29, 28, 0.18))"
-            }}
-          >
-            <video
-              src={memoIdleUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)]"
-              style={{
-                width: PET_TIMING.mascotSize,
-                height: PET_TIMING.mascotSize,
-                objectFit: "cover",
-                display: "block"
-              }}
-            />
-          </div>
-          <div className="absolute inset-0 transition-opacity duration-200" style={{ opacity: showIdle ? 0 : 1, pointerEvents: "none" }}>
-            <Cuby pose={memmyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${displayState === "processing" ? "cuby-bob" : ""}`} />
-          </div>
+          <Cuby pose={showIdle ? "neutral" : cubyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${showIdle || displayState === "processing" ? "cuby-bob" : ""}`} />
         </div>
 
         {displayState !== "idle" && <ChatWavesProp />}
@@ -2566,7 +2540,7 @@ function PetContextMenu({ registerRef, x, y, screenX, screenLeft, screenWidth, l
  * @param isSleeping Whether to enter the sleep pose.
  * @returns The Cuby pose.
  */
-function resolveMemmyPose(displayState: DisplayState, focusedTask: Task | null, isSleeping: boolean): CubyPose {
+function resolveCubyPose(displayState: DisplayState, focusedTask: Task | null, isSleeping: boolean): CubyPose {
   if (displayState === "idle" && isSleeping) {
     return "sleep";
   }

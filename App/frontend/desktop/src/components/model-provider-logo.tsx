@@ -1,4 +1,4 @@
-import memmyCoverLogoUrl from "../assets/brand/memmy-cover.png";
+import cubyCoverLogoUrl from "../assets/brand/cuby-cover.png";
 import anthropicLogoUrl from "../assets/model-logos/anthropic.svg";
 import baiduLogoUrl from "../assets/model-logos/baidu.svg";
 import deepseekLogoUrl from "../assets/model-logos/deepseek.svg";
@@ -13,7 +13,7 @@ import xiaomiLogoUrl from "../assets/model-logos/xiaomi.svg";
 import zhipuLogoUrl from "../assets/model-logos/zhipu.svg";
 import type { Protocol } from "../pages/model-config.js";
 
-export { memmyCoverLogoUrl };
+export { cubyCoverLogoUrl };
 
 const PROTOCOL_LOGO_URLS: Record<Protocol, string> = {
   openai: openaiLogoUrl,
@@ -40,7 +40,7 @@ export function modelProviderLogoUrl(provider: string): string | undefined {
     || key.includes("memmy")
     || key.includes("memos")
   ) {
-    return memmyCoverLogoUrl;
+    return cubyCoverLogoUrl;
   }
   if (key in PROTOCOL_LOGO_URLS) {
     return PROTOCOL_LOGO_URLS[key as Protocol];
@@ -88,7 +88,7 @@ export function ModelProviderLogo(props: ModelProviderLogoProps) {
     );
   }
 
-  const isCover = logoUrl === memmyCoverLogoUrl;
+  const isCover = logoUrl === cubyCoverLogoUrl;
   return (
     <img
       src={logoUrl}

@@ -15,7 +15,7 @@ describe("preloadCubyAsset", () => {
         assignedSrc = value;
       }
     } as HTMLImageElement;
-    const pending = preloadCubyAsset("/assets/memmy-work.png", {
+    const pending = preloadCubyAsset("/assets/cuby-neutral.png", {
       createImage: () => fakeImage
     });
     let resolved = false;
@@ -25,12 +25,12 @@ describe("preloadCubyAsset", () => {
     });
     await Promise.resolve();
 
-    expect(assignedSrc).toBe("/assets/memmy-work.png");
+    expect(assignedSrc).toBe("/assets/cuby-neutral.png");
     expect(resolved).toBe(false);
 
     fakeImage.onload?.call(fakeImage, new Event("load"));
 
-    await expect(pending).resolves.toBe("/assets/memmy-work.png");
+    await expect(pending).resolves.toBe("/assets/cuby-neutral.png");
     expect(resolved).toBe(true);
   });
 });

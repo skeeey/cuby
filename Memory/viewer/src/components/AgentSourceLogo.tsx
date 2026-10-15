@@ -8,12 +8,12 @@ import opencodeLogoUrl from "../../../../App/frontend/desktop/src/assets/agent-l
 import piLogoUrl from "../../../../App/frontend/desktop/src/assets/agent-logos/pi.svg";
 import qwenworkLogoUrl from "../../../../App/frontend/desktop/src/assets/agent-logos/qwenwork.svg";
 import workbuddyLogoUrl from "../../../../App/frontend/desktop/src/assets/agent-logos/workbuddy.png";
-import memmyRiceLogoUrl from "../../../../App/frontend/desktop/src/assets/mascot/memmy-rice.png";
+import cubyNeutralLogoUrl from "../../../../App/frontend/desktop/src/assets/mascot/cuby-neutral.png";
 import { normalizeAgentSource, sourceAgentInitials } from "./agent-source";
 
 const AGENT_SOURCE_LOGOS: Partial<Record<string, string>> = {
-  memmy: memmyRiceLogoUrl,
-  memmy_agent: memmyRiceLogoUrl,
+  memmy: cubyNeutralLogoUrl,
+  memmy_agent: cubyNeutralLogoUrl,
   cursor: cursorLogoUrl,
   claude_code: claudeCodeLogoUrl,
   codex: codexLogoUrl,
