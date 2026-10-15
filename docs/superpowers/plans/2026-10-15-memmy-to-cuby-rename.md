@@ -1327,6 +1327,10 @@ wc -l /tmp/cuby-leftovers.txt
 
 已知几处注释：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。
 
+**Task 14 审查追加的几项**：①`App/shell/desktop/tests/fixed-ports.test.ts:23` 的用例标题被机械替换**反转了语义**（写成 "no … Cuby-era fixed port"，而同文件的 `describe` 与正则仍是 `MEMMY_ERA_PORTS` / "never revert to the Memmy era"）——必须改回 `Memmy-era`，一个说反话的用例标题是给下一个读者的陷阱；②`.github/workflows/build-desktop.yml:137,151,183` 的 Actions artifact 标签 `memmy-windows-*` / `memmy-macos-*`（无仓库内消费者按名解析，惰性）；③`tests/package-version-guard.test.mjs:23,30` 的用例标题仍写 Memmy。
+
+> **另一条服务端依赖（已记）**：OSS 对象键 `.../memmy/$VERSION` 与更新清单必须按 Cuby 基名发布，否则客户端（已改对的名字）解析不到；本地对应物是 `main.ts:3217` 的兜底下载文件名。
+
 **Task 14 实现者列出的残留**：`scripts/run-win-local.cmd`（仍在启动 `Memmy.exe`）、DMG 卷标里的旧名、以及任何仍按旧名查找产物的本地脚本。
 
 **Task 13 审查追加的文案项**（同样逐条处理）：`App/frontend/desktop/src/i18n/messages.ts:534,2352` 的 `"重启 memmy-agent"`/`"Restart memmy-agent"`（`/restart` 命令面板项，**就在 Task 13 自己的文件里却因小写 `memmy-agent` 躲过了 `\bMemmy\b`**）；`App/backend/src/services/onboarding-first-report-memory-writer.ts:8-9`（与已改的 `messages.ts:430` 是**同一句话**，只是这里还没改）与 `:183-186`、`Memory/src/service/retrieval/retrieval-service.ts:1055-1056`（两处都在生成 "Memmy 初见报告" 这个记忆标题）；`settings-page.tsx:3438`；`onboarding-page.tsx:661,689`；`Memory/src/agent-source/integration/codex/target.ts:216,229,234-236`（Codex hook 的 `statusMessage`，会显示在 Codex 里）。
