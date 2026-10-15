@@ -746,6 +746,33 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).toContain('spawn("/bin/zsh", [helperPath, filePath, destinationAppPath, logPath, String(process.pid), options.openAfterInstall ? "1" : "0"');
   });
 
+  it("keeps the relay's legacy home on Memmy while its C-drive target stays on Cuby", () => {
+    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
+    const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
+
+    // The legacy variable names the pre-rename home: it is handed to the migration as
+    // -LegacyRuntimeHomePath and persisted as state.legacyRuntimeHomePath.
+    expect(relaySource).toContain(
+      "$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }"
+    );
+    expect(relaySource).toContain("'-LegacyRuntimeHomePath', $legacyRuntimeHomePath,");
+    expect(relaySource).toContain("legacyRuntimeHomePath = $legacyRuntimeHomePath");
+
+    // The C:\ install-drive branch is the target runtime home, so it must resolve to .cuby
+    // on its own instead of reusing the legacy variable.
+    const cDriveBranchStart = relaySource.indexOf("[string]::Equals($installDriveRoot, 'C:\\'");
+    expect(cDriveBranchStart).toBeGreaterThan(-1);
+    const cDriveBranch = relaySource.slice(
+      relaySource.indexOf("{", cDriveBranchStart),
+      relaySource.indexOf("} else {", cDriveBranchStart)
+    );
+    expect(cDriveBranch).toContain("Join-Path $env:USERPROFILE '.cuby'");
+    expect(cDriveBranch).not.toContain("$legacyRuntimeHomePath");
+
+    // The NSIS direct path keeps passing the old home on purpose.
+    expect(includeSource).toContain('-LegacyRuntimeHomePath $\\"$PROFILE\\.memmy$\\"');
+  });
+
   it("bridges electron-builder shortcut retention across relayed install-directory changes", () => {
     const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
     const installSectionSource = readFileSync(electronBuilderInstallSectionPath, "utf8");
