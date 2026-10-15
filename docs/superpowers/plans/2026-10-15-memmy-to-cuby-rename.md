@@ -477,6 +477,7 @@ git commit -m "refactor: rename the x-memmy-* protocol headers to x-cuby-*"
 - Modify: `Memory/src/agent-source/integration/templates/memmy-skill-directory.ts:3-4`
 - Modify: `App/backend/src/adapters/outbound/skill-writer/claude-code/target.ts`（hook 文件名、命令文件名、CLAUDE.md 标记）
 - Modify: `App/backend/src/adapters/outbound/skill-writer/**/target.ts`（cursor、codex、opencode、deepseek-harness、hermes、pi、qwenwork、workbuddy）
+- Modify: `Memory/src/agent-source/integration/**`（**24 个文件——这是 skill-writer 的第二份副本**，与 App/backend 那份是各自独立、内容不同的两套实现；漏掉它会让两条代码路径生成不同命名的产物）
 - Modify: `App/shell/desktop/src/main/main.ts:570-571,601,611-623`
 - Modify: `App/shell/desktop/src/main/windows-cli-path.ts:54-55`
 - Modify: `App/backend/src/infrastructure/cli-binary/index.ts:15`
@@ -1096,6 +1097,7 @@ git commit -m "feat(desktop): switch the user-facing copy to Cuby"
 - Modify: `scripts/internal/win/build-nsis.sh:127-128`
 - Modify: `.github/workflows/build-desktop.yml:147`
 - Modify: `.github/workflows/memory-release.yml:100`
+- Modify: `.github/workflows/github-draft-release-v2.yml`（`:393-396,428-429,699-706,900,907` —— 产物名、MD5/SHA 校验、发布说明里的下载链接、release 标题、上传 glob 全按 `Memmy-*` 写死；构建已改名 `Cuby-*`，不改则草稿发布找不到产物）
 - Test: `tests/release-workflow.test.ts`、`tests/package-version-guard.test.mjs`
 
 **Interfaces:**
@@ -1118,8 +1120,9 @@ Expected: FAIL。
 
 ```bash
 perl -pi -e 's/\bMemmy-/Cuby-/g' scripts/auto-release-mac.sh scripts/internal/win/build-nsis.sh
-perl -pi -e 's/\bMemmy-/Cuby-/g' .github/workflows/build-desktop.yml
+perl -pi -e 's/\bMemmy-/Cuby-/g' .github/workflows/build-desktop.yml .github/workflows/github-draft-release-v2.yml
 perl -pi -e 's/name: Memmy Memory/name: Cuby Memory/' .github/workflows/memory-release.yml
+perl -pi -e 's/--title "Memmy \$TAG"/--title "Cuby $TAG"/; s/drag Memmy to Applications/drag Cuby to Applications/; s/for a real Memmy release/for a real Cuby release/; s/scoring for Memmy/scoring for Cuby/; s/the 106 Memmy draft endpoint/the 106 Cuby draft endpoint/' .github/workflows/github-draft-release-v2.yml
 ```
 
 `build-nsis.sh:354` 的 `set "APP_EXEC=%APP_DIR%\Memmy.exe"` → `Cuby.exe`；`:358` 的报错文案同步。`auto-release-mac.sh:52` 的通知标题 `"Memmy Auto Release"` → `"Cuby Auto Release"`（`:20,189` 是本机 checkout 路径，属于个人环境，不改）。
