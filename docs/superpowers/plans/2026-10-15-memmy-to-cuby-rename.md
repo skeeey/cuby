@@ -798,7 +798,7 @@ python3 - <<'PY'
 import re, base64, os
 POSE = ["neutral","chat","think","celebrate","sleep","wave","read","shield",
         "brain","connect","hum","blush","sad","plead"]
-src = open('cuby.html', encoding='utf-8').read()
+src = open('docs/brand/cuby-mascot-spec.html', encoding='utf-8').read()
 imgs = re.findall(r'<img[^>]*src="data:image/png;base64,([^"]+)"', src, re.S)
 out = 'App/frontend/desktop/src/assets/mascot'
 assert len(imgs) == 23, f"expected 23 embedded PNGs, got {len(imgs)}"
