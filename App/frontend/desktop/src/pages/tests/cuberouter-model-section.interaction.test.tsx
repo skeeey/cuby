@@ -7,7 +7,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/i18n-provider.js";
 import { CUBEROUTER_KEY_SELECTION_STORAGE_KEY } from "../../state/cuberouter-key-selection.js";
-import { applyCuberouterSelection, createModelWorkspace } from "../../state/model-workspace.js";
+import { applyCuberouterSelection, createModelWorkspace, maskApiKey } from "../../state/model-workspace.js";
 import { CuberouterModelSection, toggleAgentModel } from "../cuberouter-model-section.js";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
@@ -46,6 +46,64 @@ function storedConfigWithEndpoint(): { catalog: ModelConfigView; configRevision:
     selection: { agent: { models: [] }, memorySummary: "", memoryEvolution: "" }
   });
   return { catalog: seeded.catalog, configRevision: "rev-1" };
+}
+
+/** Mirrors the catalog the local API answers a write with: what it stored, with keys masked. */
+function catalogFromSave(input: ModelConfigInput, previous: ModelConfigView): ModelConfigView {
+  const base = createModelWorkspace(null).catalog;
+  const providers = input.providers.map((provider) => {
+    const previousProvider = previous.providers.find((item) => item.provider === provider.provider);
+    const endpoints = provider.endpoints.map((endpoint) => {
+      // A write without a plaintext key keeps the stored one, so the mask carries over.
+      const plaintext = endpoint.apiKey?.trim() ?? "";
+      const previousEndpoint = previousProvider?.endpoints
+        .find((item) => item.endpointId === endpoint.endpointId);
+      const apiKeyMasked = plaintext ? maskApiKey(plaintext) : previousEndpoint?.apiKeyMasked ?? "";
+      return {
+        endpointId: endpoint.endpointId,
+        apiBase: endpoint.apiBase,
+        protocol: endpoint.protocol,
+        hasApiKey: Boolean(plaintext || apiKeyMasked),
+        apiKeyMasked,
+        apiKey: ""
+      };
+    });
+    const providerApiKeyMasked = provider.apiKey ? maskApiKey(provider.apiKey) : "";
+    return {
+      provider: provider.provider,
+      configured: endpoints.some((endpoint) => endpoint.hasApiKey),
+      hasApiKey: Boolean(providerApiKeyMasked) || endpoints.some((endpoint) => endpoint.hasApiKey),
+      apiKeyMasked: providerApiKeyMasked,
+      apiKey: "",
+      endpoints,
+      accountManaged: false,
+      editable: true,
+      models: provider.models.map((model) => ({
+        presetId: model.presetId ?? "",
+        provider: provider.provider,
+        endpointId: model.endpointId,
+        protocol: endpoints.find((item) => item.endpointId === model.endpointId)?.protocol
+          ?? "openai-chat-completions",
+        model: model.model,
+        source: model.source,
+        capabilities: [...model.capabilities],
+        available: true
+      }))
+    };
+  });
+  const presets = providers.flatMap((provider) => provider.models);
+  const effective = (ids: string[]) => presets.filter((preset) => ids.includes(preset.presetId));
+  return {
+    ...base,
+    configRevision: "rev-2",
+    providers,
+    modelAssignments: structuredClone(input.modelAssignments),
+    effectiveCandidates: {
+      byok: effective(input.modelAssignments.byok.agent.candidates),
+      account: effective(input.modelAssignments.account.agent.candidates)
+    },
+    configured: input.modelAssignments.byok.agent.candidates.length > 0
+  };
 }
 
 describe("cuberouter model section", () => {
@@ -160,8 +218,8 @@ describe("cuberouter model section", () => {
     let releaseSave: () => void = () => {};
     const { configClient } = await renderSection({
       storedConfig: storedConfigWithEndpoint(),
-      save: () => new Promise((resolve) => {
-        releaseSave = () => resolve({ catalog: createModelWorkspace(null).catalog, configRevision: "rev-2" });
+      save: (payload, previous) => new Promise((resolve) => {
+        releaseSave = () => resolve({ catalog: catalogFromSave(payload, previous), configRevision: "rev-2" });
       })
     });
 
@@ -209,27 +267,139 @@ describe("cuberouter model section", () => {
       .toEqual({ models: ["a", "b"], default: "a" });
   });
 
+  it("keeps the generic library behind an advanced fold, sharing the same save path", async () => {
+    const { configClient } = await renderSection();
+
+    await vi.waitFor(() => expect(advancedToggle()).toBeInstanceOf(HTMLButtonElement));
+    expect(advancedToggle().getAttribute("aria-expanded")).toBe("false");
+    expect(addConnectionButton()).toBeNull();
+
+    await act(async () => advancedToggle().click());
+
+    expect(advancedToggle().getAttribute("aria-expanded")).toBe("true");
+    expect(addConnectionButton()).toBeInstanceOf(HTMLButtonElement);
+    // 「高级」里的连接编辑与 key/分配共用同一份 workspace：一次保存带上整份目录。
+    await act(async () => addConnectionButton()!.click());
+    const dialog = container.querySelector<HTMLElement>('[role="dialog"]');
+    expect(dialog?.textContent).toContain("API 地址");
+    expect(configClient.saveModelCatalog).not.toHaveBeenCalled();
+
+    // The fold hands its own client down: 测试连接 must reach the real one, not a simulated pass.
+    const apiKeyField = dialog!.querySelector<HTMLInputElement>('input[type="password"]');
+    expect(apiKeyField).toBeInstanceOf(HTMLInputElement);
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
+        .call(apiKeyField, "sk-advanced");
+      apiKeyField!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => testConnectionButton(dialog!).click());
+    expect(configClient.testModelConfig).toHaveBeenCalledTimes(1);
+  });
+
+  it("retries once when the catalog changed under a save", async () => {
+    let attempts = 0;
+    const { configClient } = await renderSection({
+      save: async (payload, previous) => {
+        attempts += 1;
+        if (attempts === 1) {
+          throw Object.assign(new Error("changed"), { code: "model_config_changed" });
+        }
+        return { catalog: catalogFromSave(payload, previous), configRevision: "rev-2" };
+      }
+    });
+
+    await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
+    await act(async () => radio("cuby-desktop-alice").click());
+
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(2));
+    expect(attempts).toBe(2);
+    await awaitIdle();
+    expect(container.textContent)
+      .not.toContain("模型配置保存失败，请重试；如仍失败，请重启应用后再试。");
+  });
+
+  it("replays the draft from storage when a save fails, leaving nothing ahead of the catalog", async () => {
+    let refuseSave = false;
+    const { configClient } = await renderSection({
+      storedConfig: storedConfigWithEndpoint(),
+      save: async (payload, previous) => {
+        if (refuseSave) {
+          throw Object.assign(new Error("boom"), { code: "internal" });
+        }
+        return { catalog: catalogFromSave(payload, previous), configRevision: "rev-2" };
+      }
+    });
+
+    await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
+    await act(async () => radio("cuby-desktop-alice").click());
+    await awaitSave(configClient, 1);
+    await chooseRowModel(configClient, "记忆摘要", "deepseek-v4.1-flash", 2);
+    expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
+
+    refuseSave = true;
+    await chooseRowModel(configClient, "技能进化", "gpt-oss-120b", 3);
+
+    expect(container.textContent).toContain("模型配置保存失败，请重试；如仍失败，请重启应用后再试。");
+    // The refused pick is gone: the row is back on what the catalog still holds.
+    expect(assignmentCombobox("技能进化").textContent).toContain("未配置");
+    expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
+  });
+
+  it("saves an advanced connection edit through the panel and replays the draft from the new catalog", async () => {
+    const { configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
+
+    await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
+    await act(async () => radio("cuby-desktop-alice").click());
+    await awaitSave(configClient, 1);
+    await chooseRowModel(configClient, "记忆摘要", "deepseek-v4.1-flash", 2);
+    expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
+
+    await act(async () => advancedToggle().click());
+    await act(async () => editConnectionButton().click());
+    const dialog = container.querySelector<HTMLElement>('[role="dialog"]');
+    expect(dialog).not.toBeNull();
+    const endpointField = [...dialog!.querySelectorAll<HTMLInputElement>("input")]
+      .find((input) => input.value === CHOICES.apiBase);
+    expect(endpointField).toBeInstanceOf(HTMLInputElement);
+    act(() => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
+        .call(endpointField, "https://other.example/v1");
+      endpointField!.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    await act(async () => dialog!.querySelector<HTMLButtonElement>('button[aria-label="保存"]')!.click());
+    await awaitSave(configClient, 3);
+
+    // One save carried the whole catalog; the line moved, so the draft follows storage again.
+    const written = configClient.saveModelCatalog.mock.calls.at(-1)![0] as ModelConfigInput;
+    expect(written.providers[0]!.endpoints[0]!.apiBase).toBe("https://other.example/v1");
+    expect(assignmentCombobox("记忆摘要").textContent).toContain("未配置");
+  });
+
   type SectionConfigClient = Awaited<ReturnType<typeof renderSection>>["configClient"];
 
   async function renderSection(input: {
     choices?: () => Promise<CuberouterModelChoicesView>;
     reveal?: (tokenId: number) => Promise<{ key: string }>;
-    save?: (payload: unknown) => Promise<{ catalog: unknown; configRevision: string }>;
+    save?: (payload: ModelConfigInput, previous: ModelConfigView) => Promise<{ catalog: ModelConfigView; configRevision: string }>;
     storedConfig?: { catalog: ModelConfigView; configRevision: string };
   } = {}) {
+    // The local API answers a write with the catalog it stored, and the panel reads that answer
+    // back into its workspace: the fake has to keep what it was handed.
+    let stored = input.storedConfig?.catalog ?? createModelWorkspace(null).catalog;
     const accountClient = {
       getModelChoices: vi.fn(input.choices ?? (async () => CHOICES)),
       revealPersonalKey: vi.fn(input.reveal ?? (async () => ({ key: "sk-personal" })))
     };
     const configClient = {
-      getModelConfig: vi.fn(async () => input.storedConfig ?? ({
-        catalog: createModelWorkspace(null).catalog,
-        configRevision: "rev-1"
-      })),
-      saveModelCatalog: vi.fn(input.save ?? (async (_payload: unknown) => ({
-        catalog: createModelWorkspace(null).catalog,
-        configRevision: "rev-2"
-      }))),
+      getModelConfig: vi.fn(async () => ({ catalog: stored, configRevision: "rev-1" })),
+      saveModelCatalog: vi.fn(async (payload: ModelConfigInput) => {
+        // Only a resolved save is written back: a refused one leaves storage alone.
+        const answer = input.save
+          ? await input.save(payload, stored)
+          : { catalog: catalogFromSave(payload, stored), configRevision: "rev-2" };
+        stored = answer.catalog;
+        return answer;
+      }),
       testModelConfig: vi.fn(async () => ({ ok: true, message: "" }))
     };
     await act(async () => {
@@ -251,6 +421,42 @@ describe("cuberouter model section", () => {
     const target = container.querySelector<HTMLInputElement>(`input[type="radio"][aria-label="${name}"]`);
     if (!target) {
       throw new Error(`radio not found: ${name}`);
+    }
+    return target;
+  }
+
+  /** The panel's 「高级」 fold, which hides the generic connection library. */
+  function advancedToggle(): HTMLButtonElement {
+    const target = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => candidate.textContent?.trim() === "高级");
+    if (!target) {
+      throw new Error("advanced fold toggle not found");
+    }
+    return target;
+  }
+
+  /** The library's add-connection button; null while the fold keeps the library unmounted. */
+  function addConnectionButton(): HTMLButtonElement | null {
+    return [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => candidate.getAttribute("aria-label") === "添加配置") ?? null;
+  }
+
+  /** The library's per-connection edit button inside an open fold. */
+  function editConnectionButton(): HTMLButtonElement {
+    const target = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => /^编辑 .+ 配置$/.test(candidate.getAttribute("aria-label") ?? ""));
+    if (!target) {
+      throw new Error("edit connection button not found");
+    }
+    return target;
+  }
+
+  /** The connection editor's 测试连接 button. */
+  function testConnectionButton(dialog: HTMLElement): HTMLButtonElement {
+    const target = [...dialog.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => candidate.textContent?.trim() === "测试");
+    if (!target) {
+      throw new Error("connection test button not found");
     }
     return target;
   }

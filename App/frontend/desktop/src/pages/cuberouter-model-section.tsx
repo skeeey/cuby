@@ -1,6 +1,6 @@
 /** cuberouter model configuration section module. */
-import { RefreshCw } from "lucide-react";
-import { useCallback, useEffect, useState } from "react";
+import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { CuberouterKeyOption, CuberouterModelChoicesView } from "@memmy/local-api-contracts";
 import type { AccountClient } from "../api/account-client.js";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
@@ -22,6 +22,8 @@ import {
   writeCuberouterKeySelection
 } from "../state/cuberouter-key-selection.js";
 import { ModelAssignmentSection } from "./model-assignment-section.js";
+import { ModelLibrarySection } from "./model-library-section.js";
+import type { StoredConnectionTestState } from "./model-workspace-connection-test-state.js";
 
 const PROTOCOL = "openai-chat-completions" as const;
 
@@ -44,6 +46,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   const [pendingKeyId, setPendingKeyId] = useState<string | null>(null);
   const [savePending, setSavePending] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [testStates, setTestStates] = useState<Record<string, StoredConnectionTestState>>({});
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  /** Guards the single save path before a render could re-disable its controls. */
+  const saveInFlightRef = useRef(false);
 
   const loadChoices = useCallback(() => {
     const client = props.accountClient;
@@ -67,9 +73,23 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     ? choices.keys.find((key) => key.scope === record.scope && key.id === record.id && key.usable) ?? null
     : null;
 
-  /** Saves one mutation built from the current draft, refreshing the workspace on success. */
-  async function commit(mutate: (current: ModelWorkspace, apiBase: string) => ModelWorkspace): Promise<boolean> {
-    if (!props.configClient || !choices) return false;
+  /** Replays the draft from one workspace: storage is the only truth for which models this line holds. */
+  function reseedSelection(from: ModelWorkspace): void {
+    if (!choices) return;
+    setSelection(readCuberouterSelection(from.catalog, choices.apiBase));
+  }
+
+  /**
+   * Saves one mutation built from the current draft — the panel's single save path: the key card,
+   * the assignment rows and the advanced library all land here, sharing one in-flight guard, one
+   * error surface and one conflict retry. Resolves with the saved workspace, null when refused or
+   * failed.
+   */
+  async function commit(
+    mutate: (current: ModelWorkspace, apiBase: string) => ModelWorkspace
+  ): Promise<ModelWorkspace | null> {
+    if (!props.configClient || !choices || saveInFlightRef.current) return null;
+    saveInFlightRef.current = true;
     setSavePending(true);
     setSaveError(null);
     try {
@@ -77,15 +97,35 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
         configClient: props.configClient,
         mutate: (current) => mutate(current, choices.apiBase)
       });
-      setWorkspace(createModelWorkspace(saved));
+      const savedWorkspace = createModelWorkspace(saved);
+      setWorkspace(savedWorkspace);
+      // The catalog is authoritative: replay the draft, so an edit (a new apiBase, a deleted
+      // connection, a pruned model) never leaves the draft naming models storage does not hold.
+      reseedSelection(savedWorkspace);
       props.onConfigSaved?.(saved);
-      return true;
+      return savedWorkspace;
     } catch {
       setSaveError(t("settings.modelWorkspace.saveFailed"));
-      return false;
+      // A failed save leaves storage untouched: put the draft back onto the catalog we still hold.
+      reseedSelection(workspace);
+      return null;
     } finally {
+      saveInFlightRef.current = false;
       setSavePending(false);
     }
+  }
+
+  /**
+   * Takes the whole next workspace from the advanced library (it hands over a workspace, not a
+   * mutation) and reports whether the panel accepted it: false while a save is in flight, which
+   * tells the library to skip the state changes that commit would have carried.
+   */
+  function commitWorkspace(next: ModelWorkspace, onSaved?: (saved: ModelWorkspace) => void): boolean {
+    if (!props.configClient || !choices || saveInFlightRef.current) return false;
+    void commit(() => next).then((saved) => {
+      if (saved) onSaved?.(saved);
+    });
+    return true;
   }
 
   /** Applies one key: personal keys are revealed on demand, organization ones ship their secret. */
@@ -95,14 +135,14 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setPendingKeyId(id);
     try {
       const plaintext = key.secret ?? (await props.accountClient!.revealPersonalKey(key.id)).key;
-      const committed = await commit((current, apiBase) => applyCuberouterSelection(current, {
+      const saved = await commit((current, apiBase) => applyCuberouterSelection(current, {
         apiBase,
         protocol: PROTOCOL,
         apiKey: plaintext,
         selection
       }));
       // The record names the key the catalog actually holds: a failed save must not claim it.
-      if (committed) {
+      if (saved) {
         writeCuberouterKeySelection(
           { username: props.username!, scope: key.scope, id: key.id, name: key.name },
           cuberouterKeySelectionStorage()
@@ -253,7 +293,32 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
           </div>
         </>
       )}
-      {/* Task 12 再加「高级」折叠。 */}
+      {/* The generic connection library, folded away: a cuberouter user can still add an endpoint. */}
+      <section className="mt-8">
+        <button
+          type="button"
+          aria-expanded={advancedOpen}
+          onClick={() => setAdvancedOpen((open) => !open)}
+          className="inline-flex items-center gap-1 text-xs text-text-ink/50"
+        >
+          {t("settings.cuberouterModel.advanced")}
+          {advancedOpen ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}
+        </button>
+        {advancedOpen && (
+          <ModelLibrarySection
+            mode="byok"
+            workspace={workspace}
+            space={workspace.spaces.byok}
+            commitWorkspace={commitWorkspace}
+            savePending={savePending}
+            saveError={saveError}
+            testStates={testStates}
+            setTestStates={setTestStates}
+            configClient={props.configClient}
+            setSaveError={setSaveError}
+          />
+        )}
+      </section>
     </div>
   );
 }
