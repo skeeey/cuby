@@ -50,6 +50,9 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   const [advancedOpen, setAdvancedOpen] = useState(false);
   /** Guards the single save path before a render could re-disable its controls. */
   const saveInFlightRef = useRef(false);
+  // A key action starts before its save: revealing a personal key is an await of its own, and
+  // nothing else may commit while that reveal (or the save behind it) is still running.
+  const busy = savePending || pendingKeyId !== null;
 
   const loadChoices = useCallback(() => {
     const client = props.accountClient;
@@ -284,7 +287,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
             onRowChange={(kind, value) => updateSelection(
               kind === "memorySummary" ? { memorySummary: value } : { memoryEvolution: value }
             )}
-            disabled={savePending}
+            disabled={busy}
           />
           {/* Read-only: the local embedding model stays memmy's built-in default. */}
           <div className="flex items-center justify-between gap-4 px-3.5 py-2.5">
@@ -310,7 +313,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
             workspace={workspace}
             space={workspace.spaces.byok}
             commitWorkspace={commitWorkspace}
-            savePending={savePending}
+            savePending={busy}
             saveError={saveError}
             testStates={testStates}
             setTestStates={setTestStates}

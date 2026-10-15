@@ -235,6 +235,40 @@ describe("cuberouter model section", () => {
     expect(pickerToggle().disabled).toBe(false);
   });
 
+  it("keeps the assignment rows and the fold closed while a key reveal is still in flight", async () => {
+    let revealKey: () => void = () => {};
+    const { configClient } = await renderSection({
+      choices: async () => ({
+        ...CHOICES,
+        keys: [{ ...CHOICES.keys[1]!, status: 1, usable: true }]
+      }),
+      reveal: () => new Promise((resolve) => {
+        revealKey = () => resolve({ key: "sk-personal" });
+      })
+    });
+
+    await vi.waitFor(() => expect(radio("my-own-key").disabled).toBe(false));
+    await act(async () => advancedToggle().click());
+    act(() => radio("my-own-key").click());
+
+    // The key's save has not started yet — its plaintext is still being revealed — but every
+    // other control waits for the whole key action, so no second save can slip into that window.
+    expect(configClient.saveModelCatalog).not.toHaveBeenCalled();
+    expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
+    expect(assignmentCombobox("技能进化").disabled).toBe(true);
+    expect(pickerToggle().disabled).toBe(true);
+    expect(addConnectionButton()!.disabled).toBe(true);
+
+    await act(async () => revealKey());
+
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    await vi.waitFor(() => expect(
+      window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)
+    ).toContain("my-own-key"));
+    await awaitIdle();
+    expect(assignmentCombobox("记忆摘要").disabled).toBe(false);
+  });
+
   it("shows the built-in local embedding row without offering other choices", async () => {
     await renderSection();
 
