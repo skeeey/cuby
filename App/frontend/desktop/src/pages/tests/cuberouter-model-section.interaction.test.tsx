@@ -194,6 +194,31 @@ describe("cuberouter model section", () => {
     await vi.waitFor(() => expect(accountClient.getModelChoices).toHaveBeenCalledTimes(2));
   });
 
+  it("keeps the record and the retry entry when the refresh save fails", async () => {
+    // A refused save writes nothing, so nothing may be claimed: the record has to survive, or
+    // the entry's own gate (`record && !selectedKey`) removes the only way to try again.
+    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
+    }));
+    const { accountClient, configClient } = await renderSection({
+      storedConfig: storedConfigWithEndpoint(),
+      save: async () => {
+        throw Object.assign(new Error("boom"), { code: "internal" });
+      }
+    });
+
+    await vi.waitFor(() => expect(refreshKeysButton()).toBeInstanceOf(HTMLButtonElement));
+    await act(async () => refreshKeysButton().click());
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+
+    await vi.waitFor(() => expect(
+      window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)
+    ).toContain("gone"));
+    expect(refreshKeysButton()).toBeInstanceOf(HTMLButtonElement);
+    // The list is not re-read either: the catalog never took the new key.
+    expect(accountClient.getModelChoices).toHaveBeenCalledTimes(1);
+  });
+
   it("shows a retry state when the choices request fails", async () => {
     const { accountClient } = await renderSection({
       choices: async () => {

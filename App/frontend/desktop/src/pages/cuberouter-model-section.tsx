@@ -172,12 +172,15 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
         memoryEvolution: provisioning.model
       };
       setSelection(fresh);
-      await commit((current) => applyCuberouterSelection(current, {
+      const saved = await commit((current) => applyCuberouterSelection(current, {
         apiBase: provisioning.apiBase,
         protocol: PROTOCOL,
         apiKey: provisioning.apiKey,
         selection: fresh
       }));
+      // A refused or failed save wrote nothing, so nothing may be claimed: the record stays (and
+      // with it the entry) for a retry, and the list keeps describing what the catalog holds.
+      if (!saved) return;
       // 刚写进去的这把 key 没有列表身份，记录清掉；面板重新拉列表后用户可再选。
       clearCuberouterKeySelection(props.username, cuberouterKeySelectionStorage());
       loadChoices();
