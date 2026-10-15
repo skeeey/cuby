@@ -216,7 +216,7 @@ git commit -m "fix(desktop): point the installer and upgrade paths at Cuby"
 
 **Files:**
 - Modify: `App/shell/desktop/src/main/windows-launch-at-login.ts:54`
-- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:38,46,58-59,335,376,397,472`（`:38` 是 `%APPDATA%\Memmy` 用户数据目录名，`:376`/`:472` 是它的两处比较基准；`:46` 是安装盘 `MemmyData`，`:335`/`:397` 是它的派生路径）
+- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:38,46,58-59,335,397`（`:38` 是 `%APPDATA%\Memmy` 用户数据目录名，`:46` 是安装盘 `MemmyData` 容器，`:335`/`:397` 是它的派生路径）
 - Test: `App/shell/desktop/tests/windows-launch-at-login.test.ts`
 - Test: `App/shell/desktop/tests/windows-data-layout.test.ts:32,43-44`
 - Test: `App/shell/desktop/tests/windows-standard-upgrade-check.test.ts:58`
@@ -252,7 +252,11 @@ Expected: FAIL。
 
 同文件 `:46` 的安装盘数据目录名 `"MemmyData"` → `"CubyData"`（`:335`、`:397` 两处派生路径里的 `MemmyData` 与 `.memmy` 随之变为 `CubyData` 与 `.cuby`）。
 
-同文件 `:38` 的 `%APPDATA%` 用户数据目录名 `"Memmy"` → `"Cuby"`，`:376`、`:472` 两处比较基准同步（它们判断某个路径是不是本应用的账号副本，改一半会让判断失效）。对应测试 `windows-data-migration-state.test.ts:221` 的 fixture 同步改为 `join(root, "AppData", "Roaming", "Cuby")`。
+同文件 `:38` 的 `%APPDATA%` 用户数据目录名 `"Memmy"` → `"Cuby"`（这是新应用自己的数据目录，必须与 `app.setName("Cuby")` 决定的 Electron userData 一致）。
+
+> **`:376` 与 `:472` 不要动。** 那两处的 `"Memmy"` 是 `state.preparedCopies` 里的 **`SourcePath` 比较基准**——它们校验的是"这次迁移的源，是不是旧安装的账号目录"。源就是旧的 memmy 安装，所以必须留 `Memmy`，与 PS1 侧保持一致（`CubyWindowsDataMigration.ps1:504,1182,1372`、`CubyWindowsUpgradeRelay.ps1:431,494`、`CubyWindowsUpgradeRecovery.ps1:166`、`.nsh:791,866` 保留的都是源路径）。把它们改成 `Cuby` 会让 TS 校验器拒绝 PS1 写出的迁移状态，迁移直接失败。
+
+对应测试 `windows-data-migration-state.test.ts:221` 的 fixture 改法是**只改目标**：`userDataPath: join(root, "AppData", "Roaming", "Cuby")`，而 `SourcePath` 那侧的 `data\Memmy` 保持不变。
 
 - [ ] **Step 4: 运行测试**
 
@@ -1198,6 +1202,13 @@ wc -l /tmp/cuby-leftovers.txt
 - [ ] **Step 3: 更新仍描述旧名的注释与清理工具**
 
 已知几处注释：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。同时把 `runtime-services.ts:2415` 那条注释里的端口号更新为新值。
+
+另有几处**功能性**的漏网（Task 1B 审查发现，前一处 Task 1B 已改文件但未改到）：
+
+- `scripts/internal/mac/build-dmg.sh:163` 的 `APP_EXEC="$MACOS_DIR/Memmy"` → `Cuby`。它现在靠下面 `:166-173` 的"取唯一可执行文件"兜底仍能工作，所以不报错——但 `packaged-runtime-boundary.test.ts:2727` 断言了这个字面量，**脚本与测试必须同批改**，否则要么测试挂、要么 DMG 冒烟只在兜底路径下通过。
+- `App/shell/desktop/src/main/main.ts:3217` 的兜底下载文件名 `Memmy-${version}-…` → `Cuby-…`（仅在更新 URL 的 basename 不可用时使用，但会写进用户磁盘）。
+
+其余纯注释/用例标题的残留（`installer-win-unsigned.nsh:22,37,659` 的旧路径与话术、`packaged-runtime-boundary.test.ts:2724` 的用例标题）由 Step 2 的白名单扫描一并列出。
 
 清理工具单独处理——`scripts/clear-data.sh`、`scripts/clear-all.sh`、`scripts/clear-all-windows.ps1`、`scripts/clear-win-app-data.cmd` 目前只认 `Memmy` 的进程名、安装路径与数据家目录。它们要**同时覆盖两套**（Cuby 与 Memmy），而不是把 Memmy 换成 Cuby：这些脚本的用处之一正是清掉旧安装。具体做法是在各文件的进程名匹配、安装路径探测与数据家目录枚举处**各加一组 Cuby 条目**，保留原有 Memmy 条目；`clear-all-windows.ps1` 的 `-AdditionalMemmyHome` 参数及其"目录名须以 Memmy 或 .memmy 开头"的校验放宽为同时接受 Cuby / .cuby。
 
