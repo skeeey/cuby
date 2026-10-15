@@ -234,7 +234,7 @@ export function AccountAuthPanel() {
           },
           defaultModel: result.provisioning.model,
           // Only a provision carries the instance's model list; a reuse never asked for it, so the
-          // seeding behind it treats the list as unknown and writes no model.
+          // list reads as unknown and the seeding falls back to the build-time default model.
           availableModels: decision.action === "provision" ? decision.availableModels : null
         });
         const storage = cuberouterKeySelectionStorage();

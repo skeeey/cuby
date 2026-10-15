@@ -494,8 +494,9 @@ describe("resolveCuberouterLoginKey", () => {
   });
 
   it("provisions when the instance cannot be asked and nothing is written", async () => {
-    // The list is unknown on this path, and an unknown list seeds nothing: the decision says so
-    // with `availableModels: null` rather than leaving the seeding to guess.
+    // The list is unknown on this path: the decision says so with `availableModels: null` rather
+    // than leaving the seeding to guess, and an unknown list seeds the build-time default model
+    // (a connection cannot be written without one).
     await expect(resolveCuberouterLoginKey({
       apiBase: "https://cn.example/v1",
       catalog: createModelWorkspace(null).catalog,
