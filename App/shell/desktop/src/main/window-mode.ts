@@ -1,7 +1,7 @@
 export type DesktopWindowMode = "full" | "pet";
 
 export const PACKAGED_RENDERER_HOST = "127.0.0.1";
-export const PACKAGED_RENDERER_DEFAULT_PORT = 19100;
+export const PACKAGED_RENDERER_DEFAULT_PORT = 29100;
 
 export interface BootWindowModeInput {
   defaultLaunchMode: "full" | "pet" | "last";

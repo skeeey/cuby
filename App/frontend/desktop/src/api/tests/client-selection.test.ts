@@ -5,7 +5,7 @@ import { createAppClients } from "../client-types.js";
 const runtimeConfig: RuntimeConfig = {
   baseUrl: "http://127.0.0.1:18100",
   localToken: "token",
-  memory: { baseUrl: "http://127.0.0.1:18960" }
+  memory: { baseUrl: "http://127.0.0.1:28960" }
 };
 
 afterEach(() => {
@@ -18,7 +18,7 @@ describe("frontend API client selection", () => {
 
     const clients = createAppClients({ runtimeConfig });
     expect("isMock" in clients).toBe(false);
-    expect(clients.runtimeConfig.memory?.baseUrl).toBe("http://127.0.0.1:18960");
+    expect(clients.runtimeConfig.memory?.baseUrl).toBe("http://127.0.0.1:28960");
   });
 
   it("真实模式 integrations 首调失败时不再降级 mock", async () => {

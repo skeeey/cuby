@@ -165,7 +165,7 @@ function memoryServiceEndpoint(config: Config): MemoryServiceEndpoint {
   return {
     baseUrl: typeof storage.endpoint === "string" && storage.endpoint.trim()
       ? storage.endpoint.trim()
-      : "http://127.0.0.1:18960",
+      : "http://127.0.0.1:28960",
     token: typeof storage.token === "string" && storage.token.trim()
       ? storage.token.trim()
       : null,
@@ -287,7 +287,7 @@ export async function prepareLinuxGatewayConfig(
 
     websocket.enabled = true;
     websocket.host ??= "127.0.0.1";
-    websocket.port ??= 18980;
+    websocket.port ??= 28980;
     websocket.tokenTtlS ??= 86_400;
     websocket.websocketRequiresToken ??= true;
     websocket.allowFrom ??= ["*"];
@@ -300,7 +300,7 @@ export async function prepareLinuxGatewayConfig(
 
     gateway.enabled = true;
     gateway.host ??= "127.0.0.1";
-    gateway.port ??= 18970;
+    gateway.port ??= 28970;
 
     channels.websocket = websocket;
     root.channels = channels;

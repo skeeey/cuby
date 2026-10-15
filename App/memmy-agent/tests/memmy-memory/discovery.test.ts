@@ -81,7 +81,7 @@ describe("memmy memory discovery", () => {
       memmyMemory: {
         enabled: true,
         version: 1,
-        storage: { endpoint: "http://127.0.0.1:18960", token: "service-token" },
+        storage: { endpoint: "http://127.0.0.1:28960", token: "service-token" },
         retrievalLayers: ["L1", "L3", "L1"],
       },
     });
@@ -100,7 +100,7 @@ describe("memmy memory discovery", () => {
       enabled: true,
       userId: "user_config_1",
       version: 1,
-      storage: { endpoint: "http://127.0.0.1:18960", token: "service-token" },
+      storage: { endpoint: "http://127.0.0.1:28960", token: "service-token" },
       retrievalLayers: ["L1", "L3"],
     });
     expect(enabled.toObject().app).toEqual({

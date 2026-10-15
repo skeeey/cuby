@@ -16,7 +16,7 @@ CUBY_WORKSPACE_DIR="${CUBY_WORKSPACE:-$HOME/.cuby/workspace}"
 CUBY_APP_DATABASE_FILE="${CUBY_APP_DATABASE:-}"
 CUBY_BIN_DIR="$HOME/.local/bin"
 CUBY_MEMORY_BIND_HOST="${CUBY_MEMORY_HOST:-${MEMORY_SERVICE_HOST:-127.0.0.1}}"
-CUBY_MEMORY_PORT_VALUE="${CUBY_MEMORY_PORT:-${MEMORY_SERVICE_PORT:-18960}}"
+CUBY_MEMORY_PORT_VALUE="${CUBY_MEMORY_PORT:-${MEMORY_SERVICE_PORT:-28960}}"
 CUBY_MEMORY_CLIENT_HOST="$CUBY_MEMORY_BIND_HOST"
 if [[ "$CUBY_MEMORY_CLIENT_HOST" == "0.0.0.0" || "$CUBY_MEMORY_CLIENT_HOST" == "::" ]]; then
   CUBY_MEMORY_CLIENT_HOST="127.0.0.1"
@@ -451,11 +451,11 @@ stop_existing_stack() {
   pids="$(
     {
       lsof -tiTCP:19000 -sTCP:LISTEN || true
-      lsof -tiTCP:18960 -sTCP:LISTEN || true
+      lsof -tiTCP:28960 -sTCP:LISTEN || true
       lsof -tiTCP:"$CUBY_MEMORY_PORT_VALUE" -sTCP:LISTEN || true
-      lsof -tiTCP:18970 -sTCP:LISTEN || true
-      lsof -tiTCP:18980 -sTCP:LISTEN || true
-      lsof -tiTCP:18990 -sTCP:LISTEN || true
+      lsof -tiTCP:28970 -sTCP:LISTEN || true
+      lsof -tiTCP:28980 -sTCP:LISTEN || true
+      lsof -tiTCP:28990 -sTCP:LISTEN || true
       lsof -tiTCP:18997 -sTCP:LISTEN || true
       lsof -tiTCP:18999 -sTCP:LISTEN || true
       pgrep -f "electron dist/main/main.js" || true
@@ -488,11 +488,11 @@ stop_existing_stack() {
   still_running="$(
     {
       lsof -tiTCP:19000 -sTCP:LISTEN || true
-      lsof -tiTCP:18960 -sTCP:LISTEN || true
+      lsof -tiTCP:28960 -sTCP:LISTEN || true
       lsof -tiTCP:"$CUBY_MEMORY_PORT_VALUE" -sTCP:LISTEN || true
-      lsof -tiTCP:18970 -sTCP:LISTEN || true
-      lsof -tiTCP:18980 -sTCP:LISTEN || true
-      lsof -tiTCP:18990 -sTCP:LISTEN || true
+      lsof -tiTCP:28970 -sTCP:LISTEN || true
+      lsof -tiTCP:28980 -sTCP:LISTEN || true
+      lsof -tiTCP:28990 -sTCP:LISTEN || true
       lsof -tiTCP:18997 -sTCP:LISTEN || true
       lsof -tiTCP:18999 -sTCP:LISTEN || true
     } 2>/dev/null | sort -u

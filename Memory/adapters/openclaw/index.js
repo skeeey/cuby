@@ -1,4 +1,4 @@
-const ENDPOINT = (process.env.CUBY_MEMORY_URL || "http://127.0.0.1:18960").replace(/\/$/, "");
+const ENDPOINT = (process.env.CUBY_MEMORY_URL || "http://127.0.0.1:28960").replace(/\/$/, "");
 const sessions = new Map();
 const turns = new Map();
 

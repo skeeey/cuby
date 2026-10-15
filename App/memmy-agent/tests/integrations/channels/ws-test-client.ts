@@ -213,7 +213,7 @@ export class WsTestClient {
 
 export async function issueToken(
   host = "127.0.0.1",
-  port = 18980,
+  port = 28980,
   issuePath = "/auth/token",
   secret = "",
 ): Promise<[WsRawMessage | null, number]> {
@@ -234,7 +234,7 @@ export async function issueToken(
 
 export async function issueTokenOk(
   host = "127.0.0.1",
-  port = 18980,
+  port = 28980,
   issuePath = "/auth/token",
   secret = "",
 ): Promise<string> {

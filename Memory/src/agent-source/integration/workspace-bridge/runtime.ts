@@ -34,7 +34,7 @@ import {
   type L3WorldModelRequestEnvelope,
 } from "../../../contracts/index.js";
 
-const DEFAULT_ENDPOINT = "http://127.0.0.1:18960";
+const DEFAULT_ENDPOINT = "http://127.0.0.1:28960";
 
 export interface RuntimeConfig {
   endpoint: string;

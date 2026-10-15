@@ -142,7 +142,7 @@ export function isAgentGoalState(value: unknown): value is AgentGoalState {
   return AgentGoalStateSchema.safeParse(value).success;
 }
 
-export const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:18980";
+export const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:28980";
 const WEBUI_TOKEN_REFRESH_SKEW_MS = 30_000;
 
 const ModelSelectionWireSchema = z.object({

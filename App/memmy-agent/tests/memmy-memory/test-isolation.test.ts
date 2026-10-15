@@ -21,17 +21,17 @@ describe("default test Memory connection", () => {
     writeFileSync(configPath, [
       "memmyMemory:",
       "  storage:",
-      "    endpoint: http://127.0.0.1:18960",
+      "    endpoint: http://127.0.0.1:28960",
       "    token: fixture-user-config-token",
     ].join("\n"));
     const connection = discoverMemmyMemoryConnection({
       homeDir: root,
       env: {
         ...(source === "process environment" ? {
-          CUBY_MEMORY_URL: "http://127.0.0.1:18960",
+          CUBY_MEMORY_URL: "http://127.0.0.1:28960",
           CUBY_MEMORY_TOKEN: "fixture-user-environment-token",
         } : source === "legacy environment aliases" ? {
-          MEMORY_SERVICE_URL: "http://127.0.0.1:18960",
+          MEMORY_SERVICE_URL: "http://127.0.0.1:28960",
           MEMORY_SERVICE_TOKEN: "fixture-user-environment-token",
         } : {}),
         ...vitestConfig.test?.env,

@@ -764,7 +764,7 @@ async function createMemmyClient() {
     normalizeText(localConfig.memmy_config_path) ||
     DEFAULT_MEMMY_CONFIG_PATH;
   const resolved = await readMemmyConfig(memmyConfigPath).catch(() => ({}));
-  const baseUrl = normalizeText(resolved.endpoint || localConfig.endpoint || "http://127.0.0.1:18960").replace(/\/+$/u, "");
+  const baseUrl = normalizeText(resolved.endpoint || localConfig.endpoint || "http://127.0.0.1:28960").replace(/\/+$/u, "");
   const token = normalizeText(resolved.token || localConfig.token);
   if (!baseUrl) {
     throw new Error("Invalid Memmy config at " + memmyConfigPath);

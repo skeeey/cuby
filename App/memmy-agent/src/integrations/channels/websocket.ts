@@ -571,7 +571,7 @@ export function httpError(status: number, message?: string): HttpLikeResponse {
 export class WebSocketConfig {
   enabled = false;
   host = "127.0.0.1";
-  port = 18980;
+  port = 28980;
   path = "/";
   token = "";
   tokenIssuePath = "";

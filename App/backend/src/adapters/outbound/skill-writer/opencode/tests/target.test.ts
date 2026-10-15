@@ -241,7 +241,7 @@ describe("opencode skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -311,7 +311,7 @@ describe("opencode skill target", () => {
       expect(commandParts[0]?.text).toContain("1. episode-1");
       expect(requests.find((request) => request.path === "/api/v1/memory/search")?.body.query).toBe("测试 query");
       expect(requests.find((request) => request.path === "/api/v1/memory/search")?.origin).toBe(
-        "http://127.0.0.1:18960"
+        "http://127.0.0.1:28960"
       );
 
       const selectionParts: PluginPart[] = [{

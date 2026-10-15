@@ -137,7 +137,7 @@ export async function installMemoryRuntime(options: MemoryRuntimeInstallOptions 
     if (!options.skipHealthCheck) {
       try {
         await waitForRuntimeHealth(
-          options.endpoint ?? "http://127.0.0.1:18960",
+          options.endpoint ?? "http://127.0.0.1:28960",
           manifest.version,
           healthCheckTimeoutMs
         );
@@ -406,7 +406,7 @@ async function reuseInstalledRuntime(
     else if (repairLegacyTask) tryRepairLegacyWindowsTaskRegistration(home, serviceHome);
     if (!options.skipHealthCheck) {
       await waitForRuntimeHealth(
-        options.endpoint ?? "http://127.0.0.1:18960",
+        options.endpoint ?? "http://127.0.0.1:28960",
         pointer.version,
         healthCheckTimeoutMs
       );

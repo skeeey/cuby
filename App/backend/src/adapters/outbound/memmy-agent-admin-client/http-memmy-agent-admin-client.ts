@@ -7,7 +7,7 @@ import {
 import { z } from "zod";
 import type { MemmyAgentAdminClient } from "./index.js";
 
-export const DEFAULT_MEMMY_AGENT_ADMIN_BASE_URL = "http://127.0.0.1:18980";
+export const DEFAULT_MEMMY_AGENT_ADMIN_BASE_URL = "http://127.0.0.1:28980";
 
 const BootstrapSchema = z.object({
   token: z.string().min(1)

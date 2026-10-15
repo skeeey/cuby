@@ -49,9 +49,9 @@ it("restarts persistent Memory repeatedly after Desktop exits and reopens", asyn
     memoryToken: "",
     memoryListenHost: "127.0.0.1",
     memoryListenPort: port,
-    agentGatewayBaseUrl: "http://127.0.0.1:18980",
+    agentGatewayBaseUrl: "http://127.0.0.1:28980",
     agentGatewayHealthHost: "127.0.0.1",
-    agentGatewayHealthPort: 18970,
+    agentGatewayHealthPort: 28970,
     agentGatewayBootstrapSecret: "test-secret",
   };
   const entries = { memoryEntry: entry, agentEntry: join(root, "unused-agent.js") };

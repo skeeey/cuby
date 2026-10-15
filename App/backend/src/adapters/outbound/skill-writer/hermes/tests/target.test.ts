@@ -264,7 +264,7 @@ describe("hermes skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -391,7 +391,7 @@ print(json.dumps({"calls": calls, "runtime": runtime, "text": text, "selection":
       selection?: { context?: string };
       text: string;
     };
-    expect(output.runtime.baseUrl).toBe("http://127.0.0.1:18960");
+    expect(output.runtime.baseUrl).toBe("http://127.0.0.1:28960");
     expect(output.text).toContain("测试query");
     expect(output.text).toContain('Memmy resume candidates for "测试query" (top 5 episodes from L1 top20):');
     expect(output.text).not.toContain(". score ");

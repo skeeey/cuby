@@ -1027,7 +1027,7 @@ export class HeartbeatConfig extends Base {
 
 export class ApiConfig extends Base {
   host = "127.0.0.1";
-  port = 18990;
+  port = 28990;
   timeout = 120;
   apiKey: string | null = null;
 
@@ -1052,7 +1052,7 @@ export class ApiConfig extends Base {
 export class GatewayConfig extends Base {
   enabled = false;
   host = "127.0.0.1";
-  port = 18970;
+  port = 28970;
   heartbeat: HeartbeatConfig;
 
   constructor(init: Dict = {}) {

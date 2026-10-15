@@ -61,7 +61,7 @@ async function runMemoryService(argv: string[], lifecycle: {
     const port = options.port ??
         numberEnv("CUBY_MEMORY_PORT") ??
         numberEnv("MEMORY_SERVICE_PORT") ??
-        18960;
+        28960;
     const sqlitePath = options.dbPath ?? config.storage.sqlitePath;
     const serviceHome = resolve(dirname(configPath), "memory-service");
     logger.info("service.starting", {
@@ -165,7 +165,7 @@ Options:
   --db <path>           SQLite database path
   --sqlite-path <path>  Alias for --db
   --host <host>         Loopback listen address (default: 127.0.0.1)
-  --port <port>         Listen port (default: 18960)
+  --port <port>         Listen port (default: 28960)
   -h, --help            Show this help message
   --version             Show the service version
 `;

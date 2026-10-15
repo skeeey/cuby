@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { defineConfig, loadEnv, type Plugin } from "vite";
 
-const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:18980";
+const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:28980";
 const RUNTIME_CONFIG_ENDPOINT = "/__memmy_runtime_config";
 const LOCAL_API_CONTRACTS_SOURCE = fileURLToPath(new URL("../../backend/local-api-contracts/src/index.ts", import.meta.url));
 const LEGAL_BASE_URL_ENV_KEYS = ["CUBY_LEGAL_CN_BASE_URL", "CUBY_LEGAL_INTL_BASE_URL"] as const;

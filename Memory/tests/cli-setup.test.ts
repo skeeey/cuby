@@ -203,7 +203,7 @@ describe("memmy-memory CLI setup commands", () => {
     expect(output).toContain("Configuration saved successfully!");
     expect(output).toContain(`Config file: ${join(root, "config.yaml")}`);
     expect(output).toContain(`Database config: ${join(root, "memory.sqlite")}`);
-    expect(output).toContain("Endpoint: http://127.0.0.1:18960");
+    expect(output).toContain("Endpoint: http://127.0.0.1:28960");
     expect(output).toContain("Target agents: codex, cursor, claude, opencode, openclaw, hermes");
     expect(output).toContain("Shell completion: Skipped (disabled during init)");
     expect(output).toContain("Try running: memmy-memory health");

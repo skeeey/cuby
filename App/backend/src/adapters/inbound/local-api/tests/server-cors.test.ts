@@ -20,12 +20,12 @@ describe("local api cors", () => {
       method: "GET",
       url: "/api/health",
       headers: {
-        origin: "http://127.0.0.1:19100"
+        origin: "http://127.0.0.1:29100"
       }
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.headers["access-control-allow-origin"]).toBe("http://127.0.0.1:19100");
+    expect(response.headers["access-control-allow-origin"]).toBe("http://127.0.0.1:29100");
     expect(response.headers.vary).toBe("Origin");
   });
 });

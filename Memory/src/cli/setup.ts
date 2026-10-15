@@ -247,7 +247,7 @@ function setupPaths(options: MemoryCliSetupOptions): {
     )),
     endpoint: options.endpoint
       ?? optionalString(storage.endpoint)
-      ?? "http://127.0.0.1:18960"
+      ?? "http://127.0.0.1:28960"
   };
 }
 

@@ -4987,7 +4987,7 @@ function handleRendererLoadFailure(error: unknown): void {
 app.whenReady().then(async () => {
   if (!(await waitForSingleInstanceLock())) {
     // An instance is already running: this instance exits directly, to avoid a second instance
-    // contending for the fixed ports (memory 18960 / agent gateway) and causing a startup failure.
+    // contending for the fixed ports (memory 28960 / agent gateway) and causing a startup failure.
     app.quit();
     return;
   }

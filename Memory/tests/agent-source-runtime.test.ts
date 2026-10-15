@@ -615,7 +615,7 @@ describe("standalone Agent source executor", () => {
     const cursorRoot = join(root, ".cursor");
     mkdirSync(cursorRoot, { recursive: true });
     const configPath = join(root, "config.yaml");
-    writeFileSync(configPath, "memmyMemory:\n  storage:\n    endpoint: http://127.0.0.1:18960\n");
+    writeFileSync(configPath, "memmyMemory:\n  storage:\n    endpoint: http://127.0.0.1:28960\n");
     const adapter: SourceAdapter = {
       descriptor: { sourceId: "cursor", displayName: "Cursor", builtin: true, dataPath: cursorRoot },
       detect: async () => true,

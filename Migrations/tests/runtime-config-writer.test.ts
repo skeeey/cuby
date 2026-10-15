@@ -36,7 +36,7 @@ describe("runtime config writer", () => {
     const firstMayFinish = new Promise<void>((resolve) => { releaseFirst = resolve; });
     const first = mutateRuntimeConfig(configPath, async (config) => {
       await firstMayFinish;
-      config.backend = { port: 18990 };
+      config.backend = { port: 28990 };
       return "backend";
     });
     const second = mutateRuntimeConfig(configPath, (config) => {
@@ -50,7 +50,7 @@ describe("runtime config writer", () => {
     expect(config).toMatchObject({
       futureSection: { keepMe: true },
       providers: { openai: { futureProvider: true } },
-      backend: { port: 18990 },
+      backend: { port: 28990 },
       memory: { endpoint: "http://127.0.0.1:18888" },
     });
     expect((await fs.readdir(path.dirname(configPath))).filter((name) => name.endsWith(".tmp"))).toEqual([]);

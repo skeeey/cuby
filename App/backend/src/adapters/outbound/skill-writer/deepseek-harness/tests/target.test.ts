@@ -281,7 +281,7 @@ describe("DeepSeek Harness skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -428,7 +428,7 @@ describe("DeepSeek Harness skill target", () => {
       source: "deepseek_harness"
     });
     expect(requests.find((request) => request.path === "/api/v1/turns/start")?.origin).toBe(
-      "http://127.0.0.1:18960"
+      "http://127.0.0.1:28960"
     );
     expect(requests.find((request) => request.path === "/api/v1/source-turns/complete")?.body).toMatchObject({
       sessionId: "memmy-session-1",

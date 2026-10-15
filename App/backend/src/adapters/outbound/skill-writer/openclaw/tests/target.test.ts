@@ -338,7 +338,7 @@ describe("openclaw skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -410,7 +410,7 @@ describe("openclaw skill target", () => {
       expect(requestBodies[0]?.layers).toEqual(["L1"]);
       expect(requestBodies[0]?.limit).toBe(20);
       expect(requestBodies[0]?.verbose).toBe(true);
-      expect(requestOrigins[0]).toBe("http://127.0.0.1:18960");
+      expect(requestOrigins[0]).toBe("http://127.0.0.1:28960");
 
       const beforePromptBuild = handlers.get("before_prompt_build");
       expect(beforePromptBuild).toBeDefined();

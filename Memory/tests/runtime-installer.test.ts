@@ -168,7 +168,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
       });
       await started;
@@ -201,7 +201,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
         healthCheckTimeoutMs: 1
       });
@@ -243,7 +243,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory: nextDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
         healthCheckTimeoutMs: 1_000
       });
@@ -275,7 +275,7 @@ describe("standalone Memory runtime installer", () => {
       serviceVersion: "stale"
     }));
     writeFileSync(join(home, "memory-service", "runtime.json"), JSON.stringify({
-      endpoint: "http://127.0.0.1:18960"
+      endpoint: "http://127.0.0.1:28960"
     }));
     vi.useFakeTimers();
     let resolveStarted!: () => void;
@@ -294,7 +294,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
         healthCheckTimeoutMs: 1_000
       });

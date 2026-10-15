@@ -228,7 +228,7 @@ async function readMemmyMemoryServiceConfig(configPath: string): Promise<MemmyMe
     endpoint: normalizeString(storage.endpoint) ||
       normalizeString(memmyMemory.endpoint) ||
       normalizeString(legacyStorage.endpoint) ||
-      "http://127.0.0.1:18960",
+      "http://127.0.0.1:28960",
     token: normalizeString(storage.token) ||
       normalizeString(memmyMemory.token) ||
       normalizeString(legacyStorage.token)
@@ -797,7 +797,7 @@ function normalizeConfig(value) {
 
 async function createMemmyClient(cfg) {
   const resolved = await readMemmyConfig(cfg.memmyConfigPath).catch(() => ({}));
-  const baseUrl = normalizeText(resolved.endpoint || cfg.endpoint || "http://127.0.0.1:18960").replace(/\/+$/u, "");
+  const baseUrl = normalizeText(resolved.endpoint || cfg.endpoint || "http://127.0.0.1:28960").replace(/\/+$/u, "");
   const token = normalizeOptionalText(resolved.token) || normalizeOptionalText(cfg.token);
   if (!baseUrl) {
     throw new Error("Invalid Memmy config at " + cfg.memmyConfigPath);
@@ -894,7 +894,7 @@ function resolveSyncRuntimeConfig(cfg) {
     resolved = {};
   }
   return {
-    baseUrl: normalizeText(resolved.endpoint || cfg.endpoint || "http://127.0.0.1:18960").replace(/\/+$/u, ""),
+    baseUrl: normalizeText(resolved.endpoint || cfg.endpoint || "http://127.0.0.1:28960").replace(/\/+$/u, ""),
     token: normalizeOptionalText(resolved.token) || normalizeOptionalText(cfg.token)
   };
 }

@@ -13,10 +13,10 @@ import { createRotatingWriter, type RotatingWriter } from "./rotating-log-file.j
 import type { LogLevel } from "./log-level.js";
 
 const LOCAL_HOST = "127.0.0.1";
-const DEFAULT_MEMORY_URL = "http://127.0.0.1:18960";
+const DEFAULT_MEMORY_URL = "http://127.0.0.1:28960";
 const SUPPORTED_MEMORY_PROTOCOL_VERSION = 1;
-const DEFAULT_AGENT_GATEWAY_HEALTH_PORT = 18970;
-const DEFAULT_AGENT_WEBSOCKET_PORT = 18980;
+const DEFAULT_AGENT_GATEWAY_HEALTH_PORT = 28970;
+const DEFAULT_AGENT_WEBSOCKET_PORT = 28980;
 const STARTUP_TIMEOUT_MS = 30_000;
 const MEMORY_STARTUP_TIMEOUT_MS = 120_000;
 const POLL_INTERVAL_MS = 250;

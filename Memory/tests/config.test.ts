@@ -165,7 +165,7 @@ describe("memmy memory config", () => {
         version: 1,
         storage: {
           sqlitePath: "~/.cuby/memory-service/memory.sqlite",
-          endpoint: "http://127.0.0.1:18960"
+          endpoint: "http://127.0.0.1:28960"
         },
         embedding: {
           provider: "local"
@@ -370,7 +370,7 @@ describe("memmy memory config", () => {
           evolution: "follow"
         },
         storage: {
-          endpoint: "http://127.0.0.1:18960"
+          endpoint: "http://127.0.0.1:28960"
         }
       }
     }));

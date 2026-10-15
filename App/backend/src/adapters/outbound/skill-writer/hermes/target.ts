@@ -446,7 +446,7 @@ def _load_runtime() -> Dict[str, Any]:
         storage = _read_storage_config(_memmy_config_path())
     except Exception:
         storage = {}
-    base_url = _clean_text(storage.get("endpoint")).rstrip("/") or _clean_text(plugin_config.get("endpoint")).rstrip("/") or "http://127.0.0.1:18960"
+    base_url = _clean_text(storage.get("endpoint")).rstrip("/") or _clean_text(plugin_config.get("endpoint")).rstrip("/") or "http://127.0.0.1:28960"
     token = _clean_text(storage.get("token")) or _clean_text(plugin_config.get("token"))
     if not base_url:
         raise RuntimeError("Invalid Memmy config at " + str(_memmy_config_path()))
@@ -1332,7 +1332,7 @@ def _load_runtime() -> Dict[str, str]:
         root = {}
     memory = root.get("memmyMemory") if isinstance(root.get("memmyMemory"), dict) else {}
     app = root.get("app") if isinstance(root.get("app"), dict) else {}
-    base_url = _clean_text(storage.get("endpoint")).rstrip("/") or _clean_text(plugin_config.get("endpoint")).rstrip("/") or "http://127.0.0.1:18960"
+    base_url = _clean_text(storage.get("endpoint")).rstrip("/") or _clean_text(plugin_config.get("endpoint")).rstrip("/") or "http://127.0.0.1:28960"
     token = _clean_text(storage.get("token")) or _clean_text(plugin_config.get("token"))
     if not base_url:
         raise RuntimeError("Invalid Memmy config at " + str(_memmy_config_path()))

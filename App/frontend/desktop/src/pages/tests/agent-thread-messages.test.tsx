@@ -2488,7 +2488,7 @@ describe("AgentThreadMessages", () => {
     const downloadOutcomes = [true, false];
     const resolveArtifact = vi.fn(async (path: string) => {
       events.push(`resolve:${path}`);
-      return fileArtifact("/Users/yuan/fresh-deck.pptx", "fresh-deck.pptx", "http://127.0.0.1:18980/api/media/fresh");
+      return fileArtifact("/Users/yuan/fresh-deck.pptx", "fresh-deck.pptx", "http://127.0.0.1:28980/api/media/fresh");
     });
     const openArtifact = vi.fn(async (path: string) => {
       events.push(`open:${path}`);
@@ -2506,7 +2506,7 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       label: "deck.pptx",
       artifactClient,
       startDownload
@@ -2517,7 +2517,7 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       label: "deck.pptx",
       artifactClient,
       startDownload
@@ -2526,17 +2526,17 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       name: "old-deck.pptx",
       label: "deck.pptx",
       artifactClient,
       startDownload
     })).resolves.toBe("downloaded");
-    expect(startDownload).toHaveBeenLastCalledWith("http://127.0.0.1:18980/api/media/fresh", "fresh-deck.pptx");
+    expect(startDownload).toHaveBeenLastCalledWith("http://127.0.0.1:28980/api/media/fresh", "fresh-deck.pptx");
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       label: "deck.pptx",
       artifactClient,
       startDownload
@@ -2554,11 +2554,11 @@ describe("AgentThreadMessages", () => {
       "resolve:/Users/yuan/deck.pptx",
       "open:/Users/yuan/fresh-deck.pptx",
       "reveal:/Users/yuan/fresh-deck.pptx",
-      "download:http://127.0.0.1:18980/api/media/fresh:fresh-deck.pptx",
+      "download:http://127.0.0.1:28980/api/media/fresh:fresh-deck.pptx",
       "resolve:/Users/yuan/deck.pptx",
       "open:/Users/yuan/fresh-deck.pptx",
       "reveal:/Users/yuan/fresh-deck.pptx",
-      "download:http://127.0.0.1:18980/api/media/fresh:fresh-deck.pptx"
+      "download:http://127.0.0.1:28980/api/media/fresh:fresh-deck.pptx"
     ]);
   });
 
@@ -2583,7 +2583,7 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       name: "old-deck.pptx",
       label: "deck.pptx",
       artifactClient: { resolveArtifact, openArtifact, revealArtifact },
@@ -2594,7 +2594,7 @@ describe("AgentThreadMessages", () => {
       "resolve:/Users/yuan/deck.pptx",
       "open:/Users/yuan/deck.pptx",
       "reveal:/Users/yuan/deck.pptx",
-      "download:http://127.0.0.1:18980/api/media/old:old-deck.pptx"
+      "download:http://127.0.0.1:28980/api/media/old:old-deck.pptx"
     ]);
   });
 
@@ -2605,7 +2605,7 @@ describe("AgentThreadMessages", () => {
     const startDownload = vi.fn(() => true);
 
     await expect(runAttachmentAction({
-      url: "http://127.0.0.1:18980/api/media/only-url",
+      url: "http://127.0.0.1:28980/api/media/only-url",
       name: "deck.pptx",
       label: "deck.pptx",
       artifactClient: { resolveArtifact, openArtifact, revealArtifact },
@@ -2615,14 +2615,14 @@ describe("AgentThreadMessages", () => {
     expect(resolveArtifact).not.toHaveBeenCalled();
     expect(openArtifact).not.toHaveBeenCalled();
     expect(revealArtifact).not.toHaveBeenCalled();
-    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:18980/api/media/only-url", "deck.pptx");
+    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:28980/api/media/only-url", "deck.pptx");
   });
 
   it("uses fresh artifact name for download filename", async () => {
     const resolveArtifact = vi.fn(async () => fileArtifact(
       "/Users/yuan/fresh-deck.pptx",
       "fresh.pptx",
-      "http://127.0.0.1:18980/api/media/fresh"
+      "http://127.0.0.1:28980/api/media/fresh"
     ));
     const openArtifact = vi.fn(async () => {
       throw new Error("open failed");
@@ -2634,14 +2634,14 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       name: "old.pptx",
       label: "deck.pptx",
       artifactClient: { resolveArtifact, openArtifact, revealArtifact },
       startDownload
     })).resolves.toBe("downloaded");
 
-    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:18980/api/media/fresh", "fresh.pptx");
+    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:28980/api/media/fresh", "fresh.pptx");
   });
 
   it("renders final attachment failure actions with copy affordances", () => {

@@ -1871,7 +1871,7 @@ function agentActionIcon(action: AgentConnectionAction):
 }
 
 function memoryServiceEndpoint(): string {
-  return typeof location === "undefined" ? "http://127.0.0.1:18960" : location.origin;
+  return typeof location === "undefined" ? "http://127.0.0.1:28960" : location.origin;
 }
 
 function formatProfilePaths(paths: string[]): string {

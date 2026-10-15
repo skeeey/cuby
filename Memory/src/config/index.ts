@@ -322,7 +322,7 @@ export const DEFAULT_MEMMY_CONFIG: MemmyConfig = {
     mode: "local",
     backend: "sqlite",
     sqlitePath: defaultMemoryDatabasePath(),
-    endpoint: "http://127.0.0.1:18960",
+    endpoint: "http://127.0.0.1:28960",
     token: undefined
   },
   summary: {

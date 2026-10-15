@@ -75,14 +75,14 @@ describe("local api", () => {
       databasePath: join(tempDir, "app.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       memoryClient,
       cloudClient: createMockCloudClient(),
       memmyConfigPath: join(tempDir, "config.yaml")
     });
 
     expect(reloadReasons).toEqual([{ reason: "desktop_startup" }]);
-    expect(backend.runtimeConfig.memory).toEqual({ baseUrl: "http://127.0.0.1:18960" });
+    expect(backend.runtimeConfig.memory).toEqual({ baseUrl: "http://127.0.0.1:28960" });
   });
 
   it("writes the resolved UI language into Memory config before the startup reload", async () => {
@@ -96,7 +96,7 @@ describe("local api", () => {
       databasePath: join(tempDir, "app.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       accountChannel: "phone",
       memoryClient: {
         ...baseClient,
@@ -121,7 +121,7 @@ describe("local api", () => {
       databasePath: join(tempDir, "app-email.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime-email.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       accountChannel: "email",
       memoryClient: createMockMemoryClient(),
       cloudClient: createMockCloudClient(),
@@ -192,7 +192,7 @@ describe("local api", () => {
       databasePath: join(tempDir, "app.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       memoryReady,
       memoryClient,
       cloudClient: createMockCloudClient(),
@@ -283,19 +283,19 @@ describe("local api", () => {
 
   it("uses a 20s default timeout for Memory Layer HTTP clients", () => {
     expect(readMemoryLayerConfig({
-      CUBY_MEMORY_LAYER_URL: " http://127.0.0.1:18960 "
+      CUBY_MEMORY_LAYER_URL: " http://127.0.0.1:28960 "
     } as NodeJS.ProcessEnv)).toMatchObject({
-      baseUrl: "http://127.0.0.1:18960",
+      baseUrl: "http://127.0.0.1:28960",
       timeoutMs: 20_000
     });
   });
 
   it("accepts Memory service URL aliases for the writable Memory Layer client", () => {
     expect(readMemoryLayerConfig({
-      CUBY_MEMORY_URL: " http://127.0.0.1:18960 ",
+      CUBY_MEMORY_URL: " http://127.0.0.1:28960 ",
       CUBY_MEMORY_TOKEN: "memory-token"
     } as NodeJS.ProcessEnv)).toMatchObject({
-      baseUrl: "http://127.0.0.1:18960",
+      baseUrl: "http://127.0.0.1:28960",
       token: "memory-token"
     });
     expect(readMemoryLayerConfig({

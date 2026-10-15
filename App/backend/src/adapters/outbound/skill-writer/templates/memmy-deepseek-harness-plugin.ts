@@ -295,7 +295,7 @@ async function createClient(configPath) {
   const localConfig = await readLocalConfig();
   const resolved = await readMemmyConfig(configPath).catch(() => ({}));
   const config = {
-    baseUrl: (cleanText(resolved.baseUrl) || cleanText(localConfig.endpoint) || "http://127.0.0.1:18960").replace(/\/+$/u, ""),
+    baseUrl: (cleanText(resolved.baseUrl) || cleanText(localConfig.endpoint) || "http://127.0.0.1:28960").replace(/\/+$/u, ""),
     token: cleanText(resolved.token) || cleanText(localConfig.token)
   };
   return {

@@ -18,7 +18,7 @@ export default defineConfig({
   server: {
     port: 18961,
     proxy: {
-      "/api": "http://127.0.0.1:18960"
+      "/api": "http://127.0.0.1:28960"
     }
   }
 });

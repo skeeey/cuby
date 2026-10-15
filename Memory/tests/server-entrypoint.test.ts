@@ -84,7 +84,7 @@ describe("memmy memory server entrypoint", () => {
     }));
 
     try {
-      await writeCurrentEndpoint(configPath, "http://127.0.0.1:18960");
+      await writeCurrentEndpoint(configPath, "http://127.0.0.1:28960");
       const saved = YAML.parse(readFileSync(configPath, "utf8"));
       expect(saved).toMatchObject({
         futureSection: { keepMe: true },
@@ -100,7 +100,7 @@ describe("memmy memory server entrypoint", () => {
         memmyMemory: {
           futureMemoryField: "keep-memory",
           storage: {
-            endpoint: "http://127.0.0.1:18960",
+            endpoint: "http://127.0.0.1:28960",
             futureStorageField: "keep-storage"
           }
         }
@@ -151,7 +151,7 @@ async function waitForWrittenEndpoint(configPath: string): Promise<string> {
       memmyMemory?: { storage?: { endpoint?: unknown } };
     };
     const endpoint = config.memmyMemory?.storage?.endpoint;
-    if (typeof endpoint === "string" && !endpoint.endsWith(":18960")) {
+    if (typeof endpoint === "string" && !endpoint.endsWith(":28960")) {
       return endpoint;
     }
     await new Promise((resolveDelay) => setTimeout(resolveDelay, 25));

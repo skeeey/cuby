@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import YAML from "yaml";
 
-export const DEFAULT_MEMORY_URL = "http://127.0.0.1:18960";
+export const DEFAULT_MEMORY_URL = "http://127.0.0.1:28960";
 
 export interface CliMemoryConfig {
   endpoint?: string;

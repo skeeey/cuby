@@ -966,7 +966,7 @@ describe("MemmyMemoryHook", () => {
     function unreachableClient() {
       const client = fakeClient();
       client.openSession = vi.fn(async () => {
-        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:18960");
+        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:28960");
       });
       return client;
     }
@@ -1032,7 +1032,7 @@ describe("MemmyMemoryHook", () => {
       expect(hook.lastError).toBeNull();
 
       client.startTurn = vi.fn(async () => {
-        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:18960");
+        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:28960");
       });
       await hook.beforeRun(new AgentHookContext({ spec, messages: [{ role: "user", content: "five" }] }));
 

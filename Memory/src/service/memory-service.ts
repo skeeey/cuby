@@ -3240,7 +3240,7 @@ function memoryConfigLogFields(config: MemmyConfig): Record<string, unknown> {
 }
 
 function viewerUrlFromEndpoint(endpoint?: string): string {
-  const base = new URL(endpoint ?? "http://127.0.0.1:18960");
+  const base = new URL(endpoint ?? "http://127.0.0.1:28960");
   base.pathname = "/viewer";
   base.search = "";
   base.hash = "";

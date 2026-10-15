@@ -392,14 +392,14 @@ describe("Windows standalone Memory service", () => {
 
   it("ends the task and shuts down a surviving old service before starting again", async () => {
     await install(true);
-    fs.writeFileSync(join(home, "memory-service", "runtime.json"), JSON.stringify({ endpoint: "http://127.0.0.1:18960" }));
+    fs.writeFileSync(join(home, "memory-service", "runtime.json"), JSON.stringify({ endpoint: "http://127.0.0.1:28960" }));
     const request = vi.fn()
       .mockResolvedValueOnce({ ok: true, json: async () => ({ protocolVersion: 1 }) })
       .mockResolvedValueOnce({ ok: true })
       .mockRejectedValue(new Error("connection refused"));
     vi.stubGlobal("fetch", request);
     await startInstalledMemoryService(home);
-    expect(request).toHaveBeenCalledWith("http://127.0.0.1:18960/api/v1/admin/shutdown", expect.objectContaining({ method: "POST" }));
+    expect(request).toHaveBeenCalledWith("http://127.0.0.1:28960/api/v1/admin/shutdown", expect.objectContaining({ method: "POST" }));
     await stopInstalledMemoryService(home);
     expect((lifecycle.mock.calls as unknown[][]).at(-1)?.[1]).toEqual(["/End", "/TN", "Memmy Memory Service"]);
   });

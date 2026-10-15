@@ -4,7 +4,7 @@ import path from "node:path";
 import YAML from "yaml";
 import type { MemmyMemoryConnection } from "./types.js";
 
-export const DEFAULT_MEMOS_MEMORY_URL = "http://127.0.0.1:18960";
+export const DEFAULT_MEMOS_MEMORY_URL = "http://127.0.0.1:28960";
 
 type DiscoveryEnv = Record<string, string | undefined>;
 

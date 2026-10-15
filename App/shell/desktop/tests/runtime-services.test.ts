@@ -134,13 +134,13 @@ describe("packaged desktop runtime config", () => {
         configPath: "/memmy/config.yaml",
         agentWorkspace: "/memmy/workspace",
         memoryDatabasePath: "/memmy/memory.sqlite",
-        memoryBaseUrl: "http://127.0.0.1:18960",
+        memoryBaseUrl: "http://127.0.0.1:28960",
         memoryToken: "",
         memoryListenHost: "127.0.0.1",
-        memoryListenPort: 18960,
-        agentGatewayBaseUrl: "http://127.0.0.1:18980",
+        memoryListenPort: 28960,
+        agentGatewayBaseUrl: "http://127.0.0.1:28980",
         agentGatewayHealthHost: "127.0.0.1",
-        agentGatewayHealthPort: 18970,
+        agentGatewayHealthPort: 28970,
         agentGatewayBootstrapSecret: "secret"
       },
       true,
@@ -217,9 +217,9 @@ describe("packaged desktop runtime config", () => {
       memoryToken: "",
       memoryListenHost: "127.0.0.1",
       memoryListenPort: port,
-      agentGatewayBaseUrl: "http://127.0.0.1:18980",
+      agentGatewayBaseUrl: "http://127.0.0.1:28980",
       agentGatewayHealthHost: "127.0.0.1",
-      agentGatewayHealthPort: 18970,
+      agentGatewayHealthPort: 28970,
       agentGatewayBootstrapSecret: "secret"
     };
     const children: ManagedChild[] = [];
@@ -290,13 +290,13 @@ describe("packaged desktop runtime config", () => {
         configPath: "/memmy/config.yaml",
         agentWorkspace: "/memmy/workspace",
         memoryDatabasePath: "/memmy/memory.sqlite",
-        memoryBaseUrl: "http://127.0.0.1:18960",
+        memoryBaseUrl: "http://127.0.0.1:28960",
         memoryToken: "memory-token",
         memoryListenHost: "127.0.0.1",
-        memoryListenPort: 18960,
-        agentGatewayBaseUrl: "http://127.0.0.1:18980",
+        memoryListenPort: 28960,
+        agentGatewayBaseUrl: "http://127.0.0.1:28980",
         agentGatewayHealthHost: "127.0.0.1",
-        agentGatewayHealthPort: 18970,
+        agentGatewayHealthPort: 28970,
         agentGatewayBootstrapSecret: "gateway-secret"
       },
       true,
@@ -421,10 +421,10 @@ describe("packaged desktop runtime config", () => {
       configPath,
       agentWorkspace: join(memmyHome, "workspace"),
       memoryDatabasePath: join(memmyHome, "memory-service", "memory.sqlite"),
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       memoryListenHost: "127.0.0.1",
-      memoryListenPort: 18960,
-      agentGatewayBaseUrl: "http://127.0.0.1:18980",
+      memoryListenPort: 28960,
+      agentGatewayBaseUrl: "http://127.0.0.1:28980",
       agentGatewayBootstrapSecret: "stable-secret"
     });
     expect(config).toMatchObject({
@@ -444,7 +444,7 @@ describe("packaged desktop runtime config", () => {
         websocket: {
           enabled: true,
           host: "127.0.0.1",
-          port: 18980,
+          port: 28980,
           tokenIssueSecret: "stable-secret",
           websocketRequiresToken: true,
           allowFrom: ["*"]
@@ -452,7 +452,7 @@ describe("packaged desktop runtime config", () => {
       },
       gateway: {
         host: "127.0.0.1",
-        port: 18970,
+        port: 28970,
         heartbeat: { enabled: false }
       },
       fileMemory: {
@@ -463,7 +463,7 @@ describe("packaged desktop runtime config", () => {
           mode: "local",
           backend: "sqlite",
           sqlitePath: join(memmyHome, "memory-service", "memory.sqlite"),
-          endpoint: "http://127.0.0.1:18960"
+          endpoint: "http://127.0.0.1:28960"
         }
       }
     });
@@ -479,14 +479,14 @@ describe("packaged desktop runtime config", () => {
     await writeFile(`${databasePath}.server.lock`, JSON.stringify({
       pid: process.pid,
       host: "127.0.0.1",
-      port: 18960,
+      port: 28960,
       sqlitePath: databasePath
     }));
 
     expect(readLiveMemoryServerLock(databasePath)).toEqual({
       pid: process.pid,
       host: "127.0.0.1",
-      port: 18960,
+      port: 28960,
       sqlitePath: databasePath
     });
   });
@@ -536,9 +536,9 @@ describe("packaged desktop runtime config", () => {
         memoryToken: "",
         memoryListenHost: "127.0.0.1",
         memoryListenPort: port,
-        agentGatewayBaseUrl: "http://127.0.0.1:18980",
+        agentGatewayBaseUrl: "http://127.0.0.1:28980",
         agentGatewayHealthHost: "127.0.0.1",
-        agentGatewayHealthPort: 18970,
+        agentGatewayHealthPort: 28970,
         agentGatewayBootstrapSecret: "secret"
       },
       children,
@@ -795,7 +795,7 @@ describe("packaged desktop runtime config", () => {
 
     expect(runtime).toMatchObject({
       configPath,
-      agentGatewayBaseUrl: "http://127.0.0.1:18980",
+      agentGatewayBaseUrl: "http://127.0.0.1:28980",
       agentGatewayBootstrapSecret: ""
     });
     await expect(stat(configPath)).rejects.toMatchObject({ code: "ENOENT" });
@@ -1520,13 +1520,13 @@ function createSupervisorHarness(overrides: {
     appDatabaseFile: "/memmy/app.sqlite",
     agentWorkspace: "/memmy/workspace",
     memoryDatabasePath: "/memmy/memory.sqlite",
-    memoryBaseUrl: "http://127.0.0.1:18960",
+    memoryBaseUrl: "http://127.0.0.1:28960",
     memoryToken: "memory-token",
     memoryListenHost: "127.0.0.1",
-    memoryListenPort: 18960,
-    agentGatewayBaseUrl: "http://127.0.0.1:18980",
+    memoryListenPort: 28960,
+    agentGatewayBaseUrl: "http://127.0.0.1:28980",
     agentGatewayHealthHost: "127.0.0.1",
-    agentGatewayHealthPort: 18970,
+    agentGatewayHealthPort: 28970,
     agentGatewayBootstrapSecret: "gateway-secret"
   };
   const options: StartPackagedRuntimeServicesOptions = {

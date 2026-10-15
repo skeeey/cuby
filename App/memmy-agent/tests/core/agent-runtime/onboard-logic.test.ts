@@ -263,10 +263,10 @@ describe("onboard logic", () => {
   it("keeps memmy-agent service ports distinct while restoring API timeout and gateway schema", () => {
     const config = new Config();
 
-    expect(config.api.port).toBe(18990);
+    expect(config.api.port).toBe(28990);
     expect(config.api.timeout).toBe(120);
     expect(config.gateway.host).toBe("127.0.0.1");
-    expect(config.gateway.port).toBe(18970);
+    expect(config.gateway.port).toBe(28970);
     expect(config.gateway.heartbeat.enabled).toBe(true);
     expect(config.gateway.heartbeat.intervalS).toBe(30 * 60);
     expect(config.gateway.heartbeat.keepRecentMessages).toBe(8);

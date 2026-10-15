@@ -12,7 +12,7 @@ export const Config = Schema.object({
   recallTimeoutMs: Schema.number().min(100).max(3000).default(3000)
 });
 
-const endpoint = (process.env.CUBY_MEMORY_URL || "http://127.0.0.1:18960").replace(/\/$/, "");
+const endpoint = (process.env.CUBY_MEMORY_URL || "http://127.0.0.1:28960").replace(/\/$/, "");
 
 async function request(path, profileId, body, timeout = 3000) {
   const headers = { "content-type": "application/json", "x-cuby-profile-id": profileId };

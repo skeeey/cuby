@@ -305,7 +305,7 @@ export async function listenMemoryHttpServer(options: MemoryHttpServerOptions & 
 }> {
   const server = createMemoryHttpServer(options);
   const host = options.host ?? "127.0.0.1";
-  const port = options.port ?? 18960;
+  const port = options.port ?? 28960;
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, host, () => {

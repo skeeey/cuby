@@ -16,7 +16,7 @@ except Exception:
 
 class MemmyProvider(MemoryProvider):
     def __init__(self) -> None:
-        self._endpoint = os.environ.get("CUBY_MEMORY_URL", "http://127.0.0.1:18960").rstrip("/")
+        self._endpoint = os.environ.get("CUBY_MEMORY_URL", "http://127.0.0.1:28960").rstrip("/")
         self._session_id = ""
         self._turn_id = ""
         self._query = ""

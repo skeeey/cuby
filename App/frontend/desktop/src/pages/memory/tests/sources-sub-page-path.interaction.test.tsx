@@ -40,7 +40,7 @@ describe("SourcesSubPage local data path", () => {
       runtimeConfig: {
         baseUrl: "http://127.0.0.1:18100",
         localToken: "local-token",
-        memory: { baseUrl: "http://127.0.0.1:18960" }
+        memory: { baseUrl: "http://127.0.0.1:28960" }
       },
       localData: {
         getPath,

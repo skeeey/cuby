@@ -24,7 +24,7 @@ export async function readMemmyMemoryServiceConfig(configPath: string): Promise<
     endpoint: normalizeString(storage.endpoint) ||
       normalizeString(memmyMemory.endpoint) ||
       normalizeString(legacyStorage.endpoint) ||
-      "http://127.0.0.1:18960",
+      "http://127.0.0.1:28960",
     token: normalizeString(storage.token) ||
       normalizeString(memmyMemory.token) ||
       normalizeString(legacyStorage.token),

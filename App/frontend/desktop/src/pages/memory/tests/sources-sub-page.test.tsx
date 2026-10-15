@@ -276,7 +276,7 @@ describe("SourcesSubPage", () => {
   });
 
   it("从运行时 Memory URL 展示真实端口，不再写死旧地址", () => {
-    expect(formatMemoryServiceAddress("http://127.0.0.1:18960")).toBe("127.0.0.1:18960");
+    expect(formatMemoryServiceAddress("http://127.0.0.1:28960")).toBe("127.0.0.1:28960");
     expect(formatMemoryServiceAddress("http://localhost:18888/")).toBe("localhost:18888");
     expect(formatMemoryServiceAddress(undefined)).toBeUndefined();
     expect(zhCNMessages["memory.restartService"]).toBe("重启服务");
