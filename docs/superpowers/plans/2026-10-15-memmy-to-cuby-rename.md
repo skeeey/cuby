@@ -491,10 +491,14 @@ xargs -a /tmp/cuby-env-files.txt perl -pi -e 's/\bMEMMY_/CUBY_/g'
 
 ```bash
 grep -rn '\bMEMMY_\|process\.env\.MEMMY_\|env\.MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
-  | grep -vE '^(\./)?(docs/|[Rr][Ee][Aa][Dd][Mm][Ee]|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|.github/workflows/linux-cli-installer.yml|tests/linux-cli-packaging\.test\.mjs)'
+  | grep -vE '^(\./)?(docs/|scripts/install\.sh|scripts/clear-|scripts/internal/linux/|Memory/installers/|\.github/workflows/linux-cli-installer\.yml|tests/linux-cli-packaging\.test\.mjs)' \
+  | grep -viE 'readme' | grep -vE '^(\./)?\.github/release-notes/' \
+  | grep -v 'Memory/tests/home-directory.test.ts'
 ```
 
 Expected: 无输出。
+
+两处排除必须与生成清单时**逐字一致**，否则会把清单自己排除掉的文件报成漏网：①大小写不敏感的 `readme`（不锚定，覆盖嵌套 README）；②`.github/release-notes/`。另外守卫测试 `Memory/tests/home-directory.test.ts` 里的 `MEMMY_CONFIG` 是**故意保留的负向断言**（它证明代码不再读旧变量），因此单独排除。
 
 - [ ] **Step 5: 确认 `.env.example` 已改且语义正确**
 
