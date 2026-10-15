@@ -1327,6 +1327,8 @@ wc -l /tmp/cuby-leftovers.txt
 
 已知几处注释：`App/shell/desktop/src/main/runtime-services.ts:2417`、`main.ts:2855`、`main.ts:5189`（提到 `Memmy.exe` 与端口范围）。
 
+**Task 13 实现者列出的、仍在各 Task 名单之外的用户可见文案**（Task 15 逐条处理，不要指望白名单扫描自动列全）：`App/frontend/desktop/src/pages/settings-page.tsx:1879`、`App/frontend/desktop/index.html:6`、`App/shell/desktop/src/main/main.ts` 的托盘 tooltip/菜单/导出/诊断串、`desktop-screen-capture.ts` 的权限提示、`runtime-config.ts:4`、`memory-sources-page.tsx` 的提示语、`Memory/src/viewer/static.ts:103`。
+
 **Task 11 审查追加的几项**：①把 `App/frontend/desktop/src/components/mascot/tests/pose-assets.test.ts:26` 的陈旧清单从 3 个名字**扩到全部 26 个被删素材名**——守卫只覆盖 3/26 时，`memmy-wave.png` 之类被重新加回来不会有人发现（零成本、严格更强）；②同文件 `:2` 的未用 `readFileSync` import 删掉；③`App/memmy-agent/src/entrypoints/cli/tui.tsx:117` 的注释指向本计划已删除的 `memmy-rice.png`，改成不指向具体文件的表述（ASCII 稿本身仍是旧角色，见"后续轮次"）。
 
 另有两处**不含 memmy 字样、白名单扫描抓不到**的陈旧描述，必须手工列入：`App/frontend/desktop/src/pages/agent-thread-messages.tsx:1263`（注释仍写 26px bobbing rice grain，而它渲染的是蓝色方块机器人 Cuby）、`pages/pet-page.tsx:2559-2566`（文档注释已写 Cuby，函数名仍是 `resolveMemmyPose`，随 Task 11 的改名一并对齐）。同时把 `runtime-services.ts:2415` 那条注释里的端口号更新为新值。
