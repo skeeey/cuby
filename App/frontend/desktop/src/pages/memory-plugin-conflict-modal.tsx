@@ -1,4 +1,4 @@
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { createPortal } from "react-dom";
 
@@ -20,7 +20,7 @@ export function MemoryPluginConflictModal(props: MemoryPluginConflictModalProps)
         className="memory-plugin-conflict-modal"
       >
         <div className="memory-plugin-conflict-modal__mascot">
-          <Memmy pose="shield" size={112} className="memmy-bob" />
+          <Cuby pose="shield" size={112} className="memmy-bob" />
         </div>
 
         <h2 id="memory-plugin-conflict-title" className="memory-plugin-conflict-modal__title">

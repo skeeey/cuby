@@ -1,8 +1,8 @@
 /** Mascot tests. */
 import { describe, expect, it } from "vitest";
-import { preloadMemmyAsset } from "../mascot/memmy.js";
+import { preloadCubyAsset } from "../mascot/cuby.js";
 
-describe("preloadMemmyAsset", () => {
+describe("preloadCubyAsset", () => {
   it("等目标立绘加载完成后才返回可切换的 src", async () => {
     let assignedSrc = "";
     const fakeImage = {
@@ -15,7 +15,7 @@ describe("preloadMemmyAsset", () => {
         assignedSrc = value;
       }
     } as HTMLImageElement;
-    const pending = preloadMemmyAsset("/assets/memmy-work.png", {
+    const pending = preloadCubyAsset("/assets/memmy-work.png", {
       createImage: () => fakeImage
     });
     let resolved = false;

@@ -6,7 +6,7 @@ import { isCuberouterAccountBackend } from "../app/account-backend.js";
 import { FOCUSED_AGENT_CHAT_STORAGE_KEY, readGuidanceCompleted, resolveInitialView, type AppRoutePath, type ByokAgentModelAvailability } from "../app/routes.js";
 import type { MemmyAgentClient, MemmyAgentSessionSummary, MemmyAgentUnsubscribe, MemmyAgentWebSocketConnection, MemmyAgentWsEvent } from "../api/memmy-agent-client.js";
 import type { AsrClient } from "../api/asr-client.js";
-import { Memmy, type MemmyPose } from "../components/mascot/memmy.js";
+import { Cuby, type CubyPose } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { useTaskBus, type Task, type TaskBusAgentMessage, type TaskBusValue } from "../lib/task-bus.js";
 import { agentActions, appActions } from "../state/app-actions.js";
@@ -660,7 +660,7 @@ export function resolvePetContextMenuPosition(input: PetContextMenuPositionInput
 /**
  * Computes the dynamic pet window layout from the currently visible content rects.
  *
- * @param input The current offset, the Memmy body rect, and the visible content rects.
+ * @param input The current offset, the Cuby body rect, and the visible content rects.
  * @returns The renderer's next offset and the main-process window layout; returns null when there is no visible content.
  */
 export function resolvePetMeasuredLayout(input: PetMeasuredLayoutInput): PetMeasuredLayout | null {
@@ -1937,7 +1937,7 @@ export function PetPageView({ bus, mainRoute = "/main", onNavigate, onPetWindowC
             />
           </div>
           <div className="absolute inset-0 transition-opacity duration-200" style={{ opacity: showIdle ? 0 : 1, pointerEvents: "none" }}>
-            <Memmy pose={memmyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${displayState === "processing" ? "memmy-bob" : ""}`} />
+            <Cuby pose={memmyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${displayState === "processing" ? "memmy-bob" : ""}`} />
           </div>
         </div>
 
@@ -2559,14 +2559,14 @@ function PetContextMenu({ registerRef, x, y, screenX, screenLeft, screenWidth, l
 }
 
 /**
- * Resolves the Memmy pose from the displayState and the task.
+ * Resolves the Cuby pose from the displayState and the task.
  *
  * @param displayState The current display state.
  * @param focusedTask The focused task.
  * @param isSleeping Whether to enter the sleep pose.
- * @returns The Memmy pose.
+ * @returns The Cuby pose.
  */
-function resolveMemmyPose(displayState: DisplayState, focusedTask: Task | null, isSleeping: boolean): MemmyPose {
+function resolveMemmyPose(displayState: DisplayState, focusedTask: Task | null, isSleeping: boolean): CubyPose {
   if (displayState === "idle" && isSleeping) {
     return "sleep";
   }

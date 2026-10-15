@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { AgentSourceView } from "@memmy/local-api-contracts";
 import { Check, Loader2 } from "lucide-react";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import type { AgentSourceScanProgress } from "../state/app-actions.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
@@ -106,7 +106,7 @@ export function OnboardingScanAnimation(props: OnboardingScanAnimationProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-canvas-oat">
       <div className="w-full max-w-[460px] mx-4">
         <div className="flex items-center gap-3 mb-5">
-          <Memmy pose="read" size={64} className="memmy-bob shrink-0 drop-shadow-[0_5px_12px_rgba(34,39,36,0.10)]" />
+          <Cuby pose="read" size={64} className="memmy-bob shrink-0 drop-shadow-[0_5px_12px_rgba(34,39,36,0.10)]" />
           <div className="min-w-0 flex-1">
             <h2 className="text-base font-bold text-text-ink flex items-center gap-1.5">
               {t(titleKey)}

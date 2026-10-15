@@ -387,7 +387,7 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("会话压缩中");
     expect(html).toContain("思考中");
     // The waiting placeholder carries the mascot at a legible size.
-    expect(html).toContain('alt="Memmy"');
+    expect(html).toContain('alt="Cuby"');
     expect(html).not.toContain("agent-chat-bubble--assistant");
   });
 
@@ -917,7 +917,7 @@ describe("AgentThreadMessages", () => {
     expect(html).not.toContain("data-activity-key=");
     expect(html).not.toContain("agent-chat-bubble--assistant");
     expect(html).not.toContain("agent-message-copy-button--left");
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).not.toContain("模型请求重试中");
   });
 
@@ -1704,7 +1704,7 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("agent-message-content__table");
     expect(html).toContain("agent-message-content__inline-code");
     expect(html).toContain('aria-label="复制消息"');
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).not.toContain("bg-background-paper border border-border-stone/30 px-4 py-3 rounded-2xl rounded-bl-md shadow-sm");
   });
 
@@ -2228,7 +2228,7 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("flex min-w-0 justify-start");
     expect(html).toContain("min-w-0 w-full space-y-2");
     expect(html).toContain("agent-chat-bubble agent-chat-bubble--assistant w-full max-w-full min-w-0 overflow-hidden");
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).not.toContain("bg-background-paper border border-border-stone/30 px-4 py-3 rounded-2xl rounded-bl-md shadow-sm");
     expect(html).not.toContain("max-w-full min-w-0 overflow-hidden bg-background-paper");
     expect(html).toContain("agent-message-content min-w-0 max-w-full overflow-hidden");

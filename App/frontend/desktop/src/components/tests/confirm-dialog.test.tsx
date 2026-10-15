@@ -20,7 +20,7 @@ describe("ConfirmDialog", () => {
     expect(html).toContain('aria-modal="true"');
     expect(html).toContain('class="modal-backdrop"');
     expect(html).toContain("confirm-dialog");
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).toContain("width:360px");
     expect(html).toContain("max-width:calc(100vw - 32px)");
     expect(html).toContain("min-height:180px");
@@ -123,7 +123,7 @@ describe("ConfirmDialog", () => {
       />
     );
 
-    expect(html).toContain('alt="Memmy"');
+    expect(html).toContain('alt="Cuby"');
     expect(html).toContain("confirm-dialog__icon");
     expect(html).toContain("height:44px;width:44px");
     expect(html).toContain("width:36px");
@@ -152,6 +152,6 @@ describe("ConfirmDialog", () => {
     expect(html).toContain('aria-label="关闭"');
     expect(html).toContain("button button-ghost button-sm");
     expect(html).not.toContain("button button-soft button-sm");
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
   });
 });

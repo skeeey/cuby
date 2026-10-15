@@ -54,7 +54,7 @@ import {
   type OptionalModelMissingWarningKind
 } from "./optional-model-missing-warning-modal.js";
 import { ConfirmDialog } from "../components/confirm-dialog.js";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { ModelProviderLogo } from "../components/model-provider-logo.js";
 import { Select, type SelectOption } from "../components/Select.js";
 import { canSubmitFeedback, feedbackLength, FEEDBACK_MIN_LENGTH } from "../feedback/quota-feedback.js";
@@ -1994,7 +1994,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
           >
             <div className="px-7 pt-7 pb-4 text-center">
               <div className="flex justify-center mb-1">
-                <Memmy pose="hum" size={120} className="memmy-bob" />
+                <Cuby pose="hum" size={120} className="memmy-bob" />
               </div>
               <h2 className="text-lg font-bold text-text-ink">{t("settings.token.applyMore.title")}</h2>
             </div>

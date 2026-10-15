@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { ScanPermission } from "@memmy/local-api-contracts";
 import { FileText, PlugZap, Settings2 } from "lucide-react";
-import { Memmy, type MemmyPose } from "../components/mascot/memmy.js";
+import { Cuby, type CubyPose } from "../components/mascot/cuby.js";
 import { zhCNMessages, type MessageKey } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { BrainCircuit, Link2 } from "../pages/memory/memory-prototype-icons.js";
@@ -68,7 +68,7 @@ export interface ProductTourStep {
   tab: ProductTourTab;
   title: string;
   icon: ReactNode;
-  pose: MemmyPose;
+  pose: CubyPose;
   description: string;
   arrow: ArrowDirection;
   bubblePlacement: ProductTourBubblePlacement;
@@ -439,7 +439,7 @@ export function ProductTourGuide(props: ProductTourGuideProps) {
       <div className={`fixed z-50 ${animationClass}`} key={step} style={layout.bubblePosition}>
         <div className="bg-background-paper rounded-card shadow-xl border border-border-stone/30 p-5 w-72 relative">
           <div className="absolute -top-8 -right-2 pointer-events-none">
-            <Memmy pose={current.pose} size={60} />
+            <Cuby pose={current.pose} size={60} />
           </div>
 
           <div>
