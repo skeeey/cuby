@@ -37,7 +37,7 @@ export interface CloudLoginInput {
   email?: string;
   phoneNumber?: string;
   verificationCode: string;
-  loginSource: "Memmy";
+  loginSource: "Cuby";
   invitationCode?: string;
 }
 
@@ -71,7 +71,7 @@ export interface CloudLoginResult {
 export interface CloudStartSocialLoginInput {
   provider: SocialLoginProvider;
   locale: "zh" | "en";
-  loginSource: "Memmy";
+  loginSource: "Cuby";
   invitationCode?: string;
 }
 

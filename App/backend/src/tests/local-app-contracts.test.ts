@@ -431,12 +431,12 @@ describe("local app contracts", () => {
         channel: "phone",
         phoneNumber: "13800138000",
         verificationCode: "123456",
-        loginSource: "Memmy",
+        loginSource: "Cuby",
         invitationCode: "MEMMY-A1B2C3"
       })
     ).toMatchObject({
       channel: "phone",
-      loginSource: "Memmy",
+      loginSource: "Cuby",
       invitationCode: "MEMMY-A1B2C3"
     });
     expect(() =>
@@ -444,7 +444,7 @@ describe("local app contracts", () => {
         channel: "email",
         email: "hello@example.com",
         verificationCode: "123456",
-        loginSource: "Memmy",
+        loginSource: "Cuby",
         invitationCode: "MEMMY-TOO-LONG"
       })
     ).toThrow();
@@ -454,7 +454,7 @@ describe("local app contracts", () => {
         email: "hello@example.com",
         phoneNumber: "13800138000",
         verificationCode: "123456",
-        loginSource: "Memmy"
+        loginSource: "Cuby"
       })
     ).toThrow();
     const parsedSession = AccountSessionViewSchema.parse({

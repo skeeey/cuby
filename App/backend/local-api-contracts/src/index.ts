@@ -1208,7 +1208,7 @@ export const VerifyCodeInputSchema = z
         email: z.string().email().optional(),
         phoneNumber: z.string().min(3).optional(),
         verificationCode: z.string().min(1),
-        loginSource: z.literal("Memmy"),
+        loginSource: z.literal("Cuby"),
         invitationCode: z.string().trim().max(12).optional()
     })
     .refine((input) => (
@@ -1377,7 +1377,7 @@ export type AccountLoginResultView = z.infer<typeof AccountLoginResultViewSchema
 export const StartSocialLoginInputSchema = z.object({
     provider: SocialLoginProviderSchema,
     locale: AccountLocaleSchema,
-    loginSource: z.literal("Memmy"),
+    loginSource: z.literal("Cuby"),
     invitationCode: z.string().trim().max(12).optional()
 });
 export type StartSocialLoginInput = z.infer<typeof StartSocialLoginInputSchema>;

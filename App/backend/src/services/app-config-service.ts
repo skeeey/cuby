@@ -78,7 +78,7 @@ export interface CreateAppConfigServiceOptions {
 const BUILT_IN_AVATARS = AvatarOptionSchema.array().parse([
   {
     id: "memmy-default",
-    displayName: "Memmy",
+    displayName: "Cuby",
     assetKey: "avatar.memmy.default",
     kind: "image"
   },

@@ -347,7 +347,7 @@ describe("LogsSubPage", () => {
     );
 
     expect(html).toContain('id="memory-log-agent-filter"');
-    expect(html).toContain(">Memmy</span>");
+    expect(html).toContain(">Cuby</span>");
     expect(html).toContain("memory-source-filter__logo--memmy");
     expect(html).toContain("cuby-neutral.png");
     expect(html).not.toContain("memory-log-card__identity");

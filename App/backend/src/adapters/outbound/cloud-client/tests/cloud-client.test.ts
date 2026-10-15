@@ -81,7 +81,7 @@ describe("cloud client", () => {
     const login = await client.login({
       email: "hello@example.com",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
 
     expect(requests).toEqual([
@@ -101,7 +101,7 @@ describe("cloud client", () => {
       },
       {
         path: "/api/agentUser/login",
-        body: { email: "hello@example.com", verificationCode: "654321", loginSource: "memmy" },
+        body: { email: "hello@example.com", verificationCode: "654321", loginSource: "cuby" },
         lang: "zh",
         deviceId,
         region: "cn"
@@ -191,7 +191,7 @@ describe("cloud client", () => {
     const start = await client.startSocialLogin({
       provider: "google",
       locale: "en",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
     const status = await client.getSocialLoginStatus({
       flowId: start.flowId,
@@ -210,7 +210,7 @@ describe("cloud client", () => {
     expect(requests).toEqual([
       {
         path: "/api/agentUser/oauth/start",
-        body: { provider: "google", locale: "en", loginSource: "memmy" }
+        body: { provider: "google", locale: "en", loginSource: "cuby" }
       },
       {
         path: "/api/agentUser/oauth/status",
@@ -247,7 +247,7 @@ describe("cloud client", () => {
     await expect(client.startSocialLogin({
       provider: "google",
       locale: "en",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     })).rejects.toThrow(/not allowed/);
   });
 
@@ -318,7 +318,7 @@ describe("cloud client", () => {
     await expect(client.login({
       email: "hello@example.com",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     })).rejects.toMatchObject({
       code: "invalid_argument",
       message: "验证码错误"
@@ -360,7 +360,7 @@ describe("cloud client", () => {
     const login = await client.login({
       phoneNumber: "13800138000",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
 
     expect(login.profile.phoneNumber).toBe("13800138000");
@@ -402,7 +402,7 @@ describe("cloud client", () => {
     const login = await client.login({
       phoneNumber: "13800138000",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
 
     expect(login.profile.nickname).toBe("Memmy User");

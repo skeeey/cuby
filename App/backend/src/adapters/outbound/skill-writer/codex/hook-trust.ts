@@ -56,7 +56,7 @@ export async function trustMemmyCodexHooks(options: TrustMemmyCodexHooksOptions)
     await client.request("initialize", {
       clientInfo: {
         name: "memmy",
-        title: "Memmy",
+        title: "Cuby",
         version: "1"
       }
     });

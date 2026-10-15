@@ -25,8 +25,8 @@ export const MEMORY_AGENT_SOURCE_VALUES = [
 ] as const;
 
 const AGENT_SOURCE_DISPLAY_NAMES: Record<string, string> = {
-  memmy: "Memmy",
-  memmy_agent: "Memmy",
+  memmy: "Cuby",
+  memmy_agent: "Cuby",
   cursor: "Cursor",
   claude_code: "Claude Code",
   codex: "Codex",
