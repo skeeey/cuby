@@ -21,8 +21,8 @@ describe("opencode skill target", () => {
   it("installs, replaces, and uninstalls the global Memmy bootstrap and Skill directory", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createOpencodeSkillTarget({ rootDirectory });
-    mkdirSync(join(rootDirectory, "skills", "memmy-memory", "references"), { recursive: true });
-    writeFileSync(join(rootDirectory, "skills", "memmy-memory", "references", "search.md"), "old reference", "utf8");
+    mkdirSync(join(rootDirectory, "skills", "cuby-memory", "references"), { recursive: true });
+    writeFileSync(join(rootDirectory, "skills", "cuby-memory", "references", "search.md"), "old reference", "utf8");
     writeFileSync(
       join(rootDirectory, "AGENTS.md"),
       ["manual", "<!-- memmy-memory cli : start -->", "old cli", "<!-- memmy-memory cli : end -->", ""].join("\n"),
@@ -30,23 +30,23 @@ describe("opencode skill target", () => {
     );
 
     await target.install(manifest);
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
     expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Memmy");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "references"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
     await expect(target.isInstalled("opencode")).resolves.toBe(true);
 
     writeFileSync(
       join(rootDirectory, "AGENTS.md"),
-      ["manual prefix", "<!-- memmy:start v=1 -->", "old", "<!-- memmy:end v=1 -->", "manual suffix", ""].join("\n"),
+      ["manual prefix", "<!-- cuby:start v=1 -->", "old", "<!-- cuby:end v=1 -->", "manual suffix", ""].join("\n"),
       "utf8"
     );
     await target.install(manifest);
     await target.uninstall("opencode");
     expect(readTargetFile(rootDirectory)).toBe(["manual prefix", "manual suffix", ""].join("\n"));
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
   });
 
   it("initializes a missing Opencode config directory", async () => {
@@ -59,7 +59,7 @@ describe("opencode skill target", () => {
     await expect(target.isInstalled("opencode")).resolves.toBe(false);
     await target.install(manifest);
     expect(existsSync(join(rootDirectory, "AGENTS.md"))).toBe(true);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"))).toBe(true);
   });
 
   it("installs and uninstalls the native OpenCode Memmy plugin", async () => {
@@ -76,8 +76,8 @@ describe("opencode skill target", () => {
     await target.installPlugin?.("opencode");
 
     const pluginPath = join(rootDirectory, "plugins", "memmy-memory.js");
-    const pluginConfigPath = join(rootDirectory, "plugins", "memmy-memory-config.json");
-    const commandPath = join(rootDirectory, "commands", "memmy-resume.md");
+    const pluginConfigPath = join(rootDirectory, "plugins", "cuby-memory-config.json");
+    const commandPath = join(rootDirectory, "commands", "cuby-resume.md");
     const pluginSource = readFileSync(pluginPath, "utf8");
     const pluginConfig = JSON.parse(readFileSync(pluginConfigPath, "utf8")) as {
       endpoint?: string;
@@ -87,7 +87,7 @@ describe("opencode skill target", () => {
       workspaceHostId?: string;
     };
     const commandSource = readFileSync(commandPath, "utf8");
-    const skillSource = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillSource = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
 
     expect(pluginConfig).toMatchObject({
       memmy_config_path: memmyConfigPath,
@@ -123,7 +123,7 @@ describe("opencode skill target", () => {
     expect(existsSync(pluginConfigPath)).toBe(false);
     expect(existsSync(bridgePath)).toBe(false);
     expect(existsSync(commandPath)).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
     expect(readTargetFile(rootDirectory)).toBe("manual instructions\n");
   });
 
@@ -447,7 +447,7 @@ function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
     content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
-    marker: "<!-- memmy:start v=1 -->"
+    marker: "<!-- cuby:start v=1 -->"
   };
 }
 

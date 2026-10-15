@@ -23,13 +23,13 @@ const CODEX_DISPLAY_NAME = "Codex";
 const TARGET_FILE_NAME = "AGENTS.md";
 const HOOKS_FILE_NAME = "hooks.json";
 const HOOK_DIRECTORY_NAME = "hooks";
-const HOOK_SCRIPT_FILE_NAME = "memmy-resume-hook.mjs";
+const HOOK_SCRIPT_FILE_NAME = "cuby-resume-hook.mjs";
 const LEGACY_HOOK_SCRIPT_FILE_NAME = "memmy-memory-resume-hook.mjs";
-const HOOK_CONFIG_FILE_NAME = "memmy-memory-config.json";
+const HOOK_CONFIG_FILE_NAME = "cuby-memory-config.json";
 const WORKSPACE_BRIDGE_FILE_NAME = "memmy-workspace-bridge.mjs";
 const HOOK_TIMEOUT_SECONDS = 60;
-const START_MARKER = "<!-- memmy:start v=1 -->";
-const END_MARKER = "<!-- memmy:end v=1 -->";
+const START_MARKER = "<!-- cuby:start v=1 -->";
+const END_MARKER = "<!-- cuby:end v=1 -->";
 const LEGACY_CLI_START_MARKER = "<!-- memmy-memory cli : start -->";
 const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 

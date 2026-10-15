@@ -129,7 +129,7 @@ async function findSkillFiles(skillsRoot: string): Promise<string[]> {
     }
 
     for (const entry of entries) {
-      if (entry.name === "memmy-memory" || entry.name === "node_modules" || entry.name === ".git") continue;
+      if (entry.name === "cuby-memory" || entry.name === "node_modules" || entry.name === ".git") continue;
       const entryPath = join(directory, entry.name);
       if (entry.isFile() && entry.name.toLowerCase() === "skill.md") {
         files.push(entryPath);

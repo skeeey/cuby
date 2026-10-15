@@ -19,13 +19,13 @@ import { loadMemmyWorkspaceBridgeRuntimeAsset } from "../workspace-bridge/runtim
 const OPENCLAW_TARGET_ID = "openclaw";
 const OPENCLAW_DISPLAY_NAME = "OpenClaw";
 const TARGET_FILE_NAME = "AGENTS.md";
-const PLUGIN_ID = "memmy-memory";
-const PLUGIN_DIRECTORY_NAME = "memmy-memory";
-const RESUME_COMMAND_NAME = "memmy-resume";
+const PLUGIN_ID = "cuby-memory";
+const PLUGIN_DIRECTORY_NAME = "cuby-memory";
+const RESUME_COMMAND_NAME = "cuby-resume";
 const PLUGIN_PACKAGE_FILE_NAME = "package.json";
 const PLUGIN_MANIFEST_FILE_NAME = "openclaw.plugin.json";
-const START_MARKER = "<!-- memmy:start v=1 -->";
-const END_MARKER = "<!-- memmy:end v=1 -->";
+const START_MARKER = "<!-- cuby:start v=1 -->";
+const END_MARKER = "<!-- cuby:end v=1 -->";
 const LEGACY_CLI_START_MARKER = "<!-- memmy-memory cli : start -->";
 const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 
@@ -113,7 +113,7 @@ export function createOpenclawSkillTarget(deps: CreateOpenclawSkillTargetDeps = 
         await loadMemmyWorkspaceBridgeRuntimeAsset()
       );
       await writeFileAtomically(
-        join(pluginDirectory, "memmy-memory-config.json"),
+        join(pluginDirectory, "cuby-memory-config.json"),
         `${JSON.stringify({ memmy_config_path: memmyConfigPath, ...(await readSharedMemmyMemoryServiceConfig(memmyConfigPath)) }, null, 2)}\n`
       );
       await upsertOpenclawPluginConfig(configPath, {
@@ -457,14 +457,14 @@ import {
   openRuntimeSession
 } from "./memmy-workspace-bridge.mjs";
 
-const PLUGIN_ID = "memmy-memory";
+const PLUGIN_ID = "cuby-memory";
 const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const pendingTurns = new Map();
 const pendingResumeSelections = new Map();
 const sessionCache = new Map();
 const runtimeSessionCache = new Map();
 const l3InjectOnce = new Map();
-const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
+const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);
 const BRIDGE_URL = new URL("./memmy-workspace-bridge.mjs", import.meta.url);
 const completedTurns = new Set();
 const CUBY_FETCH_TIMEOUT_MS = 45000;
@@ -517,7 +517,7 @@ export default {
 
     if (typeof api.registerCommand === "function") {
       api.registerCommand({
-        name: "memmy-resume",
+        name: "cuby-resume",
         description: "Search Memmy L1 memory resume candidates.",
         acceptsArgs: true,
         handler: async (ctx) => ({ text: await handleResumeCommand(cfg, ctx) })

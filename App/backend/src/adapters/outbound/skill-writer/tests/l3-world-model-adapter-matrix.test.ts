@@ -66,7 +66,7 @@ describe("L3 World Model automatic adapter matrix", () => {
     const target = createHermesSkillTarget({ rootDirectory: hermesRoot, memmyConfigPath: configPath });
     if (!target.installPlugin || !target.uninstallPlugin) throw new Error("Hermes has no automatic adapter");
     await target.installPlugin(target.targetId);
-    const providerPath = join(hermesRoot, "plugins", "memmy-memory", "__init__.py");
+    const providerPath = join(hermesRoot, "plugins", "cuby-memory", "__init__.py");
     const source = readFileSync(providerPath, "utf8");
     expect(source).toContain('"l3WorldModelProtocolVersion": 2');
     expect(source).not.toContain('"kind": "inventory"');
@@ -124,7 +124,7 @@ function nodeAdapterCases(base: string, configPath: string): NodeAdapterCase[] {
     {
       name: "OpenClaw",
       rootDirectory: openclaw,
-      bridgePath: join(openclaw, "extensions", "memmy-memory", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(openclaw, "extensions", "cuby-memory", "memmy-workspace-bridge.mjs"),
       create: () => createOpenclawSkillTarget({
         rootDirectory: openclaw,
         configPath: join(openclaw, "openclaw.json"),
@@ -135,7 +135,7 @@ function nodeAdapterCases(base: string, configPath: string): NodeAdapterCase[] {
     {
       name: "DeepSeek Harness",
       rootDirectory: deepseek,
-      bridgePath: join(deepseek, "profiles", "node_modules", "@memmy", "memmy-memory", "memmy-workspace-bridge.mjs"),
+      bridgePath: join(deepseek, "profiles", "node_modules", "@memmy", "cuby-memory", "memmy-workspace-bridge.mjs"),
       create: () => createDeepseekHarnessSkillTarget({ rootDirectory: deepseek, memmyConfigPath: configPath })
     }
   ];

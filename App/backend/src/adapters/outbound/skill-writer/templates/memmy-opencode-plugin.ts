@@ -17,7 +17,7 @@ import {
 } from "./memmy-workspace-bridge.mjs";
 
 const SOURCE = "opencode";
-const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
+const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);
 const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const FETCH_TIMEOUT_MS = 45000;
 const SEARCH_LIMIT = 20;

@@ -1,8 +1,8 @@
-# `memmy-memory raw`
+# `cuby-memory raw`
 
 Intent map:
-- call an exposed Memory API route without a dedicated command -> `memmy-memory raw`;
-- debug request or response shapes -> `memmy-memory raw METHOD /path`.
+- call an exposed Memory API route without a dedicated command -> `cuby-memory raw`;
+- debug request or response shapes -> `cuby-memory raw METHOD /path`.
 
 Use this command when:
 - a route exists in the Memory HTTP API but no specialized CLI command exists;
@@ -22,7 +22,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory raw <GET|POST|DELETE> <path>
+cuby-memory raw <GET|POST|DELETE> <path>
 ```
 
 Common flags:
@@ -34,8 +34,8 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory raw GET /health
-memmy-memory raw POST /worker/run --body '{"limit":20}'
+cuby-memory raw GET /health
+cuby-memory raw POST /worker/run --body '{"limit":20}'
 ```
 
 Working rules:

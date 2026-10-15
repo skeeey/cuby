@@ -826,8 +826,8 @@ FunctionEnd
 
 Function MemmyAddCliToUserPath
   StrCpy $0 "$INSTDIR\resources\cli"
-  IfFileExists "$0\memmy.cmd" 0 memmy_add_cli_done
-  IfFileExists "$0\memmy-memory.cmd" 0 memmy_add_cli_done
+  IfFileExists "$0\cuby.cmd" 0 memmy_add_cli_done
+  IfFileExists "$0\cuby-memory.cmd" 0 memmy_add_cli_done
 
   ReadRegStr $1 HKCU "Environment" "Path"
   StrCmp $1 "" memmy_add_cli_empty

@@ -561,17 +561,17 @@ async function installBundledCliIfNeeded(): Promise<void> {
 
   try {
     const cliDirectory = join(process.resourcesPath, "cli");
-    const memoryCli = join(cliDirectory, "memmy-memory");
-    const memmyCli = join(cliDirectory, "memmy");
-    await Promise.all([access(memoryCli), access(memmyCli)]);
+    const memoryCli = join(cliDirectory, "cuby-memory");
+    const cubyCli = join(cliDirectory, "cuby");
+    await Promise.all([access(memoryCli), access(cubyCli)]);
 
     const binDirectory = await resolveCliInstallDirectory();
     await mkdir(binDirectory, { recursive: true });
-    await installSymlink(memoryCli, join(binDirectory, "memmy-memory"));
-    await installSymlink(memmyCli, join(binDirectory, "memmy"));
+    await installSymlink(memoryCli, join(binDirectory, "cuby-memory"));
+    await installSymlink(cubyCli, join(binDirectory, "cuby"));
     await ensureUserPathIncludes(binDirectory);
   } catch (error) {
-    console.warn("Memmy CLI auto-install skipped:", error);
+    console.warn("Cuby CLI auto-install skipped:", error);
   }
 }
 
@@ -598,7 +598,7 @@ async function installCliTools(): Promise<CliInstallResult> {
     installed.push({ ...entry, target });
   }
 
-  const profilePaths = await ensureDirectoryOnUserPath(binDirectory, "# Memmy CLI PATH", 'export PATH="$HOME/.local/bin:$PATH"');
+  const profilePaths = await ensureDirectoryOnUserPath(binDirectory, "# Cuby CLI PATH", 'export PATH="$HOME/.local/bin:$PATH"');
   return {
     ok: true,
     binDirectory,
@@ -612,14 +612,14 @@ function resolveCliToolEntries(): Array<{ name: string; source: string }> {
   if (app.isPackaged) {
     const cliDirectory = join(process.resourcesPath, "cli");
     return [
-      { name: "memmy-memory", source: join(cliDirectory, "memmy-memory") }
+      { name: "cuby-memory", source: join(cliDirectory, "cuby-memory") }
     ];
   }
 
   const rootDirectory = resolveDevelopmentRoot();
   const memoryCli = join(rootDirectory, "Memory", "dist", "src", "cli", "index.js");
   return [
-    { name: "memmy-memory", source: memoryCli }
+    { name: "cuby-memory", source: memoryCli }
   ];
 }
 
@@ -715,7 +715,7 @@ async function ensureUserPathIncludes(binDirectory: string): Promise<void> {
     return;
   }
 
-  const marker = "# Memmy CLI PATH";
+  const marker = "# Cuby CLI PATH";
   const line = 'export PATH="$HOME/.local/bin:$PATH"';
   await Promise.all([
     ensureShellProfileIncludesPath(join(homedir(), ".zshrc"), marker, line),
@@ -740,10 +740,10 @@ async function ensureDirectoryOnUserPath(binDirectory: string, marker: string, l
 }
 
 /**
- * Ensures the shell profile includes the Memmy CLI PATH.
+ * Ensures the shell profile includes the Cuby CLI PATH.
  *
  * @param profilePath The shell profile path.
- * @param marker The Memmy CLI PATH marker.
+ * @param marker The Cuby CLI PATH marker.
  * @param line The PATH export statement.
  * @returns Resolves once done.
  */

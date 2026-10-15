@@ -1135,7 +1135,7 @@ async function* findSkillFiles(root: string): AsyncGenerator<string> {
       throw error;
     }
     for (const entry of entries.sort((left, right) => left.name.localeCompare(right.name))) {
-      if (entry.name === "memmy-memory" || entry.name === "node_modules" || entry.name === ".git") continue;
+      if (entry.name === "cuby-memory" || entry.name === "node_modules" || entry.name === ".git") continue;
       const path = join(directory, entry.name);
       if (entry.isFile() && entry.name.toLowerCase() === "skill.md") yield path;
       else if (depth < 2 && entry.isDirectory()) yield* visit(path, depth + 1);

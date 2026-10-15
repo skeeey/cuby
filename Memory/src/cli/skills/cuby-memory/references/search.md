@@ -1,9 +1,9 @@
-# `memmy-memory search`
+# `cuby-memory search`
 
 Intent map:
-- retrieve relevant memories for a task -> `memmy-memory search <query>`;
-- search within a known session -> `memmy-memory search <query> --session-id <id>`;
-- limit search to selected layers -> `memmy-memory search <query> --layers <layers>`.
+- retrieve relevant memories for a task -> `cuby-memory search <query>`;
+- search within a known session -> `cuby-memory search <query> --session-id <id>`;
+- limit search to selected layers -> `cuby-memory search <query> --layers <layers>`.
 
 Use this command when:
 - the agent needs memory context outside the turn lifecycle;
@@ -27,7 +27,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory search "<query>" --source <agent-source>
+cuby-memory search "<query>" --source <agent-source>
 ```
 
 Common flags:
@@ -41,7 +41,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory search "test failure patterns" --source codex --layers L2,Skill
+cuby-memory search "test failure patterns" --source codex --layers L2,Skill
 ```
 
 Working rules:

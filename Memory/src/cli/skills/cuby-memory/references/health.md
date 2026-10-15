@@ -1,8 +1,8 @@
-# `memmy-memory health`
+# `cuby-memory health`
 
 Intent map:
-- check whether the Memory service is reachable -> `memmy-memory health`;
-- verify storage readiness before memory operations -> `memmy-memory health`.
+- check whether the Memory service is reachable -> `cuby-memory health`;
+- verify storage readiness before memory operations -> `cuby-memory health`.
 
 Use this command when:
 - service state is unknown;
@@ -23,7 +23,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory health
+cuby-memory health
 ```
 
 Common flags:
@@ -33,7 +33,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory health
+cuby-memory health
 ```
 
 Working rules:

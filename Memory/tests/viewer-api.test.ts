@@ -254,7 +254,7 @@ describe("local Viewer API", () => {
     expect(installed.status).toBe(200);
     expect(await installed.json()).toMatchObject({
       installed: true,
-      path: "~/.local/bin/memmy-memory",
+      path: "~/.local/bin/cuby-memory",
     });
   });
 

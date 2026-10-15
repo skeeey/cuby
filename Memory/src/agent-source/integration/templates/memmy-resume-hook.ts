@@ -28,7 +28,7 @@ import {
 
 const SOURCE = ${JSON.stringify(options.source)};
 const MODE = ${JSON.stringify(options.mode)};
-const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
+const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);
 const STATE_URL = new URL("./memmy-resume-state.json", import.meta.url);
 const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const FETCH_TIMEOUT_MS = 45000;

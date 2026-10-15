@@ -1,6 +1,6 @@
 import type { SkillManifest } from "../types.js";
 
-const CUBY_MARKER = "<!-- memmy:start v=1 -->";
+const CUBY_MARKER = "<!-- cuby:start v=1 -->";
 
 export function renderMemmyPluginSkillManifest(targetId: string): SkillManifest {
   return {

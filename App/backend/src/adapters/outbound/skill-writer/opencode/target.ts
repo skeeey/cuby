@@ -16,12 +16,12 @@ const OPENCODE_DISPLAY_NAME = "Opencode";
 const TARGET_FILE_NAME = "AGENTS.md";
 const PLUGIN_DIRECTORY_NAME = "plugins";
 const PLUGIN_FILE_NAME = "memmy-memory.js";
-const PLUGIN_CONFIG_FILE_NAME = "memmy-memory-config.json";
+const PLUGIN_CONFIG_FILE_NAME = "cuby-memory-config.json";
 const WORKSPACE_BRIDGE_FILE_NAME = "memmy-workspace-bridge.mjs";
 const COMMAND_DIRECTORY_NAME = "commands";
-const RESUME_COMMAND_FILE_NAME = "memmy-resume.md";
-const START_MARKER = "<!-- memmy:start v=1 -->";
-const END_MARKER = "<!-- memmy:end v=1 -->";
+const RESUME_COMMAND_FILE_NAME = "cuby-resume.md";
+const START_MARKER = "<!-- cuby:start v=1 -->";
+const END_MARKER = "<!-- cuby:end v=1 -->";
 const LEGACY_CLI_START_MARKER = "<!-- memmy-memory cli : start -->";
 const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 

@@ -147,7 +147,7 @@ export async function installMemoryCli(options: MemoryCliSetupOptions = {}): Pro
   }
 
   const home = resolve(expandHome(options.home ?? "~/.cuby"));
-  const binPath = resolve(expandHome(options.binPath ?? join(home, "bin", "memmy-memory")));
+  const binPath = resolve(expandHome(options.binPath ?? join(home, "bin", "cuby-memory")));
   const source = resolve(expandHome(options.sourcePath ?? join(process.cwd(), "dist", "src", "cli", "index.js")));
 
   if (existsSync(binPath) && !options.force && !isExistingMemmyMemoryLink(binPath, source)) {

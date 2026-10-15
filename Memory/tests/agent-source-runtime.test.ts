@@ -636,12 +636,12 @@ describe("standalone Agent source executor", () => {
     });
 
     await executor.mutateConnection("cursor", "plugin", "POST");
-    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).toContain("memmy-resume-hook.mjs");
-    expect(readFileSync(join(cursorRoot, "hooks", "memmy-resume-hook.mjs"), "utf8")).toContain("const SOURCE = \"cursor\"");
+    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).toContain("cuby-resume-hook.mjs");
+    expect(readFileSync(join(cursorRoot, "hooks", "cuby-resume-hook.mjs"), "utf8")).toContain("const SOURCE = \"cursor\"");
     expect((await executor.list()).sources[0]?.status).toBe("plugin_installed");
 
     await executor.mutateConnection("cursor", "plugin", "DELETE");
-    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).not.toContain("memmy-resume-hook.mjs");
+    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).not.toContain("cuby-resume-hook.mjs");
     expect((await executor.list()).sources[0]?.status).toBe("not_connected");
   });
 });

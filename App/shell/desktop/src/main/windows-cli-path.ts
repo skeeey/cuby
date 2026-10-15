@@ -51,8 +51,8 @@ export const installPackagedWindowsCliTools = async (
   const ensureUserPath = dependencies.ensureUserPath ?? ensureWindowsCliDirectoryOnPath;
   const binDirectory = win32.join(resourcesPath, "cli");
   const entries = [
-    { name: "memmy-memory", source: win32.join(binDirectory, "memmy-memory.cmd") },
-    { name: "memmy", source: win32.join(binDirectory, "memmy.cmd") }
+    { name: "cuby-memory", source: win32.join(binDirectory, "cuby-memory.cmd") },
+    { name: "cuby", source: win32.join(binDirectory, "cuby.cmd") }
   ];
 
   for (const entry of entries) {
@@ -123,7 +123,7 @@ export const ensureWindowsCliDirectoryOnPath = async (
   } catch (cause) {
     const registrationState = userPath.changed
       ? "Windows user PATH was updated"
-      : "Windows user PATH already contains the Memmy CLI directory";
+      : "Windows user PATH already contains the Cuby CLI directory";
     throw new Error(
       `${registrationState}, but the Environment change notification failed. Retry to notify newly opened terminals.`,
       { cause }

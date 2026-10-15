@@ -972,8 +972,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain("Call un.MemmyRemoveLaunchProxy");
     expect(includeSource).not.toContain("Call un.MemmyPointShortcutsToInstalledApp");
     expect(includeSource).toContain('StrCpy $0 "$INSTDIR\\resources\\cli"');
-    expect(includeSource).toContain('IfFileExists "$0\\memmy.cmd"');
-    expect(includeSource).toContain('IfFileExists "$0\\memmy-memory.cmd"');
+    expect(includeSource).toContain('IfFileExists "$0\\cuby.cmd"');
+    expect(includeSource).toContain('IfFileExists "$0\\cuby-memory.cmd"');
     expect(includeSource).toContain('ReadRegStr $1 HKCU "Environment" "Path"');
     expect(includeSource).toContain('WriteRegExpandStr HKCU "Environment" "Path"');
     expect(includeSource).toContain("CUBY_WM_SETTINGCHANGE");
@@ -1143,7 +1143,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).toContain('Boolean((process as NodeJS.Process & { windowsStore?: boolean }).windowsStore)');
     expect(mainSource).toContain(') === "packaged-windows"');
     expect(mainSource).toContain('join(homedir(), ".local", "bin")');
-    expect(mainSource).toContain('{ name: "memmy-memory", source: join(cliDirectory, "memmy-memory") }');
+    expect(mainSource).toContain('{ name: "cuby-memory", source: join(cliDirectory, "cuby-memory") }');
     expect(mainSource).toContain('export PATH="$HOME/.local/bin:$PATH"');
     expect(packageSource).toContain("Default prefix:\n  ~/.local/bin");
     expect(packageSource).toContain('PREFIX="$HOME/.local/bin"');
@@ -1173,17 +1173,17 @@ describe("desktop packaged runtime boundaries", () => {
 
     expect(agentPackage.bin).toEqual({ memmy: "./dist/main.js" });
     expect(agentPackageLock.packages?.[""]?.bin).toEqual({ memmy: "dist/main.js" });
-    expect(mainSource).toContain('const memmyCli = join(cliDirectory, "memmy")');
-    expect(mainSource).toContain('await Promise.all([access(memoryCli), access(memmyCli)])');
-    expect(mainSource).toContain('installSymlink(memmyCli, join(binDirectory, "memmy"))');
+    expect(mainSource).toContain('const cubyCli = join(cliDirectory, "cuby")');
+    expect(mainSource).toContain('await Promise.all([access(memoryCli), access(cubyCli)])');
+    expect(mainSource).toContain('installSymlink(cubyCli, join(binDirectory, "cuby"))');
     expect(mainSource).not.toContain(['join(cliDirectory, "', 'memmy-agent', '")'].join(""));
     expect(mainSource).not.toContain(['join(binDirectory, "', 'memmy-agent', '")'].join(""));
-    expect(packageSource).toContain('create_cli_launcher "$CLI_BIN_DIR/memmy"');
+    expect(packageSource).toContain('create_cli_launcher "$CLI_BIN_DIR/cuby"');
     expect(packageSource).not.toContain(['create_cli_launcher "$CLI_BIN_DIR/', 'memmy-agent', '"'].join(""));
     expect(packageSource).not.toContain(['ln -sf "$SCRIPT_DIR/', 'memmy-agent', '"'].join(""));
-    expect(windowsPackageSource).toContain('create_windows_cli_launcher "$CLI_BIN_DIR/memmy.cmd"');
-    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/memmy-memory.cmd"');
-    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/memmy.cmd"');
+    expect(windowsPackageSource).toContain('create_windows_cli_launcher "$CLI_BIN_DIR/cuby.cmd"');
+    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/cuby-memory.cmd"');
+    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/cuby.cmd"');
     expect(windowsPackageSource).toContain('for %%I in ("%RESOURCES_DIR%\\..") do set "APP_DIR=%%~fI"');
     expect(windowsPackageSource).toContain('set "APP_EXEC=%APP_DIR%\\Memmy.exe"');
     expect(windowsPackageSource).not.toContain('set "APP_EXEC=%RESOURCES_DIR%\\Memmy.exe"');

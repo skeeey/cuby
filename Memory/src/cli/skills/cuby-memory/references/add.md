@@ -1,9 +1,9 @@
-# `memmy-memory add`
+# `cuby-memory add`
 
 Intent map:
-- store a durable fact, preference, decision, procedure, or project note -> `memmy-memory add`;
-- manually create a memory item outside a turn lifecycle -> `memmy-memory add`;
-- attach a manually added memory to a known session or turn -> `memmy-memory add --session-id <id> --turn-id <id>`.
+- store a durable fact, preference, decision, procedure, or project note -> `cuby-memory add`;
+- manually create a memory item outside a turn lifecycle -> `cuby-memory add`;
+- attach a manually added memory to a known session or turn -> `cuby-memory add --session-id <id> --turn-id <id>`.
 
 Use this command when:
 - the user explicitly asks the agent to remember something durable;
@@ -28,7 +28,7 @@ Never store:
 Command:
 
 ```bash
-memmy-memory add "<content>" --source <agent-source>
+cuby-memory add "<content>" --source <agent-source>
 ```
 
 Common flags:
@@ -43,7 +43,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory add "this project stores local memory in sqlite" --source codex --tags project,sqlite
+cuby-memory add "this project stores local memory in sqlite" --source codex --tags project,sqlite
 ```
 
 Working rules:

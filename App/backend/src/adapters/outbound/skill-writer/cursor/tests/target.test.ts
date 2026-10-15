@@ -28,7 +28,7 @@ describe("cursor skill target", () => {
 
     await target.install(manifest);
 
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Memmy");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
     expect(existsSync(join(rootDirectory, "rules", "memmy.md"))).toBe(false);
@@ -38,14 +38,14 @@ describe("cursor skill target", () => {
   it("replaces an existing Skill directory without changing unrelated files", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createCursorSkillTarget({ rootDirectory });
-    mkdirSync(join(rootDirectory, "skills", "memmy-memory", "references"), { recursive: true });
-    writeFileSync(join(rootDirectory, "skills", "memmy-memory", "references", "search.md"), "old reference", "utf8");
+    mkdirSync(join(rootDirectory, "skills", "cuby-memory", "references"), { recursive: true });
+    writeFileSync(join(rootDirectory, "skills", "cuby-memory", "references", "search.md"), "old reference", "utf8");
     writeFileSync(join(rootDirectory, "unrelated.md"), "manual\n", "utf8");
 
     await target.install(manifest);
 
     expect(readFileSync(join(rootDirectory, "unrelated.md"), "utf8")).toBe("manual\n");
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "references"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
   });
 
   it("uninstalls only the Memmy Skill directory", async () => {
@@ -57,7 +57,7 @@ describe("cursor skill target", () => {
     await target.uninstall("cursor");
 
     expect(readFileSync(join(rootDirectory, "unrelated.md"), "utf8")).toBe("manual\n");
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
     await expect(target.isInstalled("cursor")).resolves.toBe(false);
   });
 
@@ -70,7 +70,7 @@ describe("cursor skill target", () => {
     await expect(target.resolveRootDirectory()).resolves.toBe(rootDirectory);
     await expect(target.isInstalled("cursor")).resolves.toBe(false);
     await target.install(manifest);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"))).toBe(true);
   });
 
   it("replaces an app-hosted hook idempotently without changing unrelated hooks", async () => {
@@ -78,7 +78,7 @@ describe("cursor skill target", () => {
     const target = createCursorSkillTarget({ rootDirectory, memmyConfigPath });
     const unrelatedHook = { command: "'/usr/local/bin/custom-hook'", timeout: 10 };
     const appHostedHook = {
-      command: "'/Applications/Memmy.app/Contents/MacOS/Memmy' '/Users/test/hooks/memmy-resume-hook.mjs'",
+      command: "'/Applications/Memmy.app/Contents/MacOS/Memmy' '/Users/test/hooks/cuby-resume-hook.mjs'",
       timeout: 60
     };
     writeFileSync(join(rootDirectory, "hooks.json"), JSON.stringify({
@@ -140,7 +140,7 @@ describe("cursor skill target", () => {
     try {
       await target.installPlugin?.("cursor");
 
-      const hookScriptPath = join(rootDirectory, "hooks", "memmy-resume-hook.mjs");
+      const hookScriptPath = join(rootDirectory, "hooks", "cuby-resume-hook.mjs");
       const hooksConfig = JSON.parse(readFileSync(join(rootDirectory, "hooks.json"), "utf8")) as {
         version: number;
         hooks: {
@@ -160,13 +160,13 @@ describe("cursor skill target", () => {
         timeout: 60
       });
       expect(submitHook).not.toHaveProperty("matcher");
-      expect(submitHook.command).toContain("memmy-resume-hook.mjs");
+      expect(submitHook.command).toContain("cuby-resume-hook.mjs");
       expect(submitHook.command).not.toContain("Electron.app");
       expectSafeNodeHookCommand(submitHook.command);
       expect(responseHook).toMatchObject({ timeout: 60 });
-      expect(responseHook.command).toContain("memmy-resume-hook.mjs");
+      expect(responseHook.command).toContain("cuby-resume-hook.mjs");
       expect(stopHook).toMatchObject({ timeout: 60 });
-      expect(stopHook.command).toContain("memmy-resume-hook.mjs");
+      expect(stopHook.command).toContain("cuby-resume-hook.mjs");
 
       const run = await runNodeHook(
         hookScriptPath,
@@ -194,12 +194,12 @@ describe("cursor skill target", () => {
         source: "cursor"
       });
       expect(authorization).toBe("Bearer test-token");
-      const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+      const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
       expect(skillFile).toContain("# Memmy Memory");
       expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
       expect(skillFile).toContain('memmy-memory search "query text" --source cursor');
       expect(skillFile).not.toContain("memmy-memory add");
-      const resumeSkillFile = readFileSync(join(rootDirectory, "skills", "memmy-resume", "SKILL.md"), "utf8");
+      const resumeSkillFile = readFileSync(join(rootDirectory, "skills", "cuby-resume", "SKILL.md"), "utf8");
       expect(resumeSkillFile).toContain("name: memmy-resume");
       expect(resumeSkillFile).toContain("disable-model-invocation: true");
       expect(resumeSkillFile).toContain("memmy-memory search");
@@ -233,8 +233,8 @@ describe("cursor skill target", () => {
       expect(hooksAfter.hooks?.beforeSubmitPrompt).toBeUndefined();
       expect(hooksAfter.hooks?.afterAgentResponse).toBeUndefined();
       expect(hooksAfter.hooks?.stop).toBeUndefined();
-      expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
-      expect(existsSync(join(rootDirectory, "skills", "memmy-resume"))).toBe(false);
+      expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
+      expect(existsSync(join(rootDirectory, "skills", "cuby-resume"))).toBe(false);
     } finally {
       await close(server);
     }
@@ -254,7 +254,7 @@ describe("cursor skill target", () => {
     const target = createCursorSkillTarget({ rootDirectory, memmyConfigPath });
 
     await target.installPlugin?.("cursor");
-    const hookScriptPath = join(rootDirectory, "hooks", "memmy-resume-hook.mjs");
+    const hookScriptPath = join(rootDirectory, "hooks", "cuby-resume-hook.mjs");
     const run = await runNodeHook(
       hookScriptPath,
       JSON.stringify({ hook_event_name: "beforeSubmitPrompt", prompt: "/memmy-resume unreachable" })
@@ -287,7 +287,7 @@ describe("cursor skill target", () => {
     try {
       await target.installPlugin?.("cursor");
       writeFileSync(
-        join(rootDirectory, "hooks", "memmy-memory-config.json"),
+        join(rootDirectory, "hooks", "cuby-memory-config.json"),
         JSON.stringify({
           memmy_config_path: memmyConfigPath,
           endpoint: `http://127.0.0.1:${address.port}`
@@ -295,7 +295,7 @@ describe("cursor skill target", () => {
         "utf8"
       );
       const run = await runNodeHook(
-        join(rootDirectory, "hooks", "memmy-resume-hook.mjs"),
+        join(rootDirectory, "hooks", "cuby-resume-hook.mjs"),
         JSON.stringify({ hook_event_name: "beforeSubmitPrompt", prompt: "/memmy-resume snapshot" })
       );
       const output = JSON.parse(run.stdout) as { user_message: string };
@@ -371,7 +371,7 @@ describe("cursor skill target", () => {
 
     try {
       await target.installPlugin?.("cursor");
-      const hookScriptPath = join(rootDirectory, "hooks", "memmy-resume-hook.mjs");
+      const hookScriptPath = join(rootDirectory, "hooks", "cuby-resume-hook.mjs");
       const start = await runNodeHook(
         hookScriptPath,
         JSON.stringify({
@@ -543,7 +543,7 @@ function createFixture(): {
 }
 
 function expectSafeNodeHookCommand(command: string | undefined): void {
-  expect(command).toContain("memmy-resume-hook.mjs");
+  expect(command).toContain("cuby-resume-hook.mjs");
   expect(command).not.toMatch(/\.app[\\/]contents[\\/]macos[\\/]/i);
   expect(command).not.toContain("Memmy.app");
   expect(command).not.toContain("Electron.app");
@@ -553,7 +553,7 @@ function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
     content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
-    marker: "<!-- memmy:start v=1 -->"
+    marker: "<!-- cuby:start v=1 -->"
   };
 }
 

@@ -16,11 +16,12 @@ const HERMES_DISPLAY_NAME = "Hermes";
 const TARGET_FILE_NAME = "SOUL.md";
 const LEGACY_TARGET_FILE_NAME = "AGENTS.md";
 const CONFIG_FILE_NAME = "config.yaml";
-const PLUGIN_ID = "memmy-memory";
-const COMMAND_PLUGIN_ID = "memmy-resume";
+const PLUGIN_ID = "cuby-memory";
+const COMMAND_PLUGIN_ID = "cuby-resume";
 const LEGACY_COMMAND_PLUGIN_ID = "memmy-memory-command";
-const START_MARKER = "<!-- memmy:start v=1 -->";
-const END_MARKER = "<!-- memmy:end v=1 -->";
+const LEGACY_PLUGIN_ID = "memmy-memory";
+const START_MARKER = "<!-- cuby:start v=1 -->";
+const END_MARKER = "<!-- cuby:end v=1 -->";
 const LEGACY_CLI_START_MARKER = "<!-- memmy-memory cli : start -->";
 const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 
@@ -193,7 +194,7 @@ async function detectHermesMemoryPluginConflict(filePath: string): Promise<Memor
   const config = await readYamlConfig(filePath);
   const memory = toMutableRecord(config.memory);
   const provider = normalizeString(memory.provider);
-  if (!provider || provider === "builtin" || provider === PLUGIN_ID) {
+  if (!provider || provider === "builtin" || provider === PLUGIN_ID || provider === LEGACY_PLUGIN_ID) {
     return null;
   }
 
@@ -309,13 +310,13 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
   return error instanceof Error && "code" in error;
 }
 
-const HERMES_PLUGIN_YAML = `name: memmy-memory
+const HERMES_PLUGIN_YAML = `name: cuby-memory
 version: ${CUBY_VERSION}
 kind: exclusive
 description: "Memmy local memory provider."
 `;
 
-const HERMES_COMMAND_PLUGIN_YAML = `name: memmy-resume
+const HERMES_COMMAND_PLUGIN_YAML = `name: cuby-resume
 version: ${CUBY_VERSION}
 kind: standalone
 description: "Direct Memmy resume slash command."
@@ -344,7 +345,7 @@ HTTP_TIMEOUT_SECONDS = 45.0
 
 def register(ctx) -> None:
     ctx.register_command(
-        "memmy-resume",
+        "cuby-resume",
         handler=_handle_memmy_resume_command,
         description="Search Memmy L1 memory resume candidates.",
         args_hint="<query>",
@@ -992,7 +993,7 @@ class MemmyMemoryProvider(MemoryProvider):
 
     @property
     def name(self) -> str:
-        return "memmy-memory"
+        return "cuby-memory"
 
     def is_available(self) -> bool:
         return _memmy_config_path().exists()

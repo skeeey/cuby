@@ -98,7 +98,7 @@ describe("memmy-memory CLI setup commands", () => {
 
     const saved = YAML.parse(readFileSync(configPath, "utf8"));
     expect(saved.memmyMemory.storage.token).toMatch(/^[a-f0-9]{64}$/);
-    expect(existsSync(join(root, ".codex", "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(root, ".codex", "skills", "cuby-memory"))).toBe(false);
   });
 
   it("preserves an existing authentication token when initialization is repeated", async () => {
@@ -232,41 +232,41 @@ describe("memmy-memory CLI setup commands", () => {
         agent: "codex",
         root: join(root, ".codex"),
         injectPath: join(root, ".codex", "AGENTS.md"),
-        skillPath: join(root, ".codex", "skills", "memmy-memory"),
+        skillPath: join(root, ".codex", "skills", "cuby-memory"),
         dryRun: false
       },
       {
         agent: "cursor",
         root: join(root, ".cursor"),
-        skillPath: join(root, ".cursor", "skills", "memmy-memory"),
+        skillPath: join(root, ".cursor", "skills", "cuby-memory"),
         dryRun: false
       },
       {
         agent: "claude",
         root: join(root, ".claude"),
         injectPath: join(root, ".claude", "CLAUDE.md"),
-        skillPath: join(root, ".claude", "skills", "memmy-memory"),
+        skillPath: join(root, ".claude", "skills", "cuby-memory"),
         dryRun: false
       },
       {
         agent: "opencode",
         root: join(root, ".config", "opencode"),
         injectPath: join(root, ".config", "opencode", "AGENTS.md"),
-        skillPath: join(root, ".config", "opencode", "skills", "memmy-memory"),
+        skillPath: join(root, ".config", "opencode", "skills", "cuby-memory"),
         dryRun: false
       },
       {
         agent: "openclaw",
         root: join(root, ".openclaw"),
         injectPath: join(root, ".openclaw", "workspace", "AGENTS.md"),
-        skillPath: join(root, ".openclaw", "skills", "memmy-memory"),
+        skillPath: join(root, ".openclaw", "skills", "cuby-memory"),
         dryRun: false
       },
       {
         agent: "hermes",
         root: join(root, ".hermes"),
         injectPath: join(root, ".hermes", "SOUL.md"),
-        skillPath: join(root, ".hermes", "skills", "memmy-memory"),
+        skillPath: join(root, ".hermes", "skills", "cuby-memory"),
         dryRun: false
       }
     ]);
@@ -278,16 +278,16 @@ describe("memmy-memory CLI setup commands", () => {
       join(root, ".openclaw", "workspace", "AGENTS.md"),
       join(root, ".hermes", "SOUL.md")
     ]) {
-      expect(readFileSync(injectPath, "utf8")).toContain("<!-- memmy:start v=1 -->");
+      expect(readFileSync(injectPath, "utf8")).toContain("<!-- cuby:start v=1 -->");
     }
 
     for (const skillPath of [
-      join(root, ".codex", "skills", "memmy-memory", "SKILL.md"),
-      join(root, ".cursor", "skills", "memmy-memory", "SKILL.md"),
-      join(root, ".claude", "skills", "memmy-memory", "SKILL.md"),
-      join(root, ".config", "opencode", "skills", "memmy-memory", "SKILL.md"),
-      join(root, ".openclaw", "skills", "memmy-memory", "SKILL.md"),
-      join(root, ".hermes", "skills", "memmy-memory", "SKILL.md")
+      join(root, ".codex", "skills", "cuby-memory", "SKILL.md"),
+      join(root, ".cursor", "skills", "cuby-memory", "SKILL.md"),
+      join(root, ".claude", "skills", "cuby-memory", "SKILL.md"),
+      join(root, ".config", "opencode", "skills", "cuby-memory", "SKILL.md"),
+      join(root, ".openclaw", "skills", "cuby-memory", "SKILL.md"),
+      join(root, ".hermes", "skills", "cuby-memory", "SKILL.md")
     ]) {
       expect(readFileSync(skillPath, "utf8")).toContain("name: memmy-memory");
     }
@@ -317,7 +317,7 @@ describe("memmy-memory CLI setup commands", () => {
       "openclaw"
     ]);
     expect(existsSync(join(root, ".hermes"))).toBe(false);
-    expect(existsSync(join(root, ".codex", "skills", "memmy-memory", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(root, ".codex", "skills", "cuby-memory", "SKILL.md"))).toBe(true);
   });
 
   it("installs OpenCode into OPENCODE_CONFIG_DIR", async () => {
@@ -342,7 +342,7 @@ describe("memmy-memory CLI setup commands", () => {
       agent: "opencode",
       root: opencodeRoot,
       injectPath: join(opencodeRoot, "AGENTS.md"),
-      skillPath: join(opencodeRoot, "skills", "memmy-memory"),
+      skillPath: join(opencodeRoot, "skills", "cuby-memory"),
       dryRun: false
     }]);
   });
@@ -557,21 +557,21 @@ describe("memmy-memory CLI setup commands", () => {
       agent: "codex",
       root: agentRoot,
       injectPath: join(agentRoot, "AGENTS.md"),
-      skillPath: join(agentRoot, "skills", "memmy-memory"),
+      skillPath: join(agentRoot, "skills", "cuby-memory"),
       dryRun: false
     });
     expect(readFileSync(join(agentRoot, "AGENTS.md"), "utf8")).toBe(
       [
         "manual prefix",
-        "<!-- memmy:start v=1 -->",
+        "<!-- cuby:start v=1 -->",
         "# Agent Inject",
         "Use the memmy-memory skill.",
-        "<!-- memmy:end v=1 -->",
+        "<!-- cuby:end v=1 -->",
         ""
       ].join("\n")
     );
-    expect(readFileSync(join(agentRoot, "skills", "memmy-memory", "SKILL.md"), "utf8")).toContain("name: memmy-memory");
-    expect(statSync(join(agentRoot, "skills", "memmy-memory", "references")).isDirectory()).toBe(true);
+    expect(readFileSync(join(agentRoot, "skills", "cuby-memory", "SKILL.md"), "utf8")).toContain("name: memmy-memory");
+    expect(statSync(join(agentRoot, "skills", "cuby-memory", "references")).isDirectory()).toBe(true);
     expect(existsSync(join(agentRoot, "skills-placeholder"))).toBe(true);
   });
 
@@ -595,7 +595,7 @@ describe("memmy-memory CLI setup commands", () => {
     });
     expect(result.agents).toBeUndefined();
     expect(existsSync(join(agentRoot, "AGENTS.md"))).toBe(false);
-    expect(existsSync(join(agentRoot, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(agentRoot, "skills", "cuby-memory"))).toBe(false);
   });
 
   it("uses per-agent inject paths and replaces existing marker blocks", async () => {
@@ -616,7 +616,7 @@ describe("memmy-memory CLI setup commands", () => {
       mkdirSync(dirname(injectPath), { recursive: true });
       writeFileSync(
         injectPath,
-        ["before", "<!-- memmy:start v=1 -->", "old", "<!-- memmy:end v=1 -->", "after", ""].join("\n")
+        ["before", "<!-- cuby:start v=1 -->", "old", "<!-- cuby:end v=1 -->", "after", ""].join("\n")
       );
 
       await runCommand({
@@ -630,9 +630,9 @@ describe("memmy-memory CLI setup commands", () => {
       });
 
       expect(readFileSync(injectPath, "utf8")).toBe(
-        ["before", "<!-- memmy:start v=1 -->", "# Agent Inject", "Use the memmy-memory skill.", "<!-- memmy:end v=1 -->", "after", ""].join("\n")
+        ["before", "<!-- cuby:start v=1 -->", "# Agent Inject", "Use the memmy-memory skill.", "<!-- cuby:end v=1 -->", "after", ""].join("\n")
       );
-      expect(existsSync(join(agentRoot, "skills", "memmy-memory", "SKILL.md"))).toBe(true);
+      expect(existsSync(join(agentRoot, "skills", "cuby-memory", "SKILL.md"))).toBe(true);
     }
   });
 
@@ -660,9 +660,9 @@ describe("memmy-memory CLI setup commands", () => {
     const root = tempRoot();
     const agentRoot = join(root, ".codex");
     const assetRoot = join(root, "assets");
-    mkdirSync(join(agentRoot, "skills", "memmy-memory", "references"), { recursive: true });
-    writeFileSync(join(agentRoot, "skills", "memmy-memory", "old.md"), "old skill file\n");
-    writeFileSync(join(agentRoot, "skills", "memmy-memory", "references", "old.md"), "old reference\n");
+    mkdirSync(join(agentRoot, "skills", "cuby-memory", "references"), { recursive: true });
+    writeFileSync(join(agentRoot, "skills", "cuby-memory", "old.md"), "old skill file\n");
+    writeFileSync(join(agentRoot, "skills", "cuby-memory", "references", "old.md"), "old reference\n");
     createCliAssets(assetRoot);
 
     await runCommand({
@@ -675,16 +675,16 @@ describe("memmy-memory CLI setup commands", () => {
       ]
     });
 
-    expect(readFileSync(join(agentRoot, "skills", "memmy-memory", "SKILL.md"), "utf8")).toContain("name: memmy-memory");
-    expect(existsSync(join(agentRoot, "skills", "memmy-memory", "old.md"))).toBe(false);
-    expect(existsSync(join(agentRoot, "skills", "memmy-memory", "references", "old.md"))).toBe(false);
-    expect(existsSync(join(agentRoot, "skills", "memmy-memory", "references", "health.md"))).toBe(true);
+    expect(readFileSync(join(agentRoot, "skills", "cuby-memory", "SKILL.md"), "utf8")).toContain("name: memmy-memory");
+    expect(existsSync(join(agentRoot, "skills", "cuby-memory", "old.md"))).toBe(false);
+    expect(existsSync(join(agentRoot, "skills", "cuby-memory", "references", "old.md"))).toBe(false);
+    expect(existsSync(join(agentRoot, "skills", "cuby-memory", "references", "health.md"))).toBe(true);
   });
 
   it("installs a local memmy-memory symlink after initialization", async () => {
     const root = tempRoot();
     const source = join(root, "dist", "src", "cli", "index.js");
-    const binPath = join(root, "bin", "memmy-memory");
+    const binPath = join(root, "bin", "cuby-memory");
     createAllAgentRoots(root);
     setEnv("HOME", root);
     mkdirSync(join(root, "dist", "src", "cli"), { recursive: true });
@@ -717,7 +717,7 @@ describe("memmy-memory CLI setup commands", () => {
     const configPath = join(root, ".cuby", "config.yaml");
     const pluginRoot = join(root, ".openclaw", "memos-plugin");
     const source = join(root, "dist", "src", "cli", "index.js");
-    const binPath = join(root, "bin", "memmy-memory");
+    const binPath = join(root, "bin", "cuby-memory");
     mkdirSync(dirname(configPath), { recursive: true });
     mkdirSync(pluginRoot, { recursive: true });
     mkdirSync(dirname(source), { recursive: true });
@@ -759,7 +759,7 @@ describe("memmy-memory CLI setup commands", () => {
   it("does not replace an existing non-memmy-memory binary without force", async () => {
     const root = tempRoot();
     const source = join(root, "index.js");
-    const binPath = join(root, "bin", "memmy-memory");
+    const binPath = join(root, "bin", "cuby-memory");
     createAllAgentRoots(root);
     setEnv("HOME", root);
     mkdirSync(join(root, "bin"), { recursive: true });
@@ -789,13 +789,13 @@ function tempRoot(): string {
 }
 
 function createCliAssets(assetRoot: string): void {
-  mkdirSync(join(assetRoot, "skills", "memmy-memory", "references"), { recursive: true });
+  mkdirSync(join(assetRoot, "skills", "cuby-memory", "references"), { recursive: true });
   writeFileSync(join(assetRoot, "agent_inject.md"), ["# Agent Inject", "Use the memmy-memory skill.", ""].join("\n"));
   writeFileSync(
-    join(assetRoot, "skills", "memmy-memory", "SKILL.md"),
+    join(assetRoot, "skills", "cuby-memory", "SKILL.md"),
     ["---", "name: memmy-memory", "description: test skill", "---", ""].join("\n")
   );
-  writeFileSync(join(assetRoot, "skills", "memmy-memory", "references", "health.md"), "# health\n");
+  writeFileSync(join(assetRoot, "skills", "cuby-memory", "references", "health.md"), "# health\n");
 }
 
 function createAllAgentRoots(root: string): void {

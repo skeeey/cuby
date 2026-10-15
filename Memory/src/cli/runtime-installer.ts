@@ -244,13 +244,13 @@ export function userServiceRestartCommand(
   if (platform === "darwin") {
     return {
       command: "launchctl",
-      args: ["kickstart", "-k", `gui/${uid}/com.memtensor.memmy-memory`]
+      args: ["kickstart", "-k", `gui/${uid}/com.memtensor.cuby-memory`]
     };
   }
   if (platform === "linux") {
     return {
       command: "systemctl",
-      args: ["--user", "restart", "memmy-memory.service"]
+      args: ["--user", "restart", "cuby-memory.service"]
     };
   }
   if (platform === "win32") {
@@ -694,30 +694,30 @@ function registerAndStartUserService(home: string, serviceHome: string, start = 
   const logs = join(serviceHome, "logs");
   mkdirSyncForLifecycle(logs);
   if (process.platform === "darwin") {
-    const plistPath = join(homedir(), "Library", "LaunchAgents", "com.memtensor.memmy-memory.plist");
+    const plistPath = join(homedir(), "Library", "LaunchAgents", "com.memtensor.cuby-memory.plist");
     mkdirSyncForLifecycle(dirname(plistPath));
     const plist = `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0"><dict>
-<key>Label</key><string>com.memtensor.memmy-memory</string>
+<key>Label</key><string>com.memtensor.cuby-memory</string>
 <key>ProgramArguments</key><array><string>${xmlEscape(launcher)}</string></array>
 <key>RunAtLoad</key><true/><key>KeepAlive</key><true/>
 <key>StandardOutPath</key><string>${xmlEscape(join(logs, "service.log"))}</string>
 <key>StandardErrorPath</key><string>${xmlEscape(join(logs, "service-error.log"))}</string>
 </dict></plist>\n`;
     writeFileSyncForLifecycle(plistPath, plist);
-    runLifecycle("launchctl", ["bootout", `gui/${process.getuid?.() ?? 0}/com.memtensor.memmy-memory`], true);
+    runLifecycle("launchctl", ["bootout", `gui/${process.getuid?.() ?? 0}/com.memtensor.cuby-memory`], true);
     runLifecycle("launchctl", ["bootstrap", `gui/${process.getuid?.() ?? 0}`, plistPath]);
-    runLifecycle("launchctl", ["enable", `gui/${process.getuid?.() ?? 0}/com.memtensor.memmy-memory`]);
-    runLifecycle("launchctl", ["kickstart", "-k", `gui/${process.getuid?.() ?? 0}/com.memtensor.memmy-memory`]);
+    runLifecycle("launchctl", ["enable", `gui/${process.getuid?.() ?? 0}/com.memtensor.cuby-memory`]);
+    runLifecycle("launchctl", ["kickstart", "-k", `gui/${process.getuid?.() ?? 0}/com.memtensor.cuby-memory`]);
     return;
   }
   if (process.platform === "linux") {
-    const unitPath = join(homedir(), ".config", "systemd", "user", "memmy-memory.service");
+    const unitPath = join(homedir(), ".config", "systemd", "user", "cuby-memory.service");
     mkdirSyncForLifecycle(dirname(unitPath));
     writeFileSyncForLifecycle(unitPath, `[Unit]\nDescription=Memmy Memory Service\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=${systemdEscape(launcher)}\nRestart=on-failure\nRestartSec=2\nStandardOutput=append:${join(logs, "service.log")}\nStandardError=append:${join(logs, "service-error.log")}\n\n[Install]\nWantedBy=default.target\n`);
     runLifecycle("systemctl", ["--user", "daemon-reload"]);
-    runLifecycle("systemctl", ["--user", "enable", "--now", "memmy-memory.service"]);
+    runLifecycle("systemctl", ["--user", "enable", "--now", "cuby-memory.service"]);
     return;
   }
   if (process.platform === "win32") {
@@ -742,9 +742,9 @@ function registerAndStartUserService(home: string, serviceHome: string, start = 
 
 function stopUserService(): void {
   if (process.platform === "darwin") {
-    runLifecycle("launchctl", ["bootout", `gui/${process.getuid?.() ?? 0}/com.memtensor.memmy-memory`], true);
+    runLifecycle("launchctl", ["bootout", `gui/${process.getuid?.() ?? 0}/com.memtensor.cuby-memory`], true);
   } else if (process.platform === "linux") {
-    runLifecycle("systemctl", ["--user", "stop", "memmy-memory.service"], true);
+    runLifecycle("systemctl", ["--user", "stop", "cuby-memory.service"], true);
   } else if (process.platform === "win32") {
     runLifecycle("schtasks", ["/End", "/TN", "Memmy Memory Service"], true);
   }
@@ -823,13 +823,13 @@ async function cleanupFailedFirstInstall(input: {
 
 async function removeUserServiceRegistration(): Promise<void> {
   if (process.platform === "darwin") {
-    runLifecycle("launchctl", ["bootout", `gui/${process.getuid?.() ?? 0}/com.memtensor.memmy-memory`], true);
-    await rm(join(homedir(), "Library", "LaunchAgents", "com.memtensor.memmy-memory.plist"), { force: true }).catch(() => undefined);
+    runLifecycle("launchctl", ["bootout", `gui/${process.getuid?.() ?? 0}/com.memtensor.cuby-memory`], true);
+    await rm(join(homedir(), "Library", "LaunchAgents", "com.memtensor.cuby-memory.plist"), { force: true }).catch(() => undefined);
     return;
   }
   if (process.platform === "linux") {
-    runLifecycle("systemctl", ["--user", "disable", "--now", "memmy-memory.service"], true);
-    await rm(join(homedir(), ".config", "systemd", "user", "memmy-memory.service"), { force: true }).catch(() => undefined);
+    runLifecycle("systemctl", ["--user", "disable", "--now", "cuby-memory.service"], true);
+    await rm(join(homedir(), ".config", "systemd", "user", "cuby-memory.service"), { force: true }).catch(() => undefined);
     runLifecycle("systemctl", ["--user", "daemon-reload"], true);
     return;
   }

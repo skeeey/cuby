@@ -26,9 +26,9 @@ describe("claude code skill target", () => {
 
     await target.install(manifest);
 
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
     expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Memmy");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
     await expect(target.isInstalled("claude_code")).resolves.toBe(true);
@@ -38,8 +38,8 @@ describe("claude code skill target", () => {
     const { rootDirectory, manifest } = createFixture();
     const filePath = join(rootDirectory, "CLAUDE.md");
     const target = createClaudeCodeSkillTarget({ rootDirectory });
-    mkdirSync(join(rootDirectory, "skills", "memmy-memory", "references"), { recursive: true });
-    writeFileSync(join(rootDirectory, "skills", "memmy-memory", "references", "search.md"), "old reference", "utf8");
+    mkdirSync(join(rootDirectory, "skills", "cuby-memory", "references"), { recursive: true });
+    writeFileSync(join(rootDirectory, "skills", "cuby-memory", "references", "search.md"), "old reference", "utf8");
     writeFileSync(
       filePath,
       [
@@ -47,9 +47,9 @@ describe("claude code skill target", () => {
         "<!-- memmy-memory cli : start -->",
         "old cli",
         "<!-- memmy-memory cli : end -->",
-        "<!-- memmy:start v=1 -->",
+        "<!-- cuby:start v=1 -->",
         "old",
-        "<!-- memmy:end v=1 -->",
+        "<!-- cuby:end v=1 -->",
         "manual suffix",
         ""
       ].join("\n"),
@@ -60,21 +60,21 @@ describe("claude code skill target", () => {
     expect(readTargetFile(rootDirectory)).toBe(
       [
         "manual prefix",
-        "<!-- memmy:start v=1 -->",
+        "<!-- cuby:start v=1 -->",
         "# Memmy Memory",
         "",
-        "The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.",
+        "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
         "Use that skill when prior memory may be relevant to the current request.",
-        "<!-- memmy:end v=1 -->",
+        "<!-- cuby:end v=1 -->",
         "manual suffix",
         ""
       ].join("\n")
     );
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "references"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
 
     await target.uninstall("claude_code");
     expect(readTargetFile(rootDirectory)).toBe(["manual prefix", "manual suffix", ""].join("\n"));
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
   });
 
   it("does not create Claude Code directory when Claude Code is not installed", async () => {
@@ -95,7 +95,7 @@ describe("claude code skill target", () => {
     const unrelatedHook = { type: "command", command: "'/usr/local/bin/custom-hook'", timeout: 10 };
     const appHostedHook = {
       type: "command",
-      command: "'/Volumes/Memmy Installer/Memmy.app/Contents/MacOS/Memmy' '/Users/test/hooks/memmy-resume-hook.mjs'",
+      command: "'/Volumes/Memmy Installer/Memmy.app/Contents/MacOS/Memmy' '/Users/test/hooks/cuby-resume-hook.mjs'",
       timeout: 60
     };
     writeFileSync(join(rootDirectory, "settings.json"), JSON.stringify({
@@ -115,7 +115,7 @@ describe("claude code skill target", () => {
       const commands = settings.hooks[event]?.flatMap((entry) => entry.hooks.map((hook) => hook.command)) ?? [];
       expect(commands).toHaveLength(2);
       expect(commands).toContain(unrelatedHook.command);
-      expectSafeNodeHookCommand(commands.find((command) => command.includes("memmy-resume-hook.mjs")));
+      expectSafeNodeHookCommand(commands.find((command) => command.includes("cuby-resume-hook.mjs")));
     }
   });
 
@@ -146,7 +146,7 @@ describe("claude code skill target", () => {
     try {
       await target.installPlugin?.("claude_code");
 
-      const hookScriptPath = join(rootDirectory, "hooks", "memmy-resume-hook.mjs");
+      const hookScriptPath = join(rootDirectory, "hooks", "cuby-resume-hook.mjs");
       const settings = JSON.parse(readFileSync(join(rootDirectory, "settings.json"), "utf8")) as {
         hooks: {
           Stop: Array<{ hooks: Array<{ command: string; timeout: number; type: string }> }>;
@@ -161,15 +161,15 @@ describe("claude code skill target", () => {
         type: "command",
         timeout: 60
       });
-      expect(submitHook.command).toContain("memmy-resume-hook.mjs");
+      expect(submitHook.command).toContain("cuby-resume-hook.mjs");
       expect(submitHook.command).not.toContain("Electron.app");
       expectSafeNodeHookCommand(submitHook.command);
       expect(stopHook).toMatchObject({
         type: "command",
         timeout: 60
       });
-      expect(stopHook.command).toContain("memmy-resume-hook.mjs");
-      const commandFilePath = join(rootDirectory, "commands", "memmy-resume.md");
+      expect(stopHook.command).toContain("cuby-resume-hook.mjs");
+      const commandFilePath = join(rootDirectory, "commands", "cuby-resume.md");
       const commandFile = readFileSync(commandFilePath, "utf8");
       expect(commandFile).toContain("argument-hint: <query | 1-5 | cancel>");
       expect(commandFile).toContain("CUBY_RESUME_COMMAND_ARGUMENTS:");
@@ -248,9 +248,9 @@ describe("claude code skill target", () => {
       expect(cancelOutput.reason).toBe("Memmy resume selection cancelled.");
       expect(authorization).toBe("Bearer test-token");
       expect(readTargetFile(rootDirectory)).toContain(
-        "The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`."
+        "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`."
       );
-      const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+      const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
       expect(skillFile).toContain("# Memmy Memory");
       expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
       expect(skillFile).toContain('memmy-memory search "query text" --source claude_code');
@@ -264,8 +264,8 @@ describe("claude code skill target", () => {
       };
       expect(settingsAfter.hooks?.UserPromptSubmit).toBeUndefined();
       expect(settingsAfter.hooks?.Stop).toBeUndefined();
-      expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory");
-      expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+      expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory");
+      expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
     } finally {
       await close(server);
     }
@@ -323,7 +323,7 @@ describe("claude code skill target", () => {
 
     try {
       await target.installPlugin?.("claude_code");
-      const hookScriptPath = join(rootDirectory, "hooks", "memmy-resume-hook.mjs");
+      const hookScriptPath = join(rootDirectory, "hooks", "cuby-resume-hook.mjs");
       const start = await runNodeHook(
         hookScriptPath,
         JSON.stringify({
@@ -402,7 +402,7 @@ function createFixture(): { rootDirectory: string; memmyConfigPath: string; mani
 }
 
 function expectSafeNodeHookCommand(command: string | undefined): void {
-  expect(command).toContain("memmy-resume-hook.mjs");
+  expect(command).toContain("cuby-resume-hook.mjs");
   expect(command).not.toMatch(/\.app[\\/]contents[\\/]macos[\\/]/i);
   expect(command).not.toContain("Memmy.app");
   expect(command).not.toContain("Electron.app");
@@ -412,7 +412,7 @@ function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
     content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
-    marker: "<!-- memmy:start v=1 -->"
+    marker: "<!-- cuby:start v=1 -->"
   };
 }
 

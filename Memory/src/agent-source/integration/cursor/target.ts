@@ -19,9 +19,9 @@ const CURSOR_TARGET_ID = "cursor";
 const CURSOR_DISPLAY_NAME = "Cursor";
 const HOOKS_FILE_NAME = "hooks.json";
 const HOOK_DIRECTORY_NAME = "hooks";
-const HOOK_SCRIPT_FILE_NAME = "memmy-resume-hook.mjs";
+const HOOK_SCRIPT_FILE_NAME = "cuby-resume-hook.mjs";
 const LEGACY_HOOK_SCRIPT_FILE_NAME = "memmy-memory-resume-hook.mjs";
-const HOOK_CONFIG_FILE_NAME = "memmy-memory-config.json";
+const HOOK_CONFIG_FILE_NAME = "cuby-memory-config.json";
 const WORKSPACE_BRIDGE_FILE_NAME = "memmy-workspace-bridge.mjs";
 const HOOK_TIMEOUT_SECONDS = 60;
 
@@ -56,7 +56,7 @@ export function createCursorSkillTarget(deps: CreateCursorSkillTargetDeps = {}):
     },
 
     async isInstalled(_targetId) {
-      return (await readTextFile(join(cursorRootDirectory, "skills", "memmy-memory", "SKILL.md"))).includes("name: memmy-memory");
+      return (await readTextFile(join(cursorRootDirectory, "skills", "cuby-memory", "SKILL.md"))).includes("name: cuby-memory");
     },
 
     async installPlugin(_targetId) {

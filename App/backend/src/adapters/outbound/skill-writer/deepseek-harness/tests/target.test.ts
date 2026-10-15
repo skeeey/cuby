@@ -37,8 +37,8 @@ describe("DeepSeek Harness skill target", () => {
     const pluginPath = join(pluginDirectory, "index.mjs");
     const clientPath = join(pluginDirectory, "client.js");
     const packagePath = join(pluginDirectory, "package.json");
-    const skillPath = join(rootDirectory, "skills", "memmy-memory", "SKILL.md");
-    const resumeSkillPath = join(rootDirectory, "skills", "memmy-resume", "SKILL.md");
+    const skillPath = join(rootDirectory, "skills", "cuby-memory", "SKILL.md");
+    const resumeSkillPath = join(rootDirectory, "skills", "cuby-resume", "SKILL.md");
     const patch = readFileSync(patchPath, "utf8");
     expect(existsSync(pluginPath)).toBe(true);
     const packageManifest = JSON.parse(readFileSync(packagePath, "utf8")) as Record<string, unknown>;
@@ -70,8 +70,8 @@ describe("DeepSeek Harness skill target", () => {
     await target.uninstallPlugin?.("deepseek_harness");
 
     expect(existsSync(pluginDirectory)).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-resume"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-resume"))).toBe(false);
     expect(readFileSync(patchPath, "utf8")).toBe(
       ["# user patch", "- insert:", "    - id: user-plugin", "      name: '@example/user-plugin'", ""].join("\n")
     );
@@ -576,7 +576,7 @@ function createRoot(): string {
 }
 
 function installedPluginDirectory(rootDirectory: string): string {
-  return join(rootDirectory, "profiles", "node_modules", "@memmy", "memmy-memory");
+  return join(rootDirectory, "profiles", "node_modules", "@memmy", "cuby-memory");
 }
 
 function writeDeepseekSessionFile(rootDirectory: string, sessionId: string, cwd: string, agentPreset?: string, turnCount = 1): void {

@@ -17,7 +17,7 @@ afterEach(() => {
 describe("workbuddy skill target", () => {
   it("replaces a simplified Skill with the complete Memmy CLI Skill", async () => {
     const rootDirectory = createRoot();
-    const skillDirectory = join(rootDirectory, "skills", "memmy-memory");
+    const skillDirectory = join(rootDirectory, "skills", "cuby-memory");
     mkdirSync(skillDirectory, { recursive: true });
     writeFileSync(join(skillDirectory, "SKILL.md"), "---\nname: memmy-memory\n---\n\nUse memory.\n", "utf8");
     const target = createWorkbuddySkillTarget({ rootDirectory });
@@ -32,7 +32,7 @@ describe("workbuddy skill target", () => {
     expect(content).toContain("## Delete Memory");
     expect(content).toContain("--source workbuddy");
     expect(content).not.toContain("--layer");
-    const resumeContent = readFileSync(join(rootDirectory, "skills", "memmy-resume", "SKILL.md"), "utf8");
+    const resumeContent = readFileSync(join(rootDirectory, "skills", "cuby-resume", "SKILL.md"), "utf8");
     expect(resumeContent).toContain("name: memmy-resume");
     expect(resumeContent).toContain("--source workbuddy");
     await expect(target.isInstalled("workbuddy")).resolves.toBe(true);
@@ -46,8 +46,8 @@ describe("workbuddy skill target", () => {
 
     await target.uninstall("workbuddy");
 
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-resume"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-resume"))).toBe(false);
     expect(readFileSync(join(rootDirectory, "USER.md"), "utf8")).toBe("keep");
   });
 });

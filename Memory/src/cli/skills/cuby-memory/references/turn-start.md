@@ -1,9 +1,9 @@
-# `memmy-memory turn start`
+# `cuby-memory turn start`
 
 Intent map:
-- begin a memory-aware user turn -> `memmy-memory turn start`;
-- retrieve injected context before answering -> `memmy-memory turn start --session-id <id> --query <text>`;
-- use a host-provided turn id -> `memmy-memory turn start --turn-id <id>`.
+- begin a memory-aware user turn -> `cuby-memory turn start`;
+- retrieve injected context before answering -> `cuby-memory turn start --session-id <id> --query <text>`;
+- use a host-provided turn id -> `cuby-memory turn start --turn-id <id>`.
 
 Use this command when:
 - a session already exists;
@@ -30,7 +30,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory turn start --source <agent-source> --session-id <sessionId> --query "<query>"
+cuby-memory turn start --source <agent-source> --session-id <sessionId> --query "<query>"
 ```
 
 Common flags:
@@ -43,7 +43,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory turn start --source codex --session-id se_123 --query "fix failing tests"
+cuby-memory turn start --source codex --session-id se_123 --query "fix failing tests"
 ```
 
 Working rules:

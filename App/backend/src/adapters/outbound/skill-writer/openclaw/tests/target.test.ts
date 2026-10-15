@@ -24,7 +24,7 @@ describe("openclaw skill target", () => {
 
     await target.install(manifest);
     expect(readTargetFile(rootDirectory)).toContain("Call memmy-memory search when context is needed.");
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Memmy");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
     await expect(target.isInstalled("openclaw")).resolves.toBe(true);
@@ -32,13 +32,13 @@ describe("openclaw skill target", () => {
     mkdirSync(join(rootDirectory, "workspace"), { recursive: true });
     writeFileSync(
       join(rootDirectory, "workspace", "AGENTS.md"),
-      ["manual prefix", "<!-- memmy:start v=1 -->", "old", "<!-- memmy:end v=1 -->", "manual suffix", ""].join("\n"),
+      ["manual prefix", "<!-- cuby:start v=1 -->", "old", "<!-- cuby:end v=1 -->", "manual suffix", ""].join("\n"),
       "utf8"
     );
     await target.install(manifest);
     await target.uninstall("openclaw");
     expect(readTargetFile(rootDirectory)).toBe(["manual prefix", "manual suffix", ""].join("\n"));
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
   });
 
   it("writes AGENTS.md into the workspace configured by OpenClaw", async () => {
@@ -82,9 +82,9 @@ describe("openclaw skill target", () => {
       JSON.stringify({
         plugins: {
           allow: ["existing"],
-          deny: ["memmy-memory", "other"],
+          deny: ["cuby-memory", "other"],
           entries: {
-            "memmy-memory": {
+            "cuby-memory": {
               config: {
                 previous: true
               }
@@ -94,7 +94,7 @@ describe("openclaw skill target", () => {
       }),
       "utf8"
     );
-    const pluginDirectory = join(rootDirectory, "extensions", "memmy-memory");
+    const pluginDirectory = join(rootDirectory, "extensions", "cuby-memory");
     mkdirSync(pluginDirectory, { recursive: true });
     mkdirSync(join(rootDirectory, "workspace"), { recursive: true });
     writeFileSync(
@@ -130,7 +130,7 @@ describe("openclaw skill target", () => {
       openclaw?: { id?: string; kind?: string; extensions?: string[] };
     };
     const pluginIndex = readFileSync(join(pluginDirectory, "index.mjs"), "utf8");
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     const config = JSON.parse(readFileSync(join(rootDirectory, "openclaw.json"), "utf8")) as {
       plugins?: {
         slots?: { memory?: string };
@@ -142,15 +142,15 @@ describe("openclaw skill target", () => {
     };
 
     expect(existsSync(join(pluginDirectory, "package.json"))).toBe(true);
-    expect(pluginPackage.name).toBe("memmy-memory");
+    expect(pluginPackage.name).toBe("cuby-memory");
     expect(pluginPackage.version).toBe(CUBY_VERSION);
     expect(pluginPackage.type).toBe("module");
     expect(pluginPackage.openclaw).toEqual({
-      id: "memmy-memory",
+      id: "cuby-memory",
       kind: "memory",
       extensions: ["./index.mjs"]
     });
-    expect(pluginManifest.id).toBe("memmy-memory");
+    expect(pluginManifest.id).toBe("cuby-memory");
     expect(pluginManifest.version).toBe(CUBY_VERSION);
     expect(pluginManifest.kind).toBe("memory");
     expect(pluginManifest.activation?.onStartup).toBe(true);
@@ -159,7 +159,7 @@ describe("openclaw skill target", () => {
       "memmy_memory_get",
       "memmy_memory_add"
     ]);
-    expect(pluginManifest.commandAliases).toEqual([{ name: "memmy-resume", kind: "runtime-slash" }]);
+    expect(pluginManifest.commandAliases).toEqual([{ name: "cuby-resume", kind: "runtime-slash" }]);
     expect(pluginManifest.configSchema?.additionalProperties).toBe(false);
     expect(Object.keys(pluginManifest.configSchema?.properties ?? {}).sort()).toEqual([
       "endpoint",
@@ -170,7 +170,7 @@ describe("openclaw skill target", () => {
     expect(pluginIndex).toContain('name: "memmy_memory_search"');
     expect(pluginIndex).toContain('name: "memmy_memory_add"');
     expect(pluginIndex).toContain("api.registerCommand");
-    expect(pluginIndex).toContain('name: "memmy-resume"');
+    expect(pluginIndex).toContain('name: "cuby-resume"');
     expect(pluginIndex).toContain("async function handleResumeCommand");
     expect(pluginIndex).toContain('layers: ["L1"]');
     expect(pluginIndex).toContain("limit: RESUME_SEARCH_LIMIT");
@@ -237,25 +237,25 @@ describe("openclaw skill target", () => {
     expect(pluginIndex).toContain('return "openclaw-memory-" +');
     expect(pluginIndex).toContain("const resolved = await readMemmyConfig(cfg.memmyConfigPath).catch(() => ({}));");
     expect(pluginIndex).toContain("resolved.endpoint || cfg.endpoint");
-    expect(config.plugins?.slots?.memory).toBe("memmy-memory");
-    expect(config.plugins?.allow).toEqual(["existing", "memmy-memory"]);
+    expect(config.plugins?.slots?.memory).toBe("cuby-memory");
+    expect(config.plugins?.allow).toEqual(["existing", "cuby-memory"]);
     expect(config.plugins?.deny).toEqual(["other"]);
-    expect(config.plugins?.entries?.["memmy-memory"]?.enabled).toBe(true);
-    expect(config.plugins?.entries?.["memmy-memory"]?.config).toEqual({
+    expect(config.plugins?.entries?.["cuby-memory"]?.enabled).toBe(true);
+    expect(config.plugins?.entries?.["cuby-memory"]?.config).toEqual({
       memmyConfigPath,
       endpoint: "http://127.0.0.1:18991",
       token: "test-token"
     });
-    expect(config.plugins?.entries?.["memmy-memory"]?.config?.runtimeConfigPath).toBeUndefined();
-    expect(config.plugins?.entries?.["memmy-memory"]?.hooks?.allowPromptInjection).toBe(true);
-    expect(config.plugins?.entries?.["memmy-memory"]?.hooks?.allowConversationAccess).toBe(true);
-    expect(config.plugins?.installs?.["memmy-memory"]).toMatchObject({
+    expect(config.plugins?.entries?.["cuby-memory"]?.config?.runtimeConfigPath).toBeUndefined();
+    expect(config.plugins?.entries?.["cuby-memory"]?.hooks?.allowPromptInjection).toBe(true);
+    expect(config.plugins?.entries?.["cuby-memory"]?.hooks?.allowConversationAccess).toBe(true);
+    expect(config.plugins?.installs?.["cuby-memory"]).toMatchObject({
       source: "path",
       sourcePath: pluginDirectory,
       installPath: pluginDirectory,
       version: CUBY_VERSION
     });
-    expect(config.plugins?.installs?.["memmy-memory"]?.installedAt).toEqual(expect.any(String));
+    expect(config.plugins?.installs?.["cuby-memory"]?.installedAt).toEqual(expect.any(String));
     expect(skillFile).toContain("# Memmy Memory");
     expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
     expect(skillFile).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
@@ -272,7 +272,7 @@ describe("openclaw skill target", () => {
     expect(skillFile).not.toContain("memmy-memory turn start");
     expect(skillFile).not.toContain("memmy-memory turn complete");
     expect(skillFile).not.toContain("--layer L2");
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
     expect(readTargetFile(rootDirectory)).not.toContain('memmy-memory search "query text" --source openclaw');
     expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory session open");
     expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn start");
@@ -291,11 +291,11 @@ describe("openclaw skill target", () => {
         installs?: Record<string, unknown>;
       };
     };
-    expect(existsSync(join(rootDirectory, "extensions", "memmy-memory"))).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "extensions", "cuby-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
     expect(configAfterUninstall.plugins?.slots?.memory).toBeUndefined();
-    expect(configAfterUninstall.plugins?.entries?.["memmy-memory"]).toBeUndefined();
-    expect(configAfterUninstall.plugins?.installs?.["memmy-memory"]).toBeUndefined();
+    expect(configAfterUninstall.plugins?.entries?.["cuby-memory"]).toBeUndefined();
+    expect(configAfterUninstall.plugins?.installs?.["cuby-memory"]).toBeUndefined();
     expect(configAfterUninstall.plugins?.allow).toEqual(["existing"]);
     expect(configAfterUninstall.plugins?.deny).toEqual(["other"]);
   });
@@ -321,7 +321,7 @@ describe("openclaw skill target", () => {
         entries?: Record<string, { config?: { endpoint?: string; token?: string } }>;
       };
     };
-    expect(config.plugins?.entries?.["memmy-memory"]?.config).toMatchObject({
+    expect(config.plugins?.entries?.["cuby-memory"]?.config).toMatchObject({
       endpoint: "http://127.0.0.1:18991",
       token: "nested-token"
     });
@@ -346,7 +346,7 @@ describe("openclaw skill target", () => {
     const target = createOpenclawSkillTarget({ rootDirectory, memmyConfigPath });
     await target.installPlugin?.("openclaw");
 
-    const pluginPath = join(rootDirectory, "extensions", "memmy-memory", "index.mjs");
+    const pluginPath = join(rootDirectory, "extensions", "cuby-memory", "index.mjs");
     const pluginModule = await import(`${pathToFileURL(pluginPath).href}?t=${Date.now()}`) as {
       default: {
         register(api: {
@@ -387,7 +387,7 @@ describe("openclaw skill target", () => {
         registerTool: vi.fn(),
         registerMemoryCapability: vi.fn(),
         registerCommand(command) {
-          if (command.name === "memmy-resume") {
+          if (command.name === "cuby-resume") {
             commandHandler = command.handler;
           }
         },
@@ -427,7 +427,7 @@ describe("openclaw skill target", () => {
     const target = createOpenclawSkillTarget({ rootDirectory });
     await target.installPlugin?.("openclaw");
 
-    const pluginPath = join(rootDirectory, "extensions", "memmy-memory", "index.mjs");
+    const pluginPath = join(rootDirectory, "extensions", "cuby-memory", "index.mjs");
     const pluginModule = await import(`${pathToFileURL(pluginPath).href}?t=${Date.now()}`) as {
       default: {
         register(api: {
@@ -501,7 +501,7 @@ describe("openclaw skill target", () => {
     const target = createOpenclawSkillTarget({ rootDirectory });
     await target.installPlugin?.("openclaw");
 
-    const pluginPath = join(rootDirectory, "extensions", "memmy-memory", "index.mjs");
+    const pluginPath = join(rootDirectory, "extensions", "cuby-memory", "index.mjs");
     const pluginSource = readFileSync(pluginPath, "utf8")
       .replace(
         'import { spawnSync } from "node:child_process";',
@@ -512,8 +512,8 @@ describe("openclaw skill target", () => {
         "const { closeRuntimeSession, loadRuntimeL3, notifyRuntimeBoundary, openRuntimeSession, syncRuntimeEnvironment } = globalThis.__memmyRuntime;"
       )
       .replace(
-        'const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);',
-        'const CONFIG_URL = new URL("file:///tmp/memmy-memory-config.json");'
+        'const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);',
+        'const CONFIG_URL = new URL("file:///tmp/cuby-memory-config.json");'
       )
       .replace(
         'const BRIDGE_URL = new URL("./memmy-workspace-bridge.mjs", import.meta.url);',
@@ -622,7 +622,7 @@ describe("openclaw skill target", () => {
 
     writeFileSync(
       join(rootDirectory, "openclaw.json"),
-      JSON.stringify({ plugins: { slots: { memory: "memmy-memory" } } }),
+      JSON.stringify({ plugins: { slots: { memory: "cuby-memory" } } }),
       "utf8"
     );
     await expect(target.detectMemoryPluginConflict?.()).resolves.toBeNull();
@@ -733,7 +733,7 @@ function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
     content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
-    marker: "<!-- memmy:start v=1 -->"
+    marker: "<!-- cuby:start v=1 -->"
   };
 }
 

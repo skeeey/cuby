@@ -1,9 +1,9 @@
-# `memmy-memory delete`
+# `cuby-memory delete`
 
 Intent map:
-- remove one concrete memory by id -> `memmy-memory delete <id>`;
-- delete a memory the user explicitly asked to remove -> `memmy-memory delete <id>`;
-- remove a memory that is clearly wrong or unsafe to retain -> `memmy-memory delete <id>`.
+- remove one concrete memory by id -> `cuby-memory delete <id>`;
+- delete a memory the user explicitly asked to remove -> `cuby-memory delete <id>`;
+- remove a memory that is clearly wrong or unsafe to retain -> `cuby-memory delete <id>`.
 
 Use this command when:
 - the target memory id is already known;
@@ -24,7 +24,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory delete <id>
+cuby-memory delete <id>
 ```
 
 Common flags:
@@ -34,11 +34,11 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory delete mem_123
+cuby-memory delete mem_123
 ```
 
 Working rules:
-- run `memmy-memory get <id>` first if the contents are uncertain;
+- run `cuby-memory get <id>` first if the contents are uncertain;
 - do not invent ids;
 - treat deletion as a durable operation;
 - keep the id available if the delete request fails and needs troubleshooting.

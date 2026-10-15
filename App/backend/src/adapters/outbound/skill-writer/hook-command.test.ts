@@ -64,16 +64,16 @@ describe("createNodeHookCommand", () => {
 
   it("double-quotes paths on Windows so cmd.exe and PowerShell can run them", () => {
     const nodePath = "C:/Program Files/nodejs/node.exe";
-    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/memmy-resume-hook.mjs", runtime({
+    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/cuby-resume-hook.mjs", runtime({
       platform: "win32",
       env: { CUBY_HOOK_NODE: nodePath },
       executable: [nodePath]
-    }))).toBe("\"C:/Program Files/nodejs/node.exe\" \"C:/Users/me/.codex/hooks/memmy-resume-hook.mjs\"");
+    }))).toBe("\"C:/Program Files/nodejs/node.exe\" \"C:/Users/me/.codex/hooks/cuby-resume-hook.mjs\"");
   });
 
   it("leaves a bare command name unquoted on Windows", () => {
-    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/memmy-resume-hook.mjs", runtime({ platform: "win32" })))
-      .toBe("node \"C:/Users/me/.codex/hooks/memmy-resume-hook.mjs\"");
+    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/cuby-resume-hook.mjs", runtime({ platform: "win32" })))
+      .toBe("node \"C:/Users/me/.codex/hooks/cuby-resume-hook.mjs\"");
   });
 });
 

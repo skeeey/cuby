@@ -1,9 +1,9 @@
-# `memmy-memory session open`
+# `cuby-memory session open`
 
 Intent map:
-- create a new Memory session -> `memmy-memory session open`;
-- resume a known session -> `memmy-memory session open --session-id <id>`;
-- bind a session to the current workspace -> `memmy-memory session open --workspace-path <path>`.
+- create a new Memory session -> `cuby-memory session open`;
+- resume a known session -> `cuby-memory session open --session-id <id>`;
+- bind a session to the current workspace -> `cuby-memory session open --workspace-path <path>`.
 
 Use this command when:
 - a conversation, task, or agent workflow begins;
@@ -26,7 +26,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory session open --source <agent-source>
+cuby-memory session open --source <agent-source>
 ```
 
 Common flags:
@@ -38,7 +38,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory session open --source codex --session-id thread_123 --workspace-path "$PWD"
+cuby-memory session open --source codex --session-id thread_123 --workspace-path "$PWD"
 ```
 
 Working rules:

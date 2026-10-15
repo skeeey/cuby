@@ -34,7 +34,7 @@ export function createDeepseekHarnessSkillTarget(
 ): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveDeepseekHarnessHomeDirectory();
   const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
-  const pluginDirectory = join(rootDirectory, "profiles", "node_modules", "@memmy", "memmy-memory");
+  const pluginDirectory = join(rootDirectory, "profiles", "node_modules", "@memmy", "cuby-memory");
   const patchPath = join(rootDirectory, "cordis.patch.yml");
 
   return {
@@ -88,7 +88,7 @@ export function createDeepseekHarnessSkillTarget(
         await loadMemmyWorkspaceBridgeRuntimeAsset()
       );
       await writeFileAtomically(
-        join(pluginDirectory, "memmy-memory-config.json"),
+        join(pluginDirectory, "cuby-memory-config.json"),
         JSON.stringify({ memmy_config_path: memmyConfigPath, ...(await readMemmyMemoryServiceConfig(memmyConfigPath)) }, null, 2) + "\n"
       );
       await upsertPatch(patchPath, renderPluginPatch(memmyConfigPath));

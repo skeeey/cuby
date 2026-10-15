@@ -35,11 +35,11 @@ describe("standalone Memory runtime installer", () => {
   it("maps service restarts to each user service manager", () => {
     expect(userServiceRestartCommand("darwin", 501)).toEqual({
       command: "launchctl",
-      args: ["kickstart", "-k", "gui/501/com.memtensor.memmy-memory"]
+      args: ["kickstart", "-k", "gui/501/com.memtensor.cuby-memory"]
     });
     expect(userServiceRestartCommand("linux")).toEqual({
       command: "systemctl",
-      args: ["--user", "restart", "memmy-memory.service"]
+      args: ["--user", "restart", "cuby-memory.service"]
     });
     expect(userServiceRestartCommand("win32")).toMatchObject({
       command: "powershell.exe"

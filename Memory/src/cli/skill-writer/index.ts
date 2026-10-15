@@ -43,9 +43,9 @@ interface AgentTarget {
   skillsRelativePath: string;
 }
 
-const START_MARKER = "<!-- memmy:start v=1 -->";
-const END_MARKER = "<!-- memmy:end v=1 -->";
-const SKILL_DIRECTORY_NAME = "memmy-memory";
+const START_MARKER = "<!-- cuby:start v=1 -->";
+const END_MARKER = "<!-- cuby:end v=1 -->";
+const SKILL_DIRECTORY_NAME = "cuby-memory";
 
 const AGENT_TARGETS: Record<MemmyAgentId, Omit<AgentTarget, "id" | "root">> = {
   codex: {

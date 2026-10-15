@@ -19,7 +19,7 @@ describe("Viewer CLI installation", () => {
 
     expect(await viewerCliStatus({ home, cliEntrypoint, platform: "darwin" })).toEqual({
       installed: false,
-      path: "~/.local/bin/memmy-memory",
+      path: "~/.local/bin/cuby-memory",
     });
 
     const installed = await installViewerCli({
@@ -30,10 +30,10 @@ describe("Viewer CLI installation", () => {
     });
     expect(installed).toMatchObject({
       installed: true,
-      path: "~/.local/bin/memmy-memory",
+      path: "~/.local/bin/cuby-memory",
       pathUpdated: true,
     });
-    expect(readFileSync(join(home, ".local", "bin", "memmy-memory"), "utf8")).toContain(
+    expect(readFileSync(join(home, ".local", "bin", "cuby-memory"), "utf8")).toContain(
       "'/opt/memmy/node'",
     );
     expect(readFileSync(join(home, ".zshrc"), "utf8")).toContain(
@@ -54,7 +54,7 @@ describe("Viewer CLI installation", () => {
     const second = await installViewerCli(options);
 
     expect(second.pathUpdated).toBe(false);
-    expect(readFileSync(join(home, ".zshrc"), "utf8").match(/# Memmy CLI PATH/g)).toHaveLength(1);
+    expect(readFileSync(join(home, ".zshrc"), "utf8").match(/# Cuby CLI PATH/g)).toHaveLength(1);
   });
 });
 

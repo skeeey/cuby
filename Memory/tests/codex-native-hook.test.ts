@@ -35,15 +35,15 @@ async function fixture(responseStatus = "stored") {
   });
   await new Promise<void>(resolve => server.listen(0, "127.0.0.1", resolve));
   const endpoint = `http://127.0.0.1:${(server.address() as { port: number }).port}`;
-  writeFileSync(join(dir, "memmy-resume-hook.mjs"), renderMemmyResumeHookScript({ source: "codex", mode: "codex" }));
+  writeFileSync(join(dir, "cuby-resume-hook.mjs"), renderMemmyResumeHookScript({ source: "codex", mode: "codex" }));
   writeFileSync(join(dir, "memmy-workspace-bridge.mjs"), await loadMemmyWorkspaceBridgeRuntimeAsset());
-  writeFileSync(join(dir, "memmy-memory-config.json"), JSON.stringify({ endpoint, userId: "fixture-owner", memmy_config_path: join(dir, "missing.yaml") }));
+  writeFileSync(join(dir, "cuby-memory-config.json"), JSON.stringify({ endpoint, userId: "fixture-owner", memmy_config_path: join(dir, "missing.yaml") }));
   const path = join(dir, "transcript.jsonl"); writeFileSync(path, transcript());
   return { dir, path, requests, close: () => new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve())) };
 }
 async function run(dir: string, path: string, extra: Record<string, unknown> = {}) {
   return new Promise<{ status: number | null; stdout: string; stderr: string }>((resolve, reject) => {
-    const child = spawn(process.execPath, [join(dir, "memmy-resume-hook.mjs")]);
+    const child = spawn(process.execPath, [join(dir, "cuby-resume-hook.mjs")]);
     let stdout = ""; let stderr = "";
     child.stdout.on("data", chunk => { stdout += chunk; }); child.stderr.on("data", chunk => { stderr += chunk; });
     child.on("error", reject); child.on("close", status => resolve({ status, stdout, stderr }));

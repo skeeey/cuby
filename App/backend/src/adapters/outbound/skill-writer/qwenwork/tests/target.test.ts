@@ -19,8 +19,8 @@ describe("qwenwork skill target", () => {
     const target = createQwenworkSkillTarget({ rootDirectory });
 
     await target.install(renderMemmyDefaultSkillManifest("qwenwork"));
-    const skillPath = join(rootDirectory, "skills", "memmy-memory", "SKILL.md");
-    const resumeSkillPath = join(rootDirectory, "skills", "memmy-resume", "SKILL.md");
+    const skillPath = join(rootDirectory, "skills", "cuby-memory", "SKILL.md");
+    const resumeSkillPath = join(rootDirectory, "skills", "cuby-resume", "SKILL.md");
     expect(readFileSync(skillPath, "utf8")).toContain("--source qwenwork");
     expect(readFileSync(resumeSkillPath, "utf8")).toContain("--source qwenwork");
     await expect(target.isInstalled("qwenwork")).resolves.toBe(true);

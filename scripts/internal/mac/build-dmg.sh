@@ -214,8 +214,8 @@ usage() {
 Usage: install-cli [--prefix <dir>]
 
 Installs symlinks for:
-  memmy-memory
-  memmy
+  cuby-memory
+  cuby
 
 Default prefix:
   ~/.local/bin
@@ -249,12 +249,12 @@ if [ -z "$PREFIX" ]; then
 fi
 
 mkdir -p "$PREFIX"
-ln -sf "$SCRIPT_DIR/memmy-memory" "$PREFIX/memmy-memory"
-ln -sf "$SCRIPT_DIR/memmy" "$PREFIX/memmy"
+ln -sf "$SCRIPT_DIR/cuby-memory" "$PREFIX/cuby-memory"
+ln -sf "$SCRIPT_DIR/cuby" "$PREFIX/cuby"
 
 add_local_bin_to_profile() {
   local profile_path="$1"
-  local marker="# Memmy CLI PATH"
+  local marker="# Cuby CLI PATH"
 
   if [ ! -f "$profile_path" ] || ! grep -Fq "$marker" "$profile_path"; then
     {
@@ -266,9 +266,9 @@ add_local_bin_to_profile() {
 }
 
 cat <<MESSAGE
-Memmy CLI installed:
-  $PREFIX/memmy-memory -> $SCRIPT_DIR/memmy-memory
-  $PREFIX/memmy        -> $SCRIPT_DIR/memmy
+Cuby CLI installed:
+  $PREFIX/cuby-memory -> $SCRIPT_DIR/cuby-memory
+  $PREFIX/cuby        -> $SCRIPT_DIR/cuby
 MESSAGE
 
 case ":$PATH:" in
@@ -963,8 +963,8 @@ node_modules/.bin/electron-rebuild \
   -w better-sqlite3 \
   -m "$RUNTIME_DIR/memmy-agent"
 package_step_start "Create CLI launchers"
-create_cli_launcher "$CLI_BIN_DIR/memmy-memory" "dist/src/cli/index.js" resource
-create_cli_launcher "$CLI_BIN_DIR/memmy" "dist/runtime/memmy-agent/dist/main.js"
+create_cli_launcher "$CLI_BIN_DIR/cuby-memory" "dist/src/cli/index.js" resource
+create_cli_launcher "$CLI_BIN_DIR/cuby" "dist/runtime/memmy-agent/dist/main.js"
 create_cli_installer "$CLI_BIN_DIR/install-cli"
 create_dmg_cli_installer_command "$DMG_HELPER_DIR/Install CLI.command"
 package_step_start "Prune and verify macOS runtime artifacts"

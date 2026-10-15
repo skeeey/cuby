@@ -1,7 +1,7 @@
 import type { SkillManifest } from "../types.js";
 
-export const CUBY_SKILL_DIRECTORY_NAME = "memmy-memory";
-export const CUBY_RESUME_SKILL_DIRECTORY_NAME = "memmy-resume";
+export const CUBY_SKILL_DIRECTORY_NAME = "cuby-memory";
+export const CUBY_RESUME_SKILL_DIRECTORY_NAME = "cuby-resume";
 
 export interface RenderedSkillDirectoryFile {
   relativePath: string;
@@ -14,8 +14,8 @@ export function renderMemmySkillDirectoryFiles(manifest: SkillManifest): Rendere
       relativePath: "SKILL.md",
       content: [
         "---",
-        "name: memmy-memory",
-        "description: Use shared Memmy memory when prior context may be relevant.",
+        "name: cuby-memory",
+        "description: Use shared Cuby memory when prior context may be relevant.",
         "---",
         "",
         manifest.content.trimEnd(),
@@ -31,7 +31,7 @@ export function renderMemmySkillBootstrapManifest(manifest: SkillManifest): Skil
     content: [
       "# Memmy Memory",
       "",
-      "The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.",
+      "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
       "Use that skill when prior memory may be relevant to the current request."
     ].join("\n")
   };

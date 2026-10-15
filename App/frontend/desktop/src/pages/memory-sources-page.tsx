@@ -317,8 +317,8 @@ export function MemorySourcesContent(props: MemorySourcesContentProps = {}) {
     setCliInstallError("");
     void installCliTools()
       .then((result) => {
-        const memoryTool = result.installed.find((entry) => entry.name === "memmy-memory");
-        const path = formatSourceDataPath(memoryTool?.target ?? `${result.binDirectory}/memmy-memory`);
+        const memoryTool = result.installed.find((entry) => entry.name === "cuby-memory");
+        const path = formatSourceDataPath(memoryTool?.target ?? `${result.binDirectory}/cuby-memory`);
         setCliInstallMessage(result.pathUpdated
           ? t("memory.cliInstallDonePathUpdated", { path, profiles: formatCliProfilePaths(result.profilePaths) })
           : t("memory.cliInstallDone", { path }));

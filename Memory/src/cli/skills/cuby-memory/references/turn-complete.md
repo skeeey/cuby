@@ -1,13 +1,13 @@
-# `memmy-memory turn complete`
+# `cuby-memory turn complete`
 
 Intent map:
-- finish a turn and persist the interaction -> `memmy-memory turn complete <turnId>`;
-- record a failed turn outcome -> `memmy-memory turn complete <turnId> --status failed`;
-- connect the final answer to the session and query -> `memmy-memory turn complete <turnId> --session-id <id> --query <text> --answer <text>`.
+- finish a turn and persist the interaction -> `cuby-memory turn complete <turnId>`;
+- record a failed turn outcome -> `cuby-memory turn complete <turnId> --status failed`;
+- connect the final answer to the session and query -> `cuby-memory turn complete <turnId> --session-id <id> --query <text> --answer <text>`.
 
 Use this command when:
 - the agent has produced the final answer for the turn;
-- the turn was started with `memmy-memory turn start`;
+- the turn was started with `cuby-memory turn start`;
 - the outcome should be available for future memory context and evolution.
 
 API shape:
@@ -28,7 +28,7 @@ Never store:
 Command:
 
 ```bash
-memmy-memory turn complete <turnId> --source <agent-source> --session-id <sessionId> --query "<query>" --answer "<answer>"
+cuby-memory turn complete <turnId> --source <agent-source> --session-id <sessionId> --query "<query>" --answer "<answer>"
 ```
 
 Common flags:
@@ -43,7 +43,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory turn complete turn_123 --source codex --session-id se_123 --query "fix failing tests" --answer "fixed the failing fixture" --status succeeded
+cuby-memory turn complete turn_123 --source codex --session-id se_123 --query "fix failing tests" --answer "fixed the failing fixture" --status succeeded
 ```
 
 Working rules:

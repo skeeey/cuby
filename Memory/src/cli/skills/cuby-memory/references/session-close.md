@@ -1,9 +1,9 @@
-# `memmy-memory session close`
+# `cuby-memory session close`
 
 Intent map:
-- close an active Memory session -> `memmy-memory session close <sessionId>`;
-- end a completed agent task lifecycle -> `memmy-memory session close <sessionId>`;
-- close by option instead of positional id -> `memmy-memory session close --session-id <id>`.
+- close an active Memory session -> `cuby-memory session close <sessionId>`;
+- end a completed agent task lifecycle -> `cuby-memory session close <sessionId>`;
+- close by option instead of positional id -> `cuby-memory session close --session-id <id>`.
 
 Use this command when:
 - the session id is known;
@@ -24,7 +24,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory session close <sessionId>
+cuby-memory session close <sessionId>
 ```
 
 Common flags:
@@ -34,7 +34,7 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory session close se_123
+cuby-memory session close se_123
 ```
 
 Working rules:

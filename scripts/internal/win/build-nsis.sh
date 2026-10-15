@@ -599,8 +599,8 @@ verify_packaged_windows_unpacked_artifacts() {
   local packaged_embedding_model="$DESKTOP_DIR/release/win-unpacked/resources/embedding-models/$EMBEDDING_MODEL_ID"
 
   require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/app.asar"
-  require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/memmy-memory.cmd"
-  require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/memmy.cmd"
+  require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/cuby-memory.cmd"
+  require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/cuby.cmd"
   verify_packaged_runtime_config_boundary "$DESKTOP_DIR/release/win-unpacked/resources"
   require_packaged_runtime_file "$packaged_agent_source_core/package.json"
   require_packaged_runtime_file "$packaged_agent_source_core/dist/src/index.js"
@@ -874,8 +874,8 @@ node "$ROOT_DIR/scripts/internal/shared/verify-package-version.mjs" \
   --runtime-root "$RUNTIME_NODE_DIR"
 
 package_step_start "Create Windows CLI launchers and embedding model"
-create_windows_cli_launcher "$CLI_BIN_DIR/memmy-memory.cmd" "dist\\runtime\\memory\\dist\\src\\cli\\index.js"
-create_windows_cli_launcher "$CLI_BIN_DIR/memmy.cmd" "dist\\runtime\\memmy-agent\\dist\\main.js"
+create_windows_cli_launcher "$CLI_BIN_DIR/cuby-memory.cmd" "dist\\runtime\\memory\\dist\\src\\cli\\index.js"
+create_windows_cli_launcher "$CLI_BIN_DIR/cuby.cmd" "dist\\runtime\\memmy-agent\\dist\\main.js"
 node "$ROOT_DIR/scripts/internal/shared/prepare-embedding-model.mjs" "$EMBEDDING_MODELS_DIR"
 cp -R "$EMBEDDING_MODELS_DIR" "$RUNTIME_DIR/memory/embedding-models"
 

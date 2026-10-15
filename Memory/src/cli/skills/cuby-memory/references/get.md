@@ -1,10 +1,10 @@
-# `memmy-memory get`
+# `cuby-memory get`
 
 Intent map:
-- read one memory item by id -> `memmy-memory get <id>`;
-- inspect a memory before deletion -> `memmy-memory get <id>`;
-- fetch the compact agent-readable detail behind a search hit -> `memmy-memory get <id>`;
-- debug the full raw detail payload -> `memmy-memory get <id> --verbose`.
+- read one memory item by id -> `cuby-memory get <id>`;
+- inspect a memory before deletion -> `cuby-memory get <id>`;
+- fetch the compact agent-readable detail behind a search hit -> `cuby-memory get <id>`;
+- debug the full raw detail payload -> `cuby-memory get <id> --verbose`.
 
 Use this command when:
 - a concrete memory id is available from `search`, `add`, `turn complete`, or `raw`;
@@ -28,7 +28,7 @@ Do not use this command to:
 Command:
 
 ```bash
-memmy-memory get <id>
+cuby-memory get <id>
 ```
 
 Common flags:
@@ -39,13 +39,13 @@ Common flags:
 Example:
 
 ```bash
-memmy-memory get mem_123
-memmy-memory get mem_123 --verbose
+cuby-memory get mem_123
+cuby-memory get mem_123 --verbose
 ```
 
 Working rules:
 - use ids returned by Memory API responses;
-- if injected memory text says to call `memmy_memory_get(id="...")` but that tool is unavailable, run `memmy-memory get <id>` with the same id;
+- if injected memory text says to call `memmy_memory_get(id="...")` but that tool is unavailable, run `cuby-memory get <id>` with the same id;
 - inspect the returned item before deleting when the target is not fully known;
 - pass `--verbose` only when debugging raw metadata, refs, version, etag, or timeline internals;
 - treat missing items as unavailable, not as proof that related knowledge does not exist.

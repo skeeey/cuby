@@ -171,10 +171,10 @@ describe("memmy resume hook stop capture", () => {
     const port = (server.address() as { port: number }).port;
 
     try {
-      const hookScriptPath = join(tempDir, "memmy-resume-hook.mjs");
+      const hookScriptPath = join(tempDir, "cuby-resume-hook.mjs");
       writeFileSync(hookScriptPath, renderMemmyResumeHookScript({ source: "claude_code", mode: "claude-code" }));
       writeFileSync(join(tempDir, "memmy-workspace-bridge.mjs"), runtimeAsset);
-      writeFileSync(join(tempDir, "memmy-memory-config.json"), JSON.stringify({
+      writeFileSync(join(tempDir, "cuby-memory-config.json"), JSON.stringify({
         memmy_config_path: join(tempDir, "missing-config.yaml"),
         endpoint: `http://127.0.0.1:${port}`,
         token: ""
@@ -389,10 +389,10 @@ function installHookFixture(
   runtimeAsset: string,
   render = renderMemmyResumeHookScript,
 ): string {
-  const hookScriptPath = join(directory, "memmy-resume-hook.mjs");
+  const hookScriptPath = join(directory, "cuby-resume-hook.mjs");
   writeFileSync(hookScriptPath, render({ source, mode }));
   writeFileSync(join(directory, "memmy-workspace-bridge.mjs"), runtimeAsset);
-  writeFileSync(join(directory, "memmy-memory-config.json"), JSON.stringify({
+  writeFileSync(join(directory, "cuby-memory-config.json"), JSON.stringify({
     memmy_config_path: join(directory, "missing-config.yaml"),
     endpoint,
     token: "",
