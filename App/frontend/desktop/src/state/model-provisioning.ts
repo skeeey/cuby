@@ -64,10 +64,11 @@ function connectionHasCredential(catalog: ModelConfigView, apiBase: string): boo
 /**
  * Writes one cuberouter key. The catalog's current model selection always stays when it has one —
  * a login, provisioning included, must never reset the user's choices, and any non-empty slot
- * (an agent model or either memory model) counts as a selection. Only a line with no selection
- * yet is seeded with the build's default model, and only while the instance's list
- * (`availableModels`) actually offers it: an unlisting or unknown instance seeds nothing, so the
- * panel shows 未配置 and guides the user instead of writing a model the account cannot call.
+ * (an agent model or either memory model) counts as a selection. An empty selection is seeded
+ * with exactly one model: the build's default while the instance's list (`availableModels`)
+ * offers it or could not be consulted (`null`), otherwise the first model the list does offer.
+ * A connection cannot be written without a model — the catalog contract rejects that — so there
+ * is no "seed nothing" branch.
  */
 export async function provisionCuberouterKey(input: {
   configClient: ConfigClient;
@@ -83,16 +84,20 @@ export async function provisionCuberouterKey(input: {
       const hasSelection = current.agent.models.length > 0
         || Boolean(current.memorySummary)
         || Boolean(current.memoryEvolution);
-      const seedable = !hasSelection && Boolean(input.availableModels?.includes(input.defaultModel));
+      // Only an empty selection gets the build's default, and only while the instance's list
+      // leaves it standing: an unlisted default yields to the first model the list does offer.
+      // The empty-list guard can only fire for a malformed list.
+      const listed = input.availableModels;
+      const seedModel = !listed || listed.includes(input.defaultModel)
+        ? input.defaultModel
+        : listed[0] ?? input.defaultModel;
       const selection = hasSelection
         ? current
-        : seedable
-          ? {
-              agent: { models: [input.defaultModel], default: input.defaultModel },
-              memorySummary: input.defaultModel,
-              memoryEvolution: input.defaultModel
-            }
-          : { agent: { models: [] }, memorySummary: "", memoryEvolution: "" };
+        : {
+            agent: { models: [seedModel], default: seedModel },
+            memorySummary: seedModel,
+            memoryEvolution: seedModel
+          };
       return applyCuberouterSelection(workspace, {
         apiBase: input.endpoint.apiBase,
         protocol: input.endpoint.protocol,

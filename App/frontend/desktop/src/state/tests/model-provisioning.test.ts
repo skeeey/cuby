@@ -266,8 +266,10 @@ describe("provisionCuberouterKey", () => {
   });
 
   // The build's model is a preferred default, not a promise: a key may be seeded with it only
-  // while the instance's own list (carried by the login decision) actually offers it. The four
-  // cases below pin each combination: listed, unlisted, unknown, and a non-empty draft.
+  // while the instance's own list (carried by the login decision) actually offers it, and an
+  // unlisted default falls back to the first model the list does offer. The connection is never
+  // written without a model — the catalog contract rejects that (`TextModelProviderInputSchema`
+  // requires at least one model per provider). The four cases below pin each combination.
   it("seeds the build-time default into all three slots when the instance lists it", async () => {
     const server = configClientServer();
     const decision = await resolveCuberouterLoginKey({
@@ -309,34 +311,38 @@ describe("provisionCuberouterKey", () => {
     expect(byok.memoryEvolution).toBe(presetId);
   });
 
-  it("writes only the key when the instance does not list the build-time default", async () => {
+  it("seeds the first listed model when the instance does not list the build-time default", async () => {
     // A different deployment or group: the key is valid, the default model is not callable there.
-    // Seeding it anyway would leave the machine pointing at a model the account cannot use.
+    // The first listed model takes its place — the connection cannot be written without one
+    // (`TextModelProviderInputSchema.models` is min(1)), so "seed nothing" is not a writable state.
     const server = configClientServer();
 
     await provisionCuberouterKey({
       configClient: server.client,
       endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
       defaultModel: "deepseek-flash",
-      availableModels: ["gpt-oss-120b"]
+      availableModels: ["gpt-oss-120b", "qwen3-235b"]
     });
 
     expect(server.saved).toHaveLength(1);
     const written = server.saved[0];
     const provider = written.providers[0];
     expect(provider.endpoints[0].apiKey).toBe("sk-plain");
-    expect(provider.models).toEqual([]);
+    // The contract's floor: a provider must carry at least one model.
+    expect(provider.models.length).toBeGreaterThan(0);
+    expect(provider.models.map((preset: any) => preset.model)).toEqual(["gpt-oss-120b"]);
+    const presetId = provider.models[0].presetId;
     const byok = written.modelAssignments.byok;
-    expect(byok.agent.candidates).toEqual([]);
-    expect(byok.agent.default).toBeNull();
-    expect(byok.memorySummary).toBeNull();
-    expect(byok.memoryEvolution).toBeNull();
+    expect(byok.agent.candidates).toEqual([presetId]);
+    expect(byok.agent.default).toBe(presetId);
+    expect(byok.memorySummary).toBe(presetId);
+    expect(byok.memoryEvolution).toBe(presetId);
     expect(JSON.stringify(written)).not.toContain("deepseek-flash");
   });
 
-  it("writes only the key when the model list is unknown", async () => {
-    // The choices request failed (`availableModels: null`): an unknown list is not a listing, so
-    // the default is not seeded — the next login, with the list at hand, self-heals the choice.
+  it("seeds the build-time default when the model list is unknown", async () => {
+    // The choices request failed (`availableModels: null`): the list could not be consulted, so
+    // the connection keeps the build's default — the pre-change behavior, and the only writable one.
     const server = configClientServer();
 
     await provisionCuberouterKey({
@@ -350,13 +356,14 @@ describe("provisionCuberouterKey", () => {
     const written = server.saved[0];
     const provider = written.providers[0];
     expect(provider.endpoints[0].apiKey).toBe("sk-plain");
-    expect(provider.models).toEqual([]);
+    expect(provider.models.length).toBeGreaterThan(0);
+    expect(provider.models.map((preset: any) => preset.model)).toEqual(["deepseek-flash"]);
+    const presetId = provider.models[0].presetId;
     const byok = written.modelAssignments.byok;
-    expect(byok.agent.candidates).toEqual([]);
-    expect(byok.agent.default).toBeNull();
-    expect(byok.memorySummary).toBeNull();
-    expect(byok.memoryEvolution).toBeNull();
-    expect(JSON.stringify(written)).not.toContain("deepseek-flash");
+    expect(byok.agent.candidates).toEqual([presetId]);
+    expect(byok.agent.default).toBe(presetId);
+    expect(byok.memorySummary).toBe(presetId);
+    expect(byok.memoryEvolution).toBe(presetId);
   });
 
   it("keeps a memory-only selection and seeds nothing over it", async () => {

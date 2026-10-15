@@ -194,10 +194,10 @@ describe("cuberouter model section", () => {
     await vi.waitFor(() => expect(accountClient.getModelChoices).toHaveBeenCalledTimes(2));
   });
 
-  it("refreshes the key alone when the instance does not list the provisioned model", async () => {
+  it("refreshes with the first listed model when the instance does not list the provisioned model", async () => {
     // The re-provisioned model is one this instance does not offer: seeding the three slots with
-    // it would hand the account a model it cannot call, so the fresh key lands with nothing
-    // selected and the panel's empty state guides the choice instead.
+    // it would hand the account a model it cannot call, so the first listed model takes its place
+    // — the connection cannot be written without one. The fresh key lands with that model.
     window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
       "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
     }));
@@ -216,11 +216,14 @@ describe("cuberouter model section", () => {
     await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
     const written = configClient.saveModelCatalog.mock.calls[0]![0] as ModelConfigInput;
     expect(JSON.stringify(written)).toContain("sk-fresh");
-    expect(written.providers[0]!.models).toEqual([]);
-    expect(written.modelAssignments.byok.agent.candidates).toEqual([]);
-    expect(written.modelAssignments.byok.agent.default).toBeNull();
-    expect(written.modelAssignments.byok.memorySummary).toBeNull();
-    expect(written.modelAssignments.byok.memoryEvolution).toBeNull();
+    // The contract's floor: a provider must carry at least one model.
+    expect(written.providers[0]!.models.length).toBeGreaterThan(0);
+    expect(written.providers[0]!.models.map((preset) => preset.model)).toEqual(["deepseek-v4.1-flash"]);
+    const presetId = written.providers[0]!.models[0]!.presetId;
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([presetId]);
+    expect(written.modelAssignments.byok.agent.default).toBe(presetId);
+    expect(written.modelAssignments.byok.memorySummary).toBe(presetId);
+    expect(written.modelAssignments.byok.memoryEvolution).toBe(presetId);
     expect(JSON.stringify(written)).not.toContain("unlisted-model");
     // The key just written has no list identity yet: the record goes and the list is re-read.
     await vi.waitFor(() => expect(window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toBeNull());

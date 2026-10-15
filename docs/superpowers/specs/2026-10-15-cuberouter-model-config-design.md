@@ -143,7 +143,7 @@ v1/v2 已落地的现状：cuberouter 登录成功后，桌面端把一把 key �
 1. 记录里的 key 仍在 `model-choices` 列表且 `usable` → **reuse**：组织 key 直接用列表里的明文、个人 key 调一次 reveal，只刷新 `apiKey`；
 2. 记录缺失或失效 → **provision**：走一次 find-or-create（与登录同一路径，`POST /api/account/cuberouter/provision-key` 也复用它），并清除失效记录；
 3. `model-choices` 拉取失败且配置里已有可用连接（apiBase = 当前线路 `/v1` 且有密钥）→ **keep**：什么都不写（瞬时故障不得覆盖用户选的 key），不阻断登录；
-4. **模型选择与 key 决策解耦**：三条路径都保留目录里已有的模型选择（三个槽位任一非空都算已有选择，只配了记忆模型的机器也一样）——「改了模型但没点过 key」的机器，登出再登录也不会被重置。仅当选择为空时才播种构建期默认模型（环境变量 `MEMMY_CUBEROUTER_MODEL`，即 provision 结果的 `model`），且它只是**首选默认**：只有实例的模型列表（`availableModels`，随 provision 决策一起带回，choices 拉取失败时为 `null`）确实包含它才播种；未列出或未知时不播种，面板显示未配置引导用户选择，列表未知的机器在下次登录拿到列表后自愈。
+4. **模型选择与 key 决策解耦**：三条路径都保留目录里已有的模型选择（三个槽位任一非空都算已有选择，只配了记忆模型的机器也一样）——「改了模型但没点过 key」的机器，登出再登录也不会被重置。选择为空时才播种，且只种一个模型：目录契约不允许写入没有模型的连接（`TextModelProviderInputSchema.models` 至少 1 个），所以构建期默认模型（环境变量 `MEMMY_CUBEROUTER_MODEL`，即 provision 结果的 `model`）只是**首选默认**——实例清单（`availableModels`，随 provision 决策一起带回）里有它就种它，不在就退用清单第一个，清单未知（choices 拉取失败，`availableModels` 为 `null`）时用构建期默认。「重新获取 key」同此规则。
 
 ### 4.6 写入通路
 
