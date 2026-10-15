@@ -16,6 +16,7 @@
 - **端口映射（5 个，逐字照抄）**：18960→28960（memory 服务）、18970→28970（agent gateway health）、18980→28980（agent websocket）、18990→28990（agent local API）、19100→29100（packaged renderer）。开发端口 19000 / 19001 / 18961 **不改**。
 - **环境变量**：`MEMMY_<NAME>` → `CUBY_<NAME>`，名字其余部分逐字不变（例：`MEMMY_AGENT_DATA_DIR` → `CUBY_AGENT_DATA_DIR`）。
 - **协议头**：`x-memmy-<name>` → `x-cuby-<name>`，17 个，逐字对应。
+- **机械替换的文件类型范围**：`--include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh'`。**别漏了 shell / PowerShell / NSIS / cmd** —— `scripts/package-win.sh`、`scripts/clear-data.sh`、`scripts/clear-all-windows.ps1`、`App/shell/desktop/build/installer-win-unsigned.nsh` 等文件里同样有路径、环境变量与产品名。
 - **绝不动**：`scripts/install.sh`、`scripts/internal/linux/**`、`README.md`、`README.zh-CN.md`、`docs/**`、`package.json` 的 `name` 字段与所有 `@memmy/*` / `@memtensor/memmy-memory-*` 包名、`App/memmy-agent/` 目录名、`App/memmy-agent/src/memmy-memory/` 模块目录名、`memmy.cn` / `memmy.bot` 域名、config schema 键（`memmyAgent` / `memmyMemory`）、内部标识符（`MemmyAgentClient`、`memmyConfigPath` 等）。
 - **Windows PowerShell 片段里的 `Add-Type -Namespace Memmy`**（`windows-cli-path.ts:188`）：内部实现细节，不改。
 - **提交粒度**：一个 Task 一个提交；每个 Task 结束时该层的测试必须全绿。
@@ -54,7 +55,11 @@
 
 `App/shell/desktop/tests/windows-installer-nsis-compile.test.ts`：把三处 `Memmy` 改成 `Cuby`（第 37 行 artifact、第 41 行 `Memmy.exe`、第 57 行 `--config.artifactName`）。
 
-`tests/ocu-dev-install.test.mjs` 与 `App/shell/desktop/tests/computer-use-permission-panel.test.ts:33`：把 fixture 路径里的 `Memmy Development` 改成 `Cuby Development`（注意 `App/memmy-agent/tests/tools/computer-use/native-agent-lifecycle.test.ts:41` 是真实 macOS 路径 fixture，同样改）。
+`App/shell/desktop/tests/computer-use-permission-panel.test.ts:33` 与 `App/memmy-agent/tests/tools/computer-use/native-agent-lifecycle.test.ts:41`：把 fixture 路径里的 `Memmy Development` 改成 `Cuby Development`。**注意**：`native-agent-lifecycle.test.ts` 的路径是 socket 哈希的输入，改完必须同步更新那条断言里的哈希值（实现时的实测值：`8f6a862c735ba596` → `3ea0aa865f3b08de`）。
+
+`App/shell/desktop/tests/packaged-runtime-boundary.test.ts:490`（**计划原先漏了这个文件**）：该用例直接断言 `main.ts` 源码里存在 `app.setName("Memmy")`，不改它 Step 5 不可能通过，所以它属于本 Task 而不是后续。
+
+`tests/ocu-dev-install.test.mjs`：**本 Task 不改**——它里面没有 `Memmy Development` fixture（原计划写错了），只有一个 dev 包标识 `cn.memtensor.memmy.computeruse.dev`，归 Task 1B。
 
 - [ ] **Step 2: 运行测试确认失败**
 
@@ -104,21 +109,118 @@ git commit -m "feat(desktop): rename the packaged app identity to Cuby"
 
 ---
 
+### Task 1B: 安装器脚本与已安装应用路径
+
+> **为什么有这个任务**：Task 1 把 `productName` 改成 `Cuby` 之后，可执行文件叫 `Cuby.exe` / `Cuby.app`，但安装器、Windows 升级链路与 macOS 后台更新仍在找 `Memmy.exe` / `Memmy.app`。这些文件的测试**不会因此变红**（它们断言的是自己的字面量），所以缺口是静默的——由 Task 1 的实现者在报告里发现。
+
+**Files:**
+- Modify: `App/shell/desktop/src/main/main.ts:2358,2386,2401`（`/Applications/Memmy.app`）、`:1436`（`MemmyUpdatePrompt.ps1` 的安装路径）
+- Rename + Modify: `App/shell/desktop/build/MemmyWindowsDataMigration.ps1` → `CubyWindowsDataMigration.ps1`
+- Rename + Modify: `App/shell/desktop/build/MemmyWindowsUpgradeRelay.ps1` → `CubyWindowsUpgradeRelay.ps1`
+- Rename + Modify: `App/shell/desktop/build/MemmyWindowsUpgradeRecovery.ps1` → `CubyWindowsUpgradeRecovery.ps1`
+- Rename + Modify: `App/shell/desktop/build/MemmyWindowsUpgradeCleanup.ps1` → `CubyWindowsUpgradeCleanup.ps1`
+- Rename + Modify: `App/shell/desktop/build/MemmyWindowsStandardUpgradeCheck.ps1` → `CubyWindowsStandardUpgradeCheck.ps1`
+- Rename + Modify: `App/shell/desktop/build/MemmyUpdatePrompt.ps1` → `CubyUpdatePrompt.ps1`
+- Modify: `App/shell/desktop/build/installer-win-unsigned.nsh`
+- Modify: `scripts/internal/mac/build-dmg.sh:311,660,663`
+- Modify: `tests/ocu-dev-install.test.mjs:117`（dev 包标识 `cn.memtensor.memmy.computeruse.dev` → `cn.memtensor.cuby.computeruse.dev`）
+- Test: `App/shell/desktop/tests/packaged-runtime-boundary.test.ts:62,919,922,981,984`
+- Test: `App/shell/desktop/tests/{windows-upgrade-relay,windows-standard-upgrade-check,windows-data-migration,windows-update-launcher}.test.ts`
+
+**Interfaces:**
+- Consumes: Task 1 的 `productName = Cuby`。
+- Produces: 安装器、Windows 升级/迁移链路、macOS 后台更新全部按 `Cuby.exe` / `Cuby.app` 工作；`CubyUpdatePrompt.ps1` 的安装路径与 Task 2 的 `%LOCALAPPDATA%\Cuby\launcher\` 一致。
+
+- [ ] **Step 1: 先改测试里的期望值（会失败）**
+
+`packaged-runtime-boundary.test.ts`：`:62` 的脚本路径、`:919`/`:922` 的 NSIS 行、`:981`/`:984` 的 PowerShell 函数名断言，全部 `Memmy` → `Cuby`。
+
+`windows-upgrade-relay.test.ts`、`windows-standard-upgrade-check.test.ts`、`windows-data-migration.test.ts`、`windows-update-launcher.test.ts`：把断言与 fixture 里的 `Memmy.exe`、`MemmyWindows*.ps1`、`MemmyUpdatePrompt.ps1`、函数名 `*-Memmy*` 改成对应的 Cuby 名。**注意**：这几个文件里用 `Memmy.exe` 当纯 fixture 文件名的用例（例如 `windows-upgrade-relay.test.ts:154,175,392,406,422,430-431,483,546,596` 里既创建又断言同名文件）**必须整组一起改**，否则创建与断言会不匹配。
+
+- [ ] **Step 2: 运行确认失败**
+
+Run: `npm --prefix App/shell/desktop test -- tests/packaged-runtime-boundary.test.ts tests/windows-upgrade-relay.test.ts`
+Expected: FAIL。
+
+- [ ] **Step 3: 重命名七个脚本并改文件内引用**
+
+```bash
+cd App/shell/desktop/build
+git mv MemmyWindowsDataMigration.ps1 CubyWindowsDataMigration.ps1
+git mv MemmyWindowsUpgradeRelay.ps1 CubyWindowsUpgradeRelay.ps1
+git mv MemmyWindowsUpgradeRecovery.ps1 CubyWindowsUpgradeRecovery.ps1
+git mv MemmyWindowsUpgradeCleanup.ps1 CubyWindowsUpgradeCleanup.ps1
+git mv MemmyWindowsStandardUpgradeCheck.ps1 CubyWindowsStandardUpgradeCheck.ps1
+git mv MemmyUpdatePrompt.ps1 CubyUpdatePrompt.ps1
+```
+
+文件内容按下面三类替换（逐文件核对，不要全仓替换）：
+
+1. **可执行/应用名**：`Memmy.exe` → `Cuby.exe`
+2. **脚本互相引用**：`MemmyWindowsDataMigration.ps1` → `CubyWindowsDataMigration.ps1`（`MemmyWindowsUpgradeRelay.ps1:35`、`MemmyWindowsUpgradeRecovery.ps1:54,460` 等）
+3. **路径与数据根**：`%APPDATA%\Memmy` → `%APPDATA%\Cuby`、`%LOCALAPPDATA%\Memmy\...` → `%LOCALAPPDATA%\Cuby\...`、`MemmyData` → `CubyData`、`MemmyData\.memmy` → `CubyData\.cuby`
+
+`CubyUpdatePrompt.ps1` 额外改：mutex 名 `Local\MemmyUpdatePrompt-…` → `Local\CubyUpdatePrompt-…`（**必须改**，否则新旧两个 App 会争同一个单例互斥量）、以及 `Join-MemmyChars`、`Get-MemmyUpdatePromptMutexName`、`Enter-MemmyUpdatePromptSingleton`、`Exit-MemmyUpdatePromptSingleton`、`Resolve-MemmyPromptLanguage`、`Get-MemmyAppProcessIds`、`Test-MemmyUpdatePromptDone` 等函数名与其调用点。
+
+- [ ] **Step 4: 改 NSIS include 与 macOS 打包脚本**
+
+`installer-win-unsigned.nsh`：`:405,406,413,414,653,685,688,690,857,868` 的 `File`/`StrCpy`/`FileWrite` 引用改成新的 `.ps1` 文件名；`:460` 的 `Memmy.exe` → `Cuby.exe`。NSIS 变量名（`$MemmyUpgradeRoute`、`$MemmyMigrationScriptPath` 等）与标签（`memmy_standard_check_fresh` 等）属于内部实现，**不改**。
+
+`scripts/internal/mac/build-dmg.sh`：`:311` 的 `APP_PATH="/Applications/Memmy.app"`、`:660`、`:663` 的 `Memmy.app` → `Cuby.app`。
+
+`tests/ocu-dev-install.test.mjs:117`：dev 包标识 `cn.memtensor.memmy.computeruse.dev` → `cn.memtensor.cuby.computeruse.dev`（与 Task 1 已改的 `~/Applications/Cuby Development` 保持一致；本地 dev 安装下次重装时重新注册，无迁移成本）。
+
+- [ ] **Step 5: 改 main.ts 的已安装路径**
+
+`App/shell/desktop/src/main/main.ts`：
+
+```ts
+    throw new Error("Cannot resolve installed Cuby.app path for background update");
+```
+
+```ts
+  const installedCubyAppPath = "/Applications/Cuby.app";
+  if (existsSync(installedCubyAppPath)) {
+    return installedCubyAppPath;
+  }
+```
+
+（`:2386` 的注释一并对齐；局部变量名 `installedMemmyAppPath` 同步改名。）
+
+```ts
+  const scriptPath = join(localAppData, "Cuby", "launcher", "CubyUpdatePrompt.ps1");
+```
+
+- [ ] **Step 6: 运行测试**
+
+Run: `npm --prefix App/shell/desktop test && npm run test:packaging-guards && node --test tests/ocu-dev-install.test.mjs`
+Expected: PASS（`ocu-dev-install` 的断言在非 macOS 上会 skip，属正常）。
+
+- [ ] **Step 7: 提交**
+
+```bash
+git add -A
+git commit -m "fix(desktop): point the installer and upgrade paths at Cuby"
+```
+
+---
+
 ### Task 2: Windows 本地目录
 
 **Files:**
 - Modify: `App/shell/desktop/src/main/windows-launch-at-login.ts:54`
-- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:58-59`
+- Modify: `App/shell/desktop/src/main/windows-data-layout.ts:46,58-59,335,397`（`MemmyData` 目录名在 `:46` 定义，`:335`、`:397` 是它的两处派生路径）
 - Test: `App/shell/desktop/tests/windows-launch-at-login.test.ts`
-- Test: `App/shell/desktop/tests/windows-data-layout.test.ts`
+- Test: `App/shell/desktop/tests/windows-data-layout.test.ts:32,43-44`
+- Test: `App/shell/desktop/tests/windows-standard-upgrade-check.test.ts:58`
 
 **Interfaces:**
 - Consumes: Task 1 的 `productName = Cuby`（目录名与产品名保持一致）。
-- Produces: `%LOCALAPPDATA%\Cuby\launcher\CubyLauncher.vbs`、`%LOCALAPPDATA%\Cuby\data-migration\state.json`、`%LOCALAPPDATA%\Cuby\data-layout\last-install.json`。
+- Produces: `%LOCALAPPDATA%\Cuby\launcher\CubyLauncher.vbs`、`%LOCALAPPDATA%\Cuby\data-migration\state.json`、`%LOCALAPPDATA%\Cuby\data-layout\last-install.json`、安装盘数据目录 `CubyData\` 及其下的 `.cuby` 运行时家目录。Task 1B 依赖 `CubyUpdatePrompt.ps1` 的目录名与此处一致。
 
 - [ ] **Step 1: 先改测试里的断言（会失败）**
 
-`App/shell/desktop/tests/windows-launch-at-login.test.ts` 与 `windows-data-layout.test.ts`：把 fixture 与断言里的 `Memmy` 路径段改成 `Cuby`，`MemmyLauncher.vbs` 改成 `CubyLauncher.vbs`。
+`App/shell/desktop/tests/windows-launch-at-login.test.ts` 与 `windows-data-layout.test.ts`：把 fixture 与断言里的 `Memmy` 路径段改成 `Cuby`，`MemmyLauncher.vbs` 改成 `CubyLauncher.vbs`。`windows-standard-upgrade-check.test.ts:58` 的 `MemmyData\.memmy` 改成 `CubyData\.cuby`。
 
 - [ ] **Step 2: 运行确认失败**
 
@@ -139,6 +241,8 @@ Expected: FAIL。
     migrationStatePath: win32.join(localAppDataPath, "Cuby", "data-migration", "state.json"),
     installationRecordPath: win32.join(localAppDataPath, "Cuby", "data-layout", "last-install.json"),
 ```
+
+同文件 `:46` 的安装盘数据目录名 `"MemmyData"` → `"CubyData"`（`:335`、`:397` 两处派生路径里的 `MemmyData` 与 `.memmy` 随之变为 `CubyData` 与 `.cuby`）。
 
 - [ ] **Step 4: 运行测试**
 
@@ -202,7 +306,8 @@ Expected: FAIL —— 实际返回 `~/.memmy/config.yaml`。
 
 ```bash
 grep -rl '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
-  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./scripts/install.sh$' \
   | grep -v '^\./scripts/internal/linux/' \
   | grep -v '^\./tests/linux-cli-packaging.test.mjs$' \
@@ -229,7 +334,8 @@ Expected: `.memmy` → `.cuby`（`\.memmy\b` 不会命中 `.memmyMemory` / `.mem
 
 ```bash
 grep -rn '\.memmy' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' \
-  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  --include='*.sh' --include='*.ps1' --include='*.cmd' --include='*.nsh' \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
 ```
 
@@ -284,7 +390,7 @@ Expected: FAIL —— `defaultConfigPaths()` 仍读 `MEMMY_CONFIG`，对 `CUBY_C
 - [ ] **Step 3: 生成清单并替换**
 
 ```bash
-grep -rl 'MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+grep -rl 'MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./scripts/install.sh$' \
   | grep -v '^\./scripts/internal/linux/' \
   | grep -v '^\./tests/linux-cli-packaging.test.mjs$' \
@@ -298,7 +404,7 @@ xargs -a /tmp/cuby-env-files.txt perl -pi -e 's/\bMEMMY_/CUBY_/g'
 - [ ] **Step 4: 验证**
 
 ```bash
-grep -rn '\bMEMMY_\|process\.env\.MEMMY_\|env\.MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+grep -rn '\bMEMMY_\|process\.env\.MEMMY_\|env\.MEMMY_' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -vE '^\./(docs/|README|scripts/install\.sh|scripts/internal/linux/|tests/linux-cli-packaging\.test\.mjs)'
 ```
 
@@ -335,7 +441,7 @@ git commit -m "refactor: rename MEMMY_* environment variables to CUBY_*"
 - [ ] **Step 1: 替换**
 
 ```bash
-grep -rl 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+grep -rl 'x-memmy' --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./docs/' | grep -v '^\./README' \
   > /tmp/cuby-header-files.txt
 xargs -a /tmp/cuby-header-files.txt perl -pi -e 's/\bx-memmy-/x-cuby-/g'
@@ -530,7 +636,7 @@ Expected: FAIL —— 实际为 19100。
 
 ```bash
 grep -rl '18960\|18970\|18980\|18990\|19100' --include='*.ts' --include='*.tsx' --include='*.mjs' --include='*.json' --include='*.css' \
-  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git . \
+  --exclude-dir=node_modules --exclude-dir=dist --exclude-dir=.git --exclude-dir=.superpowers . \
   | grep -v '^\./scripts/install.sh$' \
   | grep -v '^\./scripts/internal/linux/' \
   | grep -v '^\./docs/' | grep -v '^\./README' \
