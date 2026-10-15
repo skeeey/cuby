@@ -407,7 +407,11 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
     : agentIds[0] ?? null;
   assignment.memorySummary = presetIdByModel.get(selection.memorySummary.trim()) ?? null;
   assignment.memoryEvolution = presetIdByModel.get(selection.memoryEvolution.trim()) ?? null;
-  pruneInvalidAssignmentReferences(assignment, keepPresetIds);
+  // Prune against every preset still in the catalog (as `deleteModelConnection` does), not just this
+  // selection's: assignments pointing at another endpoint's presets must survive, while references to
+  // the presets the endpoint prune above just removed are cleared.
+  const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
+  pruneInvalidAssignmentReferences(assignment, remainingIds);
   refreshEffectiveCandidates(next);
   return createModelWorkspace(next);
 }
