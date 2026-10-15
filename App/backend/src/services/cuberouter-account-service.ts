@@ -86,6 +86,8 @@ export interface CuberouterAccountService {
   readModelChoices(): Promise<CuberouterModelChoices>;
   /** One personal key's plaintext, read at the moment the user selects it. */
   getPersonalKey(tokenId: number): Promise<{ key: string }>;
+  /** Re-runs the instance-side find-or-create of the signed-in account's key, without a login. */
+  reprovisionKey(): Promise<{ apiKey: string; apiBase: string; model: string }>;
   logout(): Promise<{ ok: true }>;
 }
 
@@ -206,19 +208,13 @@ export function createCuberouterAccountService(
   ): Promise<CuberouterAuthResult> {
     const { client, url } = clientForNode(nodeId);
     const session = await client.login({ username, password });
-    // The organization comes from the membership list, never from a build setting: the same
-    // organization has a different id on each deployment, and the list is already per instance.
-    const organizations = await client.listOrganizations(session.accessToken);
-    if (organizations.length > 1) {
-      log(`[cuberouter] ${session.username} belongs to ${organizations.length} organizations, using ${organizations[0]!.name}`);
-    }
-    const organization = organizations[0] ?? null;
-    // The name comes from what the instance reports, never from the typed string: an alias would
-    // name a key nobody created.
-    const tokenName = toDesktopTokenName(session.username);
-    const apiKey = organization
-      ? await ensureOrganizationKey(client, session.accessToken, organization.id, tokenName)
-      : await ensurePersonalKey(client, session.accessToken, tokenName, createDirectly);
+    const { apiKey, apiBase, model, organizationName } = await provisionKey(
+      client,
+      url,
+      session.accessToken,
+      session.username,
+      createDirectly
+    );
     // "New" is a question about this machine, and the account row is the wrong place to ask it:
     // a row whose uuid was written under a different spelling re-appears as new, and "new"
     // resets the guidance. The line memory is per username, survives a logout, and is written
@@ -243,11 +239,11 @@ export function createCuberouterAccountService(
         // What the sidebar renders for this identity, and what survives restarts in the raw
         // profile below.
         username: session.username,
-        organizationName: organization?.name ?? null,
+        organizationName,
         rawProfile: {
           username: session.username,
           displayName: session.displayName,
-          ...(organization ? { organizationName: organization.name } : {})
+          ...(organizationName ? { organizationName } : {})
         }
       }
     });
@@ -257,7 +253,39 @@ export function createCuberouterAccountService(
 
     return {
       session: projection,
-      provisioning: { apiKey, apiBase: `${url}/v1`, model: options.model }
+      provisioning: { apiKey, apiBase, model }
+    };
+  }
+
+  /**
+   * The account's key on one line, plus what the desktop writes it with: at login this is the
+   * find-or-create behind `provisioning`, and 「重新获取 key」 runs exactly it again without a login.
+   */
+  async function provisionKey(
+    client: CuberouterClient,
+    url: string,
+    accessToken: string,
+    username: string,
+    createDirectly: boolean
+  ): Promise<{ apiKey: string; apiBase: string; model: string; organizationName: string | null }> {
+    // The organization comes from the membership list, never from a build setting: the same
+    // organization has a different id on each deployment, and the list is already per instance.
+    const organizations = await client.listOrganizations(accessToken);
+    if (organizations.length > 1) {
+      log(`[cuberouter] ${username} belongs to ${organizations.length} organizations, using ${organizations[0]!.name}`);
+    }
+    const organization = organizations[0] ?? null;
+    // The name comes from what the instance reports, never from the typed string: an alias would
+    // name a key nobody created.
+    const tokenName = toDesktopTokenName(username);
+    const apiKey = organization
+      ? await ensureOrganizationKey(client, accessToken, organization.id, tokenName)
+      : await ensurePersonalKey(client, accessToken, tokenName, createDirectly);
+    return {
+      apiKey,
+      apiBase: `${url}/v1`,
+      model: options.model,
+      organizationName: organization?.name ?? null
     };
   }
 
@@ -522,6 +550,25 @@ export function createCuberouterAccountService(
     readModelChoices,
 
     getPersonalKey,
+
+    async reprovisionKey() {
+      const session = options.accountSessionRepository.get();
+      const accessToken = options.accountSessionRepository.getCloudUuid();
+      if (!session.authenticated || !accessToken) {
+        throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
+      }
+      const { client, url } = clientForNode(await currentOrProbedNodeId());
+      // Look first, as a re-login does: the desktop calls this to refresh a key that already
+      // exists, and creating a second one under the same name would pool two keys for one account.
+      const { apiKey, apiBase, model } = await provisionKey(
+        client,
+        url,
+        accessToken,
+        session.profile.username ?? "",
+        false
+      );
+      return { apiKey, apiBase, model };
+    },
 
     async logout() {
       options.accountSessionRepository.clear();

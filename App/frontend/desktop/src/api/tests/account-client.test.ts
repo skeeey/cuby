@@ -191,6 +191,23 @@ describe("account-client", () => {
     await expect(client.revealPersonalKey(41)).resolves.toEqual({ key: "sk-plain" });
     expect(calls[1]).toContain("/api/account/cuberouter/personal-keys/41/key");
   });
+
+  it("re-runs the cuberouter key provisioning through the local API", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(input.toString()).toBe("http://127.0.0.1:18100/api/account/cuberouter/provision-key");
+      expect(init?.method).toBe("POST");
+
+      return jsonResponse(provisioningPayload());
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(createHttpAccountClient(config).reprovisionKey()).resolves.toEqual({
+      apiKey: "cr-desktop-key",
+      apiBase: "https://cuberouter.example/v1",
+      model: "gpt-oss-120b"
+    });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
 });
 
 /**

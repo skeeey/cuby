@@ -9,6 +9,7 @@ import {
   CuberouterNodeProbeViewSchema,
   CuberouterNodesViewSchema,
   CuberouterPersonalKeyViewSchema,
+  CuberouterProvisioningSchema,
   CuberouterRegistrationRequirementsSchema,
   OkResponseSchema,
   UpdateAccountProfileInputSchema,
@@ -22,6 +23,7 @@ import {
   type CuberouterNodeProbeView,
   type CuberouterNodesView,
   type CuberouterPersonalKeyView,
+  type CuberouterProvisioning,
   type CuberouterRegistrationRequirements,
   type OkResponse,
   type RuntimeConfig,
@@ -48,6 +50,8 @@ export interface AccountClient {
   getModelChoices(): Promise<CuberouterModelChoicesView>;
   /** Reads one personal key's plaintext, at the moment the user selects it. */
   revealPersonalKey(tokenId: number): Promise<CuberouterPersonalKeyView>;
+  /** Re-runs the instance-side find-or-create of the account's key, without a fresh login. */
+  reprovisionKey(): Promise<CuberouterProvisioning>;
 }
 
 export function createHttpAccountClient(config: RuntimeConfig): AccountClient {
@@ -171,6 +175,15 @@ export function createHttpAccountClient(config: RuntimeConfig): AccountClient {
         schema: CuberouterPersonalKeyViewSchema,
         init: { method: "POST" },
         body: {}
+      });
+    },
+
+    async reprovisionKey() {
+      return requestJson({
+        config,
+        path: "/api/account/cuberouter/provision-key",
+        schema: CuberouterProvisioningSchema,
+        init: { method: "POST" }
       });
     }
   };

@@ -339,6 +339,29 @@ describe("account local api routes", () => {
     expect(response.json().key).toBe("sk-plain");
     expect(asked).toEqual([41]);
   });
+
+  it("re-runs the instance-side key provisioning without a login", async () => {
+    let called = 0;
+    app = createServer({
+      cuberouterAccount: {
+        ...unusedCuberouterAccount(),
+        async reprovisionKey() {
+          called += 1;
+          return { apiKey: "sk-fresh", apiBase: "https://cn.example/v1", model: "deepseek-flash" };
+        }
+      }
+    });
+
+    const response = await injectJson("POST", "/api/account/cuberouter/provision-key", {});
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({
+      apiKey: "sk-fresh",
+      apiBase: "https://cn.example/v1",
+      model: "deepseek-flash"
+    });
+    expect(called).toBe(1);
+  });
 });
 
 async function injectJson(method: string, url: string, payload: unknown) {
@@ -430,6 +453,9 @@ function unusedCuberouterAccount() {
     },
     async getPersonalKey() {
       throw new Error("getPersonalKey not used");
+    },
+    async reprovisionKey() {
+      throw new Error("reprovisionKey not used");
     }
   };
 }

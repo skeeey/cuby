@@ -12,6 +12,7 @@ import {
   CuberouterNodeProbeViewSchema,
   CuberouterNodesViewSchema,
   CuberouterPersonalKeyViewSchema,
+  CuberouterProvisioningSchema,
   CuberouterRegistrationRequirementsSchema,
   OkResponseSchema,
   SetAvatarInputSchema,
@@ -181,6 +182,17 @@ export function registerAccountRoutes(app: FastifyInstance, options: RegisterAcc
       const { id } = request.params as { id: string };
       const response = CuberouterPersonalKeyViewSchema.parse(
         await options.cuberouterAccount.getPersonalKey(Number.parseInt(id, 10))
+      );
+      return reply.send(response);
+    })
+  );
+
+  app.post(
+    "/api/account/cuberouter/provision-key",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (_request, reply) => {
+      const response = CuberouterProvisioningSchema.parse(
+        await options.cuberouterAccount.reprovisionKey()
       );
       return reply.send(response);
     })

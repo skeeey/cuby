@@ -954,3 +954,45 @@ describe("cuberouter model choices", () => {
     await expect(service.getPersonalKey(41)).resolves.toEqual({ key: "sk-plain" });
   });
 });
+
+describe("cuberouter key reprovision", () => {
+  it("re-runs the instance-side find-or-create for the signed-in account", async () => {
+    const client = fakeClient();
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.reprovisionKey()).resolves.toEqual({
+      apiKey: "sk-org",
+      apiBase: "http://127.0.0.1:3000/v1",
+      model: "deepseek-flash"
+    });
+    expect(client.listOrganizationTokens).toHaveBeenCalledWith("jwt-1", "7", "cuby-desktop-alice");
+  });
+
+  it("reuses the personal key it finds instead of creating a second one", async () => {
+    // 「重新获取 key」 is a refresh, not a provisioning: an existing key — an operator's included —
+    // is handed back rather than a second one created under the same name.
+    const client = fakeClient({
+      listOrganizations: vi.fn(async () => []),
+      searchPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice", status: 1 }]),
+      getPersonalTokenKey: vi.fn(async () => "sk-personal")
+    });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.reprovisionKey()).resolves.toMatchObject({ apiKey: "sk-personal" });
+    expect(client.createPersonalToken).not.toHaveBeenCalled();
+  });
+
+  it("refuses to re-provision without a session", async () => {
+    const service = singleNodeService(fakeClient(), {
+      get: () => ({ authenticated: false, profile: {} }),
+      getCloudUuid: () => null,
+      upsert: vi.fn(),
+      clear: vi.fn()
+    });
+
+    await expect(service.reprovisionKey()).rejects.toMatchObject({
+      code: "rejected",
+      message: "尚未登录 cuberouter 账号"
+    });
+  });
+});
