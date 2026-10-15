@@ -3,6 +3,7 @@ import type { CuberouterAuthResult, OnboardingStateDto } from "@memmy/local-api-
 import { useEffect, useRef, useState } from "react";
 import { setAnalyticsUserId } from "../analytics/analytics-context.js";
 import { useAnalytics } from "../analytics/use-analytics.js";
+import type { ModelProviderConfig } from "../api/config-client.js";
 import { buildInvitationSignupEvent } from "../app/invitation-analytics.js";
 import { persistLoginModeSelection } from "../app/login-mode.js";
 import { useApiClients } from "../app/providers.js";
@@ -11,7 +12,14 @@ import { useTranslation } from "../i18n/use-translation.js";
 import { getLegalLinkUrl } from "../legal/legal-links.js";
 import { appActions } from "../state/app-actions.js";
 import { useAppState } from "../state/app-state.js";
-import { provisionByokModel } from "../state/model-provisioning.js";
+import {
+  cuberouterKeySelectionStorage,
+  clearCuberouterKeySelection,
+  readCuberouterKeySelection,
+  writeCuberouterKeySelection
+} from "../state/cuberouter-key-selection.js";
+import { provisionCuberouterKey, resolveCuberouterLoginKey } from "../state/model-provisioning.js";
+import { createModelWorkspace } from "../state/model-workspace.js";
 import { openExternalUrl } from "../utils/open-url.js";
 import { AuthCredentialsForm } from "./auth-credentials-form.js";
 import { toFeedbackText, useAccountAuth, useEmailVerificationCode } from "./use-account-auth.js";
@@ -198,17 +206,43 @@ export function AccountAuthPanel() {
 
     try {
       setContinuing(true);
-      const saved = await provisionByokModel({
-        configClient: clients.config,
-        endpoint: {
-          apiBase: result.provisioning.apiBase,
-          protocol: "openai-chat-completions",
-          apiKey: result.provisioning.apiKey
-        },
-        model: result.provisioning.model,
-        capabilities: ["agent", "memory_summary", "memory_evolution"],
-        assign: ["agent", "memory_summary", "memory_evolution"]
+      const username = session.profile.username ?? "";
+      // The catalog is read fresh: the app's own snapshot may predate this login, and the
+      // "keep" decision below turns on whether a cuberouter connection is already written.
+      const stored = await clients.config.getModelConfig();
+      const decision = await resolveCuberouterLoginKey({
+        apiBase: result.provisioning.apiBase,
+        catalog: createModelWorkspace(stored).catalog,
+        record: username ? readCuberouterKeySelection(username, cuberouterKeySelectionStorage()) : null,
+        getModelChoices: () => clients.account.getModelChoices(),
+        revealPersonalKey: (tokenId) => clients.account.revealPersonalKey(tokenId)
       });
+
+      let saved: ModelProviderConfig;
+      if (decision.action === "keep") {
+        // The instance could not be asked and a cuberouter connection already exists: read it and
+        // write nothing.
+        saved = await clients.config.getModelConfig();
+      } else {
+        saved = await provisionCuberouterKey({
+          configClient: clients.config,
+          endpoint: {
+            apiBase: result.provisioning.apiBase,
+            protocol: "openai-chat-completions",
+            apiKey: decision.action === "reuse" ? decision.apiKey : result.provisioning.apiKey
+          },
+          defaultModel: result.provisioning.model,
+          keepSelection: decision.action === "reuse"
+        });
+        const storage = cuberouterKeySelectionStorage();
+        if (decision.action === "reuse") {
+          writeCuberouterKeySelection(decision.record, storage);
+        } else if (username) {
+          // The remembered key is gone: drop the record so the panel stops calling it selected.
+          // find-or-create is name-based, so the key it just wrote shows up in the panel's list.
+          clearCuberouterKeySelection(username, storage);
+        }
+      }
       dispatch(appActions.modelConfigUpdated(saved));
 
       // The self-check needs its own guard: it either returns { ok: false } (no quota yet, or

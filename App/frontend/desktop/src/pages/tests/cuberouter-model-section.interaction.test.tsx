@@ -169,6 +169,31 @@ describe("cuberouter model section", () => {
     expect(window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toBeNull();
   });
 
+  it("re-runs the provisioning behind 「重新获取 key」 and reloads the key list", async () => {
+    // The record names a key the list no longer has: the panel offers the refresh entry.
+    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
+    }));
+    const { accountClient, configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
+
+    await vi.waitFor(() => expect(refreshKeysButton()).toBeInstanceOf(HTMLButtonElement));
+    await act(async () => refreshKeysButton().click());
+
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    expect(accountClient.reprovisionKey).toHaveBeenCalledTimes(1);
+    const written = configClient.saveModelCatalog.mock.calls[0]![0] as ModelConfigInput;
+    expect(JSON.stringify(written)).toContain("sk-fresh");
+    const preset = written.providers[0]!.models[0]!;
+    expect(preset.model).toBe("deepseek-v4.1-flash");
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([preset.presetId]);
+    expect(written.modelAssignments.byok.agent.default).toBe(preset.presetId);
+    expect(written.modelAssignments.byok.memorySummary).toBe(preset.presetId);
+    expect(written.modelAssignments.byok.memoryEvolution).toBe(preset.presetId);
+    // The key just written has no list identity yet: the record goes and the list is re-read.
+    await vi.waitFor(() => expect(window.localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toBeNull());
+    await vi.waitFor(() => expect(accountClient.getModelChoices).toHaveBeenCalledTimes(2));
+  });
+
   it("shows a retry state when the choices request fails", async () => {
     const { accountClient } = await renderSection({
       choices: async () => {
@@ -414,6 +439,7 @@ describe("cuberouter model section", () => {
   async function renderSection(input: {
     choices?: () => Promise<CuberouterModelChoicesView>;
     reveal?: (tokenId: number) => Promise<{ key: string }>;
+    reprovision?: () => Promise<{ apiKey: string; apiBase: string; model: string }>;
     save?: (payload: ModelConfigInput, previous: ModelConfigView) => Promise<{ catalog: ModelConfigView; configRevision: string }>;
     storedConfig?: { catalog: ModelConfigView; configRevision: string };
   } = {}) {
@@ -422,7 +448,12 @@ describe("cuberouter model section", () => {
     let stored = input.storedConfig?.catalog ?? createModelWorkspace(null).catalog;
     const accountClient = {
       getModelChoices: vi.fn(input.choices ?? (async () => CHOICES)),
-      revealPersonalKey: vi.fn(input.reveal ?? (async () => ({ key: "sk-personal" })))
+      revealPersonalKey: vi.fn(input.reveal ?? (async () => ({ key: "sk-personal" }))),
+      reprovisionKey: vi.fn(input.reprovision ?? (async () => ({
+        apiKey: "sk-fresh",
+        apiBase: CHOICES.apiBase,
+        model: "deepseek-v4.1-flash"
+      })))
     };
     const configClient = {
       getModelConfig: vi.fn(async () => ({ catalog: stored, configRevision: "rev-1" })),
@@ -455,6 +486,16 @@ describe("cuberouter model section", () => {
     const target = container.querySelector<HTMLInputElement>(`input[type="radio"][aria-label="${name}"]`);
     if (!target) {
       throw new Error(`radio not found: ${name}`);
+    }
+    return target;
+  }
+
+  /** The key card's 「重新获取 key」 entry, offered when the remembered key left the list. */
+  function refreshKeysButton(): HTMLButtonElement {
+    const target = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => candidate.textContent?.includes("重新获取 key"));
+    if (!target) {
+      throw new Error("refresh keys button not found");
     }
     return target;
   }

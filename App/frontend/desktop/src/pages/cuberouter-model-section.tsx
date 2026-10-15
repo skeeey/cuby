@@ -17,6 +17,7 @@ import {
 } from "../state/model-workspace.js";
 import { saveCatalogMutation } from "../state/model-provisioning.js";
 import {
+  clearCuberouterKeySelection,
   cuberouterKeySelectionStorage,
   readCuberouterKeySelection,
   writeCuberouterKeySelection
@@ -32,7 +33,7 @@ export interface CuberouterModelSectionProps {
   organizationName: string | null;
   seedConfig?: ModelProviderConfig | null;
   configClient?: Pick<ConfigClient, "getModelConfig" | "saveModelCatalog" | "testModelConfig">;
-  accountClient?: Pick<AccountClient, "getModelChoices" | "revealPersonalKey">;
+  accountClient?: Pick<AccountClient, "getModelChoices" | "revealPersonalKey" | "reprovisionKey">;
   onConfigSaved?: (config: ModelProviderConfig) => void;
 }
 
@@ -158,9 +159,33 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     }
   }
 
-  /** Task 13 接线：重新走一次登录时的 find-or-create（`provisionCuberouterKey({ …, keepSelection: false })`）。 */
-  function onRefreshKeys(): void {
-    // 见 Task 13。
+  /** Re-runs the instance-side find-or-create, then re-reads the key list. */
+  async function onRefreshKeys(): Promise<void> {
+    if (!props.configClient || !props.accountClient || !props.username) return;
+    setSaveError(null);
+    setSavePending(true);
+    try {
+      const provisioning = await props.accountClient.reprovisionKey();
+      const fresh: CuberouterSelection = {
+        agent: { models: [provisioning.model], default: provisioning.model },
+        memorySummary: provisioning.model,
+        memoryEvolution: provisioning.model
+      };
+      setSelection(fresh);
+      await commit((current) => applyCuberouterSelection(current, {
+        apiBase: provisioning.apiBase,
+        protocol: PROTOCOL,
+        apiKey: provisioning.apiKey,
+        selection: fresh
+      }));
+      // 刚写进去的这把 key 没有列表身份，记录清掉；面板重新拉列表后用户可再选。
+      clearCuberouterKeySelection(props.username, cuberouterKeySelectionStorage());
+      loadChoices();
+    } catch {
+      setSaveError(t("settings.modelWorkspace.saveFailed"));
+    } finally {
+      setSavePending(false);
+    }
   }
 
   /** Applies one assignment change: draft first, then the panel's shared save path. */

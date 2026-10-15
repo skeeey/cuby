@@ -3,6 +3,7 @@
 /** Auth flow tests. */
 import type {
   CuberouterAuthResult,
+  CuberouterModelChoicesView,
   ModelConfigInput,
   ModelConfigTestResult,
   ModelConfigView
@@ -17,7 +18,7 @@ import type { ModelProviderConfig } from "../../api/config-client.js";
 import { AccountAuthPanel } from "../../components/account-auth-panel.js";
 import { appActions } from "../../state/app-actions.js";
 import { createInitialAppState, type AppState } from "../../state/app-reducer.js";
-import { createModelWorkspace } from "../../state/model-workspace.js";
+import { applyCuberouterSelection, createModelWorkspace } from "../../state/model-workspace.js";
 
 const mocks = vi.hoisted(() => ({
   clients: null as AppClients | null,
@@ -47,6 +48,7 @@ describe("auth flow", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(console, "error").mockImplementation(() => undefined);
+    localStorage.clear();
     order = [];
     mocks.state = createInitialAppState();
     container = document.createElement("div");
@@ -165,6 +167,83 @@ describe("auth flow", () => {
     expect(server.registerUsernames()).toEqual(["alice", "bob"]);
   });
 
+  it("登录时保留机器上已选的 key（记录有效且仍可用）", async () => {
+    localStorage.setItem("memmy.cuberouterKeySelection.v1", JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
+    }));
+    const server = createAuthServer(order, {
+      modelChoices: {
+        account: { username: "alice@a.com", organizationName: null },
+        apiBase: "http://127.0.0.1:3100/v1",
+        keys: [{
+          scope: "personal",
+          id: 41,
+          name: "my-own-key",
+          status: 1,
+          usable: true,
+          billing: { kind: "personal", remainingQuota: 100 }
+        }],
+        models: ["deepseek-flash"]
+      },
+      revealedKey: "sk-personal-revealed"
+    });
+    mocks.clients = server.client;
+    await renderPanel();
+    await fillCredentials();
+    await clickButton("account.register");
+
+    await vi.waitFor(() => expect(server.savedInput()).not.toBeNull());
+    expect(server.client.account.revealPersonalKey).toHaveBeenCalledWith(41);
+    expect(server.savedInput()!.providers[0]!.endpoints[0]!.apiKey).toBe("sk-personal-revealed");
+  });
+
+  it("记录里的 key 已不在列表时回落到登录 provision 的 key", async () => {
+    localStorage.setItem("memmy.cuberouterKeySelection.v1", JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
+    }));
+    const server = createAuthServer(order, {
+      modelChoices: {
+        account: { username: "alice@a.com", organizationName: null },
+        apiBase: "http://127.0.0.1:3100/v1",
+        keys: [],
+        models: ["deepseek-flash"]
+      }
+    });
+    mocks.clients = server.client;
+    await renderPanel();
+    await fillCredentials();
+    await clickButton("account.register");
+
+    await vi.waitFor(() => expect(server.savedInput()).not.toBeNull());
+    expect(server.savedInput()!.providers[0]!.endpoints[0]!.apiKey).toBe("sk-cuberouter");
+    // The remembered key is gone: the record goes with it, so the panel stops naming it selected.
+    expect(localStorage.getItem("memmy.cuberouterKeySelection.v1")).toBeNull();
+  });
+
+  it("choices 拉不到时不动已有配置", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: "http://127.0.0.1:3100/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-already-chosen",
+      selection: {
+        agent: { models: ["deepseek-flash"], default: "deepseek-flash" },
+        memorySummary: "deepseek-flash",
+        memoryEvolution: "deepseek-flash"
+      }
+    });
+    localStorage.setItem("memmy.cuberouterKeySelection.v1", JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
+    }));
+    const server = createAuthServer(order, { choicesFailure: true, catalog: seeded.catalog });
+    mocks.clients = server.client;
+    await renderPanel();
+    await fillCredentials();
+    await clickButton("account.register");
+
+    await vi.waitFor(() => expect(mocks.dispatch).toHaveBeenCalledWith(appActions.navigate("/onboarding")));
+    expect(server.savedInput()).toBeNull();
+  });
+
   async function renderPanel(mode: "login" | "register" = "register") {
     await act(async () => root.render(createElement(AccountAuthPanel)));
     // The card opens on login; the register flow has to ask for its form first.
@@ -213,21 +292,21 @@ describe("auth flow pages", () => {
     expect(source).not.toContain("useVerificationCodeAuth");
   });
 
-  it("面板按 提交 → 供给模型 → 选 byok 模式 → 跳转 的顺序续接", () => {
+  it("面板按 提交 → 复核 key → 供给模型 → 选 byok 模式 → 跳转 的顺序续接", () => {
     const panel = readFileSync(resolve(__dirname, "../../components/account-auth-panel.tsx"), "utf8");
     const loginIndex = panel.indexOf("await auth.login(");
-    const provisionIndex = panel.indexOf("await provisionByokModel({");
+    const resolveIndex = panel.indexOf("await resolveCuberouterLoginKey({");
+    const provisionIndex = panel.indexOf("await provisionCuberouterKey({");
     const modeIndex = panel.indexOf("await persistLoginModeSelection({");
     const navigateIndex = panel.indexOf("dispatch(appActions.navigate(");
 
     expect(panel).toContain("if (!result || !result.session.authenticated) return;");
     expect(loginIndex).toBeGreaterThanOrEqual(0);
-    expect(provisionIndex).toBeGreaterThan(loginIndex);
+    expect(resolveIndex).toBeGreaterThan(loginIndex);
+    expect(provisionIndex).toBeGreaterThan(resolveIndex);
     expect(modeIndex).toBeGreaterThan(provisionIndex);
     expect(navigateIndex).toBeGreaterThan(modeIndex);
     expect(panel).toContain("userMode: \"byok\"");
-    expect(panel).toContain('capabilities: ["agent", "memory_summary", "memory_evolution"]');
-    expect(panel).toContain('assign: ["agent", "memory_summary", "memory_evolution"]');
   });
 });
 
@@ -238,9 +317,16 @@ function readPageSource(fileName: string): string {
 
 function createAuthServer(
   order: string[],
-  options: { testResult?: ModelConfigTestResult; failFirstModePersist?: boolean } = {}
+  options: {
+    testResult?: ModelConfigTestResult;
+    failFirstModePersist?: boolean;
+    modelChoices?: CuberouterModelChoicesView;
+    revealedKey?: string;
+    catalog?: ModelConfigView;
+    choicesFailure?: boolean;
+  } = {}
 ) {
-  let catalog: ModelConfigView = createModelWorkspace(null).catalog;
+  let catalog: ModelConfigView = options.catalog ?? createModelWorkspace(null).catalog;
   let written: ModelConfigInput | null = null;
   let modePersistAttempts = 0;
   const registerUsernames: string[] = [];
@@ -259,7 +345,18 @@ function createAuthServer(
         login: vi.fn(async () => {
           order.push("account.login");
           return authResult();
-        })
+        }),
+        getModelChoices: vi.fn(async () => {
+          order.push("getModelChoices");
+          if (options.choicesFailure) throw new Error("instance offline");
+          return options.modelChoices ?? {
+            account: { username: "alice@a.com", organizationName: null },
+            apiBase: "http://127.0.0.1:3100/v1",
+            keys: [],
+            models: ["deepseek-flash"]
+          };
+        }),
+        revealPersonalKey: vi.fn(async () => ({ key: options.revealedKey ?? "sk-revealed" }))
       },
       config: {
         getModelConfig: vi.fn(async () => {
@@ -306,7 +403,9 @@ function authResult(): CuberouterAuthResult {
         nickname: "alice",
         registeredAt: "2026-09-16T00:00:00.000Z",
         // The cuberouter service always writes null here: it has no memmy cloud guide state.
-        hasFinishedGuide: null
+        hasFinishedGuide: null,
+        // The machine's key record is per username, so the profile has to carry the real one.
+        username: "alice@a.com"
       }
     },
     provisioning: {

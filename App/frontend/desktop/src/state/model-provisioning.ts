@@ -1,84 +1,91 @@
 /** Model provisioning module. */
-import type { ModelCapability, ModelEndpointProtocol } from "@memmy/local-api-contracts";
+import type {
+  CuberouterModelChoicesView,
+  ModelConfigView,
+  ModelEndpointProtocol
+} from "@memmy/local-api-contracts";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
+import type { CuberouterKeySelection } from "./cuberouter-key-selection.js";
 import {
-  assignCatalogPreset,
+  applyCuberouterSelection,
   createModelWorkspace,
   modelConfigInput,
-  upsertByokPreset,
+  readCuberouterSelection,
   type ModelWorkspace
 } from "./model-workspace.js";
 
-const PROVIDER_ID = "openai";
+/** What a login should do about the model key. */
+export type CuberouterLoginKeyDecision =
+  | { action: "reuse"; apiKey: string; record: CuberouterKeySelection }
+  | { action: "provision" }
+  | { action: "keep" };
 
-/** Contract for provision byok model input. */
-export interface ProvisionByokModelInput {
-  configClient: ConfigClient;
-  endpoint: { apiBase: string; protocol: ModelEndpointProtocol; apiKey: string };
-  model: string;
-  /** Capabilities written into the preset. */
-  capabilities: ModelCapability[];
-  /** Assignment slots pointed at the preset. */
-  assign: ModelCapability[];
+/**
+ * Decides whether a login keeps the key this machine remembered. `reuse` needs the record to be
+ * listed and usable (a personal key's plaintext is revealed on the spot); `keep` covers the one
+ * case where nothing may be written — the instance could not be asked and a cuberouter
+ * connection already exists — because a transient outage must not overwrite the user's key.
+ */
+export async function resolveCuberouterLoginKey(input: {
+  apiBase: string;
+  catalog: ModelConfigView;
+  record: CuberouterKeySelection | null;
+  getModelChoices: () => Promise<CuberouterModelChoicesView>;
+  revealPersonalKey: (tokenId: number) => Promise<{ key: string }>;
+}): Promise<CuberouterLoginKeyDecision> {
+  try {
+    const choices = await input.getModelChoices();
+    const remembered = input.record
+      ? choices.keys.find((key) => key.scope === input.record!.scope && key.id === input.record!.id && key.usable)
+      : undefined;
+    if (!input.record || !remembered) return { action: "provision" };
+    const apiKey = remembered.secret ?? (await input.revealPersonalKey(remembered.id)).key;
+    return { action: "reuse", apiKey, record: input.record };
+  } catch {
+    return connectionHasCredential(input.catalog, input.apiBase) ? { action: "keep" } : { action: "provision" };
+  }
+}
+
+/** Whether the stored catalog already carries a usable connection at this line's base. */
+function connectionHasCredential(catalog: ModelConfigView, apiBase: string): boolean {
+  const normalized = apiBase.trim().replace(/\/+$/, "");
+  return catalog.providers.some((provider) => (
+    !provider.accountManaged
+    && provider.endpoints.some((endpoint) => (
+      endpoint.apiBase.replace(/\/+$/, "") === normalized && (endpoint.hasApiKey || Boolean(endpoint.apiKeyMasked))
+    ))
+  ));
 }
 
 /**
- * Writes one BYOK provider/endpoint/preset for the given key and model, then
- * points the requested assignment slots at it.
- *
- * Re-running it is a no-op beyond refreshing the stored secret: the existing
- * endpoint is looked up by its normalised apiBase and protocol first, because
- * `upsertByokPreset` cannot recognise it on its own — the server never echoes a
- * stored key, so a plain-key comparison never matches and a second login would
- * push a duplicate endpoint that the API rejects.
- *
- * @param input the endpoint, model, capabilities and assignment slots.
- * @returns the saved catalog, so callers do not need to read it back.
+ * Writes one cuberouter key (and, when there is no selection yet, the build's default model).
+ * `keepSelection: true` is the re-login path: the catalog's current model selection stays.
  */
-export async function provisionByokModel(input: ProvisionByokModelInput): Promise<ModelProviderConfig> {
-  for (let attempt = 0; attempt < 2; attempt += 1) {
-    const latest = await input.configClient.getModelConfig();
-    let workspace = createModelWorkspace(latest);
-    const existingEndpointId = findExistingEndpointId(workspace, input.endpoint);
-    const preset = upsertByokPreset(workspace, {
-      provider: PROVIDER_ID,
-      ...(existingEndpointId ? { endpointId: existingEndpointId } : {}),
-      endpoint: input.endpoint.apiBase,
-      protocol: input.endpoint.protocol,
-      apiKey: input.endpoint.apiKey,
-      model: input.model,
-      capabilities: input.capabilities
-    });
-    workspace = preset.workspace;
-    for (const capability of input.assign) {
-      workspace = assignCatalogPreset(workspace, "byok", capability, preset.presetId);
+export async function provisionCuberouterKey(input: {
+  configClient: ConfigClient;
+  endpoint: { apiBase: string; protocol: ModelEndpointProtocol; apiKey: string };
+  defaultModel: string;
+  keepSelection: boolean;
+}): Promise<ModelProviderConfig> {
+  return saveCatalogMutation({
+    configClient: input.configClient,
+    mutate: (workspace) => {
+      const current = readCuberouterSelection(workspace.catalog, input.endpoint.apiBase);
+      const selection = input.keepSelection && current.agent.models.length > 0
+        ? current
+        : {
+            agent: { models: [input.defaultModel], default: input.defaultModel },
+            memorySummary: input.defaultModel,
+            memoryEvolution: input.defaultModel
+          };
+      return applyCuberouterSelection(workspace, {
+        apiBase: input.endpoint.apiBase,
+        protocol: input.endpoint.protocol,
+        apiKey: input.endpoint.apiKey,
+        selection
+      });
     }
-
-    try {
-      return await input.configClient.saveModelCatalog(modelConfigInput(workspace));
-    } catch (error) {
-      const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
-      if (attempt === 1 || (code !== "model_config_changed" && code !== "config_write_busy")) {
-        throw error;
-      }
-    }
-  }
-
-  throw new Error("unreachable: provisionByokModel retried without resolving");
-}
-
-/** Finds an existing BYOK endpoint with the same normalised apiBase and protocol. */
-function findExistingEndpointId(
-  workspace: ModelWorkspace,
-  endpoint: ProvisionByokModelInput["endpoint"]
-): string | undefined {
-  const apiBase = endpoint.apiBase.trim().replace(/\/+$/, "");
-  const provider = workspace.catalog.providers.find(
-    (item) => item.provider === PROVIDER_ID && !item.accountManaged
-  );
-  return provider?.endpoints.find(
-    (item) => item.apiBase.replace(/\/+$/, "") === apiBase && item.protocol === endpoint.protocol
-  )?.endpointId;
+  });
 }
 
 /** Reads the latest catalog, applies a pure mutation, saves; retries once on catalog conflicts. */
