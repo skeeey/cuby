@@ -206,6 +206,21 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
 
   const models = choices?.models ?? [];
   const modelOptions = models.map((model) => ({ value: model, label: model }));
+  /** Draft agent models the instance no longer lists; the union keeps them visible to uncheck. */
+  const staleAgentModels = (selection?.agent.models ?? []).filter((model) => !models.includes(model));
+  const conversationModels = [...models, ...staleAgentModels];
+  const showsOffListHint = selection !== null && (
+    staleAgentModels.length > 0
+    || (selection.memorySummary !== "" && !models.includes(selection.memorySummary))
+    || (selection.memoryEvolution !== "" && !models.includes(selection.memoryEvolution))
+  );
+
+  /** One memory row's options, appending a stored value the instance dropped (else it reads 未配置). */
+  function rowOptionsFor(value: string): Array<{ value: string; label: string }> {
+    return value !== "" && !models.includes(value)
+      ? [...modelOptions, { value, label: value }]
+      : modelOptions;
+  }
 
   if (choicesFailed) {
     return (
@@ -277,11 +292,11 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       {selection && (
         <>
           <ModelAssignmentSection
-            conversationGroups={models.length > 0 ? [{
+            conversationGroups={conversationModels.length > 0 ? [{
               key: "cuberouter",
               title: t("settings.cuberouterModel.modelsGroup"),
               icon: <ModelProviderLogo provider="openai" size={14} />,
-              candidates: models.map((model) => ({
+              candidates: conversationModels.map((model) => ({
                 id: model,
                 label: model,
                 detail: t("settings.cuberouterModel.modelsGroup")
@@ -298,7 +313,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
                 description: t("settings.model.memoryDesc"),
                 tip: t("apiKey.modelPage.memoryHint"),
                 value: selection.memorySummary,
-                options: modelOptions,
+                options: rowOptionsFor(selection.memorySummary),
                 searchable: true,
                 preserveUnassigned: true
               },
@@ -307,7 +322,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
                 label: t("settings.model.skillEvolution"),
                 description: t("settings.model.skillDesc"),
                 value: selection.memoryEvolution,
-                options: modelOptions,
+                options: rowOptionsFor(selection.memoryEvolution),
                 searchable: true,
                 preserveUnassigned: true
               }
@@ -317,6 +332,11 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
             )}
             disabled={busy}
           />
+          {showsOffListHint && (
+            <p className="mt-2 px-3.5 text-xs leading-relaxed text-text-ink/60">
+              {t("settings.cuberouterModel.offListHint")}
+            </p>
+          )}
           {/* Read-only: the local embedding model stays memmy's built-in default. */}
           <div className="flex items-center justify-between gap-4 px-3.5 py-2.5">
             <span className="text-sm text-text-ink/80">{t("settings.model.embeddingSearch")}</span>

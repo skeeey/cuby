@@ -103,5 +103,18 @@ describe("SearchableSelect", () => {
 
     expect(container.querySelector('[role="listbox"]')).toBeNull();
     expect(getTrigger().textContent).toContain("qwen3-235b");
+
+    // Escape closed the menu without a choice: the filter is reset too, or reopening would look
+    // like the list had vanished behind the stale query.
+    act(() => getTrigger().click());
+    expect(getOptionLabels()).toEqual(["deepseek-v4.1-flash", "gpt-oss-120b", "qwen3-235b"]);
+
+    // The outside-mousedown path closes the same way and resets the same way.
+    typeSearch("oss");
+    expect(getOptionLabels()).toEqual(["gpt-oss-120b"]);
+    act(() => document.dispatchEvent(new MouseEvent("mousedown", { bubbles: true })));
+    expect(container.querySelector('[role="listbox"]')).toBeNull();
+    act(() => getTrigger().click());
+    expect(getOptionLabels()).toEqual(["deepseek-v4.1-flash", "gpt-oss-120b", "qwen3-235b"]);
   });
 });

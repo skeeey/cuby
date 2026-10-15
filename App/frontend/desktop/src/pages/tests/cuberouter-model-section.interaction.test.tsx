@@ -340,6 +340,38 @@ describe("cuberouter model section", () => {
     expect(assignmentCombobox("技能进化").disabled).toBe(true);
   });
 
+  it("surfaces models that left the instance list so they stay visible and re-choosable", async () => {
+    // The stored draft names two models the instance no longer lists: the memory row must show
+    // the real name instead of the 未配置 placeholder, the conversation picker must still offer
+    // the agent model (so it can be unchecked), and one hint must say the list changed.
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: CHOICES.apiBase,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-stored",
+      selection: {
+        agent: { models: ["gpt-oss-120b", "retired-agent"], default: "gpt-oss-120b" },
+        memorySummary: "retired-summary",
+        memoryEvolution: "gpt-oss-120b"
+      }
+    });
+
+    await renderSection({
+      choices: async () => ({ ...CHOICES, models: ["deepseek-v4.1-flash", "gpt-oss-120b"] }),
+      seedConfig: { catalog: seeded.catalog, configRevision: "rev-1" }
+    });
+
+    await vi.waitFor(() => expect(assignmentCombobox("记忆摘要").textContent).toContain("retired-summary"));
+    expect(assignmentCombobox("记忆摘要").textContent).not.toContain("未配置");
+    // The row still pointing at a listed model is untouched.
+    expect(assignmentCombobox("技能进化").textContent).toContain("gpt-oss-120b");
+
+    act(() => pickerToggle().click());
+    expect(candidateCheckbox("retired-agent")).toBeInstanceOf(HTMLButtonElement);
+    expect(candidateCheckbox("gpt-oss-120b")).toBeInstanceOf(HTMLButtonElement);
+
+    expect(container.textContent).toContain("有模型已不在实例可选列表中，请重新选择。");
+  });
+
   it("keeps one agent model selected and repairs a default that left the list", () => {
     expect(toggleAgentModel({ models: ["gpt-oss-120b"] }, "gpt-oss-120b"))
       .toEqual({ models: ["gpt-oss-120b"] });
@@ -467,6 +499,8 @@ describe("cuberouter model section", () => {
     reprovision?: () => Promise<{ apiKey: string; apiBase: string; model: string }>;
     save?: (payload: ModelConfigInput, previous: ModelConfigView) => Promise<{ catalog: ModelConfigView; configRevision: string }>;
     storedConfig?: { catalog: ModelConfigView; configRevision: string };
+    /** The catalog the host seeds the panel's draft with, as `state.modelConfig` does. */
+    seedConfig?: { catalog: ModelConfigView; configRevision: string };
   } = {}) {
     // The local API answers a write with the catalog it stored, and the panel reads that answer
     // back into its workspace: the fake has to keep what it was handed.
@@ -498,6 +532,7 @@ describe("cuberouter model section", () => {
           <CuberouterModelSection
             username="alice@a.com"
             organizationName="yeebo"
+            seedConfig={input.seedConfig as never}
             configClient={configClient as never}
             accountClient={accountClient as never}
           />

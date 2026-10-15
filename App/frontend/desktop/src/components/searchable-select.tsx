@@ -39,6 +39,8 @@ export function SearchableSelect(props: SearchableSelectProps) {
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        // Reopening must start from the whole list: a stale query would look like a vanished list.
+        setQuery("");
       }
     };
 
@@ -55,6 +57,7 @@ export function SearchableSelect(props: SearchableSelectProps) {
   function handleKeyDown(event: KeyboardEvent<HTMLElement>) {
     if (event.key === "Escape") {
       setOpen(false);
+      setQuery("");
       return;
     }
 
