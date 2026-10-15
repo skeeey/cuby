@@ -7,9 +7,11 @@ import {
   CuberouterAuthInputSchema,
   CuberouterAuthResultSchema,
   CuberouterEmailCodeInputSchema,
+  CuberouterModelChoicesViewSchema,
   CuberouterNodeIdQuerySchema,
   CuberouterNodeProbeViewSchema,
   CuberouterNodesViewSchema,
+  CuberouterPersonalKeyViewSchema,
   CuberouterRegistrationRequirementsSchema,
   OkResponseSchema,
   SetAvatarInputSchema,
@@ -158,6 +160,29 @@ export function registerAccountRoutes(app: FastifyInstance, options: RegisterAcc
     withErrorEnvelope(async (request, reply) => {
       const input = SetAvatarInputSchema.parse(request.body);
       return reply.send(await options.appConfig.setAvatar(input));
+    })
+  );
+
+  app.get(
+    "/api/account/cuberouter/model-choices",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (_request, reply) => {
+      const response = CuberouterModelChoicesViewSchema.parse(
+        await options.cuberouterAccount.readModelChoices()
+      );
+      return reply.send(response);
+    })
+  );
+
+  app.post(
+    "/api/account/cuberouter/personal-keys/:id/key",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const response = CuberouterPersonalKeyViewSchema.parse(
+        await options.cuberouterAccount.getPersonalKey(Number.parseInt(id, 10))
+      );
+      return reply.send(response);
     })
   );
 }

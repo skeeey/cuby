@@ -291,6 +291,54 @@ describe("account local api routes", () => {
 
     expect(response.statusCode).toBe(400);
   });
+
+  it("serves the cuberouter model choices view", async () => {
+    app = createServer({
+      cuberouterAccount: {
+        ...unusedCuberouterAccount(),
+        async readModelChoices() {
+          return {
+            account: { username: "alice@a.com", organizationName: "yeebo" },
+            apiBase: "https://cn.example/v1",
+            keys: [{
+              scope: "organization",
+              id: 11,
+              name: "cuby-desktop-alice",
+              secret: "sk-org",
+              usable: true,
+              billing: { kind: "organization", organizationName: "yeebo", remainingQuota: 97500 }
+            }],
+            models: ["deepseek-v4.1-flash"]
+          };
+        }
+      }
+    });
+
+    const response = await injectJson("GET", "/api/account/cuberouter/model-choices", undefined);
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().keys[0].billing.remainingQuota).toBe(97500);
+    expect(response.json().models).toEqual(["deepseek-v4.1-flash"]);
+  });
+
+  it("reveals one personal key by id", async () => {
+    const asked: number[] = [];
+    app = createServer({
+      cuberouterAccount: {
+        ...unusedCuberouterAccount(),
+        async getPersonalKey(tokenId: number) {
+          asked.push(tokenId);
+          return { key: "sk-plain" };
+        }
+      }
+    });
+
+    const response = await injectJson("POST", "/api/account/cuberouter/personal-keys/41/key", {});
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json().key).toBe("sk-plain");
+    expect(asked).toEqual([41]);
+  });
 });
 
 async function injectJson(method: string, url: string, payload: unknown) {
@@ -324,23 +372,7 @@ function createServer(overrides: Record<string, unknown> = {}): FastifyInstance 
         return { avatarId: "memmy-default" };
       }
     },
-    cuberouterAccount: {
-      async register() {
-        throw new Error("register not used");
-      },
-      async login() {
-        throw new Error("login not used");
-      },
-      async getRegistrationRequirements() {
-        return { emailVerificationRequired: false, turnstileRequired: false };
-      },
-      async sendEmailVerificationCode() {
-        throw new Error("sendEmailVerificationCode not used");
-      },
-      async logout() {
-        return { ok: true };
-      }
-    },
+    cuberouterAccount: unusedCuberouterAccount(),
     account: {
       async getInvitation() {
         return {
@@ -373,6 +405,33 @@ function createServer(overrides: Record<string, unknown> = {}): FastifyInstance 
     services,
     heartbeatIntervalMs: 20
   });
+}
+
+/** The default cuberouter account a test spreads over when it needs only one or two of its methods. */
+function unusedCuberouterAccount() {
+  return {
+    async register() {
+      throw new Error("register not used");
+    },
+    async login() {
+      throw new Error("login not used");
+    },
+    async getRegistrationRequirements() {
+      return { emailVerificationRequired: false, turnstileRequired: false };
+    },
+    async sendEmailVerificationCode() {
+      throw new Error("sendEmailVerificationCode not used");
+    },
+    async logout() {
+      return { ok: true };
+    },
+    async readModelChoices() {
+      throw new Error("readModelChoices not used");
+    },
+    async getPersonalKey() {
+      throw new Error("getPersonalKey not used");
+    }
+  };
 }
 
 function accountSession() {

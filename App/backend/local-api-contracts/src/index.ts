@@ -1283,6 +1283,38 @@ export const CuberouterNodesViewSchema = z.object({
 });
 export type CuberouterNodesView = z.infer<typeof CuberouterNodesViewSchema>;
 
+/** One selectable cuberouter key, with the pool its spend lands on. */
+export const CuberouterKeyOptionSchema = z.object({
+    scope: z.enum(["organization", "personal"]),
+    id: z.number().int(),
+    name: z.string(),
+    /** Organization keys carry the plaintext the instance returns; personal keys never do. */
+    secret: z.string().optional(),
+    status: z.number().int().optional(),
+    usable: z.boolean(),
+    billing: z.union([
+        z.object({ kind: z.literal("personal"), remainingQuota: z.number().nullable() }),
+        z.object({
+            kind: z.literal("organization"),
+            organizationName: z.string(),
+            remainingQuota: z.number().nullable()
+        })
+    ])
+});
+export type CuberouterKeyOption = z.infer<typeof CuberouterKeyOptionSchema>;
+
+/** The model page's data: my keys with billing, the selectable models. */
+export const CuberouterModelChoicesViewSchema = z.object({
+    account: z.object({ username: z.string(), organizationName: z.string().nullable() }),
+    apiBase: z.string(),
+    keys: z.array(CuberouterKeyOptionSchema),
+    models: z.array(z.string())
+});
+export type CuberouterModelChoicesView = z.infer<typeof CuberouterModelChoicesViewSchema>;
+
+export const CuberouterPersonalKeyViewSchema = z.object({ key: z.string() });
+export type CuberouterPersonalKeyView = z.infer<typeof CuberouterPersonalKeyViewSchema>;
+
 /** 探测结果：首次注册默认该用哪条线路（null = 都没探到）。 */
 export const CuberouterNodeProbeViewSchema = z.object({
     nodes: z.array(z.string()),
