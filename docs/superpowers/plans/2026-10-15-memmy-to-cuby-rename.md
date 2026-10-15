@@ -277,8 +277,10 @@ git commit -m "feat(desktop): move the Windows launcher and data layout under Cu
 
 **Files:**
 - Modify: 源码里 78 个含 `.memmy` 路径的 `.ts`/`.tsx`/`.mjs` 文件（`Memory/src/cli/`、`App/memmy-agent/src/`、`App/backend/src/`、`App/shell/desktop/src/`、`App/frontend/desktop/src/`）
+- Modify（**显式，扫描覆盖不到**）: `App/shell/desktop/src/main/desktop-edition.ts:34` 的 `desktopUserDataDirectoryName()` 返回的 `"Memmy"`
 - Modify: 89 个相关测试文件
 - Test（新增）: `Memory/tests/home-directory.test.ts`
+- Test: `App/shell/desktop/tests/desktop-edition.test.ts:12,20`
 
 **Interfaces:**
 - Consumes: 无。
@@ -345,6 +347,17 @@ wc -l < /tmp/cuby-home-files.txt
 ```
 
 两类命中都不该出现在清单里：①禁改清单里的文件；②`.superpowers/`（本计划的 SDD ledger 里就写着 `~/.memmy`，被扫进去会被一并改写）。任一条不符就**停下**修排除模式，不要继续替换。
+
+替换完成后，**还要显式改一处扫描覆盖不到的**：`App/shell/desktop/src/main/desktop-edition.ts:34` 的 `desktopUserDataDirectoryName()` 返回 `"Memmy"`。这是 macOS/非 Windows 的用户数据目录名（`main.ts:512` 用它拼 `app.getData()` 下的路径），而 `.memmy` 那条扫描只会改同文件 `:39` 的 `desktopRuntimeHomeDirectoryName()`。两个姊妹函数必须同批改，否则同一平台上"用户数据目录叫 Memmy、运行时家目录叫 .cuby"：
+
+```ts
+export function desktopUserDataDirectoryName(edition: DesktopEdition): string {
+  void edition;
+  return "Cuby";
+}
+```
+
+对应测试 `App/shell/desktop/tests/desktop-edition.test.ts:12,20` 的两条断言同步改为 `"Cuby"`。
 
 Expected: 清单里**不应**出现 `docs/`、`README*`、`scripts/install.sh`、`scripts/clear-*`、`scripts/internal/linux/*`、`Memory/installers/*`、`tests/linux-cli-packaging.test.mjs`，也不应出现 `.superpowers/`。
 
