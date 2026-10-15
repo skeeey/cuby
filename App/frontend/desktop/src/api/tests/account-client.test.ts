@@ -154,6 +154,43 @@ describe("account-client", () => {
     await expect(client.logout()).resolves.toEqual({ ok: true });
     expect(fetchMock).toHaveBeenCalledTimes(6);
   });
+
+  it("reads the cuberouter model choices and reveals one personal key", async () => {
+    const calls: string[] = [];
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = input.toString();
+      calls.push(url);
+
+      if (url.endsWith("/api/account/cuberouter/model-choices")) {
+        expect(init?.method).toBe("GET");
+        return jsonResponse({
+          account: { username: "alice@a.com", organizationName: "yeebo" },
+          apiBase: "https://cn.example/v1",
+          keys: [],
+          models: ["m1"]
+        });
+      }
+
+      if (url.endsWith("/api/account/cuberouter/personal-keys/41/key")) {
+        expect(init?.method).toBe("POST");
+        return jsonResponse({ key: "sk-plain" });
+      }
+
+      throw new Error(`unexpected request: ${url}`);
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const client = createHttpAccountClient(config);
+
+    await expect(client.getModelChoices()).resolves.toEqual({
+      account: { username: "alice@a.com", organizationName: "yeebo" },
+      apiBase: "https://cn.example/v1",
+      keys: [],
+      models: ["m1"]
+    });
+    await expect(client.revealPersonalKey(41)).resolves.toEqual({ key: "sk-plain" });
+    expect(calls[1]).toContain("/api/account/cuberouter/personal-keys/41/key");
+  });
 });
 
 /**

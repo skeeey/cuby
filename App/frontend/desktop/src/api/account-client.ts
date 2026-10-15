@@ -5,8 +5,10 @@ import {
   CuberouterAuthInputSchema,
   CuberouterAuthResultSchema,
   CuberouterEmailCodeInputSchema,
+  CuberouterModelChoicesViewSchema,
   CuberouterNodeProbeViewSchema,
   CuberouterNodesViewSchema,
+  CuberouterPersonalKeyViewSchema,
   CuberouterRegistrationRequirementsSchema,
   OkResponseSchema,
   UpdateAccountProfileInputSchema,
@@ -16,8 +18,10 @@ import {
   type CuberouterAuthInput,
   type CuberouterAuthResult,
   type CuberouterEmailCodeInput,
+  type CuberouterModelChoicesView,
   type CuberouterNodeProbeView,
   type CuberouterNodesView,
+  type CuberouterPersonalKeyView,
   type CuberouterRegistrationRequirements,
   type OkResponse,
   type RuntimeConfig,
@@ -40,6 +44,10 @@ export interface AccountClient {
   markGuideFinished(): Promise<OkResponse>;
   logout(): Promise<OkResponse>;
   getSession(): Promise<AccountSessionView>;
+  /** The model page data: my keys with their billing, and the selectable models. */
+  getModelChoices(): Promise<CuberouterModelChoicesView>;
+  /** Reads one personal key's plaintext, at the moment the user selects it. */
+  revealPersonalKey(tokenId: number): Promise<CuberouterPersonalKeyView>;
 }
 
 export function createHttpAccountClient(config: RuntimeConfig): AccountClient {
@@ -144,6 +152,25 @@ export function createHttpAccountClient(config: RuntimeConfig): AccountClient {
         config,
         path: "/api/account/session",
         schema: AccountSessionViewSchema
+      });
+    },
+
+    async getModelChoices() {
+      return requestJson({
+        config,
+        path: "/api/account/cuberouter/model-choices",
+        schema: CuberouterModelChoicesViewSchema,
+        init: { method: "GET" }
+      });
+    },
+
+    async revealPersonalKey(tokenId) {
+      return requestJson({
+        config,
+        path: `/api/account/cuberouter/personal-keys/${encodeURIComponent(String(tokenId))}/key`,
+        schema: CuberouterPersonalKeyViewSchema,
+        init: { method: "POST" },
+        body: {}
       });
     }
   };
