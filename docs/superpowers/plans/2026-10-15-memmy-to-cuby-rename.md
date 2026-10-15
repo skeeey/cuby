@@ -1049,7 +1049,13 @@ git commit -m "build: publish the desktop artifacts under the Cuby name"
 - [ ] **Step 1: 跑全量测试**
 
 Run: `npm test && npm --prefix App/memmy-agent test`
-Expected: PASS，**除一个既有的环境失败**：`Memory/tests/agent-source-runtime.test.ts > owns startup and recurring scans in the Memory process`（`automatic scan did not complete`）。该用例在改名前就失败，本地是 Node 24.18 而项目 CI 用 Node 22，假定时器与真实 I/O 的交替行为在版本间有差异。不要为它改动代码。
+Expected: PASS，**除三个既有的环境失败**（改名前就已失败，本地 Node 24.18 而项目 CI 用 Node 22）：
+
+1. `Memory/tests/agent-source-runtime.test.ts > owns startup and recurring scans in the Memory process`（`automatic scan did not complete`）
+2. `App/memmy-agent/tests/entrypoints/frontend-bridge/mcp-presets-api.test.ts > detects bundled OCU with an empty PATH and preserves the portable config`
+3. `App/memmy-agent/tests/core/agent-runtime/mcp-connection.test.ts > registers bundled OCU tools without looking up the launcher on PATH`
+
+这三个文件都不被本计划任何 Task 触碰。不要为它们改动代码。
 
 > `App/memmy-agent` 不在 package.json 的 workspaces 列表里，`npm test` → `workspace:test`（`--workspaces`）不会覆盖它，而它的测试套件同样断言了本计划改动的路径、环境变量与端口，所以必须显式补跑。
 
