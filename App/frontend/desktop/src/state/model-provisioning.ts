@@ -80,3 +80,23 @@ function findExistingEndpointId(
     (item) => item.apiBase.replace(/\/+$/, "") === apiBase && item.protocol === endpoint.protocol
   )?.endpointId;
 }
+
+/** Reads the latest catalog, applies a pure mutation, saves; retries once on catalog conflicts. */
+export async function saveCatalogMutation(input: {
+  configClient: ConfigClient;
+  mutate: (workspace: ModelWorkspace) => ModelWorkspace;
+}): Promise<ModelProviderConfig> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const latest = await input.configClient.getModelConfig();
+    const next = input.mutate(createModelWorkspace(latest));
+    try {
+      return await input.configClient.saveModelCatalog(modelConfigInput(next));
+    } catch (error) {
+      const code = error && typeof error === "object" && "code" in error ? (error as { code?: string }).code : undefined;
+      if (code !== "model_config_changed" && code !== "config_write_busy") throw error;
+      lastError = error;
+    }
+  }
+  throw lastError ?? new Error("unreachable: saveCatalogMutation retried without resolving");
+}

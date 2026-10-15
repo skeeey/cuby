@@ -15,6 +15,7 @@ import {
 } from "../../../../../backend/src/infrastructure/memmy-config/model-config-catalog.js";
 import {
   MODEL_WORKSPACE_STORAGE_KEY,
+  applyCuberouterSelection,
   assignCatalogPreset,
   assignedCatalogEndpointId,
   clearLegacyModelWorkspace,
@@ -24,6 +25,7 @@ import {
   getModelCandidates,
   getTaskModelCandidates,
   modelConfigInput,
+  readCuberouterSelection,
   resolveModelSelection,
   setDefaultTaskModel,
   setModelAssignment,
@@ -1084,5 +1086,79 @@ describe("canonical model workspace adapter", () => {
     expect(serialized).not.toContain("label");
     expect(serialized).not.toContain("maxTokens");
     expect(serialized).not.toContain("dailyTokenLimit");
+  });
+});
+
+describe("cuberouter selection", () => {
+  const API_BASE = "https://cn.example/v1";
+
+  it("materializes per-model presets with the capability of each slot they serve", () => {
+    const workspace = createModelWorkspace(null);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: {
+        agent: { models: ["a", "b"], default: "a" },
+        memorySummary: "b",
+        memoryEvolution: "c"
+      }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    expect(provider?.endpoints[0]?.apiBase).toBe(API_BASE);
+    const byModel = Object.fromEntries(
+      (provider?.models ?? []).map((preset) => [preset.model, [...preset.capabilities].sort()])
+    );
+    expect(byModel).toEqual({
+      a: ["agent"],
+      b: ["agent", "memory_summary"],
+      c: ["memory_evolution"]
+    });
+    const assignment = next.catalog.modelAssignments.byok;
+    expect(assignment.agent.candidates).toHaveLength(2);
+    expect(assignment.memorySummary).toBe(
+      provider?.models.find((preset) => preset.model === "b")?.presetId
+    );
+  });
+
+  it("keeps the stored secret when no plaintext is given, and prunes dropped models", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"] }, memorySummary: "a", memoryEvolution: "b" }
+    });
+
+    const second = applyCuberouterSelection(first, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+    });
+
+    const provider = second.catalog.providers.find((item) => item.provider === "openai");
+    expect(provider?.models.map((preset) => preset.model)).toEqual(["a"]);
+    expect(second.catalog.modelAssignments.byok.agent.candidates).toHaveLength(1);
+  });
+
+  it("reads the selection back out of the stored catalog", () => {
+    const workspace = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"], default: "b" }, memorySummary: "a", memoryEvolution: "b" }
+    });
+
+    expect(readCuberouterSelection(workspace.catalog, API_BASE)).toEqual({
+      agent: { models: ["a", "b"], default: "b" },
+      memorySummary: "a",
+      memoryEvolution: "b"
+    });
+    expect(readCuberouterSelection(workspace.catalog, "https://other.example/v1")).toEqual({
+      agent: { models: [], default: undefined },
+      memorySummary: "",
+      memoryEvolution: ""
+    });
   });
 });

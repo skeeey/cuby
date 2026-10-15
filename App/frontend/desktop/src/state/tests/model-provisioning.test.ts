@@ -1,7 +1,7 @@
 /** Model provisioning tests. */
 import { describe, expect, it, vi } from "vitest";
-import { createModelWorkspace } from "../model-workspace.js";
-import { provisionByokModel } from "../model-provisioning.js";
+import { applyCuberouterSelection, createModelWorkspace } from "../model-workspace.js";
+import { provisionByokModel, saveCatalogMutation } from "../model-provisioning.js";
 
 function configClientWithCalls() {
   const saved: any[] = [];
@@ -166,5 +166,32 @@ describe("provisionByokModel", () => {
     // The server never echoes the stored secret, so every write must carry it again.
     expect(second.providers[0].endpoints[0].apiKey).toBe("sk-plain");
     expect(second.modelAssignments.byok.agent.default).toBe(second.providers[0].models[0].presetId);
+  });
+});
+
+describe("saveCatalogMutation", () => {
+  it("re-reads and retries once when the catalog changed under it", async () => {
+    const saved: any[] = [];
+    const client = {
+      getModelConfig: vi.fn(async () => ({ catalog: createModelWorkspace(null).catalog, configRevision: "rev-1" })),
+      saveModelCatalog: vi.fn(async (input: any) => {
+        saved.push(input);
+        if (saved.length === 1) throw Object.assign(new Error("changed"), { code: "model_config_changed" });
+        return { catalog: createModelWorkspace(null).catalog, configRevision: "rev-2" };
+      })
+    };
+
+    await saveCatalogMutation({
+      configClient: client as any,
+      mutate: (workspace) => applyCuberouterSelection(workspace, {
+        apiBase: "https://cn.example/v1",
+        protocol: "openai-chat-completions",
+        apiKey: "sk-1",
+        selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+      })
+    });
+
+    expect(client.saveModelCatalog).toHaveBeenCalledTimes(2);
+    expect(client.getModelConfig).toHaveBeenCalledTimes(2);
   });
 });
