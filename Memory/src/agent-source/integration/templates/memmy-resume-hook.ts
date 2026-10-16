@@ -1176,7 +1176,7 @@ function formatResumeSearchResult(query, candidates) {
     "",
     candidates.map(formatResumeEpisode).join("\n\n"),
     "",
-    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.",
+    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to cuby-memory get <episode_id>) and inject continuation context.",
     "Enter /memmy-resume cancel to cancel."
   ].join("\n");
 }

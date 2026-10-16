@@ -81,7 +81,7 @@ export function apply(ctx, config = {}) {
       });
       return { ...decision, messages: insertAfterUserMessage(decision.messages, memory) };
     } catch (error) {
-      ctx.logger.warn("memmy-memory: recall failed: " + errorText(error));
+      ctx.logger.warn("cuby-memory: recall failed: " + errorText(error));
       return decision;
     }
   });
@@ -154,7 +154,7 @@ export function apply(ctx, config = {}) {
       }
       await completeTurn(memorySessionIds, session, event.data.turn, pending);
     }).catch((error) => {
-      ctx.logger.warn("memmy-memory: turn capture failed: " + errorText(error));
+      ctx.logger.warn("cuby-memory: turn capture failed: " + errorText(error));
     });
     captureJobs.set(sessionKey, capture);
     void capture.finally(() => {
@@ -579,7 +579,7 @@ export const DEEPSEEK_HARNESS_PLUGIN_CLIENT = String.raw`window.__ModuleLoader__
       if (uiConversation && uiConversation.events) return uiConversation.events;
       const conversationEvents = typeof ctx.get === "function" ? ctx.get("conversationEvents") : undefined;
       if (conversationEvents) return conversationEvents;
-      throw new Error("memmy-memory requires uiConversation.events or conversationEvents");
+      throw new Error("cuby-memory requires uiConversation.events or conversationEvents");
     }
 
     function apply(ctx) {

@@ -26,11 +26,11 @@ describe("claude code skill target", () => {
 
     await target.install(manifest);
 
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
-    expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).not.toContain("Call cuby-memory search when context is needed.");
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Cuby");
-    expect(skillFile).toContain("Call memmy-memory search when context is needed.");
+    expect(skillFile).toContain("Call cuby-memory search when context is needed.");
     await expect(target.isInstalled("claude_code")).resolves.toBe(true);
   });
 
@@ -63,7 +63,7 @@ describe("claude code skill target", () => {
         "<!-- cuby:start v=1 -->",
         "# Cuby Memory",
         "",
-        "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
+        "The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
         "Use that skill when prior memory may be relevant to the current request.",
         "<!-- cuby:end v=1 -->",
         "manual suffix",
@@ -248,13 +248,13 @@ describe("claude code skill target", () => {
       expect(cancelOutput.reason).toBe("Cuby resume selection cancelled.");
       expect(authorization).toBe("Bearer test-token");
       expect(readTargetFile(rootDirectory)).toContain(
-        "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`."
+        "The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`."
       );
       const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
       expect(skillFile).toContain("# Cuby Memory");
       expect(skillFile).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
-      expect(skillFile).toContain('memmy-memory search "query text" --source claude_code');
-      expect(skillFile).not.toContain("memmy-memory add");
+      expect(skillFile).toContain('cuby-memory search "query text" --source claude_code');
+      expect(skillFile).not.toContain("cuby-memory add");
 
       await target.uninstallPlugin?.("claude_code");
       expect(existsSync(hookScriptPath)).toBe(false);
@@ -411,7 +411,7 @@ function expectSafeNodeHookCommand(command: string | undefined): void {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

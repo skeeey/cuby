@@ -31,7 +31,7 @@ export function renderMemmySkillBootstrapManifest(manifest: SkillManifest): Skil
     content: [
       "# Cuby Memory",
       "",
-      "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
+      "The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
       "Use that skill when prior memory may be relevant to the current request."
     ].join("\n")
   };
@@ -55,8 +55,8 @@ export function renderMemmyResumeSkillFile(source: string): string {
     "",
     "If this skill reaches the model, preserve the same user-facing workflow:",
     "",
-    `1. For a text query, run \`memmy-memory search "<query>" --source ${source}\`, keep at most five L1 episode candidates, and show their ids and summaries as a numbered list.`,
-    `2. For a selection from \`1\` to \`5\`, use the matching episode id from the latest candidate list, run \`memmy-memory get "<episode_id>" --source ${source}\`, and continue the selected task from that context.`,
+    `1. For a text query, run \`cuby-memory search "<query>" --source ${source}\`, keep at most five L1 episode candidates, and show their ids and summaries as a numbered list.`,
+    `2. For a selection from \`1\` to \`5\`, use the matching episode id from the latest candidate list, run \`cuby-memory get "<episode_id>" --source ${source}\`, and continue the selected task from that context.`,
     "3. For `cancel`, discard the latest candidate list.",
     "4. Never invent an episode or ask the user to paste an episode that Cuby can retrieve.",
     ""

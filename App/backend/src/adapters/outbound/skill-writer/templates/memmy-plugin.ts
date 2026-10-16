@@ -30,8 +30,8 @@ function renderMemmyPluginContent(source: string): string {
     "Use the CLI only when the current request needs memory beyond the context already injected by the integration:",
     "",
     "```bash",
-    `memmy-memory search "query text" --source ${source}`,
-    `memmy-memory get "$MEMORY_ID" --source ${source}`,
+    `cuby-memory search "query text" --source ${source}`,
+    `cuby-memory get "$MEMORY_ID" --source ${source}`,
     "```",
     "",
     "Search only when prior preferences, project decisions, recurring issues, or reusable procedures are likely relevant. Read a specific memory only when search results or injected context provide its id and more detail is needed."

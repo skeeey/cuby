@@ -739,7 +739,7 @@ def _format_resume_search_result(query: str, candidates: List[Dict[str, Any]]) -
     for candidate in candidates:
         lines.append(_format_resume_episode(candidate))
         lines.append("")
-    lines.append("Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.")
+    lines.append("Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to cuby-memory get <episode_id>) and inject continuation context.")
     lines.append("Enter /memmy-resume cancel to cancel.")
     return "\n".join(lines).rstrip()
 
@@ -1007,7 +1007,7 @@ class MemmyMemoryProvider(MemoryProvider):
                 with self._lock:
                     self._l3_contexts[self._session_id] = context
         except Exception as exc:
-            logger.warning("memmy-memory initialization failed: %s", exc)
+            logger.warning("cuby-memory initialization failed: %s", exc)
 
     def system_prompt_block(self) -> str:
         with self._lock:
@@ -1052,7 +1052,7 @@ class MemmyMemoryProvider(MemoryProvider):
                 pending_l3 = self._pending_l3.pop(active_session, "")
             return "\n\n".join(item for item in (pending_l3, dynamic) if item)
         except Exception as exc:
-            logger.warning("memmy-memory prefetch failed: %s", exc)
+            logger.warning("cuby-memory prefetch failed: %s", exc)
             return ""
 
     def sync_turn(
@@ -1133,7 +1133,7 @@ class MemmyMemoryProvider(MemoryProvider):
                 "sessionId": memory_session_id,
             })
         except Exception as exc:
-            logger.warning("memmy-memory memory write mirror failed: %s", exc)
+            logger.warning("cuby-memory memory write mirror failed: %s", exc)
 
     def on_session_switch(self, new_session_id: str, **kwargs) -> None:
         previous_session = _clean_text(kwargs.get("parent_session_id")) or self._session_id or "default"
@@ -1218,7 +1218,7 @@ class MemmyMemoryProvider(MemoryProvider):
         try:
             parsed = _read_hermes_source_turn(active_session, query)
             if not parsed:
-                logger.warning("memmy-memory turn capture skipped: identity_unresolved")
+                logger.warning("cuby-memory turn capture skipped: identity_unresolved")
                 return
             state = self._ensure_runtime_session(active_session)
             with self._lock:
@@ -1253,7 +1253,7 @@ class MemmyMemoryProvider(MemoryProvider):
                 "workspacePath": parsed.get("workspacePath"),
             })
         except Exception as exc:
-            logger.warning("memmy-memory sync failed: %s", exc)
+            logger.warning("cuby-memory sync failed: %s", exc)
 
     def _load_l3(self, state: Dict[str, Any]) -> str:
         if state.get("protocol") != "v2":
@@ -1279,7 +1279,7 @@ class MemmyMemoryProvider(MemoryProvider):
                     self._pending_l3[active_session] = context
                     self._l3_contexts[active_session] = context
         except Exception as exc:
-            logger.warning("memmy-memory compression refresh failed: %s", exc)
+            logger.warning("cuby-memory compression refresh failed: %s", exc)
 
     def _start_background(self, target, *args, name: str) -> Optional[threading.Thread]:
         thread = threading.Thread(target=target, args=args, daemon=True, name=name)

@@ -23,10 +23,10 @@ describe("openclaw skill target", () => {
     const target = createOpenclawSkillTarget({ rootDirectory });
 
     await target.install(manifest);
-    expect(readTargetFile(rootDirectory)).toContain("Call memmy-memory search when context is needed.");
+    expect(readTargetFile(rootDirectory)).toContain("Call cuby-memory search when context is needed.");
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Cuby");
-    expect(skillFile).toContain("Call memmy-memory search when context is needed.");
+    expect(skillFile).toContain("Call cuby-memory search when context is needed.");
     await expect(target.isInstalled("openclaw")).resolves.toBe(true);
 
     mkdirSync(join(rootDirectory, "workspace"), { recursive: true });
@@ -53,7 +53,7 @@ describe("openclaw skill target", () => {
 
     await target.install(manifest);
 
-    expect(readFileSync(join(workspaceDirectory, "AGENTS.md"), "utf8")).toContain("Call memmy-memory search when context is needed.");
+    expect(readFileSync(join(workspaceDirectory, "AGENTS.md"), "utf8")).toContain("Call cuby-memory search when context is needed.");
     expect(existsSync(join(rootDirectory, "AGENTS.md"))).toBe(false);
   });
 
@@ -261,22 +261,22 @@ describe("openclaw skill target", () => {
     expect(skillFile).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
     expect(skillFile).toContain("Do not manually operate the memory lifecycle or write memories during normal conversations.");
     expect(skillFile).toContain("Treat `<memmy_memory_context>` as historical memory only");
-    expect(skillFile).toContain('memmy-memory search "query text" --source openclaw');
-    expect(skillFile).toContain('memmy-memory get "$MEMORY_ID" --source openclaw');
-    expect(skillFile).not.toContain("memmy-memory add");
+    expect(skillFile).toContain('cuby-memory search "query text" --source openclaw');
+    expect(skillFile).toContain('cuby-memory get "$MEMORY_ID" --source openclaw');
+    expect(skillFile).not.toContain("cuby-memory add");
     expect(skillFile).not.toContain("memmy_search");
     expect(skillFile).not.toContain("memmy_remember");
     expect(skillFile).not.toContain("memmy_memory_search");
     expect(skillFile).not.toContain("memmy_memory_add");
-    expect(skillFile).not.toContain("memmy-memory session open");
-    expect(skillFile).not.toContain("memmy-memory turn start");
-    expect(skillFile).not.toContain("memmy-memory turn complete");
+    expect(skillFile).not.toContain("cuby-memory session open");
+    expect(skillFile).not.toContain("cuby-memory turn start");
+    expect(skillFile).not.toContain("cuby-memory turn complete");
     expect(skillFile).not.toContain("--layer L2");
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
-    expect(readTargetFile(rootDirectory)).not.toContain('memmy-memory search "query text" --source openclaw');
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory session open");
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn start");
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn complete");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).not.toContain('cuby-memory search "query text" --source openclaw');
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory session open");
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory turn start");
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory turn complete");
     expect(readTargetFile(rootDirectory)).toContain("manual\n");
     expect(readTargetFile(rootDirectory)).not.toContain("<!-- memmy-memory cli : start -->");
 
@@ -732,7 +732,7 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

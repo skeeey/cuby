@@ -336,8 +336,8 @@ is_managed_user_cli_target() {
   local expected_suffix contents
 
   case "$name" in
-    memmy-memory) expected_suffix="Memory/dist/src/cli/index.js" ;;
-    memmy) expected_suffix="App/memmy-agent/dist/main.js" ;;
+    cuby-memory | memmy-memory) expected_suffix="Memory/dist/src/cli/index.js" ;;
+    cuby | memmy) expected_suffix="App/memmy-agent/dist/main.js" ;;
     *) return 1 ;;
   esac
 
@@ -423,13 +423,13 @@ build_and_install_memory_cli() {
   require_command node
   require_command npm
 
-  log "building memmy-memory CLI"
+  log "building cuby-memory CLI"
   cd "$ROOT_DIR"
   npm run memory:build
 
   ensure_memmy_bin_on_path
 
-  log "initializing memmy-memory config at $CUBY_CONFIG_PATH"
+  log "initializing cuby-memory config at $CUBY_CONFIG_PATH"
   if [[ -n "$CUBY_MEMORY_TOKEN_VALUE" ]]; then
     node "$MEMORY_CLI_ENTRY" init \
       --config "$CUBY_CONFIG_PATH" \
@@ -443,10 +443,10 @@ build_and_install_memory_cli() {
       --skip-agent-skills >/dev/null
   fi
 
-  install_user_cli_link "memmy-memory" "$MEMORY_CLI_ENTRY"
+  install_user_cli_link "cuby-memory" "$MEMORY_CLI_ENTRY"
 
-  "$(user_cli_path "memmy-memory")" --version >/dev/null
-  log "memmy-memory command is ready in $CUBY_BIN_DIR"
+  "$(user_cli_path "cuby-memory")" --version >/dev/null
+  log "cuby-memory command is ready in $CUBY_BIN_DIR"
 }
 
 stop_existing_stack() {
@@ -685,9 +685,9 @@ NODE
 
   cd "$CUBY_AGENT_DIR"
 
-  install_user_cli_link "memmy" "$CUBY_AGENT_DIR/dist/main.js"
-  "$(user_cli_path "memmy")" --version >/dev/null
-  log "memmy command is ready in $CUBY_BIN_DIR"
+  install_user_cli_link "cuby" "$CUBY_AGENT_DIR/dist/main.js"
+  "$(user_cli_path "cuby")" --version >/dev/null
+  log "cuby command is ready in $CUBY_BIN_DIR"
 
   log "refreshing non-interactive memmy-agent onboard state"
   node dist/main.js onboard --defaults </dev/null

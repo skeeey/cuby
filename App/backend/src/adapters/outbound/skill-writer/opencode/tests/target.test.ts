@@ -30,11 +30,11 @@ describe("opencode skill target", () => {
     );
 
     await target.install(manifest);
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
-    expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).not.toContain("Call cuby-memory search when context is needed.");
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Cuby");
-    expect(skillFile).toContain("Call memmy-memory search when context is needed.");
+    expect(skillFile).toContain("Call cuby-memory search when context is needed.");
     expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
     await expect(target.isInstalled("opencode")).resolves.toBe(true);
 
@@ -111,11 +111,11 @@ describe("opencode skill target", () => {
     expect(skillSource).toContain("# Cuby Memory");
     expect(skillSource).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
     expect(skillSource).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
-    expect(skillSource).toContain('memmy-memory search "query text" --source opencode');
-    expect(skillSource).not.toContain("memmy-memory add");
-    expect(skillSource).not.toContain("Call memmy-memory search when context is needed.");
+    expect(skillSource).toContain('cuby-memory search "query text" --source opencode');
+    expect(skillSource).not.toContain("cuby-memory add");
+    expect(skillSource).not.toContain("Call cuby-memory search when context is needed.");
     expect(readTargetFile(rootDirectory)).toContain("manual instructions");
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed");
 
     await target.uninstallPlugin?.("opencode");
 
@@ -446,7 +446,7 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

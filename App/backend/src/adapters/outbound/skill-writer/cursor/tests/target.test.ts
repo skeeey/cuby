@@ -30,7 +30,7 @@ describe("cursor skill target", () => {
 
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     expect(skillFile).toContain("# Cuby");
-    expect(skillFile).toContain("Call memmy-memory search when context is needed.");
+    expect(skillFile).toContain("Call cuby-memory search when context is needed.");
     expect(existsSync(join(rootDirectory, "rules", "memmy.md"))).toBe(false);
     await expect(target.isInstalled("cursor")).resolves.toBe(true);
   });
@@ -197,12 +197,12 @@ describe("cursor skill target", () => {
       const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
       expect(skillFile).toContain("# Cuby Memory");
       expect(skillFile).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
-      expect(skillFile).toContain('memmy-memory search "query text" --source cursor');
-      expect(skillFile).not.toContain("memmy-memory add");
+      expect(skillFile).toContain('cuby-memory search "query text" --source cursor');
+      expect(skillFile).not.toContain("cuby-memory add");
       const resumeSkillFile = readFileSync(join(rootDirectory, "skills", "cuby-resume", "SKILL.md"), "utf8");
       expect(resumeSkillFile).toContain("name: memmy-resume");
       expect(resumeSkillFile).toContain("disable-model-invocation: true");
-      expect(resumeSkillFile).toContain("memmy-memory search");
+      expect(resumeSkillFile).toContain("cuby-memory search");
 
       const selectionRun = await runNodeHook(
         hookScriptPath,
@@ -552,7 +552,7 @@ function expectSafeNodeHookCommand(command: string | undefined): void {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

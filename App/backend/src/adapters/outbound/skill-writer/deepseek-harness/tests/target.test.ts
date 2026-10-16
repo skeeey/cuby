@@ -52,7 +52,7 @@ describe("DeepSeek Harness skill target", () => {
       dsh: { client: { platform: "web" } }
     });
     expect(packageManifest).not.toHaveProperty("version");
-    expect(readFileSync(skillPath, "utf8")).toContain('memmy-memory search "query text" --source deepseek_harness');
+    expect(readFileSync(skillPath, "utf8")).toContain('cuby-memory search "query text" --source deepseek_harness');
     expect(readFileSync(resumeSkillPath, "utf8")).toContain("--source deepseek_harness");
     expect(patch).toContain("id: user-plugin");
     expect(patch).toContain("# memmy-memory plugin:start");
@@ -239,7 +239,7 @@ describe("DeepSeek Harness skill target", () => {
 
     const client = handoff?.factory();
     expect(() => client?.apply({ get: () => undefined })).toThrow(
-      "memmy-memory requires uiConversation.events or conversationEvents"
+      "cuby-memory requires uiConversation.events or conversationEvents"
     );
   });
 

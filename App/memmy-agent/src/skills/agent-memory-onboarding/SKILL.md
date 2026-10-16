@@ -175,12 +175,12 @@ memmy_agent_source(
 
 The tool reads the persisted user-entered name, safely renders the full template, and returns `skillPath`.
 
-- Prefer the Agent's native Skill directory and install the returned file as `memmy-memory/SKILL.md`.
-- If no native Skill system exists, add the rendered body to its global instructions between `<!-- memmy-memory:start -->` and `<!-- memmy-memory:end -->`.
+- Prefer the Agent's native Skill directory and install the returned file as `cuby-memory/SKILL.md`.
+- If no native Skill system exists, add the rendered body to its global instructions between `<!-- cuby-memory:start -->` and `<!-- cuby-memory:end -->`.
 - Preserve existing files and documented frontmatter conventions.
 - Never install the unrendered reference template.
 - Verify the installed content contains the user-entered Agent name and no `{{SOURCE_ARG}}`.
-- Verify `memmy-memory health`; if the command is outside `PATH`, locate the configured Cuby CLI and run that binary rather than skipping health validation.
+- Verify `cuby-memory health`; if the command is outside `PATH`, locate the configured Cuby CLI and run that binary rather than skipping health validation.
 
 For `connect`, do not call `set_skill_status` yet. A copied file is not a fully provisioned connection.
 

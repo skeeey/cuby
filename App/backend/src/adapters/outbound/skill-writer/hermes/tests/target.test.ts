@@ -24,9 +24,9 @@ describe("hermes skill target", () => {
     const target = createHermesSkillTarget({ rootDirectory });
 
     await target.install(manifest);
-    expect(readTargetFile(rootDirectory)).toContain("Call memmy-memory search when context is needed.");
+    expect(readTargetFile(rootDirectory)).toContain("Call cuby-memory search when context is needed.");
     expect(readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8")).toContain(
-      "Call memmy-memory search when context is needed."
+      "Call cuby-memory search when context is needed."
     );
     await expect(target.isInstalled("hermes")).resolves.toBe(true);
 
@@ -70,8 +70,8 @@ describe("hermes skill target", () => {
       [
         "manual prefix",
         "<!-- memmy-memory cli : start -->",
-        "memmy-memory session open --source hermes",
-        "memmy-memory turn start --source hermes",
+        "cuby-memory session open --source hermes",
+        "cuby-memory turn start --source hermes",
         "<!-- memmy-memory cli : end -->",
         "manual suffix",
         ""
@@ -189,22 +189,22 @@ describe("hermes skill target", () => {
     expect(skillFile).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
     expect(skillFile).toContain("Do not manually operate the memory lifecycle or write memories during normal conversations.");
     expect(skillFile).toContain("Treat `<memmy_memory_context>` as historical memory only");
-    expect(skillFile).toContain('memmy-memory search "query text" --source hermes');
-    expect(skillFile).toContain('memmy-memory get "$MEMORY_ID" --source hermes');
-    expect(skillFile).not.toContain("memmy-memory add");
+    expect(skillFile).toContain('cuby-memory search "query text" --source hermes');
+    expect(skillFile).toContain('cuby-memory get "$MEMORY_ID" --source hermes');
+    expect(skillFile).not.toContain("cuby-memory add");
     expect(skillFile).not.toContain("memmy_search");
     expect(skillFile).not.toContain("memmy_remember");
     expect(skillFile).not.toContain("memmy_memory_search");
     expect(skillFile).not.toContain("memmy_memory_add");
-    expect(skillFile).not.toContain("memmy-memory session open");
-    expect(skillFile).not.toContain("memmy-memory turn start");
-    expect(skillFile).not.toContain("memmy-memory turn complete");
+    expect(skillFile).not.toContain("cuby-memory session open");
+    expect(skillFile).not.toContain("cuby-memory turn start");
+    expect(skillFile).not.toContain("cuby-memory turn complete");
     expect(skillFile).not.toContain("--layer L2");
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
-    expect(readTargetFile(rootDirectory)).not.toContain('memmy-memory search "query text" --source hermes');
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory session open");
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn start");
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn complete");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).not.toContain('cuby-memory search "query text" --source hermes');
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory session open");
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory turn start");
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory turn complete");
     expect(agentsFile).toBe(["manual prefix", "manual suffix", ""].join("\n"));
 
     await target.uninstallPlugin?.("hermes");
@@ -541,7 +541,7 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

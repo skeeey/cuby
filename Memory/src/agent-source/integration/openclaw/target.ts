@@ -628,7 +628,7 @@ export default {
         const loaded = await loadRuntimeL3(runtimeSession);
         if (loaded.additionalContext) l3InjectOnce.set(resolveExternalSessionId(ctx), loaded.additionalContext);
       } catch (error) {
-        api.logger.warn("memmy-memory: L3 session start failed: " + formatError(error));
+        api.logger.warn("cuby-memory: L3 session start failed: " + formatError(error));
       }
     });
 
@@ -640,7 +640,7 @@ export default {
         const loaded = await loadRuntimeL3(runtimeSession);
         if (loaded.additionalContext) l3InjectOnce.set(resolveExternalSessionId(ctx), loaded.additionalContext);
       } catch (error) {
-        api.logger.warn("memmy-memory: L3 compaction refresh failed: " + formatError(error));
+        api.logger.warn("cuby-memory: L3 compaction refresh failed: " + formatError(error));
       }
     });
 
@@ -670,7 +670,7 @@ export default {
           return { prependContext: [l3, resumeContext].filter(Boolean).join("\n\n") };
         }
       } catch (error) {
-        api.logger.warn("memmy-memory: resume selection failed: " + formatError(error));
+        api.logger.warn("cuby-memory: resume selection failed: " + formatError(error));
       }
 
       latestCurrentUserRequest = query;
@@ -700,7 +700,7 @@ export default {
           return { prependContext: [l3, typeof markdown === "string" && markdown.trim() ? renderMemmyContextPacket(markdown, "turn_start", query) : ""].filter(Boolean).join("\n\n") };
         }
       } catch (error) {
-        api.logger.warn("memmy-memory: recall failed: " + formatError(error));
+        api.logger.warn("cuby-memory: recall failed: " + formatError(error));
       }
 
       return undefined;
@@ -721,7 +721,7 @@ export default {
       // recomputes the same one. A run without it stays unwritten for the scan to fill.
       const resolvedTurnId = resolveRunId(ctx, event);
       if (!resolvedTurnId) {
-        api.logger.warn("memmy-memory: turn capture failed: identity_unresolved");
+        api.logger.warn("cuby-memory: turn capture failed: identity_unresolved");
         return;
       }
       const captureKey = key + "\\u0000" + resolvedTurnId;
@@ -741,7 +741,7 @@ export default {
       });
 
       if (!result.ok) {
-        api.logger.warn("memmy-memory: turn capture failed: " + result.error);
+        api.logger.warn("cuby-memory: turn capture failed: " + result.error);
         return;
       }
 
@@ -749,7 +749,7 @@ export default {
       pendingTurns.delete(key);
       pendingTurns.delete(externalKey);
       if (typeof api.logger.info === "function") {
-        api.logger.info("memmy-memory: captured turn via " + (result.mode || "sync"));
+        api.logger.info("cuby-memory: captured turn via " + (result.mode || "sync"));
       }
     });
   }
@@ -1630,7 +1630,7 @@ function formatResumeSearchResult(query, candidates) {
     "",
     candidates.map(formatResumeEpisode).join("\n\n"),
     "",
-    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.",
+    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to cuby-memory get <episode_id>) and inject continuation context.",
     "Enter /memmy-resume cancel to cancel."
   ].join("\n");
 }

@@ -15,13 +15,13 @@ If it exists, ask the user: "An upgrade skill already exists. Reconfigure?" Wait
 
 ## Step 2: Current Version and Install Clues
 
-Use `exec` to run `memmy --version`. Tell the user the current version.
+Use `exec` to run `cuby --version`. Tell the user the current version.
 
 Then collect install clues with `exec`. These commands are best-effort; if one fails,
 keep going and show the useful output:
 
 ```
-command -v memmy || true
+command -v cuby || true
 npm list -g memmy-agent --depth=0 || true
 pnpm list -g memmy-agent --depth=0 || true
 yarn global list --pattern memmy-agent || true
@@ -118,7 +118,7 @@ description: "Upgrade Cuby to the latest version. Triggers: upgrade cuby, update
 1. (If proxy configured) Set proxy: `export http_proxy=URL && export https_proxy=URL`
 2. Use `exec` to run the preflight check: <PREFLIGHT_CHECK>. If it fails, stop and tell the user to rerun `update-setup` because the saved install method no longer matches this environment.
 3. Use `exec` to run the upgrade command: <UPGRADE_COMMAND>
-4. Use `exec` to verify: `memmy --version`
+4. Use `exec` to verify: `cuby --version`
 5. Tell the user the new version. Say: "Run `/restart` to restart Cuby and apply the update. If `/restart` is unavailable in this channel, restart the memmy process manually."
 ```
 

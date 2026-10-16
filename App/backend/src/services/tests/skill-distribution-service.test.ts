@@ -81,14 +81,14 @@ describe("skill distribution service", () => {
       marker: "<!-- cuby:start v=1 -->"
     });
     expect(installed?.content).toContain("# Cuby Memory CLI Skill");
-    expect(installed?.content).toContain("memmy-memory turn start");
-    expect(installed?.content).toContain("memmy-memory turn complete");
-    expect(installed?.content).toContain('memmy-memory search "query text"');
-    expect(installed?.content).toContain("memmy-memory session open --source cursor");
-    expect(installed?.content).toContain("memmy-memory turn start --source cursor");
-    expect(installed?.content).toContain('memmy-memory turn complete "$TURN_ID" --source cursor');
-    expect(installed?.content).toContain('memmy-memory search "query text" --source cursor');
-    expect(installed?.content).toContain('memmy-memory add "The user prefers concise Chinese status updates." --title "User preference: status style" --tags user-preference --source cursor');
+    expect(installed?.content).toContain("cuby-memory turn start");
+    expect(installed?.content).toContain("cuby-memory turn complete");
+    expect(installed?.content).toContain('cuby-memory search "query text"');
+    expect(installed?.content).toContain("cuby-memory session open --source cursor");
+    expect(installed?.content).toContain("cuby-memory turn start --source cursor");
+    expect(installed?.content).toContain('cuby-memory turn complete "$TURN_ID" --source cursor');
+    expect(installed?.content).toContain('cuby-memory search "query text" --source cursor');
+    expect(installed?.content).toContain('cuby-memory add "The user prefers concise Chinese status updates." --title "User preference: status style" --tags user-preference --source cursor');
     expect(installed?.content).not.toContain("--layer");
     expect(installed?.content).not.toContain("/panel/");
     expect(installed?.content).not.toContain("Panel Debugging");
