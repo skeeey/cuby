@@ -376,7 +376,7 @@ export class AgentDefaults extends Base {
   toolHintMaxLength = 40;
   reasoningEffort: string | null = null;
   timezone = systemUtcOffset();
-  botName = "memmy";
+  botName = "cuby";
   botIcon = "🍚";
   unifiedSession = false;
   disabledSkills: string[] = [];
