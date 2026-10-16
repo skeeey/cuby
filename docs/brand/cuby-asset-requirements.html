@@ -151,31 +151,32 @@
 
 <div class="sheet">
   <header class="masthead">
-    <div class="eyebrow">CUBY BRAND · 待补素材清单 v1.0</div>
-    <h1>Cuby 品牌素材补件清单</h1>
+    <div class="eyebrow">CUBY BRAND · 交付记录 v1.1</div>
+    <h1>Cuby 品牌素材交付记录</h1>
     <p class="lede">
-      把 Memmy 换成 Cuby 之后，<b>文字、命令、安装目录</b>都换完了，唯独<b>图</b>这一层没动——
-      因为二进制图没法改，只能重画。现在仓库里 <b>16 个文件</b>仍然画着旧的 Memmy 形象
-      （最短路径是应用图标：装完之后桌面快捷方式、任务栏、控制面板全是白毛球），
-      另有 <b>6 件吉祥物素材</b>从来没做过（MCP 那四个图标已经改成本地打包，见第 04 节）。
-      这份清单把每一件的规格、放在哪、用在哪、现在是什么，逐条列出来。
+      这份清单原本是给设计的<b>补件需求</b>；素材已经交付并落进仓库，所以它现在是一份<b>交付记录</b>——
+      每件东西放到了哪个路径、什么规格、当初为什么这么要求，都留在这里，以后要换图或加图可以直接照。
+      <br><br>
+      交付分三批落地：<b>P0 应用图标</b>（9 个文件）、<b>P1 安装与站内图</b>（DMG 背景四个尺寸 + 账号 logo）、
+      <b>P2/P3 吉祥物与字标</b>（5 个姿态 + 1 条待机动画 + 横版字标 + 字符画）。
+      仍欠一件，见文末。
     </p>
     <dl class="metastrip meta">
       <div>
-        <dt>要替换</dt>
-        <dd>16 个文件<small>现在画的是 Memmy</small></dd>
+        <dt>交付状态</dt>
+        <dd>已全部落地<small>除文末列出的 1 件</small></dd>
       </div>
       <div>
-        <dt>要新做</dt>
-        <dd>已完成<small>MCP 四个图标已打包</small></dd>
+        <dt>应用图标</dt>
+        <dd>9 个文件<small>含补全的 16/32 槽位</small></dd>
       </div>
       <div>
-        <dt>欠件</dt>
-        <dd>5 姿态 · 1 动画<small>吉祥物本体</small></dd>
+        <dt>吉祥物</dt>
+        <dd>5 姿态 + 1 动画<small>预留位已清空</small></dd>
       </div>
       <div>
-        <dt>风格基准</dt>
-        <dd>cuby.jpg<small>与 cuby-mascot-spec.html</small></dd>
+        <dt>出处</dt>
+        <dd>deliver/<small>设计交付原件（已 gitignore）</small></dd>
       </div>
     </dl>
   </header>
@@ -183,7 +184,7 @@
   <section class="sec">
     <div class="rail">01<span>APP ICON</span></div>
     <div>
-      <h2>应用图标 —— 装完之后看到的那张</h2>
+      <h2>应用图标 —— 装完之后看到的那张</h2> <span class="tag ok">已交付</span>
       <p class="sub">
         这是唯一一个<b>用户不打开 App 也会看到</b>的素材：桌面快捷方式、开始菜单、任务栏、
         Dock、访达、控制面板的「卸载程序」列表、安装包本身，全都读它。
@@ -287,7 +288,7 @@
   <section class="sec">
     <div class="rail">02<span>DMG</span></div>
     <div>
-      <h2>macOS 安装窗口背景</h2>
+      <h2>macOS 安装窗口背景</h2> <span class="tag ok">已交付</span>
       <p class="sub">
         拖拽安装那个窗口的底图。<b>文字是烤进位图里的</b>，所以换品牌必须重画，
         不能靠改代码——这也是为什么它现在还写着 Memmy。
@@ -337,7 +338,7 @@
   <section class="sec">
     <div class="rail">03<span>IN APP</span></div>
     <div>
-      <h2>App 里面还在用 Memmy 的图</h2>
+      <h2>App 里面还在用 Memmy 的图</h2> <span class="tag ok">已交付</span>
       <p class="sub">
         这一节是<b>真正会露出破绽的</b>几处：文件名已经改成 <code>cuby-</code> 了，内容还是旧形象，
         属于「看起来换过了，其实没换」。
@@ -458,7 +459,7 @@
   <section class="sec">
     <div class="rail">05<span>MASCOT</span></div>
     <div>
-      <h2>吉祥物还欠的 6 件</h2>
+      <h2>吉祥物欠的 6 件</h2> <span class="tag ok">已交付</span>
       <p class="sub">
         吉祥物本体已经交付了 14 个姿态（规格见 <code>docs/brand/cuby-mascot-spec.html</code>，
         画布、锚点、比例都在那份文档里，这里不重复）。还剩 <b>5 个预留姿态</b>和 <b>1 条待机动画</b>。
@@ -502,10 +503,11 @@
   <section class="sec">
     <div class="rail">06<span>CLI</span></div>
     <div>
-      <h2>命令行里的字符画</h2>
+      <h2>命令行里的字符画 <span class="tag">部分交付</span></h2>
       <p class="sub">
         交互式命令行（<code>cuby</code> / <code>cuby-memory</code>）启动时会画一个用半块字符
-        <code>▀▄</code> 拼出来的角色。现在画的是<b>已经退役的「米饭 + 勺子」</b>。
+        <code>▀▄</code> 拼出来的角色。<b>角色已换成 Cuby 头</b>（20×12 格，与交付的
+        <code>cuby-ascii.txt</code> 像素级一致）；<b>但它上方的字标仍是 MEMMY AGENT</b>——见文末。
       </p>
 
       <div class="stack">
@@ -537,7 +539,7 @@
   <section class="sec">
     <div class="rail">07<span>IDENTITY</span></div>
     <div>
-      <h2>品牌基础件：字标与主视觉</h2>
+      <h2>品牌基础件：字标与主视觉</h2> <span class="tag ok">已交付</span>
       <p class="sub">
         应用图标是「方形的头」，但品牌还缺<b>横版字标</b>（logo + Cuby 字样并排）和主视觉的正式落位。
       </p>
@@ -614,14 +616,16 @@
       <p class="sub">按优先级排的。每一行都可以独立交付，不用等齐了一起给。</p>
 
       <ul class="check">
-        <li><label><input type="checkbox"><span><em>P0 · 应用图标</em> — 一个 1024×1024 源文件（含圆角与不透明处理），以及菜单栏那张单色模板图。这两件落地之后，01 节整节都可以勾掉（7 + 2 个文件）。</span></label></li>
-        <li><label><input type="checkbox" checked><span><em>P0 · MCP 四图</em> — 已从 LobeHub 打包四个官方 SVG 进仓库，不再走网络。新增预设时要补一张（见 04 节）。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P1 · DMG 背景</em> — 一张 540×380 的底图（文字改成 Cuby），其余三个尺寸我们导出。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P1 · cuby-cover</em> — 模型列表里「Cuby」那一行的头部特写，512×512 透明 PNG。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P2 · 五个姿态</em> — work / point / box / wrench / peek，沿用现有画布规格。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P2 · 待机动画</em> — cuby-idle-alpha.webm，透明通道、2–4 秒无缝循环。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P3 · 字标</em> — logo-light.svg / logo-dark.svg 横版两版。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P3 · 字符画</em> — Cuby 头部的半块字符画 + 调色板，约 20 列宽。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P0 · 应用图标</em> — 9 个文件已落地。<b>交付的 icon.icns 缺 16/32 槽位</b>（只有 128 以上），已按 1024 母版补齐到 11 个槽位。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P0 · MCP 四图</em> — 已从 LobeHub 打包四个官方 SVG 进仓库，不走网络。新增预设时按 04 节补一张。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P1 · DMG 背景</em> — 四个尺寸都是按同一版式<b>重新排版</b>的，不是把 540 放大（文字不会糊）。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P1 · cuby-cover</em> — 透明底头部特写。它有意<b>不同于</b>应用图标（后者是给系统遮罩的满幅渐变方），原来的“两者必须同一份”的测试已按新设计改写。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P2 · 五个姿态</em> — work / point / box / wrench / peek 已接入 <code>poseToAsset</code>，不再回退到 neutral。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P2 · 待机动画</em> — <code>cuby-idle-alpha.webm</code> 已就位；<b>但还没有代码播放它</b>（桌宠目前用静态姿态），见文末。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P3 · 字标</em> — logo-light.svg / logo-dark.svg 已替换。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P3 · 字符画</em> — Cuby 头部半块字符画已接入 CLI，渲染结果与交付预览<b>逐像素一致</b>。</span></label></li>
+        <li><label><input type="checkbox"><span><em>待补 · CLI 字标</em> — 命令行启动画面里，角色上方的字标仍是 <b>MEMMY AGENT</b>（<code>tui.tsx</code> 里的 <code>WORDMARK_ROWS</code> / <code>AGENT_ROWS</code>）。这次交付没有包含它，需要补一版 CUBY。</span></label></li>
+        <li><label><input type="checkbox"><span><em>待做 · 待机动画播放</em> — 素材有了，但没有消费方。要在桌宠窗口播 webm 才能算用上。</span></label></li>
       </ul>
       <p class="progress">0 / 10 已交付</p>
     </div>
@@ -629,13 +633,16 @@
 
   <footer>
     <div class="coderefs">
+      <b>交付后仍欠</b><br>
+      <span class="c">1. CLI 字标仍是 MEMMY AGENT —— 需要 CUBY 版块字</span><br>
+      <span class="c">2. cuby-idle-alpha.webm 没有播放方 —— 素材就位，代码未接</span><br><br>
       <b>相关文件</b><br>
       App/shell/desktop/build/ &nbsp;·&nbsp; <span class="c">应用图标、DMG 背景、菜单栏图标</span><br>
       App/frontend/desktop/src/assets/ &nbsp;·&nbsp; <span class="c">App 内的图片资源</span><br>
       docs/brand/cuby-mascot-spec.html &nbsp;·&nbsp; <span class="c">吉祥物姿态的完整规格（画布、锚点、14 个已交付姿态）</span><br>
       docs/brand/cuby.jpg &nbsp;·&nbsp; <span class="c">现有主视觉</span><br>
       App/memmy-agent/src/entrypoints/frontend-bridge/mcp-presets-api.ts:65 &nbsp;·&nbsp; <span class="c">MCP 图标的取图逻辑</span><br>
-      App/frontend/desktop/src/components/mascot/cuby.tsx:49 &nbsp;·&nbsp; <span class="c">姿态名到文件的映射（含 5 个回退项）</span>
+      App/frontend/desktop/src/components/mascot/cuby.tsx:49 &nbsp;·&nbsp; <span class="c">姿态名到文件的映射（19 个姿态各有其图）</span>
     </div>
   </footer>
 </div>
