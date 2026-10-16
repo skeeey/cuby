@@ -1087,7 +1087,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(exportSource).toContain("authorization: `Bearer ${service.token}`");
     expect(exportSource).toContain("await response.arrayBuffer()");
     expect(exportSource).toContain("await writeFile(selected.filePath, payload)");
-    expect(exportSource).toContain("memmy-memory-${formatExportTimestamp(new Date())}.json");
+    expect(exportSource).toContain("cuby-memory-${formatExportTimestamp(new Date())}.json");
     expect(exportSource).toContain("filters:");
     expect(exportSource).not.toContain("backupSqliteDatabase");
   });

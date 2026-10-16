@@ -626,7 +626,7 @@ function Record-ExternalEnvironmentPaths {
     }
 
     if ($workspaceVariables -notcontains $entry.Name) {
-      Add-ListItem $script:Failures "external-memmy-path-retained: $normalized [$($entry.Scope):$($entry.Name); pass its Memmy-owned home with -AdditionalMemmyHome or clean it manually]"
+      Add-ListItem $script:Failures "external-cuby-path-retained: $normalized [$($entry.Scope):$($entry.Name); pass its Memmy- or Cuby-owned home with -AdditionalMemmyHome or clean it manually]"
     }
   }
 }
@@ -662,7 +662,7 @@ function Record-ExternalConfigDatabasePaths {
     if ($entry.Scope -eq "Machine" -and -not $IncludeMachineScope) {
       continue
     }
-    if ($entry.Name -notmatch "(?i)^MEMMY_(?:CONFIG|CONFIG_PATH|RUNTIME_CONFIG_PATH)$") {
+    if ($entry.Name -notmatch "(?i)^(?:CUBY|MEMMY)_(?:CONFIG|CONFIG_PATH|RUNTIME_CONFIG_PATH)$") {
       continue
     }
     $candidate = Expand-NormalizedPath $entry.Value
@@ -1393,11 +1393,13 @@ function Get-MemmyProcesses {
 
     if (-not $isMemmy -and
         $name -match "(?i)^(cmd|powershell|pwsh|wscript|cscript)\.exe$" -and
-        $commandLine -match "(?i)(MemmyLauncher\.vbs|MemmyUpdatePrompt\.ps1|(?:install|launch)-win-update-[A-Za-z0-9._-]+\.(?:cmd|ps1|vbs))") {
+        $commandLine -match "(?i)(MemmyLauncher\.vbs|MemmyUpdatePrompt\.ps1|CubyLauncher\.vbs|CubyUpdatePrompt\.ps1|(?:install|launch)-win-update-[A-Za-z0-9._-]+\.(?:cmd|ps1|vbs))") {
       foreach ($helperRoot in @(
         (Join-Path $env:LOCALAPPDATA "Memmy\launcher"),
+        (Join-Path $env:LOCALAPPDATA "Cuby\launcher"),
         (Join-Path $env:APPDATA "Memmy\updates"),
-        (Join-Path $env:APPDATA "MemmyIntl\updates")
+        (Join-Path $env:APPDATA "MemmyIntl\updates"),
+        (Join-Path $env:APPDATA "Cuby\updates")
       )) {
         if (Test-CommandLineContainsRoot $commandLine $helperRoot) {
           $isMemmy = $true
@@ -1406,7 +1408,7 @@ function Get-MemmyProcesses {
       }
     }
 
-    if (-not $isMemmy -and $name -match "(?i)^(memmy|memmy-memory|memmy-agent)\.exe$" -and $executablePath) {
+    if (-not $isMemmy -and $name -match "(?i)^(memmy|memmy-memory|memmy-agent|cuby|cuby-memory|cuby-agent)\.exe$" -and $executablePath) {
       foreach ($target in $script:Targets.Values) {
         if ($target.Kind -eq "File" -and $executablePath -ieq $target.Path) {
           $isMemmy = $true

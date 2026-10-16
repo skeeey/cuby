@@ -297,7 +297,7 @@ describe("AgentSourceTool Skill rendering", () => {
     expect(skill).toContain("## Installation Identity Gate");
     expect(skill).toContain('action="verify_installation"');
     expect(skill).toContain("If no automatically discovered evidence passes `verify_installation`, stop and report that the requested Agent was not found.");
-    expect(skill).toContain("Never substitute Memmy's own workspace or the current Agent surface");
+    expect(skill).toContain("Never substitute Cuby's own workspace or the current Agent surface");
     expect(skill).toContain('installation_path_origin="user_provided"');
     expect(skill).toContain("Do not keep searching or guess paths after asking.");
   });

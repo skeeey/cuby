@@ -1,11 +1,11 @@
 ---
 name: memmy-memory
-description: Use the shared Memmy memory service to retrieve relevant prior context and persist durable Agent turns, facts, decisions, preferences, procedures, and follow-ups.
+description: Use the shared Cuby memory service to retrieve relevant prior context and persist durable Agent turns, facts, decisions, preferences, procedures, and follow-ups.
 ---
 
-# Memmy Memory CLI Skill
+# Cuby Memory CLI Skill
 
-Use `memmy-memory` to read and write the shared Memmy memory substrate.
+Use `memmy-memory` to read and write the shared Cuby memory substrate.
 
 ## Ground Rules
 

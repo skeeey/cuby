@@ -24,7 +24,7 @@ Use this skill when the task needs persistent agent memory through the `cuby-mem
 
 - `--url <url>` sends requests to a specific Memory HTTP service.
 - `--token <token>` sends a bearer token.
-- `--config <path>` loads a specific Memmy config file.
+- `--config <path>` loads a specific Cuby config file.
 - `--source <agent-source>` identifies the calling agent/source, such as `codex`, `cursor`, or `openclaw`; use it on memory commands from installed agent skills.
 - `--body '<json>'`, `--json '<json-or-path>'`, and `--body-file <path>` provide request body fields.
 

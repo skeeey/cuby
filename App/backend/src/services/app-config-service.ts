@@ -181,14 +181,14 @@ export function createAppConfigService(options: CreateAppConfigServiceOptions): 
 
     async getModelConfig() {
       if (!options.memmyConfigWriter?.readModelConfig) {
-        throw new Error("Memmy config writer is not configured");
+        throw new Error("Cuby config writer is not configured");
       }
       return options.memmyConfigWriter.readModelConfig();
     },
 
     async setModelConfig(input) {
       if (!options.memmyConfigWriter?.writeModelConfig) {
-        throw new Error("Memmy config writer is not configured");
+        throw new Error("Cuby config writer is not configured");
       }
       const config = await options.memmyConfigWriter.writeModelConfig(input);
       await options.memoryClient?.reloadConfig({ reason: "model_config_saved" });

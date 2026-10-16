@@ -28,12 +28,12 @@ export function resolveDefaultDatabasePath(): string {
   }
 
   if (process.platform === "darwin") {
-    return join(homedir(), "Library", "Application Support", "Memmy", "app.sqlite");
+    return join(homedir(), "Library", "Application Support", "Cuby", "app.sqlite");
   }
 
   if (process.platform === "win32") {
-    return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "Memmy", "app.sqlite");
+    return join(process.env.APPDATA ?? join(homedir(), "AppData", "Roaming"), "Cuby", "app.sqlite");
   }
 
-  return join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share"), "Memmy", "app.sqlite");
+  return join(process.env.XDG_DATA_HOME ?? join(homedir(), ".local", "share"), "Cuby", "app.sqlite");
 }

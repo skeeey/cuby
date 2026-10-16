@@ -1,6 +1,6 @@
 ---
 name: update-setup
-description: One-time setup wizard for the memmy upgrade skill. Triggers: setup update, configure update, 切设置更新, 初始化更新.
+description: One-time setup wizard for the Cuby upgrade skill. Triggers: setup update, configure update, 切设置更新, 初始化更新.
 ---
 
 # Update Setup
@@ -35,7 +35,7 @@ likely install method. Do not treat them as confirmation.
 CRITICAL: Do not write `skills/update/SKILL.md` until the install method is
 explicitly confirmed by the user. The install method must come from a user
 answer or confirmation, not from inference alone. If you cannot get a clear
-answer, stop and ask the user to rerun this setup when they know how memmy was
+answer, stop and ask the user to rerun this setup when they know how Cuby was
 installed.
 
 Treat a request like "generate upgrade config", "set up updates", or "use
@@ -67,7 +67,7 @@ If the user selected `not sure`, explain the difference between the options and
 stop. Do not generate the upgrade skill.
 
 If the user selected `source (git clone)`, ask for the local checkout path:
-`question: "Where is your memmy source checkout? Enter an absolute path or a path relative to this workspace:"`.
+`question: "Where is your Cuby source checkout? Enter an absolute path or a path relative to this workspace:"`.
 
 **Question 2 — Proxy:**
 
@@ -110,18 +110,18 @@ Use `write_file` to write `skills/update/SKILL.md` with this content:
 ```
 ---
 name: update
-description: "Upgrade memmy to the latest version. Triggers: upgrade memmy, update memmy, 升级memmy, 更新memmy."
+description: "Upgrade Cuby to the latest version. Triggers: upgrade cuby, update cuby, 升级cuby, 更新cuby."
 ---
 
-# Update Memmy
+# Update Cuby
 
 1. (If proxy configured) Set proxy: `export http_proxy=URL && export https_proxy=URL`
 2. Use `exec` to run the preflight check: <PREFLIGHT_CHECK>. If it fails, stop and tell the user to rerun `update-setup` because the saved install method no longer matches this environment.
 3. Use `exec` to run the upgrade command: <UPGRADE_COMMAND>
 4. Use `exec` to verify: `memmy --version`
-5. Tell the user the new version. Say: "Run `/restart` to restart memmy and apply the update. If `/restart` is unavailable in this channel, restart the memmy process manually."
+5. Tell the user the new version. Say: "Run `/restart` to restart Cuby and apply the update. If `/restart` is unavailable in this channel, restart the memmy process manually."
 ```
 
 ## Step 5: Confirm
 
-Tell the user: "Upgrade skill created. Say 'upgrade memmy' when you want to update."
+Tell the user: "Upgrade skill created. Say 'upgrade cuby' when you want to update."

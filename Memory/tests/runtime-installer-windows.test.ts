@@ -401,6 +401,6 @@ describe("Windows standalone Memory service", () => {
     await startInstalledMemoryService(home);
     expect(request).toHaveBeenCalledWith("http://127.0.0.1:28960/api/v1/admin/shutdown", expect.objectContaining({ method: "POST" }));
     await stopInstalledMemoryService(home);
-    expect((lifecycle.mock.calls as unknown[][]).at(-1)?.[1]).toEqual(["/End", "/TN", "Memmy Memory Service"]);
+    expect((lifecycle.mock.calls as unknown[][]).at(-1)?.[1]).toEqual(["/End", "/TN", "Cuby Memory Service"]);
   });
 });

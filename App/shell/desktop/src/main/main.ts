@@ -5545,11 +5545,11 @@ async function exportMemoryDatabase(owner: BrowserWindow | null): Promise<Memory
   }
 
   const options = {
-    title: "Export Memmy Memory",
+    title: "Export Cuby Memory",
     buttonLabel: "Export",
-    defaultPath: join(app.getPath("documents"), `memmy-memory-${formatExportTimestamp(new Date())}.json`),
+    defaultPath: join(app.getPath("documents"), `cuby-memory-${formatExportTimestamp(new Date())}.json`),
     filters: [
-      { name: "Memmy Memory Export", extensions: ["json"] },
+      { name: "Cuby Memory Export", extensions: ["json"] },
       { name: "All Files", extensions: ["*"] }
     ]
   };
@@ -5613,7 +5613,7 @@ async function exportDiagnosticsReport(owner: BrowserWindow | null): Promise<Dia
   const options = {
     title: "Export diagnostics report",
     buttonLabel: "Export",
-    defaultPath: join(app.getPath("documents"), `memmy-diagnostics-${formatExportTimestamp(new Date())}.txt`),
+    defaultPath: join(app.getPath("documents"), `cuby-diagnostics-${formatExportTimestamp(new Date())}.txt`),
     filters: [
       { name: "Text Report", extensions: ["txt"] },
       { name: "All Files", extensions: ["*"] }
@@ -5650,8 +5650,8 @@ function buildDiagnosticsReport(): string {
   const agentGatewayBaseUrl = runtimeConfig?.agentGateway?.baseUrl ?? "<not-ready>";
 
   const lines = [
-    "Memmy Diagnostics Report",
-    "========================",
+    "Cuby Diagnostics Report",
+    "=======================",
     "",
     "Generated At",
     `- ISO Time: ${new Date().toISOString()}`,

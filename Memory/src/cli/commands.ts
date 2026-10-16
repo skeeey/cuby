@@ -640,7 +640,7 @@ function helpText(): string {
     "  --token <token>              Memory HTTP bearer token",
     "  --user-id <id>               Memory namespace user id",
     "  --source <agent>             Calling agent/source id",
-    "  --config <path>              Memmy config path",
+    "  --config <path>              Cuby config path",
     "  --health-check-timeout-ms <ms> Activation health timeout for Memory install",
     "  --skip-agent-skills          Initialize config without installing agent skills",
     "  --config-source <agent>      Select openclaw or hermes legacy config",

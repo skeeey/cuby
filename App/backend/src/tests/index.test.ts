@@ -39,7 +39,7 @@ afterEach(async () => {
 });
 
 describe("local api", () => {
-  it("requires an explicit Memmy config path instead of using the user's home directory", async () => {
+  it("requires an explicit Cuby config path instead of using the user's home directory", async () => {
     const previousMemmyConfig = process.env.CUBY_CONFIG;
     delete process.env.CUBY_CONFIG;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-config-path-"));

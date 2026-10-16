@@ -262,7 +262,7 @@ export function userServiceRestartCommand(
         "-WindowStyle",
         "Hidden",
         "-Command",
-        "Start-Sleep -Milliseconds 250; schtasks.exe /End /TN 'Memmy Memory Service' | Out-Null; Start-Sleep -Seconds 1; schtasks.exe /Run /TN 'Memmy Memory Service' | Out-Null"
+        "Start-Sleep -Milliseconds 250; schtasks.exe /End /TN 'Cuby Memory Service' | Out-Null; Start-Sleep -Seconds 1; schtasks.exe /Run /TN 'Cuby Memory Service' | Out-Null"
       ]
     };
   }
@@ -661,7 +661,7 @@ function isLegacyWindowsTask(home: string): boolean {
     "$ErrorActionPreference = 'Stop'",
     "$scheduler = New-Object -ComObject Schedule.Service",
     "$scheduler.Connect()",
-    "$actions = $scheduler.GetFolder('\\').GetTask('Memmy Memory Service').Definition.Actions",
+    "$actions = $scheduler.GetFolder('\\').GetTask('Cuby Memory Service').Definition.Actions",
     "if ($actions.Count -ne 1) { exit 2 }",
     "$action = $actions.Item(1)",
     "if ($action.Type -ne 0) { exit 2 }",
@@ -715,7 +715,7 @@ function registerAndStartUserService(home: string, serviceHome: string, start = 
   if (process.platform === "linux") {
     const unitPath = join(homedir(), ".config", "systemd", "user", "cuby-memory.service");
     mkdirSyncForLifecycle(dirname(unitPath));
-    writeFileSyncForLifecycle(unitPath, `[Unit]\nDescription=Memmy Memory Service\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=${systemdEscape(launcher)}\nRestart=on-failure\nRestartSec=2\nStandardOutput=append:${join(logs, "service.log")}\nStandardError=append:${join(logs, "service-error.log")}\n\n[Install]\nWantedBy=default.target\n`);
+    writeFileSyncForLifecycle(unitPath, `[Unit]\nDescription=Cuby Memory Service\nAfter=network.target\n\n[Service]\nType=simple\nExecStart=${systemdEscape(launcher)}\nRestart=on-failure\nRestartSec=2\nStandardOutput=append:${join(logs, "service.log")}\nStandardError=append:${join(logs, "service-error.log")}\n\n[Install]\nWantedBy=default.target\n`);
     runLifecycle("systemctl", ["--user", "daemon-reload"]);
     runLifecycle("systemctl", ["--user", "enable", "--now", "cuby-memory.service"]);
     return;
@@ -733,8 +733,8 @@ function registerAndStartUserService(home: string, serviceHome: string, start = 
 <Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><ExecutionTimeLimit>PT0S</ExecutionTimeLimit></Settings>
 <Actions Context="User"><Exec><Command>${xmlEscape(host)}</Command><Arguments>${xmlEscape(args)}</Arguments></Exec></Actions>
 </Task>\n`, "utf16le");
-    runLifecycle("schtasks", ["/Create", "/TN", "Memmy Memory Service", "/XML", taskPath, "/F"]);
-    if (start) runLifecycle("schtasks", ["/Run", "/TN", "Memmy Memory Service"]);
+    runLifecycle("schtasks", ["/Create", "/TN", "Cuby Memory Service", "/XML", taskPath, "/F"]);
+    if (start) runLifecycle("schtasks", ["/Run", "/TN", "Cuby Memory Service"]);
     return;
   }
   throw new Error(`unsupported platform: ${process.platform}`);
@@ -746,7 +746,7 @@ function stopUserService(): void {
   } else if (process.platform === "linux") {
     runLifecycle("systemctl", ["--user", "stop", "cuby-memory.service"], true);
   } else if (process.platform === "win32") {
-    runLifecycle("schtasks", ["/End", "/TN", "Memmy Memory Service"], true);
+    runLifecycle("schtasks", ["/End", "/TN", "Cuby Memory Service"], true);
   }
 }
 
@@ -834,8 +834,8 @@ async function removeUserServiceRegistration(): Promise<void> {
     return;
   }
   if (process.platform === "win32") {
-    runLifecycle("schtasks", ["/End", "/TN", "Memmy Memory Service"], true);
-    runLifecycle("schtasks", ["/Delete", "/TN", "Memmy Memory Service", "/F"], true);
+    runLifecycle("schtasks", ["/End", "/TN", "Cuby Memory Service"], true);
+    runLifecycle("schtasks", ["/Delete", "/TN", "Cuby Memory Service", "/F"], true);
   }
 }
 

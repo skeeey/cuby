@@ -405,7 +405,7 @@ describe("cloud client", () => {
       loginSource: "Cuby"
     });
 
-    expect(login.profile.nickname).toBe("Memmy User");
+    expect(login.profile.nickname).toBe("Cuby User");
     expect(login.profile.nickname).not.toBe("user-8000");
   });
 

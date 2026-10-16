@@ -558,7 +558,7 @@ verify_windows_agent_html_lint_runtime() {
     node --input-type=module --eval '
       import { HtmlValidate } from "html-validate";
       const validator = new HtmlValidate({ extends: ["html-validate:recommended"] });
-      const valid = await validator.validateString("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Cuby</title></head><body><main>ready</main></body></html>");
+      const valid = await validator.validateString("<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"><title>Memmy</title></head><body><main>ready</main></body></html>");
       const invalid = await validator.validateString("<main><span></main>");
       if (!valid.valid || invalid.valid) throw new Error("html-validate packaged runtime smoke failed");
     '

@@ -893,20 +893,20 @@ function renderEmptyHistoryReport(locale: "zh-CN" | "en-US", sample: SampleBundl
   if (agentNames.length > 0) {
     const names = agentNames.join(", ");
     return locale === "en-US" ? [
-      `Memmy found ${names} on this device, but the quick first scan did not return readable conversation history.`,
-      "Once you use Memmy with a real task, it will preserve the useful background, decisions, and next step for future conversations and other Agents."
+      `Cuby found ${names} on this device, but the quick first scan did not return readable conversation history.`,
+      "Once you use Cuby with a real task, it will preserve the useful background, decisions, and next step for future conversations and other Agents."
     ].join("\n\n") : [
-      `Memmy 已识别到这台设备上的 ${names}，但首次轻量扫描暂时没有读到可用的对话历史。`,
-      "之后用 Memmy 处理真实任务时，它会记住有用的背景、决策和下一步，方便新对话或其他 Agent 继续。"
+      `Cuby 已识别到这台设备上的 ${names}，但首次轻量扫描暂时没有读到可用的对话历史。`,
+      "之后用 Cuby 处理真实任务时，它会记住有用的背景、决策和下一步，方便新对话或其他 Agent 继续。"
     ].join("\n\n");
   }
 
   return locale === "en-US" ? [
     "There is no readable Agent history on this device yet, so there is nothing useful to pretend I already know.",
-    "Tell Memmy about one real task. It will preserve the useful background, decisions, and next step so a new conversation—or another Agent such as Cursor or Codex—can continue without making you explain it again."
+    "Tell Cuby about one real task. It will preserve the useful background, decisions, and next step so a new conversation—or another Agent such as Cursor or Codex—can continue without making you explain it again."
   ].join("\n\n") : [
     "这台设备上还没有可读取的 Agent 历史，所以我不会假装已经了解你。",
-    "先告诉 Memmy 一件你正在做的真实任务。它会记住有用的背景、决策和下一步；之后新开对话，或换到 Cursor、Codex，也不用再从头解释。"
+    "先告诉 Cuby 一件你正在做的真实任务。它会记住有用的背景、决策和下一步；之后新开对话，或换到 Cursor、Codex，也不用再从头解释。"
   ].join("\n\n");
 }
 
@@ -1916,7 +1916,7 @@ function buildLlmMessages(input: OnboardingInsightGenerationInput): Array<{ role
     {
       role: "system",
       content: [
-        "你是 Memmy 首次登录初见报告撰写者。报告要像一位刚接手工作的可靠搭档：私人化、具体、克制，不是技术日志，也不是营销文案。",
+        "你是 Cuby 首次登录初见报告撰写者。报告要像一位刚接手工作的可靠搭档：私人化、具体、克制，不是技术日志，也不是营销文案。",
         "只依据输入里的明确证据，不要编造项目、完成情况、错误原因或用户偏好。证据不足时直接说明尚不能确认。",
         "不要把 diagnostics 写给用户，不要出现“轻量样本、采样、query 数、discoveredAgentCount”等实现细节。",
         "你必须根据 profile.nameHints 综合判断用户可能希望被怎么称呼。nameHints.selfDeclaredNames 来自扫描到的用户自称，homePathName 是 home 路径最后一段，computerUserName 是电脑用户名，homeAndComputerMatch 表示 home 路径名和电脑用户名一致。",

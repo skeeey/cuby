@@ -97,8 +97,8 @@ describe("onboarding insight service", () => {
 
     expect(report.status).toBe("ready");
     expect(report.reportMarkdown).toBe([
-      "Memmy 已识别到这台设备上的 Codex，但首次轻量扫描暂时没有读到可用的对话历史。",
-      "之后用 Memmy 处理真实任务时，它会记住有用的背景、决策和下一步，方便新对话或其他 Agent 继续。"
+      "Cuby 已识别到这台设备上的 Codex，但首次轻量扫描暂时没有读到可用的对话历史。",
+      "之后用 Cuby 处理真实任务时，它会记住有用的背景、决策和下一步，方便新对话或其他 Agent 继续。"
     ].join("\n\n"));
     expect(report.reportMarkdown).not.toContain("not enough recent user messages");
     expect(report.diagnostics).toMatchObject({
@@ -131,7 +131,7 @@ describe("onboarding insight service", () => {
     expect(report.status).toBe("ready");
     expect(report.reportMarkdown).toBe([
       "There is no readable Agent history on this device yet, so there is nothing useful to pretend I already know.",
-      "Tell Memmy about one real task. It will preserve the useful background, decisions, and next step so a new conversation—or another Agent such as Cursor or Codex—can continue without making you explain it again."
+      "Tell Cuby about one real task. It will preserve the useful background, decisions, and next step so a new conversation—or another Agent such as Cursor or Codex—can continue without making you explain it again."
     ].join("\n\n"));
     expect(report.reportMarkdown).not.toContain("我没有在本机扫描到");
     expect(events).toEqual([
