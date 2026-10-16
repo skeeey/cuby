@@ -1,6 +1,6 @@
 /** Settings page for account, model, token usage, and desktop preferences. */
 import { useCallback, useEffect, useRef, useState, type CSSProperties, type Dispatch, type ReactNode } from "react";
-import { Brain, Palette, Rocket, Settings2, Shield, User, Zap, ArrowRight, Bell, ExternalLink, FolderOpen, Gift, Gauge, Info, KeyRound, LogOut, Wrench, Eye, EyeOff, ChevronDown, ChevronUp, Database, Loader2, CheckCircle2, XCircle, Check, AlertTriangle, Mic, Image as ImageIcon, Copy, Users} from "lucide-react";
+import { Brain, Palette, Rocket, Settings2, Shield, User, Zap, ArrowRight, Bell, ExternalLink, FolderOpen, Gift, Gauge, Info, KeyRound, LogOut, Wrench, Eye, EyeOff, ChevronDown, ChevronUp, Database, Loader2, CheckCircle2, XCircle, Check, AlertTriangle, Mic, Image as ImageIcon, Copy} from "lucide-react";
 import type { AccountInvitationView, AppSettingsDto, ByokTokenUsageByKind, ByokTokenUsageByModel, ByokTokenUsageCapability, ByokTokenUsageKind, ByokTokenUsageSummary, Language, MemoryTokenBudgetDto, ModelConfigView, PrivacySettingsDto, TokenQuotaEligibility, TokenSceneUsageDto, TokenUsageDto } from "@memmy/local-api-contracts";
 import { useApiClients } from "../app/providers.js";
 import { copyInvitationCode } from "../app/invitation-analytics.js";
@@ -19,7 +19,6 @@ import {
 } from "../app/pet-guide.js";
 import { consumeTokenExhaustedApplyMoreRequest, TOKEN_EXHAUSTED_APPLY_MORE_EVENT } from "../app/token-exhausted-apply-more.js";
 import { getLegalLinkUrl } from "../legal/legal-links.js";
-import { communityLinks } from "../community/community-links.js";
 import { maskAccountIdentifier } from "../utils/mask-account-identifier.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
 import { openExternalUrl } from "../utils/open-url.js";
@@ -1899,23 +1898,6 @@ export function SettingsPageView(props: SettingsPageViewProps) {
           </div>
         </Section>
 
-        <Section icon={<Users size={16} className="text-text-ink/60" />} title={t("settings.about.community")}>
-          <div className="community-popover-grid grid gap-2.5">
-            <div className="community-popover-wechat">
-              <div className="community-popover-wechat-title">
-                <span>{t("welcome.wechatGroup")}</span>
-              </div>
-              <img src={communityLinks.wechatGroupUrl} alt={t("welcome.wechatGroup")} className="community-popover-qr rounded bg-white" />
-              <span className="community-popover-wechat-hint">{t("appFrame.scanToJoin")}</span>
-            </div>
-            <div className="community-popover-links">
-              <SettingsCommunityLink href={communityLinks.githubUrl} title={t("welcome.github")} detail="MemTensor/memmy-agent" />
-              <SettingsCommunityLink href={communityLinks.discordUrl} title={t("welcome.discord")} detail="discord.gg/zfhKKn52wP" />
-              <SettingsCommunityLink href={communityLinks.twitterUrl} title={t("welcome.twitter")} detail="@Memmy_ai" />
-              <SettingsCommunityLink href={communityLinks.emailUrl} title={t("welcome.email")} detail={communityLinks.email} external={false} />
-            </div>
-          </div>
-        </Section>
 
         <Section icon={<Settings2 size={16} className="text-text-ink/60" />} title={t("settings.developer")}>
           <div className="space-y-1">
@@ -3344,21 +3326,6 @@ function LinkButton(props: LinkButtonProps) {
 }
 
 /** Renders a community link row used by the About tab's community section. */
-function SettingsCommunityLink(props: { href: string; title: string; detail: string; external?: boolean }) {
-  const external = props.external ?? true;
-  return (
-    <a
-      href={props.href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noreferrer" : undefined}
-      className="community-link flex flex-col rounded-lg text-xs text-text-ink/60 transition-colors"
-    >
-      <span className="community-link-title font-medium text-text-ink/70">{props.title}</span>
-      <span className="community-link-detail text-text-ink/45">{props.detail}</span>
-    </a>
-  );
-}
-
 /**
  * Parses the diagnostics report export result.
  *
