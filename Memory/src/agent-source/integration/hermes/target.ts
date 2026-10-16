@@ -313,13 +313,13 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 const HERMES_PLUGIN_YAML = `name: cuby-memory
 version: ${CUBY_VERSION}
 kind: exclusive
-description: "Memmy local memory provider."
+description: "Cuby local memory provider."
 `;
 
 const HERMES_COMMAND_PLUGIN_YAML = `name: cuby-resume
 version: ${CUBY_VERSION}
 kind: standalone
-description: "Direct Memmy resume slash command."
+description: "Direct Cuby resume slash command."
 `;
 
 const HERMES_COMMAND_PLUGIN_INIT = String.raw`import json
@@ -347,7 +347,7 @@ def register(ctx) -> None:
     ctx.register_command(
         "cuby-resume",
         handler=_handle_memmy_resume_command,
-        description="Search Memmy L1 memory resume candidates.",
+        description="Search Cuby L1 memory resume candidates.",
         args_hint="<query>",
     )
     if hasattr(ctx, "register_hook"):
@@ -361,7 +361,7 @@ def _handle_memmy_resume_command(raw_args: str) -> str:
         return "Usage: /memmy-resume <query>"
     if query == "cancel":
         _clear_pending_state()
-        return "Memmy resume selection cancelled."
+        return "Cuby resume selection cancelled."
 
     try:
         result = _memmy_post("/api/v1/memory/search", {
@@ -388,7 +388,7 @@ def _handle_memmy_resume_command(raw_args: str) -> str:
         })
         return _format_resume_search_result(query, candidates)
     except Exception as exc:
-        return "Memmy resume search failed: " + str(exc)
+        return "Cuby resume search failed: " + str(exc)
 
 
 def _on_pre_llm_call(user_message: Any = "", **_kwargs: Any):
@@ -449,7 +449,7 @@ def _load_runtime() -> Dict[str, Any]:
     base_url = _clean_text(storage.get("endpoint")).rstrip("/") or _clean_text(plugin_config.get("endpoint")).rstrip("/") or "http://127.0.0.1:28960"
     token = _clean_text(storage.get("token")) or _clean_text(plugin_config.get("token"))
     if not base_url:
-        raise RuntimeError("Invalid Memmy config at " + str(_memmy_config_path()))
+        raise RuntimeError("Invalid Cuby config at " + str(_memmy_config_path()))
     return {"baseUrl": base_url, "token": token}
 
 
@@ -523,9 +523,9 @@ def _memmy_post(path: str, body: Dict[str, Any]) -> Dict[str, Any]:
             message = (((data or {}).get("error") or {}).get("message") or text)
         except Exception:
             message = text
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
     except URLError as exc:
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + str(exc.reason)) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + str(exc.reason)) from exc
 
 
 def _memmy_get(path: str) -> Dict[str, Any]:
@@ -548,9 +548,9 @@ def _memmy_get(path: str) -> Dict[str, Any]:
             message = (((data or {}).get("error") or {}).get("message") or text)
         except Exception:
             message = text
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
     except URLError as exc:
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + str(exc.reason)) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + str(exc.reason)) from exc
 
 
 def _build_episode_candidates(query: str, result: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -734,12 +734,12 @@ def _last_l1_memory_summary(episode_detail: Dict[str, Any]) -> str:
 
 def _format_resume_search_result(query: str, candidates: List[Dict[str, Any]]) -> str:
     if not candidates:
-        return 'No L1 Memmy memories found for: "' + query + '"'
-    lines = ['Memmy resume candidates for "' + query + '" (top 5 episodes from L1 top20):', ""]
+        return 'No L1 Cuby memories found for: "' + query + '"'
+    lines = ['Cuby resume candidates for "' + query + '" (top 5 episodes from L1 top20):', ""]
     for candidate in candidates:
         lines.append(_format_resume_episode(candidate))
         lines.append("")
-    lines.append("Enter 1-5 to select an episode to resume. Memmy will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.")
+    lines.append("Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.")
     lines.append("Enter /memmy-resume cancel to cancel.")
     return "\n".join(lines).rstrip()
 
@@ -822,7 +822,7 @@ def _build_resume_context(selection: Dict[str, Any], detail: Dict[str, Any]) -> 
     raw_turns = _episode_raw_turns(detail)
     related = _episode_timeline_items(detail)
     lines = [
-        "Memmy resume selection",
+        "Cuby resume selection",
         "",
         "The user selected candidate " + str(selection.get("index")) + " from the previous /memmy-resume result.",
         "Treat the current user prompt as a selection, not as a standalone question or task.",
@@ -937,7 +937,7 @@ HTTP_TIMEOUT_SECONDS = 45.0
 SHUTDOWN_THREAD_TIMEOUT_SECONDS = 60.0
 CUBY_SEARCH_SCHEMA = {
     "name": "memmy_memory_search",
-    "description": "Search Memmy local memory for relevant facts, preferences, policies, world models, and skills.",
+    "description": "Search Cuby local memory for relevant facts, preferences, policies, world models, and skills.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -954,7 +954,7 @@ CUBY_SEARCH_SCHEMA = {
 
 CUBY_REMEMBER_SCHEMA = {
     "name": "memmy_memory_add",
-    "description": "Write an important fact, preference, decision, or task insight into Memmy local memory.",
+    "description": "Write an important fact, preference, decision, or task insight into Cuby local memory.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -969,7 +969,7 @@ CUBY_REMEMBER_SCHEMA = {
 
 CUBY_MEMORY_GET_SCHEMA = {
     "name": "memmy_memory_get",
-    "description": "Read one Memmy memory detail by id. Use this for trace_, policy_, world_, skill_, and episode_ ids returned by memory search.",
+    "description": "Read one Cuby memory detail by id. Use this for trace_, policy_, world_, skill_, and episode_ ids returned by memory search.",
     "parameters": {
         "type": "object",
         "properties": {
@@ -1013,8 +1013,8 @@ class MemmyMemoryProvider(MemoryProvider):
         with self._lock:
             l3_context = self._l3_contexts.get(self._session_id, "")
         base = (
-            "# Memmy Memory\n"
-            "Memmy Memory is active. Relevant memory is recalled automatically, "
+            "# Cuby Memory\n"
+            "Cuby Memory is active. Relevant memory is recalled automatically, "
             "and completed turns are captured automatically.\n"
             "Treat <memmy_memory_context> as historical memory only. "
             "Treat <current_user_request> as the authoritative current task."
@@ -1112,7 +1112,7 @@ class MemmyMemoryProvider(MemoryProvider):
                     "source": "hermes",
                     "sessionId": memory_session_id,
                 })
-                return "Stored Memmy memory " + str(result.get("id"))
+                return "Stored Cuby memory " + str(result.get("id"))
         except Exception as exc:
             return tool_error(str(exc))
 
@@ -1198,7 +1198,7 @@ class MemmyMemoryProvider(MemoryProvider):
             protocol = "legacy"
         memory_session_id = str(opened.get("sessionId") or "")
         if not memory_session_id:
-            raise RuntimeError("Memmy did not return a sessionId")
+            raise RuntimeError("Cuby did not return a sessionId")
         state = {
             "protocol": protocol,
             "sessionId": memory_session_id,
@@ -1335,7 +1335,7 @@ def _load_runtime() -> Dict[str, str]:
     base_url = _clean_text(storage.get("endpoint")).rstrip("/") or _clean_text(plugin_config.get("endpoint")).rstrip("/") or "http://127.0.0.1:28960"
     token = _clean_text(storage.get("token")) or _clean_text(plugin_config.get("token"))
     if not base_url:
-        raise RuntimeError("Invalid Memmy config at " + str(_memmy_config_path()))
+        raise RuntimeError("Invalid Cuby config at " + str(_memmy_config_path()))
     return {
         "baseUrl": base_url,
         "token": token,
@@ -1414,9 +1414,9 @@ def _memmy_post(path: str, body: Dict[str, Any]) -> Dict[str, Any]:
             message = (((data or {}).get("error") or {}).get("message") or text)
         except Exception:
             message = text
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
     except URLError as exc:
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + str(exc.reason)) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + str(exc.reason)) from exc
 
 
 def _memmy_get(path: str, *, query: Optional[Dict[str, str]] = None, headers: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
@@ -1441,9 +1441,9 @@ def _memmy_get(path: str, *, query: Optional[Dict[str, str]] = None, headers: Op
             message = (((data or {}).get("error") or {}).get("message") or text)
         except Exception:
             message = text
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + (message or ("HTTP " + str(exc.code)))) from exc
     except URLError as exc:
-        raise RuntimeError("Memmy request to " + request.full_url + " failed: " + str(exc.reason)) from exc
+        raise RuntimeError("Cuby request to " + request.full_url + " failed: " + str(exc.reason)) from exc
 
 
 def _runtime_envelope(runtime: Dict[str, Any], session_key: str, project_id: Optional[str]) -> Dict[str, Any]:
@@ -1833,7 +1833,7 @@ def _render_l3_world_model_context(content: str) -> str:
 
 
 def _render_memmy_context_packet(markdown: str, source: str, current_user_request: str) -> str:
-    memory = _clean_text(markdown) or "No relevant Memmy memories found."
+    memory = _clean_text(markdown) or "No relevant Cuby memories found."
     request = _sanitize_memmy_protocol_text(current_user_request) or "(conversation continued)"
     return "\n".join([
         f'<memmy_memory_context source="{_escape_attr(source)}">',
@@ -1904,7 +1904,7 @@ def _format_search_result(result: Dict[str, Any]) -> str:
     if (not isinstance(hits, list) or not hits) and isinstance(debug, dict):
         hits = debug.get("hits")
     if not isinstance(hits, list) or not hits:
-        return "No relevant Memmy memories found."
+        return "No relevant Cuby memories found."
     lines = []
     for index, hit in enumerate(hits, start=1):
         if not isinstance(hit, dict):

@@ -210,9 +210,9 @@ export async function startManagedRuntimeServices(
   let stopMemoryOnClose = false;
 
   async function restartMemoryRuntime(): Promise<void> {
-    if (closing) throw new Error("Memmy is shutting down");
+    if (closing) throw new Error("Cuby is shutting down");
     await memoryStartup;
-    if (closing) throw new Error("Memmy is shutting down");
+    if (closing) throw new Error("Cuby is shutting down");
     if (!memoryRestart) {
       memoryRestart = restartManagedMemoryService(
         entries,
@@ -2414,7 +2414,7 @@ export async function stopManagedChild(child: ManagedChild): Promise<void> {
 
   // Windows: child.kill only terminates the direct child; if memory / agent-gateway spawned a
   // worker (grandchild), it survives, keeps holding the fixed service ports and locking
-  // Memmy.exe, causing EADDRINUSE on the next launch and blocking silent updates from installing.
+  // Cuby.exe, causing EADDRINUSE on the next launch and blocking silent updates from installing.
   // Use taskkill /T to kill the entire process tree.
   if (process.platform === "win32") {
     const pid = child.process.pid;

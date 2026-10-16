@@ -19,7 +19,7 @@
 !macroend
 
 ; Force per-user installation by skipping the all-users versus current-user choice and using
-; %LOCALAPPDATA%\Programs\Memmy, which remains writable by the current user.
+; %LOCALAPPDATA%\Programs\Cuby, which remains writable by the current user.
 ; 1) Program Files requires elevation, and a locked uninstaller can make overwrite installation fail.
 ; 2) Silent background upgrades use NSIS /currentuser and must match the original installation scope.
 ; 3) A writable per-user directory enables zero-click silent upgrades without elevation.
@@ -34,7 +34,7 @@ Var pid
 ; Keep electron-builder's localized running-app prompt and its normal-then-forced termination
 ; retries. Force the exact-image/current-user cmd fallback instead of the default $INSTDIR prefix
 ; check: a custom-drive uninstaller can otherwise resolve a stale/default install directory, miss
-; the live Memmy process, and delete resources underneath the tray process. _CHECK_APP_RUNNING
+; the live Cuby process, and delete resources underneath the tray process. _CHECK_APP_RUNNING
 ; aborts before file or shortcut cleanup if the process still exists after the forced retry.
 !macro customCheckAppRunning
   !insertmacro IS_POWERSHELL_AVAILABLE
@@ -656,7 +656,7 @@ Function MemmyRelayLegacyUpgrade
     StrCpy $R7 "$LOCALAPPDATA\Cuby\upgrade-logs\windows-upgrade.log"
     StrCpy $R8 "$R1\relay-ready"
 
-    ; Direct/manual updates reopen Memmy. A prepared update without the boot-attempt marker was
+    ; Direct/manual updates reopen Cuby. A prepared update without the boot-attempt marker was
     ; launched during normal app shutdown and must remain closed. Boot fallback writes .attempt.
     StrCpy $R6 "1"
     IfFileExists "$APPDATA\Cuby\prepared-required-update.json" memmy_relay_resolve_roaming_reopen memmy_relay_check_legacy_reopen

@@ -148,7 +148,7 @@ function removePatchBlock(value: string): string {
     const start = result.indexOf(PATCH_START);
     if (start < 0) return result;
     const end = result.indexOf(PATCH_END, start);
-    if (end < 0) throw new Error("Invalid Memmy patch block starting at " + PATCH_START);
+    if (end < 0) throw new Error("Invalid Cuby patch block starting at " + PATCH_START);
     const lineEnd = result.indexOf("\n", end + PATCH_END.length);
     const after = lineEnd < 0 ? result.length : lineEnd + 1;
     result = result.slice(0, start).trimEnd() + "\n" + result.slice(after).trimStart();

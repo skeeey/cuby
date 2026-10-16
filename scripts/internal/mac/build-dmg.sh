@@ -112,10 +112,10 @@ resolve_microphone_usage_description() {
 
   case "$edition" in
     intl)
-      printf '%s' "Memmy uses the microphone only when you start voice input."
+      printf '%s' "Cuby uses the microphone only when you start voice input."
       ;;
     cn)
-      printf '%s' "Memmy 仅在你开始语音输入时使用麦克风"
+      printf '%s' "Cuby 仅在你开始语音输入时使用麦克风"
       ;;
     *)
       echo "Unsupported package edition for microphone usage description: $edition" >&2
@@ -160,7 +160,7 @@ done
 SCRIPT_DIR="\$(cd -P "\$(dirname "\$SOURCE")" && pwd)"
 RESOURCES_DIR="\$(cd "\$SCRIPT_DIR/.." && pwd)"
 MACOS_DIR="\$RESOURCES_DIR/../MacOS"
-APP_EXEC="\$MACOS_DIR/Memmy"
+APP_EXEC="\$MACOS_DIR/Cuby"
 
 if [ ! -x "\$APP_EXEC" ]; then
   for candidate in "\$MACOS_DIR"/*; do
@@ -172,7 +172,7 @@ if [ ! -x "\$APP_EXEC" ]; then
 fi
 
 if [ ! -x "\$APP_EXEC" ]; then
-  echo "Cannot find Memmy app executable under \$MACOS_DIR" >&2
+  echo "Cannot find Cuby app executable under \$MACOS_DIR" >&2
   exit 1
 fi
 
@@ -312,7 +312,7 @@ APP_PATH="/Applications/Cuby.app"
 INSTALLER="$APP_PATH/Contents/Resources/cli/install-cli"
 
 if [ ! -x "$INSTALLER" ]; then
-  MESSAGE="Please drag Memmy to Applications first, then run Install CLI again."
+  MESSAGE="Please drag Cuby to Applications first, then run Install CLI again."
   if command -v osascript >/dev/null 2>&1; then
     osascript -e "display dialog \"$MESSAGE\" buttons {\"OK\"} default button \"OK\" with icon caution" >/dev/null
   else
@@ -1006,7 +1006,7 @@ LATEST_DMG="$(ls -t release/*.dmg 2>/dev/null | head -1 || true)"
 if [ -n "$LATEST_DMG" ]; then
   echo "Swapping oversized DMG background for resize tolerance..."
   package_step_start "Patch DMG window background"
-  bash "$ROOT_DIR/scripts/internal/shared/fix-dmg-window-bounds.sh" "$LATEST_DMG" "Memmy Installer" "$DESKTOP_DIR" || \
+  bash "$ROOT_DIR/scripts/internal/shared/fix-dmg-window-bounds.sh" "$LATEST_DMG" "Cuby Installer" "$DESKTOP_DIR" || \
     echo "Warning: could not swap DMG background — resize may show white edges."
 else
   echo "Packaging completed without a DMG artifact." >&2

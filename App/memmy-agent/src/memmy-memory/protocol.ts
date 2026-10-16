@@ -40,7 +40,7 @@ export function renderMemmyMemoryUnavailableNotice(): string {
   return [
     `<${CUBY_MEMORY_STATUS_TAG} status="unavailable">`,
     "IMPORTANT:",
-    "- The Memmy long-term memory service is currently unreachable.",
+    "- The Cuby long-term memory service is currently unreachable.",
     "- No memory recall or write was performed for this turn. This is NOT the same as \"memory was searched and nothing relevant was found\" — memory was simply not checked.",
     "- Never claim you searched memory and found nothing. If the user asks about previously saved information or long-term memory, tell them the memory service is temporarily unavailable, then continue helping with the current request using only what is visible in this conversation.",
     `</${CUBY_MEMORY_STATUS_TAG}>`,

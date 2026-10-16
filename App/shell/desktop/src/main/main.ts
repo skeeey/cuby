@@ -375,7 +375,7 @@ async function boot(): Promise<void> {
           } catch { return null; }
         },
         showPanel: (state, act) => {
-          if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Memmy window unavailable');
+          if (!mainWindow || mainWindow.isDestroyed()) throw new Error("Cuby window unavailable");
           return showComputerUsePermissionPanel(mainWindow, state, act);
         },
         openSettings: url => shell.openExternal(url),
@@ -937,7 +937,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle("memmy:get-runtime-config", () => {
     if (!runtimeConfig) {
-      throw new Error("Memmy runtime config is not ready");
+      throw new Error("Cuby runtime config is not ready");
     }
 
     return runtimeConfig;
@@ -1095,12 +1095,12 @@ function getDesktopAppInfo(): DesktopAppInfo {
 }
 
 /**
- * Resolves the Memmy desktop app version.
+ * Resolves the Cuby desktop app version.
  *
  * In development mode, Electron may resolve app.getVersion() to Electron's own
  * version, so we fall back to reading the desktop workspace package.json.
  *
- * @returns The Memmy desktop app version.
+ * @returns The Cuby desktop app version.
  */
 function resolveDesktopAppVersion(): string {
   const electronAppVersion = app.getVersion();
@@ -2979,7 +2979,7 @@ function shouldQuitForManualUpdateInstall(filePath: string): boolean {
 
 /**
  * Delays quitting the current app so Finder has time to open the DMG window before we release
- * /Applications/Memmy.app.
+ * /Applications/Cuby.app.
  *
  * @returns Nothing.
  */
@@ -3018,7 +3018,7 @@ function resolveUpdatesDirectory(): string {
 /**
  * Parses the version number from an update package / pre-expanded app file name.
  *
- * File names look like `Memmy-0.0.2-darwin-arm64-cn-unsigned.dmg` / `...-unsigned.staged.app`.
+ * File names look like `Cuby-0.0.2-darwin-arm64-cn-unsigned.dmg` / `...-unsigned.staged.app`.
  *
  * @param fileName The file name.
  * @returns The version number (e.g. "0.0.2"); null when it cannot be parsed.
@@ -3214,7 +3214,7 @@ function resolveUpdatePackageFileName(downloadUrl: string, latestVersion: string
   }
 
   const version = (latestVersion ?? resolveDesktopAppVersion()).replace(/[^a-zA-Z0-9._+-]/gu, "");
-  return `Memmy-${version}-${process.platform}-${process.arch}${resolveUpdatePackageExtension()}`;
+  return `Cuby-${version}-${process.platform}-${process.arch}${resolveUpdatePackageExtension()}`;
 }
 
 /**
@@ -3642,13 +3642,13 @@ function syncMenuBarTray(enabled: boolean): void {
   }
 
   menuBarTray = new Tray(trayImage, MENU_BAR_TRAY_GUID);
-  menuBarTray.setToolTip("Memmy");
+  menuBarTray.setToolTip("Cuby");
   if (process.platform === "darwin") {
     menuBarTray.setIgnoreDoubleClickEvents(true);
   }
   menuBarTray.setContextMenu(Menu.buildFromTemplate([
     {
-      label: "显示 Memmy",
+      label: "显示 Cuby",
       click: () => activateMainWindow()
     },
     {
@@ -3657,7 +3657,7 @@ function syncMenuBarTray(enabled: boolean): void {
     },
     { type: "separator" },
     {
-      label: "退出 Memmy",
+      label: "退出 Cuby",
       click: () => app.quit()
     }
   ]));
@@ -3665,7 +3665,7 @@ function syncMenuBarTray(enabled: boolean): void {
 }
 
 /**
- * Determines whether the current OS has a native tray/status area Memmy should manage.
+ * Determines whether the current OS has a native tray/status area Cuby should manage.
  *
  * @returns True on macOS and Windows.
  */
@@ -4035,7 +4035,7 @@ function setPetWindowMode(enabled: boolean, target: RendererRouteTarget | null =
 /**
  * Closes the pet and hides it to the background: does not restore the full main window, and instead
  * forces the menu bar tray to stay resident, so the user can still re-summon it from the tray via
- * "Pet mode / Show Memmy"; the next cold start returns to full mode.
+ * "Pet mode / Show Cuby"; the next cold start returns to full mode.
  * @returns Nothing.
  */
 function hidePetWindowToBackground(): void {
@@ -4443,7 +4443,7 @@ function areBoundsEqual(left: Rectangle | null, right: Rectangle): boolean {
 
 /**
  * Resolves the screen anchor for the pet's first appearance.
- * @returns The top-left corner of the Memmy mascot, defaulting to the bottom-right of the primary screen.
+ * @returns The top-left corner of the Cuby mascot, defaulting to the bottom-right of the primary screen.
  */
 function resolveDefaultPetMascotAnchor(): { x: number; y: number } {
   const workArea = screen.getPrimaryDisplay().workArea;

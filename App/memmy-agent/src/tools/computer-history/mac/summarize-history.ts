@@ -681,7 +681,7 @@ export function renderSummary({
   const resolvedTitle = title || defaultTitle(turns, file);
   const firstRequest = cleanInline(contentToText(turns[0].user.content), SUMMARY_TEXT_LIMIT);
   const resolvedDescription = description || (
-    `Memmy session summary with ${turns.length} user turn(s), ${toolCallTotal} tool call(s), `
+    `Cuby session summary with ${turns.length} user turn(s), ${toolCallTotal} tool call(s), `
     + `${artifacts.length} captured image artifact(s), and status ${status}.`
   );
 

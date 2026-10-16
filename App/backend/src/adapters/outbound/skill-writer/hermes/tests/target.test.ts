@@ -19,7 +19,7 @@ afterEach(() => {
 });
 
 describe("hermes skill target", () => {
-  it("installs, replaces, and uninstalls the Memmy marker block in SOUL.md", async () => {
+  it("installs, replaces, and uninstalls the Cuby marker block in SOUL.md", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createHermesSkillTarget({ rootDirectory });
 
@@ -52,7 +52,7 @@ describe("hermes skill target", () => {
     expect(existsSync(rootDirectory)).toBe(false);
   });
 
-  it("installs the Memmy memory provider plugin and selects it in config.yaml", async () => {
+  it("installs the Cuby memory provider plugin and selects it in config.yaml", async () => {
     const { rootDirectory } = createFixture();
     const memmyConfigPath = join(rootDirectory, "memmy-config.yaml");
     writeFileSync(
@@ -130,7 +130,7 @@ describe("hermes skill target", () => {
     expect(commandPluginInit).toContain('"layers": ["L1"]');
     expect(commandPluginInit).toContain('"limit": SEARCH_LIMIT');
     expect(commandPluginInit).toContain('"verbose": True');
-    expect(commandPluginInit).toContain('"Memmy request to " + request.full_url + " failed: "');
+    expect(commandPluginInit).toContain('"Cuby request to " + request.full_url + " failed: "');
     expect(commandPluginInit).toContain('ctx.register_hook("pre_llm_call", _on_pre_llm_call)');
     expect(commandPluginInit).toContain('ctx.register_hook("pre_gateway_dispatch", _on_pre_gateway_dispatch)');
     expect(commandPluginInit).toContain("def _episode_score");
@@ -148,7 +148,7 @@ describe("hermes skill target", () => {
     expect(pluginInit).toContain('if tool_name == "memmy_memory_get"');
     expect(pluginInit).toContain('return _render_memmy_context_packet(_format_search_result(result), "tool_search"');
     expect(pluginInit).toContain('return _render_memmy_context_packet(_format_memory_detail(result), "tool_get"');
-    expect(pluginInit).toContain('return "Stored Memmy memory " + str(result.get("id"))');
+    expect(pluginInit).toContain('return "Stored Cuby memory " + str(result.get("id"))');
     expect(pluginInit).not.toContain('"raw": result');
     expect(pluginInit).not.toContain('"name": "memmy_search"');
     expect(pluginInit).not.toContain('"name": "memmy_remember"');
@@ -184,8 +184,8 @@ describe("hermes skill target", () => {
     expect(config.plugins?.enabled).toContain("cuby-resume");
     expect(config.plugins?.enabled).not.toContain("memmy-memory-command");
     expect(config.toolsets).toEqual(["hermes-cli", "memory"]);
-    expect(skillFile).toContain("# Memmy Memory");
-    expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
+    expect(skillFile).toContain("# Cuby Memory");
+    expect(skillFile).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
     expect(skillFile).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
     expect(skillFile).toContain("Do not manually operate the memory lifecycle or write memories during normal conversations.");
     expect(skillFile).toContain("Treat `<memmy_memory_context>` as historical memory only");
@@ -227,7 +227,7 @@ describe("hermes skill target", () => {
     expect(configAfterUninstall.toolsets).toEqual(["hermes-cli"]);
   });
 
-  it("reads the Memmy endpoint from memmyMemory.storage", async () => {
+  it("reads the Cuby endpoint from memmyMemory.storage", async () => {
     const { rootDirectory } = createFixture();
     const memmyConfigPath = join(rootDirectory, "memmy-config.yaml");
     writeFileSync(
@@ -393,7 +393,7 @@ print(json.dumps({"calls": calls, "runtime": runtime, "text": text, "selection":
     };
     expect(output.runtime.baseUrl).toBe("http://127.0.0.1:28960");
     expect(output.text).toContain("测试query");
-    expect(output.text).toContain('Memmy resume candidates for "测试query" (top 5 episodes from L1 top20):');
+    expect(output.text).toContain('Cuby resume candidates for "测试query" (top 5 episodes from L1 top20):');
     expect(output.text).not.toContain(". score ");
     expect(output.text).toContain("1. episode_1");
     expect(output.text).toContain("first_query: First query 1");
@@ -541,7 +541,7 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

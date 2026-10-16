@@ -20,7 +20,7 @@ afterEach(() => {
 });
 
 describe("codex skill target", () => {
-  it("installs Memmy bootstrap into AGENTS.md and full content into the Skill directory", async () => {
+  it("installs Cuby bootstrap into AGENTS.md and full content into the Skill directory", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createCodexSkillTarget({ rootDirectory });
 
@@ -29,7 +29,7 @@ describe("codex skill target", () => {
     expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
     expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
-    expect(skillFile).toContain("# Memmy");
+    expect(skillFile).toContain("# Cuby");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
     const resumeSkillFile = readFileSync(join(rootDirectory, "skills", "cuby-resume", "SKILL.md"), "utf8");
     expect(resumeSkillFile).toContain("name: memmy-resume");
@@ -65,7 +65,7 @@ describe("codex skill target", () => {
       [
         "manual prefix",
         "<!-- cuby:start v=1 -->",
-        "# Memmy Memory",
+        "# Cuby Memory",
         "",
         "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.",
         "Use that skill when prior memory may be relevant to the current request.",
@@ -224,7 +224,7 @@ describe("codex skill target", () => {
       expect(run.stderr).toBe("");
       const output = JSON.parse(run.stdout) as { decision: string; reason: string };
       expect(output.decision).toBe("block");
-      expect(output.reason).toContain('Memmy resume candidates for "测试query" (top 5 episodes from L1 top20):');
+      expect(output.reason).toContain('Cuby resume candidates for "测试query" (top 5 episodes from L1 top20):');
       expect(output.reason).not.toContain(". score ");
       expect(output.reason).toContain("1. episode_1");
       expect(output.reason).toContain("first_query: First query 1");
@@ -262,8 +262,8 @@ describe("codex skill target", () => {
         "The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`."
       );
       const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
-      expect(skillFile).toContain("# Memmy Memory");
-      expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
+      expect(skillFile).toContain("# Cuby Memory");
+      expect(skillFile).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
       expect(skillFile).toContain('memmy-memory search "query text" --source codex');
       expect(skillFile).not.toContain("memmy-memory add");
 
@@ -420,7 +420,7 @@ function expectSafeNodeHookCommand(command: string | undefined): void {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

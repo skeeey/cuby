@@ -1260,7 +1260,7 @@ function ThinkingPlaceholder() {
   const { t } = useTranslation();
   // The waiting gap (before any activity arrives) is the one spot in the
   // thread quiet AND large enough for the mascot to stay legible — a gentle
-  // 26px bobbing rice grain, never squeezed into 12px icon slots.
+  // 26px bobbing Cuby, never squeezed into 12px icon slots.
   return (
     <div className="flex min-w-0 justify-start" aria-live="polite" aria-busy="true">
       <div className="agent-thinking-placeholder inline-flex max-w-full min-w-0 items-center gap-2 overflow-hidden text-[13px] font-normal text-text-ink/55">

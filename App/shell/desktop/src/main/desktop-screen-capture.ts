@@ -26,18 +26,18 @@ export function createDesktopScreenCapture(deps: {
           else await deps.openSettings();
         }
         return { ok: false, code: 'permission_required', message: [
-          '目前还没有获得 Memmy 的屏幕录制权限，暂时无法查看屏幕内容。',
-          '请在弹出的系统授权提示或系统设置中开启：\n**系统设置 → 隐私与安全性 → 屏幕与系统音频录制（屏幕录制）**\n找到 **Memmy** 并打开开关；开发版可能显示为 **Electron**。',
-          '这次需要授权的是 Memmy 本身，不是 Open Computer Use。如果系统提示「退出并重新打开」，请按提示重启 Memmy，然后重新发送“帮我看下屏幕内容”。此次没有向模型返回屏幕图片。',
+          '目前还没有获得 Cuby 的屏幕录制权限，暂时无法查看屏幕内容。',
+          '请在弹出的系统授权提示或系统设置中开启：\n**系统设置 → 隐私与安全性 → 屏幕与系统音频录制（屏幕录制）**\n找到 **Cuby** 并打开开关；开发版可能显示为 **Electron**。',
+          '这次需要授权的是 Cuby 本身，不是 Open Computer Use。如果系统提示「退出并重新打开」，请按提示重启 Cuby，然后重新发送“帮我看下屏幕内容”。此次没有向模型返回屏幕图片。',
         ].join('\n\n') };
       }
-      if (status !== 'granted') return failed('unavailable', '无法确认 Memmy 的屏幕录制权限，或权限受系统限制。此次未截图。');
+      if (status !== 'granted') return failed('unavailable', '无法确认 Cuby 的屏幕录制权限，或权限受系统限制。此次未截图。');
       guidanceShown = false;
       const display = displayId ? deps.getDisplays().find(d => String(d.id) === displayId) : deps.getPrimaryDisplay();
       if (!display) return failed('capture_failed', '指定显示器不存在。');
       const sources = await deps.getSources(options);
       if (signal?.aborted) return failed('cancelled', '屏幕请求已取消。');
-      if (deps.getStatus() !== 'granted') return { ok: false, code: 'permission_required', message: 'Memmy 的屏幕录制权限已改变，请完成授权后重新发送消息。此次未返回屏幕图片。' };
+      if (deps.getStatus() !== 'granted') return { ok: false, code: 'permission_required', message: 'Cuby 的屏幕录制权限已改变，请完成授权后重新发送消息。此次未返回屏幕图片。' };
       let image = sources.find(s => s.display_id === String(display.id))?.thumbnail;
       if (!image || image.isEmpty()) return failed('capture_failed', '未取得所选屏幕的有效图片。');
       for (let attempt = 0; attempt < 10; attempt++) {

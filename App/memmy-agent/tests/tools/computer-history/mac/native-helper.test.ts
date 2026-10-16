@@ -39,7 +39,7 @@ test.each(["human-recorder", "app-icon"])("%s resolves the unpacked binary witho
 
 test.each(["app.asar", "app.asar.unpacked"])("a missing %s helper is an installation error and never falls back to Swift", async (archive) => {
   const source = path.join(root, archive, "human-recorder.swift");
-  await expect(ensureNativeHistoryHelper(source, "recorder")).rejects.toThrow(/packaged helper.*Reinstall Memmy/);
+  await expect(ensureNativeHistoryHelper(source, "recorder")).rejects.toThrow(/packaged helper.*Reinstall Cuby/);
   expect(compiler.run).not.toHaveBeenCalled();
 });
 

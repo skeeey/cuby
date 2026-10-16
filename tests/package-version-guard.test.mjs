@@ -20,14 +20,14 @@ describe("package version guard", () => {
       .toBe("1.0.8");
   });
 
-  it("accepts independent Memmy and Memory release versions", () => {
+  it("accepts independent Cuby and Memory release versions", () => {
     const root = fixtureRepo("1.1.2", "2.1.0");
     const runtimeRoot = fixtureRuntime(root, "1.1.2", "2.1.0");
     expect(verifyPackageVersion({ repoRoot: root, expected: "1.1.2", runtimeRoot }))
       .toBe("1.1.2");
   });
 
-  it("synchronizes Memmy metadata without overwriting the Memory release", () => {
+  it("synchronizes Cuby metadata without overwriting the Memory release", () => {
     const root = fixtureRepo("1.1.1", "2.1.0");
     writeJson(join(root, "package.json"), { version: "1.1.2" });
     const script = join(root, "scripts", "sync-project-version.mjs");

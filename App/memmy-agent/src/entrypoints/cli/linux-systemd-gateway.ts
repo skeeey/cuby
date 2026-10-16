@@ -421,7 +421,7 @@ export async function enableSystemdGatewayService(
     throw new LinuxSystemdGatewayError(
       "Could not start memmy-gateway.service with systemd --user"
       + `${detail ? `: ${detail}` : "."} `
-      + "Install Memmy with the Linux installer and check "
+      + "Install Cuby with the Linux installer and check "
       + "`systemctl --user status memmy-gateway.service`.",
     );
   }
@@ -567,7 +567,7 @@ export async function runLinuxRootTerminal(
   if (result.status === "ready" && servicePid === null) {
     throw new LinuxSystemdGatewayError(
       "A compatible Gateway is already running outside memmy-gateway.service. "
-      + "Stop that Gateway before starting the installed Memmy CLI.",
+      + "Stop that Gateway before starting the installed Cuby CLI.",
     );
   }
   if (result.status === "unexpected" && servicePid === null) {
@@ -586,7 +586,7 @@ export async function runLinuxRootTerminal(
     if (result.status === "ready" && servicePid === null) {
       throw new LinuxSystemdGatewayError(
         "A compatible Gateway is already running outside memmy-gateway.service. "
-        + "Stop that Gateway before starting the installed Memmy CLI.",
+        + "Stop that Gateway before starting the installed Cuby CLI.",
       );
     }
     if (result.status === "unexpected" && servicePid === null) {

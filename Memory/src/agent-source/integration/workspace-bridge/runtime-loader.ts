@@ -7,12 +7,12 @@ export function loadMemmyWorkspaceBridgeRuntimeAsset(): Promise<string> {
     new URL("./cuby-workspace-bridge.mjs", import.meta.url),
     "utf8",
   ).then((content) => {
-    if (!content.trim()) throw new Error("Memmy lifecycle sidecar asset is empty");
+    if (!content.trim()) throw new Error("Cuby lifecycle sidecar asset is empty");
     return content;
   }).catch((error) => {
     runtimeAssetPromise = null;
     throw new Error(
-      `Memmy lifecycle sidecar asset is unavailable: ${error instanceof Error ? error.message : String(error)}`,
+      `Cuby lifecycle sidecar asset is unavailable: ${error instanceof Error ? error.message : String(error)}`,
     );
   });
   return runtimeAssetPromise;

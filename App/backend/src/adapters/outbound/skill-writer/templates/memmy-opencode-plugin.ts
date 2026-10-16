@@ -1,4 +1,4 @@
-/** OpenCode Memmy plugin templates. */
+/** OpenCode Cuby plugin templates. */
 
 /** Renders the self-contained OpenCode plugin installed into the global plugin directory. */
 export function renderMemmyOpencodePlugin(): string {
@@ -70,7 +70,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
       workspaceRoot: worktree || directory || null,
       transition: "allow_legacy_rollover"
     });
-    if (!opened) throw new Error("Memmy session unavailable");
+    if (!opened) throw new Error("Cuby session unavailable");
     sessionCache.set(cacheKey, opened);
     return opened;
   }
@@ -115,7 +115,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
       });
       recalledContext = normalizeText(turn && turn.injectedContext && turn.injectedContext.markdown);
     } catch (error) {
-      log("warn", "Memmy recall failed", { error: formatError(error), sessionID: input.sessionID });
+      log("warn", "Cuby recall failed", { error: formatError(error), sessionID: input.sessionID });
     }
 
     const context = [
@@ -138,7 +138,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
     pendingTurns.delete(sessionID);
     const job = completeTurn(pending)
       .catch((error) => {
-        log("warn", "Memmy turn capture failed", { error: formatError(error), sessionID });
+        log("warn", "Cuby turn capture failed", { error: formatError(error), sessionID });
       })
       .finally(() => {
         captureJobs.delete(job);
@@ -152,12 +152,12 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
     const conversationId = normalizeText(pending.externalSessionId);
     const turnId = normalizeText(pending.userMessageId);
     if (!conversationId || !turnId) {
-      log("warn", "Memmy turn capture skipped", { reason: "identity_unresolved", sessionID: pending.externalSessionId });
+      log("warn", "Cuby turn capture skipped", { reason: "identity_unresolved", sessionID: pending.externalSessionId });
       return;
     }
     const parsed = await readOpencodeHookSourceTurn({ conversationId, turnId });
     if (!parsed.turn) {
-      log("warn", "Memmy turn capture skipped", { reason: parsed.reason || "identity_unresolved", sessionID: conversationId });
+      log("warn", "Cuby turn capture skipped", { reason: parsed.reason || "identity_unresolved", sessionID: conversationId });
       return;
     }
     const result = await completeSourceTurn({
@@ -170,7 +170,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
     });
     const status = normalizeText(result && result.status);
     if (status !== "stored" && status !== "existing" && status !== "rejected") {
-      log("warn", "Memmy turn capture failed", { reason: normalizeText(result && result.reason) || status || "unexpected_response", sessionID: conversationId });
+      log("warn", "Cuby turn capture failed", { reason: normalizeText(result && result.reason) || status || "unexpected_response", sessionID: conversationId });
     }
   }
 
@@ -181,7 +181,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
     }
     if (query === "cancel") {
       pendingResumeSelections.delete(sessionID);
-      replaceUserTextParts(parts, renderCommandResult("Memmy resume selection cancelled."));
+      replaceUserTextParts(parts, renderCommandResult("Cuby resume selection cancelled."));
       return;
     }
 
@@ -201,7 +201,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
       });
       replaceUserTextParts(parts, renderCommandResult(formatResumeSearchResult(query, candidates)));
     } catch (error) {
-      replaceUserTextParts(parts, renderCommandResult("Memmy resume search failed: " + formatError(error)));
+      replaceUserTextParts(parts, renderCommandResult("Cuby resume search failed: " + formatError(error)));
     }
   }
 
@@ -210,7 +210,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
     if (!selected) {
       replaceUserTextParts(
         output.parts,
-        renderCommandResult("No active Memmy resume selection. Run /memmy-resume <query> first.")
+        renderCommandResult("No active Cuby resume selection. Run /memmy-resume <query> first.")
       );
       return;
     }
@@ -221,16 +221,16 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
       pendingResumeSelections.delete(input.sessionID);
       const context = buildResumeContext(selected, detail);
       const title = normalizeText(detail && detail.title) || normalizeText(selected.title) || selected.episodeId;
-      await beginTurn(input, output, "Continue Memmy episode " + selected.episodeId + ": " + title, context);
+      await beginTurn(input, output, "Continue Cuby episode " + selected.episodeId + ": " + title, context);
     } catch (error) {
-      replaceUserTextParts(partsFromOutput(output), renderCommandResult("Memmy resume selection failed: " + formatError(error)));
+      replaceUserTextParts(partsFromOutput(output), renderCommandResult("Cuby resume selection failed: " + formatError(error)));
     }
   }
 
   return {
     tool: {
       memmy_memory_search: tool({
-        description: "Search Memmy local memory for relevant facts, preferences, decisions, procedures, and prior tasks.",
+        description: "Search Cuby local memory for relevant facts, preferences, decisions, procedures, and prior tasks.",
         args: {
           query: tool.schema.string(),
           layers: tool.schema.array(tool.schema.enum(["L1", "L2", "L3", "Skill"])).optional()
@@ -250,7 +250,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
         }
       }),
       memmy_memory_get: tool({
-        description: "Read one Memmy memory detail by id.",
+        description: "Read one Cuby memory detail by id.",
         args: {
           id: tool.schema.string()
         },
@@ -264,12 +264,12 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
           return renderMemmyContextPacket(
             formatMemoryDetail(result),
             "tool_get",
-            latestRequests.get(context.sessionID) || "Read Memmy memory " + id
+            latestRequests.get(context.sessionID) || "Read Cuby memory " + id
           );
         }
       }),
       memmy_memory_add: tool({
-        description: "Write an important durable fact, preference, decision, reusable procedure, or unresolved follow-up into Memmy.",
+        description: "Write an important durable fact, preference, decision, reusable procedure, or unresolved follow-up into Cuby.",
         args: {
           content: tool.schema.string(),
           title: tool.schema.string().optional(),
@@ -291,7 +291,7 @@ export const MemmyMemoryPlugin = async ({ client, directory, worktree }) => {
             source: SOURCE,
             sessionId
           });
-          return "Stored Memmy memory " + normalizeText(result && result.id) + ": " +
+          return "Stored Cuby memory " + normalizeText(result && result.id) + ": " +
             (normalizeText(result && result.summary) || content);
         }
       })
@@ -501,7 +501,7 @@ function resolveResumeSelection(state, selection) {
 
 function renderCommandResult(value) {
   return [
-    "This is a Memmy command result. Reply with exactly the content inside <memmy_command_result> and nothing else.",
+    "This is a Cuby command result. Reply with exactly the content inside <memmy_command_result> and nothing else.",
     "",
     "<memmy_command_result>",
     normalizeText(value),
@@ -512,7 +512,7 @@ function renderCommandResult(value) {
 function renderMemmyContextPacket(markdown, source, currentUserRequest) {
   return [
     "<memmy_memory_context source=\"" + escapeXmlAttribute(source) + "\">",
-    normalizeText(markdown) || "No relevant Memmy memories found.",
+    normalizeText(markdown) || "No relevant Cuby memories found.",
     "</memmy_memory_context>",
     "",
     "<current_user_request>",
@@ -530,7 +530,7 @@ async function createMemmyClient() {
   const baseUrl = normalizeText(runtimeConfig.endpoint || localConfig.endpoint || "http://127.0.0.1:28960").replace(/\/+$/u, "");
   const token = normalizeText(runtimeConfig.token || localConfig.token);
   if (!baseUrl) {
-    throw new Error("Invalid Memmy config at " + memmyConfigPath);
+    throw new Error("Invalid Cuby config at " + memmyConfigPath);
   }
 
   return {
@@ -636,9 +636,9 @@ async function fetchWithTimeout(url, init, timeoutMs) {
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (error) {
     if (error && error.name === "AbortError") {
-      throw new Error("Memmy request to " + url + " timed out after " + timeoutMs + "ms");
+      throw new Error("Cuby request to " + url + " timed out after " + timeoutMs + "ms");
     }
-    throw new Error("Memmy request to " + url + " failed: " + formatErrorWithCause(error));
+    throw new Error("Cuby request to " + url + " failed: " + formatErrorWithCause(error));
   } finally {
     clearTimeout(timeout);
   }
@@ -673,7 +673,7 @@ async function parseResponse(response) {
   }
   if (!response.ok) {
     const message = data && data.error && data.error.message ? data.error.message : response.statusText;
-    throw new Error(message || "Memmy HTTP " + response.status);
+    throw new Error(message || "Cuby HTTP " + response.status);
   }
   return data;
 }
@@ -858,14 +858,14 @@ function lastL1MemorySummary(detail) {
 
 function formatResumeSearchResult(query, candidates) {
   if (!candidates.length) {
-    return "No L1 Memmy memories found for: \"" + query + "\"";
+    return "No L1 Cuby memories found for: \"" + query + "\"";
   }
   return [
-    "Memmy resume candidates for \"" + query + "\" (top 5 episodes from L1 top20):",
+    "Cuby resume candidates for \"" + query + "\" (top 5 episodes from L1 top20):",
     "",
     candidates.map(formatResumeEpisode).join("\n\n"),
     "",
-    "Enter 1-5 to select an episode to resume. Memmy will automatically retrieve the full episode and inject continuation context.",
+    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode and inject continuation context.",
     "Enter /memmy-resume cancel to cancel."
   ].join("\n");
 }
@@ -886,7 +886,7 @@ function buildResumeContext(selection, detail) {
   const rawTurns = episodeRawTurns(detail);
   const related = episodeTimelineItems(detail);
   return truncateText([
-    "Memmy resume selection",
+    "Cuby resume selection",
     "",
     "The user selected candidate " + selection.index + " from the previous /memmy-resume result.",
     "Continue the selected task using the episode context below. Do not ask the user to paste it again.",
@@ -916,7 +916,7 @@ function formatRelatedMemoryForResume(item, index) {
 function formatSearchResult(result) {
   const hits = extractSearchHits(result).slice(0, 10);
   if (!hits.length) {
-    return "No relevant Memmy memories found.";
+    return "No relevant Cuby memories found.";
   }
   return hits.map((hit, index) => {
     const id = normalizeText(hit.id) || normalizeText(hit.memoryId) || normalizeText(hit.refId);
@@ -1053,14 +1053,14 @@ function normalizeText(value) {
 export function renderMemmyOpencodeResumeCommand(): string {
   return [
     "---",
-    "description: Search Memmy L1 episodes and continue a selected task.",
+    "description: Search Cuby L1 episodes and continue a selected task.",
     "---",
     "",
     "CUBY_RESUME_COMMAND_ARGUMENTS:",
     "$ARGUMENTS",
     "CUBY_RESUME_COMMAND_END",
     "",
-    "The installed Memmy OpenCode plugin handles this command before normal task execution.",
+    "The installed Cuby OpenCode plugin handles this command before normal task execution.",
     ""
   ].join("\n");
 }

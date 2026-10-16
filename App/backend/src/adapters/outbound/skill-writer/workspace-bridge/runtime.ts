@@ -518,7 +518,7 @@ class RuntimeHttpClient {
     try {
       response = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(45_000) });
     } catch (error) {
-      throw new Error(`Memmy request to ${url} failed: ${formatErrorWithCause(error)}`, { cause: error });
+      throw new Error(`Cuby request to ${url} failed: ${formatErrorWithCause(error)}`, { cause: error });
     }
     const textValue = await response.text();
     const parsed = textValue.trim() ? JSON.parse(textValue) : null;

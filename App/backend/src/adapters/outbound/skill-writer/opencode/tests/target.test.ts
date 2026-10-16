@@ -18,7 +18,7 @@ afterEach(() => {
 });
 
 describe("opencode skill target", () => {
-  it("installs, replaces, and uninstalls the global Memmy bootstrap and Skill directory", async () => {
+  it("installs, replaces, and uninstalls the global Cuby bootstrap and Skill directory", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createOpencodeSkillTarget({ rootDirectory });
     mkdirSync(join(rootDirectory, "skills", "cuby-memory", "references"), { recursive: true });
@@ -33,7 +33,7 @@ describe("opencode skill target", () => {
     expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
     expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
-    expect(skillFile).toContain("# Memmy");
+    expect(skillFile).toContain("# Cuby");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
     expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
     await expect(target.isInstalled("opencode")).resolves.toBe(true);
@@ -62,7 +62,7 @@ describe("opencode skill target", () => {
     expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"))).toBe(true);
   });
 
-  it("installs and uninstalls the native OpenCode Memmy plugin", async () => {
+  it("installs and uninstalls the native OpenCode Cuby plugin", async () => {
     const { rootDirectory } = createFixture();
     const memmyConfigPath = join(rootDirectory, "memmy-config.yaml");
     writeFileSync(
@@ -105,11 +105,11 @@ describe("opencode skill target", () => {
     expect(pluginSource).toContain('event: async ({ event }) =>');
     expect(pluginSource).toContain("dispose: async () =>");
     expect(pluginSource).toContain("memmy_memory_search: tool");
-    expect(pluginSource).toContain('"Memmy request to " + url + " failed: " + formatErrorWithCause(error)');
+    expect(pluginSource).toContain('"Cuby request to " + url + " failed: " + formatErrorWithCause(error)');
     expect(commandSource).toContain("CUBY_RESUME_COMMAND_ARGUMENTS:");
     expect(commandSource).toContain("$ARGUMENTS");
-    expect(skillSource).toContain("# Memmy Memory");
-    expect(skillSource).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
+    expect(skillSource).toContain("# Cuby Memory");
+    expect(skillSource).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
     expect(skillSource).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
     expect(skillSource).toContain('memmy-memory search "query text" --source opencode');
     expect(skillSource).not.toContain("memmy-memory add");
@@ -307,7 +307,7 @@ describe("opencode skill target", () => {
         { sessionID: "session-resume", messageID: "command-message", agent: "build" },
         { message: { id: "command-message" }, parts: commandParts }
       );
-      expect(commandParts[0]?.text).toContain('Memmy resume candidates for "测试 query"');
+      expect(commandParts[0]?.text).toContain('Cuby resume candidates for "测试 query"');
       expect(commandParts[0]?.text).toContain("1. episode-1");
       expect(requests.find((request) => request.path === "/api/v1/memory/search")?.body.query).toBe("测试 query");
       expect(requests.find((request) => request.path === "/api/v1/memory/search")?.origin).toBe(
@@ -446,7 +446,7 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

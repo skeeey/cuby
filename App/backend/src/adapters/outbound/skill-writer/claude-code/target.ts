@@ -33,7 +33,7 @@ const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 export interface CreateClaudeCodeSkillTargetDeps {
   /** Root directory. */
   rootDirectory?: string;
-  /** Memmy config path. */
+  /** Cuby config path. */
   memmyConfigPath?: string;
 }
 
@@ -360,7 +360,7 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 }
 
 const CLAUDE_CODE_RESUME_COMMAND = `---
-description: Fast Memmy resume lookup handled by the installed hook.
+description: Fast Cuby resume lookup handled by the installed hook.
 argument-hint: <query | 1-5 | cancel>
 ---
 
@@ -368,6 +368,6 @@ CUBY_RESUME_COMMAND_ARGUMENTS:
 $ARGUMENTS
 CUBY_RESUME_COMMAND_END
 
-This slash command is a parser shim for the installed Memmy UserPromptSubmit hook.
-If this text reaches the model, respond only with: Memmy resume hook did not intercept this command; reinstall the Memmy Claude Code hook.
+This slash command is a parser shim for the installed Cuby UserPromptSubmit hook.
+If this text reaches the model, respond only with: Cuby resume hook did not intercept this command; reinstall the Cuby Claude Code hook.
 `;

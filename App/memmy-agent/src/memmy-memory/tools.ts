@@ -42,7 +42,7 @@ const searchShape = {
 export const MEMOS_MEMORY_TOOL_SPECS: ToolSpec[] = [
   {
     name: "memmy_memory_search",
-    description: "Search relevant Memmy memory traces, policies, world models, and skills for the current task.",
+    description: "Search relevant Cuby memory traces, policies, world models, and skills for the current task.",
     parameters: objectSchema(searchShape, ["query"]),
     readOnly: true,
     execute: async (client, params, runtime, sessionKey) => {
@@ -52,7 +52,7 @@ export const MEMOS_MEMORY_TOOL_SPECS: ToolSpec[] = [
   },
   {
     name: "memmy_memory_get",
-    description: "Read one Memmy memory detail by id. Use the same tool for trace_, policy_, world_, skill_, and episode_ ids; episode_ ids expand the task timeline.",
+    description: "Read one Cuby memory detail by id. Use the same tool for trace_, policy_, world_, skill_, and episode_ ids; episode_ ids expand the task timeline.",
     parameters: objectSchema({
       id: { type: "string" },
     }, ["id"]),
@@ -265,7 +265,7 @@ function markdownFromSearchResult(result: any): string {
     });
     if (renderedHits.length) return renderedHits.join("\n\n");
   }
-  return "No relevant Memmy memories found.";
+  return "No relevant Cuby memories found.";
 }
 
 function markdownFromMemoryDetail(result: any): string {

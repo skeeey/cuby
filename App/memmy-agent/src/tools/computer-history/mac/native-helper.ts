@@ -18,7 +18,7 @@ export async function ensureNativeHistoryHelper(source: string, cacheDirectory: 
   } catch (error) {
     // Never hide a broken installation by compiling on the customer's machine.
     if (/[/\\]app\.asar(?:\.unpacked)?[/\\]/.test(source)) {
-      throw new Error(`Computer History packaged helper is missing or not executable: ${binary}. Reinstall Memmy.`, { cause: error });
+      throw new Error(`Computer History packaged helper is missing or not executable: ${binary}. Reinstall Cuby.`, { cause: error });
     }
   }
 

@@ -12,7 +12,7 @@ afterEach(() => {
 });
 
 describe("Pi skill target", () => {
-  it("installs and removes the Memmy skill in Pi's global skill directory", async () => {
+  it("installs and removes the Cuby skill in Pi's global skill directory", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-pi-skill-"));
     const rootDirectory = join(tempDir, ".pi", "agent");
     mkdirSync(rootDirectory, { recursive: true });

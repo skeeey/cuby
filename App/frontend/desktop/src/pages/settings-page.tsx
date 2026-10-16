@@ -1876,7 +1876,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
         <Section icon={<Info size={16} className="text-text-ink/60" />} title={t("settings.about")}>
           <div className="space-y-3">
             <div className="flex items-center flex-wrap gap-3">
-              <span className="text-text-ink/70 font-mono text-xs">Memmy v{update.appVersion}</span>
+              <span className="text-text-ink/70 font-mono text-xs">Cuby v{update.appVersion}</span>
               <button
                 type="button"
                 onClick={() => void update.requestPrimaryAction()}
@@ -3400,7 +3400,7 @@ async function downloadDiagnosticsReportInBrowser(report: string): Promise<Diagn
     throw new Error("Diagnostics report download is unavailable in this runtime");
   }
 
-  const fileName = `memmy-renderer-diagnostics-${formatDiagnosticsTimestamp(new Date())}.txt`;
+  const fileName = `cuby-renderer-diagnostics-${formatDiagnosticsTimestamp(new Date())}.txt`;
   const blob = new Blob([report], { type: "text/plain;charset=utf-8" });
   const url = URL.createObjectURL(blob);
   const anchor = document.createElement("a");
@@ -3435,8 +3435,8 @@ function buildRendererDiagnosticsReport(input: RendererDiagnosticsReportInput): 
   const hasModelConfig = Boolean(input.state.modelConfig.configured);
 
   const lines = [
-    "Memmy Renderer Diagnostics Report",
-    "=================================",
+    "Cuby Renderer Diagnostics Report",
+    "================================",
     "",
     "Generated At",
     `- ISO Time: ${new Date().toISOString()}`,

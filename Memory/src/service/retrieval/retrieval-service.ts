@@ -1053,7 +1053,7 @@ function onboardingFirstReportLanguage(trace: TraceMeta): "zh" | "en" {
 }
 
 function localizedFirstReportTitle(trace: TraceMeta): string {
-  return onboardingFirstReportLanguage(trace) === "zh" ? "Memmy 初见报告" : "Memmy First Encounter Report";
+  return onboardingFirstReportLanguage(trace) === "zh" ? "Cuby 初见报告" : "Cuby First Encounter Report";
 }
 
 function localizedFirstReportBlock(label: string, value: string, language: "zh" | "en"): string[] {

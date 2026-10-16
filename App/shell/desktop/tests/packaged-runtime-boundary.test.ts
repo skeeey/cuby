@@ -1463,8 +1463,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(preloadSource).toContain("getMicrophoneAccessStatus(): Promise<MicrophoneAccessStatus>;");
     expect(preloadSource).toContain("requestMicrophoneAccess(): Promise<MicrophoneAccessStatus>;");
     expect(packageMacDmgSource).toContain("resolve_microphone_usage_description()");
-    expect(packageMacDmgSource).toContain('printf \'%s\' "Memmy 仅在你开始语音输入时使用麦克风"');
-    expect(packageMacDmgSource).toContain('printf \'%s\' "Memmy uses the microphone only when you start voice input."');
+    expect(packageMacDmgSource).toContain('printf \'%s\' "Cuby 仅在你开始语音输入时使用麦克风"');
+    expect(packageMacDmgSource).toContain('printf \'%s\' "Cuby uses the microphone only when you start voice input."');
     expect(packageMacDmgSource).toContain("--config.mac.extendInfo.NSMicrophoneUsageDescription=");
   });
 
@@ -1592,6 +1592,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).not.toContain("node dist/main.js gateway");
     expect(source).not.toContain("--gateway)");
     expect(source).toContain('pgrep -f "/Memmy.app/Contents/MacOS/Memmy"');
+    expect(source).toContain('pgrep -f "/Cuby.app/Contents/MacOS/Cuby"');
     expect(source.match(/lsof -tiTCP:18997/g)).toHaveLength(2);
     expect(source.match(/lsof -tiTCP:18999/g)).toHaveLength(2);
     expect(migrationIndex).toBeGreaterThan(runMainIndex);
@@ -1608,11 +1609,11 @@ describe("desktop packaged runtime boundaries", () => {
     const source = readFileSync(clearAllPath, "utf8");
 
     expect(source).toContain("launchctl unsetenv");
-    expect(source).toContain("^(MEMMY_|MEMORY_SERVICE_)");
+    expect(source).toContain("^(CUBY_|MEMMY_|MEMORY_SERVICE_)");
     expect(source).toContain('"$HOME/.zshenv"');
     expect(source).toContain('"$HOME/.bash_profile"');
     expect(source).toContain('"/usr/local/bin/memmy-memory"');
-    expect(source).toContain("# Memmy CLI PATH");
+    expect(source).toContain("(Memmy|Cuby) CLI PATH");
     expect(source).toContain("Fully quit and reopen Codex");
   });
 
@@ -1636,14 +1637,14 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("InstallLocation is shared-looking or contains a protected path");
     expect(source).toContain("-IncludeMachineScope requires an already elevated PowerShell session");
     expect(source).toContain("This script can only run on Windows.");
-    expect(source).toContain("This permanently deletes Memmy application state and local data.");
+    expect(source).toContain("This permanently deletes Memmy and Cuby application state and local data.");
     expect(source).not.toContain("Read-Host");
   });
 
-  it("keeps packaged CLI launchers on Memmy.app and ~/.cuby/config.yaml", () => {
+  it("keeps packaged CLI launchers on Cuby.app and ~/.cuby/config.yaml", () => {
     const source = readFileSync(packageMacDmgPath, "utf8");
 
-    expect(source).toContain('APP_EXEC="\\$MACOS_DIR/Memmy"');
+    expect(source).toContain('APP_EXEC="\\$MACOS_DIR/Cuby"');
     expect(source).toContain('DEFAULT_CONFIG="\\$HOME/.cuby/config.yaml"');
     expect(source).toContain('APP_PATH="/Applications/Cuby.app"');
     expect(source).not.toMatch(legacyProductPattern);

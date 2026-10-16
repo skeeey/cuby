@@ -575,7 +575,7 @@ function preserveIntegerIdentifiers(raw: string): string {
 function toCloudAccountProfile(data: Record<string, unknown>): CloudAccountProfile {
   const email = readString(data.email);
   const phoneNumber = readString(data.phoneNumber) ?? readString(data.phone);
-  const nickname = readString(data.userName) ?? (email ? email.split("@")[0] : null) ?? "Memmy User";
+  const nickname = readString(data.userName) ?? (email ? email.split("@")[0] : null) ?? "Cuby User";
   const rawProfile = { ...data };
   delete rawProfile.token;
   delete rawProfile.uuid;

@@ -1,5 +1,5 @@
 @echo off
-rem Start the packaged Memmy with the cuberouter settings for local testing.
+rem Start the packaged Cuby with the cuberouter settings for local testing.
 rem Edit the values below, then double-click or run from cmd/PowerShell.
 rem Both are commented out by default, so the packaged build's own defaults
 rem apply: the shipped cn + hk line table — which is what makes the line picker
@@ -11,4 +11,4 @@ rem set CUBY_CUBEROUTER_URLS=cn=https://cuberouter.cn
 rem Must be a model that really exists on the instance the line points at (K4 in the tracking doc).
 rem set CUBY_CUBEROUTER_MODEL=deepseek-v4.1-flash
 
-start "" "%~dp0..\App\shell\desktop\release\win-unpacked\Memmy.exe"
+start "" "%~dp0..\App\shell\desktop\release\win-unpacked\Cuby.exe"

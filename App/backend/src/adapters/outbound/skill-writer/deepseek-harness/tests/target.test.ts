@@ -61,7 +61,7 @@ describe("DeepSeek Harness skill target", () => {
     expect(patch).toContain(memmyConfigPath);
     expect(YAML.parse(patch)).toHaveLength(2);
     expect(readFileSync(pluginPath, "utf8")).toContain(
-      '"Memmy request to " + url + " failed: " + formatErrorWithCause(error)'
+      '"Cuby request to " + url + " failed: " + formatErrorWithCause(error)'
     );
     expect(spawnSync(process.execPath, ["--check", pluginPath], { encoding: "utf8" })).toMatchObject({ status: 0 });
     expect(spawnSync(process.execPath, ["--check", clientPath], { encoding: "utf8" })).toMatchObject({ status: 0 });

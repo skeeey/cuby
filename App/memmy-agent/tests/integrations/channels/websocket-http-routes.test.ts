@@ -722,7 +722,7 @@ describe("WebSocket HTTP route helpers", () => {
     expect(control.metadata[INBOUND_META_RUNTIME_CONTROL]).toBe(RUNTIME_CONTROL_MCP_RELOAD);
     control.metadata[RUNTIME_CONTROL_ACK].resolve({
       ok: true,
-      message: "MCP config reloaded without restarting memmy.",
+      message: "MCP config reloaded without restarting Cuby.",
       requires_restart: false,
     });
 

@@ -61,7 +61,7 @@ describe("Windows launch at login", () => {
     });
   });
 
-  it("does not mistake another wscript startup entry for an enabled Memmy launch item", () => {
+  it("does not mistake another wscript startup entry for an enabled Cuby launch item", () => {
     const launcherPath = "C:\\Users\\Lee User\\AppData\\Local\\Cuby\\launcher\\CubyLauncher.vbs";
     const getLoginItemSettings = vi.fn(() => ({
       openAtLogin: true,

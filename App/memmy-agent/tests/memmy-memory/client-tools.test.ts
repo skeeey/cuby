@@ -242,7 +242,7 @@ describe("memmy memory tools", () => {
     expect(registry.has("memmy_memory_search")).toBe(true);
     expect(registry.has("memmy_memory_get")).toBe(true);
     expect(searchResult).toContain('<memmy_memory_context source="tool_search">');
-    expect(searchResult).toContain("No relevant Memmy memories found.");
+    expect(searchResult).toContain("No relevant Cuby memories found.");
     expect(searchResult).toContain("<current_user_request>\nSummarize the current README\n</current_user_request>");
     expect(getResult).toContain('<memmy_memory_context source="tool_get">');
     expect(getResult).toContain("/api/v1/memory/trace_123");

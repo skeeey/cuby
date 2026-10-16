@@ -51,10 +51,10 @@ describe("onboarding first-report memory writer", () => {
     await writer.write({
       locale: "zh-CN",
       reportMarkdown: "## 你的偏好\n- 喜欢中文回答。\n\n## 接下来可以做\n1. 运行测试。",
-      projects: ["Memmy"],
+      projects: ["Cuby"],
       keywords: ["onboarding", "Memory"],
       taskContext: {
-        topic: "Memmy 初见报告接续",
+        topic: "Cuby 初见报告接续",
         userGoal: "让其他 Agent 准确接续最近任务。",
         latestRequest: "把任务历史整理成通用轨迹摘要后写入记忆。",
         status: "active",
@@ -77,7 +77,7 @@ describe("onboarding first-report memory writer", () => {
       adapterId: "agent-source:memmy-onboarding",
       source: "memmy-onboarding",
       layer: "L1",
-      title: "Memmy 初见报告 — Memmy 初见报告接续",
+      title: "Cuby 初见报告 — Cuby 初见报告接续",
       deferProcessing: true,
       tags: expect.arrayContaining([
         "agent-source",
@@ -85,15 +85,15 @@ describe("onboarding first-report memory writer", () => {
         "初见报告",
         "first-encounter-report",
         "cross-agent-handoff",
-        "Memmy",
+        "Cuby",
         "onboarding",
         "Memory"
       ])
     });
-    expect(added?.content).toContain("## user\n\nMemmy 初见报告：跨 Agent 任务接续记忆");
+    expect(added?.content).toContain("## user\n\nCuby 初见报告：跨 Agent 任务接续记忆");
     expect(added?.content).toContain("语言：中文");
-    expect(added?.content).toContain("检索关键词：Memmy、初见报告、首次登录报告");
-    expect(added?.content).toContain("请接着我刚才在 Memmy 里的初见报告继续聊天");
+    expect(added?.content).toContain("检索关键词：Cuby、初见报告、首次登录报告");
+    expect(added?.content).toContain("请接着我刚才在 Cuby 里的初见报告继续聊天");
     expect(added?.content).toContain("任务上下文（由最近会话轨迹归纳，不含原始对话流水）");
     expect(added?.content).toContain("用户目标：让其他 Agent 准确接续最近任务。");
     expect(added?.content).toContain("任务状态：进行中");
@@ -105,7 +105,7 @@ describe("onboarding first-report memory writer", () => {
     expect(added?.content).not.toContain("【User query / 用户请求");
     expect(added?.content).not.toContain("【Agent reply / Agent 回复");
     expect(added?.content).not.toContain("【Tool call or result / 简略工具调用");
-    expect(added?.content).toContain("## assistant\n\nMemmy 初见报告");
+    expect(added?.content).toContain("## assistant\n\nCuby 初见报告");
     expect(added?.content).toContain("## 接下来可以做\n1. 运行测试。");
     expect(enqueueImportSummaries).toHaveBeenCalledWith(["memory-first-report"]);
     expect(runWorker).toHaveBeenCalledTimes(2);
@@ -119,7 +119,7 @@ describe("onboarding first-report memory writer", () => {
       requestId: expect.stringMatching(/^first-report-search-log:/),
       adapterId: "agent-source:memmy-onboarding",
       source: "memmy-onboarding",
-      query: "请接着我刚才在 Memmy 里的初见报告继续聊天。最近任务的项目路径是：/Users/jiang/MyProject/memmy-agent-jiang。请先在这个路径下查看项目，再告诉我我们已经确定了什么，并给出一个最合适的下一步。",
+      query: "请接着我刚才在 Cuby 里的初见报告继续聊天。最近任务的项目路径是：/Users/jiang/MyProject/memmy-agent-jiang。请先在这个路径下查看项目，再告诉我我们已经确定了什么，并给出一个最合适的下一步。",
       layers: ["L1"]
     });
     expect(addMemory.mock.invocationCallOrder[0]).toBeLessThan(enqueueImportSummaries.mock.invocationCallOrder[0] ?? 0);

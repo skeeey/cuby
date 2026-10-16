@@ -1,4 +1,4 @@
-/** Memmy default module. */
+/** Cuby default module. */
 import type { SkillManifest } from "../types.js";
 
 const CUBY_MARKER = "<!-- cuby:start v=1 -->";
@@ -14,9 +14,9 @@ export function renderMemmyDefaultSkillManifest(targetId: string): SkillManifest
 
 export function renderMemmyDefaultContent(source: string): string {
   return [
-    "# Memmy Memory CLI Skill",
+    "# Cuby Memory CLI Skill",
     "",
-    "Use `memmy-memory` to read and write the shared Memmy memory substrate.",
+    "Use `memmy-memory` to read and write the shared Cuby memory substrate.",
     "",
     "## Ground Rules",
     "",

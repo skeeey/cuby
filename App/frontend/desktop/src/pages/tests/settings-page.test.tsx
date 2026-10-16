@@ -419,7 +419,7 @@ describe("SettingsPageView", () => {
     expect(settingsSource).toContain("update={update}");
     expect(settingsSource).toContain("onClick={() => void update.requestPrimaryAction()}");
     expect(settingsSource).toContain("resolveUpdateButtonLabel(update.phase, t)");
-    expect(settingsSource).toContain("Memmy v{update.appVersion}");
+    expect(settingsSource).toContain("Cuby v{update.appVersion}");
     expect(settingsSource).not.toContain("desktopBridge.checkForUpdates()");
     expect(settingsSource).not.toContain("desktopBridge.downloadUpdate");
     expect(settingsSource).not.toContain("setPendingUpdate");
@@ -456,7 +456,7 @@ describe("SettingsPageView", () => {
       })
     ));
 
-    expect(html).toContain("Memmy v2.1.0");
+    expect(html).toContain("Cuby v2.1.0");
     expect(html).toContain("重启安装");
     expect(html).not.toContain("检查更新");
   });

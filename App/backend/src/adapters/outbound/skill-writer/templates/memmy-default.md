@@ -1,6 +1,6 @@
-# Memmy Memory CLI Skill
+# Cuby Memory CLI Skill
 
-Use `memmy-memory` to read and write the shared Memmy memory substrate.
+Use `memmy-memory` to read and write the shared Cuby memory substrate.
 
 ## Ground Rules
 

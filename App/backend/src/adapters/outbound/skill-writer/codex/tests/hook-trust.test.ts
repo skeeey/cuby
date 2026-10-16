@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe("Codex hook trust", () => {
-  it("persists and verifies trust for only the five Memmy user hooks", async () => {
+  it("persists and verifies trust for only the five Cuby user hooks", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-codex-hook-trust-"));
 
     await expect(trustMemmyCodexHooks({
@@ -27,7 +27,7 @@ describe("Codex hook trust", () => {
     })).resolves.toBeUndefined();
   });
 
-  it("rejects success when Codex does not discover every Memmy hook", async () => {
+  it("rejects success when Codex does not discover every Cuby hook", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-codex-hook-trust-missing-"));
 
     await expect(trustMemmyCodexHooks({

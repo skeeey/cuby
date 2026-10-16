@@ -94,7 +94,7 @@ describe("Weixin protocol helpers", () => {
     expect(WEIXIN_CHANNEL_VERSION).toBe("2.1.1");
   });
 
-  it("uses configured Memmy WeChat app id instead of the protocol fallback app id", () => {
+  it("uses configured Cuby WeChat app id instead of the protocol fallback app id", () => {
     const bus = new MessageBus();
     const channel = new WeixinChannel(new WeixinConfig({ allowFrom: ["*"], appId: "cli_memmy" }), bus);
 
@@ -153,15 +153,15 @@ describe("Weixin protocol helpers", () => {
     expect(saved.baseUrl).toBe("https://redirect.weixin.example");
   });
 
-  it("rejects UI QR login when Memmy WeChat app id is not configured", async () => {
+  it("rejects UI QR login when Cuby WeChat app id is not configured", async () => {
     const { channel } = makeChannel();
     const fetchQrCode = vi.spyOn(channel, "fetchQrCode").mockResolvedValue(["qr-1", "data:image/png;base64,qr"]);
 
-    await expect(channel.startLoginSession(true)).rejects.toThrow("微信渠道还没有配置 Memmy 应用");
+    await expect(channel.startLoginSession(true)).rejects.toThrow("微信渠道还没有配置 Cuby 应用");
     expect(fetchQrCode).not.toHaveBeenCalled();
   });
 
-  it("rejects QR generation without Memmy WeChat app id before calling the protocol API", async () => {
+  it("rejects QR generation without Cuby WeChat app id before calling the protocol API", async () => {
     const { channel } = makeChannel();
     channel.client = {};
     const apiGet = vi.spyOn(channel, "apiGet").mockResolvedValue({
@@ -169,7 +169,7 @@ describe("Weixin protocol helpers", () => {
       qrcode_img_content: "iVBORw0KGgo="
     });
 
-    await expect(channel.fetchQrCode()).rejects.toThrow("微信渠道还没有配置 Memmy 应用");
+    await expect(channel.fetchQrCode()).rejects.toThrow("微信渠道还没有配置 Cuby 应用");
     expect(apiGet).not.toHaveBeenCalled();
   });
 

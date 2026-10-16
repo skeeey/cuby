@@ -133,7 +133,7 @@ export class AgentSourceTool extends Tool {
   }
 
   get description(): string {
-    return "Provision a GUI-managed Agent source: verify the requested Agent against a real local installation, inspect its persisted status, render its Memmy Skill, import a normalized bootstrap manifest, save the reusable automatic-sync recipe, or update Skill installation state. Verification is mandatory before any provisioning mutation. Use only in an explicitly requested agent-memory-onboarding task.";
+    return "Provision a GUI-managed Agent source: verify the requested Agent against a real local installation, inspect its persisted status, render its Cuby Skill, import a normalized bootstrap manifest, save the reusable automatic-sync recipe, or update Skill installation state. Verification is mandatory before any provisioning mutation. Use only in an explicitly requested agent-memory-onboarding task.";
   }
 
   override get readOnly(): boolean {
@@ -438,7 +438,7 @@ export function renderFullMemorySkill(
 ): { skillPath: string; memorySource: string } {
   const template = fs.readFileSync(FULL_MEMORY_SKILL_TEMPLATE, "utf8");
   if (!template.includes("{{SOURCE_ARG}}")) {
-    throw new Error("Full Memmy Skill template is missing {{SOURCE_ARG}}");
+    throw new Error("Full Cuby Skill template is missing {{SOURCE_ARG}}");
   }
   const targetDir = path.join(
     path.resolve(workspace),

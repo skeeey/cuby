@@ -302,7 +302,7 @@ ensure_memmy_bin_on_path() {
       ;;
   esac
 
-  marker="# Memmy CLI PATH"
+  marker="# Cuby CLI PATH"
   if [[ -f "$profile" ]] && grep -Fq "$marker" "$profile"; then
     log "~/.local/bin PATH entry already managed in $profile"
   else
@@ -357,8 +357,11 @@ is_managed_user_cli_target() {
   if [[ "$contents" == $'#!/bin/sh\nexec env ELECTRON_RUN_AS_NODE=1 '*"$expected_suffix"*' "$@"' ]]; then
     return 0
   fi
-  [[ "$contents" == *'rem Managed by Memmy dev-start.'* ]] \
-    && [[ "$contents" == *'node "'*"$expected_suffix"'" %*'* ]]
+  if [[ "$contents" == *'rem Managed by Cuby dev-start.'* ]] || [[ "$contents" == *'rem Managed by Memmy dev-start.'* ]]; then
+    [[ "$contents" == *'node "'*"$expected_suffix"'" %*'* ]]
+    return
+  fi
+  return 1
 }
 
 install_user_cli_link() {
@@ -392,7 +395,7 @@ install_user_cli_link() {
     done
 
     windows_source="$(cygpath -w "$source")"
-    printf '@echo off\r\nrem Managed by Memmy dev-start.\r\nnode "%s" %%*\r\nexit /b %%ERRORLEVEL%%\r\n' "$windows_source" > "$target"
+    printf '@echo off\r\nrem Managed by Cuby dev-start.\r\nnode "%s" %%*\r\nexit /b %%ERRORLEVEL%%\r\n' "$windows_source" > "$target"
     log "installed $name -> $source"
     return
   fi
@@ -461,6 +464,7 @@ stop_existing_stack() {
       pgrep -f "electron dist/main/main.js" || true
       pgrep -f "Electron.app/Contents/MacOS/Electron dist/main/main.js" || true
       pgrep -f "/Memmy.app/Contents/MacOS/Memmy" || true
+      pgrep -f "/Cuby.app/Contents/MacOS/Cuby" || true
       pgrep -f "concurrently -k -n renderer,desktop" || true
       pgrep -f "npm run dev:desktop" || true
       pgrep -f "npm run dev -w @memmy/frontend-desktop" || true
@@ -595,7 +599,7 @@ run_main() {
         : process.platform === "darwin"
           ? path.join(os.homedir(), "Library", "Application Support")
           : (process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"));
-      process.stdout.write(path.resolve(appData, "Memmy", "app.sqlite"));
+      process.stdout.write(path.resolve(appData, "Cuby", "app.sqlite"));
     ')"
   fi
 

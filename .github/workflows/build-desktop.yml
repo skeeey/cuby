@@ -134,7 +134,7 @@ jobs:
       - name: Upload the installer
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}
+          name: cuby-windows-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}
           path: App/shell/desktop/release/*.exe
           if-no-files-found: error
       - name: Zip the unpacked build
@@ -148,7 +148,7 @@ jobs:
       - name: Upload the unpacked build
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}-unpacked
+          name: cuby-windows-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}-unpacked
           path: App/shell/desktop/release/*-unpacked.zip
           if-no-files-found: error
 
@@ -180,6 +180,6 @@ jobs:
       - name: Upload the image
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-macos-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}
+          name: cuby-macos-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}
           path: App/shell/desktop/release/*.dmg
           if-no-files-found: error

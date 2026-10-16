@@ -99,6 +99,6 @@ const CONTENT_TYPES: Record<string, string> = {
 };
 
 function viewerBuildMissingHtml(): string {
-  return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Memmy Memory</title></head>" +
-    "<body><main><h1>Memmy Memory Viewer</h1><p>Viewer assets are not built. Run npm run viewer:build in Memory.</p></main></body></html>";
+  return "<!doctype html><html><head><meta charset=\"utf-8\"><title>Cuby Memory</title></head>" +
+    "<body><main><h1>Cuby Memory Viewer</h1><p>Viewer assets are not built. Run npm run viewer:build in Memory.</p></main></body></html>";
 }

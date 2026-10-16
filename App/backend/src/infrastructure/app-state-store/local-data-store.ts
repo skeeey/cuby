@@ -42,7 +42,7 @@ export function createFilesystemLocalDataStore(options: CreateFilesystemLocalDat
 
     exportData(input, bundle) {
       const exportRoot = resolveExportRoot(input.targetPath, memoryDataPath);
-      const exportPath = join(exportRoot, `memmy-export-${toExportTimestamp(new Date())}`);
+      const exportPath = join(exportRoot, `cuby-export-${toExportTimestamp(new Date())}`);
       mkdirSync(exportPath, { recursive: true });
       writeFileSync(join(exportPath, "memory.json"), `${JSON.stringify(bundle, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 

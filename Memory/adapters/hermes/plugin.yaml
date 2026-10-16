@@ -1,6 +1,6 @@
 name: memmy
 version: 2.1.0
-description: Thin Hermes HTTP adapter for the standalone Memmy Memory service.
+description: Thin Hermes HTTP adapter for the standalone Cuby Memory service.
 author: MemTensor
 pip_dependencies: []
 requires_env: []

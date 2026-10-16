@@ -36,9 +36,9 @@ const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 export interface CreateCodexSkillTargetDeps {
   /** Root directory. */
   rootDirectory?: string;
-  /** Memmy config path. */
+  /** Cuby config path. */
   memmyConfigPath?: string;
-  /** Persists trust for the installed user-level Memmy hooks. */
+  /** Persists trust for the installed user-level Cuby hooks. */
   trustHooks?: TrustMemmyCodexHooks;
 }
 
@@ -213,7 +213,7 @@ async function upsertCodexHookConfig(filePath: string, hookCommand: string): Pro
           type: "command",
           command: hookCommand,
           timeout: HOOK_TIMEOUT_SECONDS,
-          statusMessage: "Searching Memmy resume candidates"
+          statusMessage: "Searching Cuby resume candidates"
         }
       ]
     }
@@ -226,14 +226,14 @@ async function upsertCodexHookConfig(filePath: string, hookCommand: string): Pro
           type: "command",
           command: hookCommand,
           timeout: HOOK_TIMEOUT_SECONDS,
-          statusMessage: "Saving Memmy turn"
+          statusMessage: "Saving Cuby turn"
         }
       ]
     }
   ];
-  hooks.SessionStart = codexHookEntries(hooks.SessionStart, hookCommand, "Loading Memmy world model");
-  hooks.PostCompact = codexHookEntries(hooks.PostCompact, hookCommand, "Updating Memmy world model");
-  hooks.SessionEnd = codexHookEntries(hooks.SessionEnd, hookCommand, "Closing Memmy memory session");
+  hooks.SessionStart = codexHookEntries(hooks.SessionStart, hookCommand, "Loading Cuby world model");
+  hooks.PostCompact = codexHookEntries(hooks.PostCompact, hookCommand, "Updating Cuby world model");
+  hooks.SessionEnd = codexHookEntries(hooks.SessionEnd, hookCommand, "Closing Cuby memory session");
   config.hooks = hooks;
   await writeFileAtomically(filePath, `${JSON.stringify(config, null, 2)}\n`);
 }

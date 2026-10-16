@@ -1,4 +1,4 @@
-/** Memmy resume hook template. */
+/** Cuby resume hook template. */
 
 export type MemmyResumeHookMode = "claude-code" | "codex" | "cursor";
 
@@ -86,7 +86,7 @@ async function main() {
         return;
       }
     } catch (error) {
-      writeResultOutput("Memmy resume selection failed: " + formatError(error));
+      writeResultOutput("Cuby resume selection failed: " + formatError(error));
       return;
     }
   }
@@ -110,7 +110,7 @@ async function main() {
 
   if (query === "cancel") {
     await clearPendingState();
-    writeResultOutput("Memmy resume selection cancelled.");
+    writeResultOutput("Cuby resume selection cancelled.");
     return;
   }
 
@@ -137,7 +137,7 @@ async function main() {
     });
     writeResultOutput(formatResumeSearchResult(query, candidates));
   } catch (error) {
-    writeResultOutput("Memmy resume search failed: " + formatError(error));
+    writeResultOutput("Cuby resume search failed: " + formatError(error));
   }
 }
 
@@ -767,7 +767,7 @@ async function createMemmyClient() {
   const baseUrl = normalizeText(resolved.endpoint || localConfig.endpoint || "http://127.0.0.1:28960").replace(/\/+$/u, "");
   const token = normalizeText(resolved.token || localConfig.token);
   if (!baseUrl) {
-    throw new Error("Invalid Memmy config at " + memmyConfigPath);
+    throw new Error("Invalid Cuby config at " + memmyConfigPath);
   }
 
   return {
@@ -891,9 +891,9 @@ async function fetchWithTimeout(url, init, timeoutMs) {
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (error) {
     if (error && error.name === "AbortError") {
-      throw new Error("Memmy request to " + url + " timed out after " + timeoutMs + "ms");
+      throw new Error("Cuby request to " + url + " timed out after " + timeoutMs + "ms");
     }
-    throw new Error("Memmy request to " + url + " failed: " + formatErrorWithCause(error));
+    throw new Error("Cuby request to " + url + " failed: " + formatErrorWithCause(error));
   } finally {
     clearTimeout(timeout);
   }
@@ -921,7 +921,7 @@ async function parseResponse(response) {
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
     const message = data && data.error && data.error.message ? data.error.message : response.statusText;
-    throw new Error(message || "Memmy HTTP " + response.status);
+    throw new Error(message || "Cuby HTTP " + response.status);
   }
   return data;
 }
@@ -1169,14 +1169,14 @@ function lastL1MemorySummary(episodeDetail) {
 
 function formatResumeSearchResult(query, candidates) {
   if (candidates.length === 0) {
-    return 'No L1 Memmy memories found for: "' + query + '"';
+    return 'No L1 Cuby memories found for: "' + query + '"';
   }
   return [
-    'Memmy resume candidates for "' + query + '" (top 5 episodes from L1 top20):',
+    'Cuby resume candidates for "' + query + '" (top 5 episodes from L1 top20):',
     "",
     candidates.map(formatResumeEpisode).join("\n\n"),
     "",
-    "Enter 1-5 to select an episode to resume. Memmy will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.",
+    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.",
     "Enter /memmy-resume cancel to cancel."
   ].join("\n");
 }
@@ -1217,7 +1217,7 @@ function buildResumeContext(selection, detail) {
   const rawTurns = episodeRawTurns(detail);
   const related = episodeTimelineItems(detail);
   const lines = [
-    "Memmy resume selection",
+    "Cuby resume selection",
     "",
     "The user selected candidate " + selection.index + " from the previous /memmy-resume result.",
     "Treat the current user prompt as a selection, not as a standalone question or task.",
@@ -1325,7 +1325,7 @@ function normalizeText(value) {
 }
 
 main().catch((error) => {
-  writeResultOutput("Memmy resume search failed: " + formatError(error));
+  writeResultOutput("Cuby resume search failed: " + formatError(error));
 });
 `;
 }

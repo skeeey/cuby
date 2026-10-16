@@ -658,7 +658,7 @@ export function OnboardingPage() {
 
   async function persistReportConversationCompletion(completionPatch: ReturnType<typeof buildOnboardingCompletionPatch>) {
     if (!clients) {
-      throw new Error("Memmy API client is not ready");
+      throw new Error("Cuby API client is not ready");
     }
 
     await clients.config.updatePreferredMode("full");
@@ -686,7 +686,7 @@ export function OnboardingPage() {
 
     try {
       if (!clients) {
-        throw new Error("Memmy API client is not ready");
+        throw new Error("Cuby API client is not ready");
       }
 
       await clients.config.updatePreferredMode(mode);

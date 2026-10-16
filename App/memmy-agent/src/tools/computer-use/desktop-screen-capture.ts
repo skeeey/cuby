@@ -48,7 +48,7 @@ export class DesktopScreenClient {
     return this.handshake;
   }
   async capture(displayId?: string, signal?: AbortSignal | null): Promise<ScreenCaptureResult> {
-    const unavailable = { ok: false as const, code: 'unavailable' as const, message: 'Memmy 桌面截图服务不可用，本次未截图。' };
+    const unavailable = { ok: false as const, code: 'unavailable' as const, message: 'Cuby 桌面截图服务不可用，本次未截图。' };
     if (!this.available || !this.ipc.connected) return unavailable;
     const response = await this.request(`${PREFIX}request`, displayId ? { displayId } : {}, 10_000, signal);
     if (signal?.aborted || response?.type !== `${PREFIX}response` || !isScreenCaptureResult(response.result)) return unavailable;
@@ -59,7 +59,7 @@ export class DesktopScreenClient {
         || !png.subarray(0, 8).equals(Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]))
         || png.toString('ascii', 12, 16) !== 'IHDR'
         || png.readUInt32BE(16) !== result.width || png.readUInt32BE(20) !== result.height) {
-        return { ok: false, code: 'capture_failed', message: 'Memmy 返回的屏幕图片无效，本次未读取屏幕内容。' };
+        return { ok: false, code: 'capture_failed', message: 'Cuby 返回的屏幕图片无效，本次未读取屏幕内容。' };
       }
     }
     return result;
@@ -80,12 +80,12 @@ export class DesktopScreenCaptureTool extends Tool {
   static create(ctx: any): DesktopScreenCaptureTool { return new DesktopScreenCaptureTool(() => screenCaptureEnabled(ctx.runtimeState ? { mcpServers: ctx.runtimeState.mcpServers } : ctx.config)); }
   constructor(private readonly enabledNow: () => boolean = () => false, private readonly client = desktopScreenClient) { super(); }
   get name(): string { return 'get_screen_state'; }
-  get description(): string { return 'Observe the currently visible main screen, or a specified display_id, without opening, focusing or restoring any application. Call this tool for requests to see the current screen, including when permission has not been granted: it checks Memmy screen-recording permission and presents authorization guidance if needed. Do not infer permission from tool availability or prior messages. Never use Finder/get_app_state as a substitute.'; }
+  get description(): string { return 'Observe the currently visible main screen, or a specified display_id, without opening, focusing or restoring any application. Call this tool for requests to see the current screen, including when permission has not been granted: it checks Cuby screen-recording permission and presents authorization guidance if needed. Do not infer permission from tool availability or prior messages. Never use Finder/get_app_state as a substitute.'; }
   get parameters() { return { type: 'object', properties: { display_id: { type: 'integer', minimum: 1 } }, additionalProperties: false }; }
   get exclusive(): boolean { return true; }
   async execute(params: { display_id?: number } = {}, context?: ToolExecutionContext): Promise<any> {
     if (context?.abortSignal?.aborted) return 'Screen request cancelled';
-    if (!this.enabledNow()) { const message = 'Memmy 桌面截图工具已禁用或不可用。'; context?.stopTurn?.(message); return message; }
+    if (!this.enabledNow()) { const message = 'Cuby 桌面截图工具已禁用或不可用。'; context?.stopTurn?.(message); return message; }
     const result = await this.client.capture(params.display_id === undefined ? undefined : String(params.display_id), context?.abortSignal);
     if (context?.abortSignal?.aborted) return 'Screen request cancelled';
     if (!result.ok) { context?.stopTurn?.(result.message); return result.message; }

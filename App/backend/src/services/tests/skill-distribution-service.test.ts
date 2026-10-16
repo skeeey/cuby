@@ -68,7 +68,7 @@ describe("skill distribution service", () => {
     }
   });
 
-  it("renders and installs the fixed Memmy skill manifest", async () => {
+  it("renders and installs the fixed Cuby skill manifest", async () => {
     let installed: SkillManifest | undefined;
     const service = createSkillDistributionService({
       targetRegistry: createSkillTargetRegistry([createFakeTarget({ install: (manifest) => (installed = manifest) })])
@@ -80,7 +80,7 @@ describe("skill distribution service", () => {
       targetId: "cursor",
       marker: "<!-- cuby:start v=1 -->"
     });
-    expect(installed?.content).toContain("# Memmy Memory CLI Skill");
+    expect(installed?.content).toContain("# Cuby Memory CLI Skill");
     expect(installed?.content).toContain("memmy-memory turn start");
     expect(installed?.content).toContain("memmy-memory turn complete");
     expect(installed?.content).toContain('memmy-memory search "query text"');

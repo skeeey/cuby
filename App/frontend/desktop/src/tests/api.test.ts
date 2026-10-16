@@ -25,6 +25,6 @@ describe("runtime config loading", () => {
   it("reports when neither Electron bridge nor Vite env config is available", async () => {
     vi.stubGlobal("window", {});
 
-    await expect(getRuntimeConfig()).rejects.toThrow("Memmy runtime config is unavailable");
+    await expect(getRuntimeConfig()).rejects.toThrow("Cuby runtime config is unavailable");
   });
 });

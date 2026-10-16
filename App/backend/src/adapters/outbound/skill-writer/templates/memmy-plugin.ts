@@ -12,9 +12,9 @@ export function renderMemmyPluginSkillManifest(targetId: string): SkillManifest 
 
 function renderMemmyPluginContent(source: string): string {
   return [
-    "# Memmy Memory",
+    "# Cuby Memory",
     "",
-    "A Memmy Memory Hook or plugin is installed for this agent.",
+    "A Cuby Memory Hook or plugin is installed for this agent.",
     "",
     "## Automatic Memory",
     "",

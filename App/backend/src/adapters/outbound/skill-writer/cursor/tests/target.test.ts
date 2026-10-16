@@ -22,14 +22,14 @@ afterEach(() => {
 });
 
 describe("cursor skill target", () => {
-  it("installs Memmy into Cursor's global Skill directory", async () => {
+  it("installs Cuby into Cursor's global Skill directory", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createCursorSkillTarget({ rootDirectory });
 
     await target.install(manifest);
 
     const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
-    expect(skillFile).toContain("# Memmy");
+    expect(skillFile).toContain("# Cuby");
     expect(skillFile).toContain("Call memmy-memory search when context is needed.");
     expect(existsSync(join(rootDirectory, "rules", "memmy.md"))).toBe(false);
     await expect(target.isInstalled("cursor")).resolves.toBe(true);
@@ -48,7 +48,7 @@ describe("cursor skill target", () => {
     expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
   });
 
-  it("uninstalls only the Memmy Skill directory", async () => {
+  it("uninstalls only the Cuby Skill directory", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createCursorSkillTarget({ rootDirectory });
     writeFileSync(join(rootDirectory, "unrelated.md"), "manual\n", "utf8");
@@ -177,7 +177,7 @@ describe("cursor skill target", () => {
       expect(run.stderr).toBe("");
       const output = JSON.parse(run.stdout) as { continue: boolean; user_message: string };
       expect(output.continue).toBe(false);
-      expect(output.user_message).toContain('Memmy resume candidates for "测试query" (top 5 episodes from L1 top20):');
+      expect(output.user_message).toContain('Cuby resume candidates for "测试query" (top 5 episodes from L1 top20):');
       expect(output.user_message).not.toContain(". score ");
       expect(output.user_message).toContain("1. episode_1");
       expect(output.user_message).toContain("first_query: First query 1");
@@ -195,8 +195,8 @@ describe("cursor skill target", () => {
       });
       expect(authorization).toBe("Bearer test-token");
       const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
-      expect(skillFile).toContain("# Memmy Memory");
-      expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
+      expect(skillFile).toContain("# Cuby Memory");
+      expect(skillFile).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
       expect(skillFile).toContain('memmy-memory search "query text" --source cursor');
       expect(skillFile).not.toContain("memmy-memory add");
       const resumeSkillFile = readFileSync(join(rootDirectory, "skills", "cuby-resume", "SKILL.md"), "utf8");
@@ -223,7 +223,7 @@ describe("cursor skill target", () => {
       );
       const cancelOutput = JSON.parse(cancelRun.stdout) as { continue: boolean; user_message: string };
       expect(cancelOutput.continue).toBe(false);
-      expect(cancelOutput.user_message).toBe("Memmy resume selection cancelled.");
+      expect(cancelOutput.user_message).toBe("Cuby resume selection cancelled.");
 
       await target.uninstallPlugin?.("cursor");
       expect(existsSync(hookScriptPath)).toBe(false);
@@ -263,7 +263,7 @@ describe("cursor skill target", () => {
 
     expect(output.continue).toBe(false);
     expect(output.user_message).toContain(
-      `Memmy request to http://127.0.0.1:${address.port}/api/v1/memory/search failed:`
+      `Cuby request to http://127.0.0.1:${address.port}/api/v1/memory/search failed:`
     );
     expect(output.user_message).toContain("ECONNREFUSED");
   });
@@ -301,7 +301,7 @@ describe("cursor skill target", () => {
       const output = JSON.parse(run.stdout) as { user_message: string };
 
       expect(searchRequested).toBe(true);
-      expect(output.user_message).toBe('No L1 Memmy memories found for: "snapshot"');
+      expect(output.user_message).toBe('No L1 Cuby memories found for: "snapshot"');
     } finally {
       await close(server);
     }
@@ -552,7 +552,7 @@ function expectSafeNodeHookCommand(command: string | undefined): void {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
+    content: ["# Cuby", "Call memmy-memory search when context is needed."].join("\n"),
     marker: "<!-- cuby:start v=1 -->"
   };
 }

@@ -114,7 +114,7 @@ const TITLE_ROW_COLORS = ["#A8E7DC", "#86D8CA", "#67C7B7", "#67C7B7", "#49AA9B",
 type MascotTone = "dark" | "none" | "rice0" | "rice1" | "rice2" | "spoon0" | "spoon1" | "spoon2";
 type MascotPixelSegment = readonly [MascotTone, MascotTone, string];
 
-// Half-block raster sampled from App/frontend/desktop/src/assets/mascot/memmy-rice.png.
+// Half-block raster of the retired rice mascot, kept until the Cuby ASCII artwork lands.
 const MASCOT_PIXEL_ROWS: ReadonlyArray<ReadonlyArray<MascotPixelSegment>> = [
   [["none", "none", "                       "], ["rice0", "none", "▄▄▄▄▄▄"]],
   [["none", "none", "                    "], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀"]],
@@ -343,7 +343,7 @@ function AssistantMessageBlock({ columns, message }: { columns: number; message:
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      <MessageFrameTop title="🍚 Memmy" width={width} />
+      <MessageFrameTop title="🍚 Cuby" width={width} />
       {lines.map((line, index) => (
         <MessageFrameRow key={index} line={line} width={width} />
       ))}
@@ -739,7 +739,7 @@ function Banner({
   const toolColumnGap = 3;
   const toolColumnWidth = Math.max(16, wideContentWidth - workspaceColumnWidth - toolColumnGap);
   const toolDetailWidth = Math.max(1, toolColumnWidth - 14);
-  const title = `Memmy Agent v${version}`;
+  const title = `Cuby Agent v${version}`;
 
   return (
     <Box flexDirection="column" marginBottom={1}>

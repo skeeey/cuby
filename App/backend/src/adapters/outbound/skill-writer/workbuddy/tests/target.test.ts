@@ -15,7 +15,7 @@ afterEach(() => {
 });
 
 describe("workbuddy skill target", () => {
-  it("replaces a simplified Skill with the complete Memmy CLI Skill", async () => {
+  it("replaces a simplified Skill with the complete Cuby CLI Skill", async () => {
     const rootDirectory = createRoot();
     const skillDirectory = join(rootDirectory, "skills", "cuby-memory");
     mkdirSync(skillDirectory, { recursive: true });
@@ -38,7 +38,7 @@ describe("workbuddy skill target", () => {
     await expect(target.isInstalled("workbuddy")).resolves.toBe(true);
   });
 
-  it("uninstalls only WorkBuddy's Memmy Skill directory", async () => {
+  it("uninstalls only WorkBuddy's Cuby Skill directory", async () => {
     const rootDirectory = createRoot();
     writeFileSync(join(rootDirectory, "USER.md"), "keep", "utf8");
     const target = createWorkbuddySkillTarget({ rootDirectory });

@@ -194,7 +194,7 @@ describe("EmailChannel", () => {
       expect.objectContaining({ host: "smtp.example.com", port: 587, secure: false, requireTLS: true }),
     );
     expect(emailRuntimeMocks.transport.sendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ from: "bot@example.com", to: "alice@example.com", subject: "Re: memmy reply", text: "Acknowledged." }),
+      expect.objectContaining({ from: "bot@example.com", to: "alice@example.com", subject: "Re: Cuby reply", text: "Acknowledged." }),
     );
   });
 

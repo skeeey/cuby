@@ -1,7 +1,7 @@
 import { RuntimeConfigSchema, type RuntimeConfig } from "@memmy/local-api-contracts";
 
 export const MISSING_RUNTIME_CONFIG_MESSAGE =
-  "Memmy runtime config is unavailable: Electron preload bridge is missing and Vite env config is incomplete.";
+  "Cuby runtime config is unavailable: Electron preload bridge is missing and Vite env config is incomplete.";
 
 export async function getRuntimeConfig(): Promise<RuntimeConfig> {
   const electronBridge = typeof window === "undefined" ? undefined : window.memmy;
