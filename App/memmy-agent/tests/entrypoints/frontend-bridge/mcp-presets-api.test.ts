@@ -86,6 +86,31 @@ describe("mcp presets api", () => {
     });
   });
 
+  it("serves no remote logo URL for presets; the desktop bundles them", () => {
+    useConfig();
+
+    const payload = mcpPresetsPayload();
+    const presets = payload.presets.filter((preset: any) => preset.source === "preset");
+
+    expect(presets.length).toBeGreaterThan(0);
+    for (const preset of presets) {
+      expect(preset.logo_url, preset.name).toBeNull();
+      // appManifest drops a null rather than emitting it, so "absent" is the shape
+      // to assert here; both spellings mean the payload carries no logo URL.
+      expect(preset.manifest.logo_url ?? null, preset.name).toBeNull();
+    }
+    expect(JSON.stringify(payload)).not.toContain("google.com");
+    // Dropping the brandDomain constructor argument shifted every positional field
+    // after it, and brand colour and brand domain are both plain strings, so a
+    // mistake there is invisible to the type checker. Pin the colours.
+    expect(presets.map((preset: any) => [preset.name, preset.brand_color])).toEqual([
+      ["firecrawl", "#EB5E28"],
+      ["exa", "#101010"],
+      ["brave-search", "#FB542B"],
+      ["figma", "#F24E1E"],
+    ]);
+  });
+
   it("serves only the four office-facing presets and marks the developer pair", () => {
     useConfig();
 

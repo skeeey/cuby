@@ -40,7 +40,6 @@ class McpPreset {
     public docsUrl: string,
     public transport: string,
     public installSupported: boolean,
-    public brandDomain: string,
     public brandColor: string,
     public server: Record<string, any> | null = null,
     public fields: McpPresetField[] = [],
@@ -62,10 +61,6 @@ const CUSTOM_ACTIONS = new Set(["custom", "import", "import-cursor", "tools"]);
 
 class McpPresetTestTimeoutError extends Error {}
 
-function favicon(domain: string): string {
-  return `https://www.google.com/s2/favicons?domain=${domain}&sz=64`;
-}
-
 export const MCP_PRESETS = [
   new McpPreset(
     "firecrawl",
@@ -75,7 +70,6 @@ export const MCP_PRESETS = [
     "https://docs.firecrawl.dev/use-cases/developers-mcp",
     "stdio",
     true,
-    "firecrawl.dev",
     "#EB5E28",
     { type: "stdio", command: "npx", args: ["-y", "firecrawl-mcp"], tool_timeout: 60 },
     [new McpPresetField("firecrawl_api_key", "Firecrawl API key", ["env", "FIRECRAWL_API_KEY"], true, true, "FIRECRAWL_API_KEY", "fc-...")],
@@ -89,7 +83,6 @@ export const MCP_PRESETS = [
     "https://exa.ai/mcp",
     "streamableHttp",
     true,
-    "exa.ai",
     "#101010",
     { type: "streamableHttp", url: "https://mcp.exa.ai/mcp", tool_timeout: 45 },
     [],
@@ -104,7 +97,6 @@ export const MCP_PRESETS = [
     "https://www.npmjs.com/package/@brave/brave-search-mcp-server",
     "stdio",
     true,
-    "brave.com",
     "#FB542B",
     { type: "stdio", command: "npx", args: ["-y", "@brave/brave-search-mcp-server@latest", "--transport", "stdio"], tool_timeout: 45 },
     [new McpPresetField("brave_api_key", "Brave Search API key", ["env", "BRAVE_API_KEY"], true, true, "BRAVE_API_KEY", "BSA...")],
@@ -118,7 +110,6 @@ export const MCP_PRESETS = [
     "https://help.figma.com/hc/en-us/articles/32132100833559-Guide-to-the-Figma-MCP-server",
     "streamableHttp",
     true,
-    "figma.com",
     "#F24E1E",
     { type: "streamableHttp", url: "http://127.0.0.1:3845/mcp", tool_timeout: 45 },
     [],
@@ -302,7 +293,7 @@ function testTimeout(cfg: MCPServerConfig): number {
   return Math.max(5, Math.min(Number.isFinite(raw) ? raw : DEFAULT_TEST_TIMEOUT, DEFAULT_TEST_TIMEOUT));
 }
 
-function manifest(preset: McpPreset, logoUrl: string): Record<string, any> {
+function manifest(preset: McpPreset): Record<string, any> {
   const server = preset.server;
   const managedPaths = managedMcpPath(preset.name, server ? new MCPServerConfig(server) : undefined);
   const fields = preset.fields.map((field) => compactDict({
@@ -329,7 +320,7 @@ function manifest(preset: McpPreset, logoUrl: string): Record<string, any> {
     category: preset.category,
     source: "mcp-preset",
     docsUrl: preset.docsUrl,
-    logoUrl,
+    logoUrl: null,
     brandColor: preset.brandColor,
     capabilities,
     install: compactDict({
@@ -456,7 +447,10 @@ function presetPayload(preset: McpPreset, configuredServers: Record<string, MCPS
   const cfg = configuredServers[preset.name];
   const status = statusFor(preset, cfg);
   const installed = Boolean(cfg);
-  const logoUrl = favicon(preset.brandDomain);
+  // The desktop bundles a brand mark per preset name, so no logo URL travels in the
+  // payload: a remote one was resolved against Google's favicon service, which is
+  // unreachable from some networks and left every card blank without a fallback.
+  const logoUrl = null;
   return {
     name: preset.name,
     display_name: preset.displayName,
@@ -478,7 +472,7 @@ function presetPayload(preset: McpPreset, configuredServers: Record<string, MCPS
     connection_summary: connectionSummary(preset, cfg),
     enabled_tools: toolAllowlist(cfg),
     source: "preset",
-    manifest: manifest(preset, logoUrl),
+    manifest: manifest(preset),
   };
 }
 
