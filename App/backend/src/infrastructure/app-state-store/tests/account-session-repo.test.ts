@@ -74,6 +74,93 @@ describe("account session repository", () => {
     });
   });
 
+  it("round-trips the rotating cuberouter credential without disturbing the account uuid", () => {
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-account-session-"));
+    const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
+
+    store.repositories.accountSession.upsert({
+      profile: {
+        userId: "7",
+        email: null,
+        phoneNumber: null,
+        nickname: "Alice",
+        avatarUrl: null,
+        planType: null,
+        hasFinishedGuide: null,
+        region: null,
+        registeredAt: null,
+        identityProvider: "cuberouter",
+        username: "alice@yeebo.com.cn",
+        organizationName: "yeebo",
+        rawProfile: { username: "alice@yeebo.com.cn", displayName: "Alice", organizationName: "yeebo" }
+      },
+      uuid: "cuberouter:7",
+      cloudUuid: "jwt-login-time",
+      authChannel: "cuberouter"
+    });
+
+    // A session logged in before this existed carries no renewable credential yet.
+    expect(store.repositories.accountSession.getCuberouterCredential()).toBeNull();
+
+    store.repositories.accountSession.setCuberouterCredential({
+      accessToken: "jwt-renewed",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-1"
+    });
+
+    expect(store.repositories.accountSession.getCuberouterCredential()).toEqual({
+      accessToken: "jwt-renewed",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-1"
+    });
+    // The login-time credential is the account's identity, so renewing must not move it.
+    expect(store.repositories.accountSession.getCloudUuid()).toBe("jwt-login-time");
+
+    const secrets = store.db.prepare("SELECT * FROM secret_store").all() as Record<string, unknown>[];
+    store.close();
+
+    expect(JSON.stringify(secrets)).not.toContain("rt-1");
+    expect(JSON.stringify(secrets)).not.toContain("jwt-renewed");
+  });
+
+  it("drops the stored cuberouter credential without touching the account", () => {
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-account-session-"));
+    const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
+
+    store.repositories.accountSession.upsert({
+      profile: {
+        userId: "7",
+        email: null,
+        phoneNumber: null,
+        nickname: "Alice",
+        avatarUrl: null,
+        planType: null,
+        hasFinishedGuide: null,
+        region: null,
+        registeredAt: null,
+        identityProvider: "cuberouter",
+        username: "alice@yeebo.com.cn",
+        organizationName: "yeebo",
+        rawProfile: { username: "alice@yeebo.com.cn", displayName: "Alice", organizationName: "yeebo" }
+      },
+      uuid: "cuberouter:7",
+      cloudUuid: "jwt-login-time",
+      authChannel: "cuberouter"
+    });
+    store.repositories.accountSession.setCuberouterCredential({
+      accessToken: "jwt-renewed",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-1"
+    });
+
+    store.repositories.accountSession.clearCuberouterCredential();
+
+    expect(store.repositories.accountSession.getCuberouterCredential()).toBeNull();
+    expect(store.repositories.accountSession.getCloudUuid()).toBe("jwt-login-time");
+    expect(store.repositories.accountSession.get().authenticated).toBe(true);
+    store.close();
+  });
+
   it("stores cloud accounts by uuid and switches the active account", () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-account-session-"));
     const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });

@@ -6,6 +6,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/i18n-provider.js";
+import { ApiRequestError } from "../../api/http.js";
 import { CUBEROUTER_KEY_SELECTION_STORAGE_KEY } from "../../state/cuberouter-key-selection.js";
 import { applyCuberouterSelection, createModelWorkspace, maskApiKey } from "../../state/model-workspace.js";
 import { CuberouterModelSection, toggleAgentModel } from "../cuberouter-model-section.js";
@@ -271,6 +272,20 @@ describe("cuberouter model section", () => {
 
     expect(accountClient.getModelChoices).toHaveBeenCalledTimes(2);
     expect(container.textContent).toContain("模型配置数据加载失败，请重试。");
+  });
+
+  it("reports an expired session instead of a retry it cannot honour", async () => {
+    await renderSection({
+      choices: async () => {
+        throw new ApiRequestError("登录已过期，请重新登录", 401, "unauthorized");
+      }
+    });
+
+    await vi.waitFor(() => expect(container.textContent).toContain("cuberouter 登录已过期。"));
+    // Retrying would resend the same dead token, so the button must not be offered, and the
+    // panel has to say where to fix it instead of leaving the user at a dead end.
+    expect([...container.querySelectorAll("button")].some((candidate) => candidate.textContent === "重试")).toBe(false);
+    expect(container.textContent).toContain("退出登录");
   });
 
   it("assigns instance models per slot and writes one preset per used model", async () => {

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { CuberouterKeyOption, CuberouterModelChoicesView } from "@memmy/local-api-contracts";
 import type { AccountClient } from "../api/account-client.js";
+import { ApiRequestError } from "../api/http.js";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
 import { Button } from "../components/button.js";
 import { ModelProviderLogo } from "../components/model-provider-logo.js";
@@ -28,6 +29,13 @@ import type { StoredConnectionTestState } from "./model-workspace-connection-tes
 
 const PROTOCOL = "openai-chat-completions" as const;
 
+/** Why the choices read failed, and whether the fix is a fresh login rather than a retry. */
+interface CuberouterChoicesError {
+  /** The local API's own message, or null when the failure never reached it. */
+  message: string | null;
+  sessionExpired: boolean;
+}
+
 export interface CuberouterModelSectionProps {
   username: string | null;
   organizationName: string | null;
@@ -40,7 +48,7 @@ export interface CuberouterModelSectionProps {
 export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   const { t } = useTranslation();
   const [choices, setChoices] = useState<CuberouterModelChoicesView | null>(null);
-  const [choicesFailed, setChoicesFailed] = useState(false);
+  const [choicesError, setChoicesError] = useState<CuberouterChoicesError | null>(null);
   const [workspace, setWorkspace] = useState<ModelWorkspace>(() => createModelWorkspace(props.seedConfig));
   /** The draft the panel edits; seeded from the stored catalog once the line's apiBase is known. */
   const [selection, setSelection] = useState<CuberouterSelection | null>(null);
@@ -58,11 +66,20 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   const loadChoices = useCallback(() => {
     const client = props.accountClient;
     setChoices(null);
-    setChoicesFailed(false);
+    setChoicesError(null);
     // A host that only wires the parts it has (a narrow or absent client) keeps the section in
     // its loading state, as the settings page does for its own account client.
     if (!client?.getModelChoices) return;
-    void client.getModelChoices().then(setChoices).catch(() => setChoicesFailed(true));
+    void client.getModelChoices().then(setChoices).catch((error: unknown) => {
+      // Only the local API's messages are written to be read by a person. A transport failure
+      // or a bug would put something like "Failed to fetch" on screen, so those keep the
+      // localized fallback instead of the raw message.
+      const fromApi = error instanceof ApiRequestError;
+      setChoicesError({
+        message: fromApi && error.message ? error.message : null,
+        sessionExpired: fromApi && error.code === "unauthorized"
+      });
+    });
   }, [props.accountClient]);
 
   useEffect(() => { loadChoices(); }, [loadChoices]);
@@ -229,13 +246,23 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       : modelOptions;
   }
 
-  if (choicesFailed) {
+  if (choicesError) {
     return (
       <div className="model-workspace-layout">
-        <p className="text-xs text-text-ink/60">{t("settings.cuberouterModel.loadFailed")}</p>
-        <Button type="button" size="sm" variant="secondary" onClick={loadChoices}>
-          {t("settings.cuberouterModel.retry")}
-        </Button>
+        <p className="text-xs text-text-ink/60">
+          {choicesError.sessionExpired
+            ? t("settings.cuberouterModel.sessionExpired")
+            : choicesError.message ?? t("settings.cuberouterModel.loadFailed")}
+        </p>
+        {choicesError.sessionExpired ? (
+          // Retrying resends the token the instance just refused, so it can never succeed.
+          // Point at the one action that does.
+          <p className="text-xs text-text-ink/45">{t("settings.cuberouterModel.relogin")}</p>
+        ) : (
+          <Button type="button" size="sm" variant="secondary" onClick={loadChoices}>
+            {t("settings.cuberouterModel.retry")}
+          </Button>
+        )}
       </div>
     );
   }
