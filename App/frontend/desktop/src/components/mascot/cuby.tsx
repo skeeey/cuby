@@ -1,12 +1,15 @@
 /** Cuby module. */
 import { useEffect, useState } from "react";
 import cubyBlushUrl from "../../assets/mascot/cuby-blush.png";
+import cubyBoxUrl from "../../assets/mascot/cuby-box.png";
 import cubyBrainUrl from "../../assets/mascot/cuby-brain.png";
 import cubyCelebrateUrl from "../../assets/mascot/cuby-celebrate.png";
 import cubyChatUrl from "../../assets/mascot/cuby-chat.png";
 import cubyConnectUrl from "../../assets/mascot/cuby-connect.png";
 import cubyHumUrl from "../../assets/mascot/cuby-hum.png";
 import cubyNeutralUrl from "../../assets/mascot/cuby-neutral.png";
+import cubyPeekUrl from "../../assets/mascot/cuby-peek.png";
+import cubyPointUrl from "../../assets/mascot/cuby-point.png";
 import cubyPleadUrl from "../../assets/mascot/cuby-plead.png";
 import cubyReadUrl from "../../assets/mascot/cuby-read.png";
 import cubySadUrl from "../../assets/mascot/cuby-sad.png";
@@ -14,6 +17,8 @@ import cubyShieldUrl from "../../assets/mascot/cuby-shield.png";
 import cubySleepUrl from "../../assets/mascot/cuby-sleep.png";
 import cubyThinkUrl from "../../assets/mascot/cuby-think.png";
 import cubyWaveUrl from "../../assets/mascot/cuby-wave.png";
+import cubyWorkUrl from "../../assets/mascot/cuby-work.png";
+import cubyWrenchUrl from "../../assets/mascot/cuby-wrench.png";
 
 export type CubyPose =
   | "wave"
@@ -50,19 +55,19 @@ export const poseToAsset: Record<CubyPose, string> = {
   neutral: cubyNeutralUrl,
   wave: cubyWaveUrl,
   think: cubyThinkUrl,
-  work: cubyNeutralUrl,
+  work: cubyWorkUrl,
   celebrate: cubyCelebrateUrl,
   shield: cubyShieldUrl,
   read: cubyReadUrl,
   connect: cubyConnectUrl,
   sleep: cubySleepUrl,
-  point: cubyNeutralUrl,
-  box: cubyNeutralUrl,
+  point: cubyPointUrl,
+  box: cubyBoxUrl,
   brain: cubyBrainUrl,
   chat: cubyChatUrl,
-  wrench: cubyNeutralUrl,
+  wrench: cubyWrenchUrl,
   blush: cubyBlushUrl,
-  peek: cubyNeutralUrl,
+  peek: cubyPeekUrl,
   hum: cubyHumUrl,
   plead: cubyPleadUrl,
   sad: cubySadUrl

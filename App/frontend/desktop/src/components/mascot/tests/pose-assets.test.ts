@@ -47,10 +47,15 @@ describe("mascot pose assets", () => {
     }
   });
 
-  it("falls the five reserved poses back to neutral", () => {
+  it("gives each of the five delivered poses its own artwork", () => {
     for (const pose of RESERVED) {
-      expect(poseToAsset[pose], `pose ${pose}`).toBe(poseToAsset.neutral);
+      const url = poseToAsset[pose];
+      expect(url, `pose ${pose}`).toBeTruthy();
+      // While these were reserved they fell back to neutral, so a page that asked for one
+      // silently got a blank expression. Each now has its own file.
+      expect(url, `pose ${pose} still falls back to neutral`).not.toBe(poseToAsset.neutral);
     }
+    expect(new Set(RESERVED.map((pose) => poseToAsset[pose])).size).toBe(RESERVED.length);
   });
 
   it("ships no Memmy-era artwork", () => {
