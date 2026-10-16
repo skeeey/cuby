@@ -434,7 +434,11 @@ export function parallelMemoryLaneLimit(limit: number): number {
 }
 
 function isOnboardingFirstReportContinuationQuery(query: string): boolean {
-  return /memmy/i.test(query) &&
+  // The report is titled "Cuby 初见报告" / "Cuby First Encounter Report" since the
+  // rename; the old "memmy" spelling still matches so that a user who read a
+  // pre-upgrade report (or has an old handoff prompt in their history) keeps
+  // resolving to the handoff path.
+  return /(?:cuby|memmy)/i.test(query) &&
     /(?:初见报告|首次登录报告|first\s+(?:encounter\s+)?report|onboarding\s+report)/i.test(query) &&
     /(?:接着|继续|接续|刚才|continue|resume|pick\s+up)/i.test(query);
 }

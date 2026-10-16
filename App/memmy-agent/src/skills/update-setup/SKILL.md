@@ -119,7 +119,7 @@ description: "Upgrade Cuby to the latest version. Triggers: upgrade cuby, update
 2. Use `exec` to run the preflight check: <PREFLIGHT_CHECK>. If it fails, stop and tell the user to rerun `update-setup` because the saved install method no longer matches this environment.
 3. Use `exec` to run the upgrade command: <UPGRADE_COMMAND>
 4. Use `exec` to verify: `cuby --version`
-5. Tell the user the new version. Say: "Run `/restart` to restart Cuby and apply the update. If `/restart` is unavailable in this channel, restart the memmy process manually."
+5. Tell the user the new version. Say: "Run `/restart` to restart Cuby and apply the update. If `/restart` is unavailable in this channel, restart the Cuby process manually."
 ```
 
 ## Step 5: Confirm

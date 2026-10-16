@@ -21,11 +21,11 @@ afterEach(() => {
   }
 });
 
-describe("memmy CLI command map", () => {
+describe("cuby-memory CLI command map", () => {
   it("prints a complete help page", async () => {
     const help = await runCommand({ argv: ["--help"] });
 
-    expect(help).toContain(`memmy-memory ${PROJECT_VERSION}`);
+    expect(help).toContain(`cuby-memory ${PROJECT_VERSION}`);
     expect(help).toContain("Usage:");
     expect(help).toContain("init --agent codex");
     expect(help).toContain("init --skip-agent-skills");
@@ -70,7 +70,7 @@ describe("memmy CLI command map", () => {
     })).rejects.toThrow("--health-check-timeout-ms must be a positive integer");
   });
 
-  it("supports memmy-memory stop as an alias for service stop", async () => {
+  it("supports cuby-memory stop as an alias for service stop", async () => {
     const stop = vi.fn(async (home: string) => ({ ok: true, action: "stop", home }));
 
     await expect(runCommand({

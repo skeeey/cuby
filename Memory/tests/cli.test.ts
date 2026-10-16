@@ -20,7 +20,7 @@ afterEach(() => {
   }
 });
 
-describe("memmy CLI", () => {
+describe("cuby-memory CLI", () => {
   it("recognizes npm bin symlinks as direct CLI execution", () => {
     const root = mkdtempSync(join(tmpdir(), "memmy-cli-symlink-"));
     roots.push(root);

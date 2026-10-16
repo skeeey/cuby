@@ -1319,7 +1319,7 @@ function MemmyTui({ config, gateway, registerCleanup, target, toolsets, version 
     ? gatewayState.ownedByTui
       ? "Enter: queue next turn · Tab: add to current turn"
       : "Session is running from another channel · Enter: queue next turn"
-    : "Ask memmy, /quit to exit";
+    : "Ask Cuby, /quit to exit";
   const currentModelLabel = gatewayState.modelSelection
     ? modelSelectionLabel(gatewayState.modelSelection)
     : gatewayState.modelName

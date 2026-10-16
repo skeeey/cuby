@@ -444,7 +444,7 @@ export function renderFullMemorySkill(
     path.resolve(workspace),
     ".cuby-agent",
     createHash("sha256").update(sourceId).digest("hex").slice(0, 16),
-    "memmy-memory"
+    "cuby-memory"
   );
   const skillPath = path.join(targetDir, "SKILL.md");
   fs.mkdirSync(targetDir, { recursive: true });

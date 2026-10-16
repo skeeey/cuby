@@ -1314,7 +1314,7 @@ function AgentAccessTab({
             status={cliStatusFailed ? "error" : cliStatus === null ? "checking" : cliStatus.installed ? "ok" : "error"}
             okLabel={t("settings.agents.installed")}
             errorLabel={t(cliStatusFailed ? "settings.agents.statusUnavailable" : "settings.agents.notInstalled")}
-            value={cliStatus?.path ?? "~/.local/bin/memmy-memory"}
+            value={cliStatus?.path ?? "~/.local/bin/cuby-memory"}
             description={t("settings.agents.cli.desc")}
             actionLabel={t(
               cliBusy

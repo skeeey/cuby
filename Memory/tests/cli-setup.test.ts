@@ -30,7 +30,7 @@ afterEach(() => {
   }
 });
 
-describe("memmy-memory CLI setup commands", () => {
+describe("cuby-memory CLI setup commands", () => {
   it("initializes CLI config without creating local sqlite storage", async () => {
     const root = tempRoot();
     const configPath = join(root, "config.yaml");
@@ -206,7 +206,7 @@ describe("memmy-memory CLI setup commands", () => {
     expect(output).toContain("Endpoint: http://127.0.0.1:28960");
     expect(output).toContain("Target agents: codex, cursor, claude, opencode, openclaw, hermes");
     expect(output).toContain("Shell completion: Skipped (disabled during init)");
-    expect(output).toContain("Try running: memmy-memory health");
+    expect(output).toContain("Try running: cuby-memory health");
     expect(() => JSON.parse(output)).toThrow();
 
     expect(renderSetupResult(result, { color: true })).toContain("\u001b[");
@@ -681,7 +681,7 @@ describe("memmy-memory CLI setup commands", () => {
     expect(existsSync(join(agentRoot, "skills", "cuby-memory", "references", "health.md"))).toBe(true);
   });
 
-  it("installs a local memmy-memory symlink after initialization", async () => {
+  it("installs a local cuby-memory symlink after initialization", async () => {
     const root = tempRoot();
     const source = join(root, "dist", "src", "cli", "index.js");
     const binPath = join(root, "bin", "cuby-memory");
@@ -756,7 +756,7 @@ describe("memmy-memory CLI setup commands", () => {
     });
   });
 
-  it("does not replace an existing non-memmy-memory binary without force", async () => {
+  it("does not replace an existing non-cuby-memory binary without force", async () => {
     const root = tempRoot();
     const source = join(root, "index.js");
     const binPath = join(root, "bin", "cuby-memory");

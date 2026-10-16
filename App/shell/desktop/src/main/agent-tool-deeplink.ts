@@ -1,6 +1,6 @@
-const WORKBUDDY_MEMORY_COMMAND = "/memmy-memory";
+const WORKBUDDY_MEMORY_COMMAND = "/cuby-memory";
 
-/** WorkBuddy needs the memmy-memory slash command before the continuation prompt. */
+/** WorkBuddy needs the cuby-memory slash command before the continuation prompt. */
 export function formatWorkBuddyAgentPrompt(prompt: string): string {
   const trimmed = prompt.trim();
   if (!trimmed) {

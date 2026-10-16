@@ -46,4 +46,4 @@ Information about the user to help personalize interactions.
 
 ---
 
-*Edit this file to customize memmy's behavior for your needs.*
+*Edit this file to customize Cuby's behavior for your needs.*

@@ -3295,7 +3295,7 @@ async function probeEmbedding(embedder: Embedder): Promise<ModelProbeResult> {
   const startedAt = Date.now();
   const status = embedder.status();
   try {
-    const vector = await embedder.embedOne("Memmy model connectivity test", "query");
+    const vector = await embedder.embedOne("Cuby model connectivity test", "query");
     if (vector.length === 0 || vector.some((value) => !Number.isFinite(value))) {
       throw new Error("embedding model returned an invalid vector");
     }

@@ -1,6 +1,6 @@
 # Heartbeat Tasks
 
-Your memmy agent checks this file every 30 minutes.
+Your Cuby agent checks this file every 30 minutes.
 Add tasks below that you want the agent to handle periodically.
 
 If this file has no tasks (only headings and comments), the agent will skip the heartbeat.

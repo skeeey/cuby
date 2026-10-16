@@ -29,7 +29,7 @@ import {
 } from "./runtime-installer.js";
 
 type Method = "GET" | "POST" | "DELETE";
-const CLI_NAME = "memmy-memory";
+const CLI_NAME = "cuby-memory";
 const COMPACT_GET_TOOL_FIELD_CHARS = 1200;
 
 export interface CommandContext {
@@ -265,14 +265,14 @@ async function serveMemory(parsed: ParsedArgs): Promise<unknown> {
     loadCliMemoryConfig(configPath).config.endpoint ??
     DEFAULT_MEMORY_URL;
   return [
-    "memmy-memory serve is not bundled with this CLI package.",
+    "cuby-memory serve is not bundled with this CLI package.",
     "Run the local Memory service separately, or point this CLI at a cloud Memory endpoint.",
     "",
     `Current target endpoint: ${url}`,
     "",
     "Examples:",
-    "  memmy-memory health --url <memory-service-url>",
-    "  memmy-memory search \"project decisions\" --url <memory-service-url>"
+    "  cuby-memory health --url <memory-service-url>",
+    "  cuby-memory search \"project decisions\" --url <memory-service-url>"
   ].join("\n");
 }
 

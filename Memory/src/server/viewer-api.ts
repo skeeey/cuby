@@ -265,7 +265,7 @@ export async function routeViewerRequest(
         includeAudit: url.searchParams.get("includeAudit") === "true"
       }),
       headers: {
-        "content-disposition": `attachment; filename="memmy-memory-${new Date().toISOString().slice(0, 10)}.json"`
+        "content-disposition": `attachment; filename="cuby-memory-${new Date().toISOString().slice(0, 10)}.json"`
       }
     };
   }

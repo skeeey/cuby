@@ -1730,10 +1730,10 @@ export function showConfigPanel(displayName: string, model: any, fields: Array<[
 export function showMainMenuHeader(): void {
   if (!shouldRenderPromptUi()) return;
   if (shouldUseClackPromptUi()) {
-    clackIntro("memmy onboarding");
+    clackIntro("Cuby onboarding");
     return;
   }
-  process.stdout.write("\nmemmy onboarding\n\n");
+  process.stdout.write("\nCuby onboarding\n\n");
 }
 
 export function showSectionHeader(title: string, subtitle = ""): void {

@@ -83,6 +83,6 @@ records general tool contracts and less obvious usage patterns.
 
 ## Scheduling and Background Work
 
-- Use `cron` for scheduled reminders or recurring tasks; do not run `memmy cron`, and do not run it through `exec`.
+- Use `cron` for scheduled reminders or recurring tasks; do not run `cuby cron`, and do not run it through `exec`.
 - For heartbeat tasks, update `HEARTBEAT.md` according to the agent instructions.
 - When the user expects an actual notification, do not only write the reminder into a memory file.
