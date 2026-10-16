@@ -157,7 +157,7 @@
       把 Memmy 换成 Cuby 之后，<b>文字、命令、安装目录</b>都换完了，唯独<b>图</b>这一层没动——
       因为二进制图没法改，只能重画。现在仓库里 <b>17 个文件</b>仍然画着旧的 Memmy 形象
       （最短路径是应用图标：装完之后桌面快捷方式、任务栏、控制面板全是白毛球），
-      另有 <b>4 个 MCP 卡片图标</b>在实时取图、<b>6 件吉祥物素材</b>从来没做过。
+      另有 <b>6 件吉祥物素材</b>从来没做过（MCP 那四个图标已经改成本地打包，见第 04 节）。
       这份清单把每一件的规格、放在哪、用在哪、现在是什么，逐条列出来。
     </p>
     <dl class="metastrip meta">
@@ -167,7 +167,7 @@
       </div>
       <div>
         <dt>要新做</dt>
-        <dd>4 个 MCP 图标<small>第三方品牌，非设计件</small></dd>
+        <dd>已完成<small>MCP 四个图标已打包</small></dd>
       </div>
       <div>
         <dt>欠件</dt>
@@ -409,16 +409,16 @@
   <section class="sec">
     <div class="rail">04<span>MCP</span></div>
     <div>
-      <h2>MCP 服务器卡片图标</h2>
+      <h2>MCP 服务器卡片图标 <span class="tag ok">已完成</span></h2>
       <p class="sub">
         「链接与工具 → MCP 服务器」里 Exa / Brave / Firecrawl / Figma 四张卡片的图标。
-        <b>这不是缺图，是取不到图</b>——四个图标是同一行代码从 Google 的 favicon 服务实时拉的，
-        而 Google 在这个网络环境里不通，所以四张一起变空白。
+        <b>这里不是缺图，是取不到图</b>——四个图标原本是同一行代码从 Google 的 favicon 服务实时拉的，
+        而 Google 在这个网络环境里不通，所以四张一起变空白。<b>已改为随 App 打包</b>，不需要额外提供图片。
       </p>
 
       <div class="stack">
-        <div class="note warn">
-          <b>诊断结论。</b>代码是
+        <div class="note">
+          <b>当时的诊断。</b>代码是
           <code>App/memmy-agent/src/entrypoints/frontend-bridge/mcp-presets-api.ts:65</code> 的
           <code>favicon()</code>，返回
           <code>https://www.google.com/s2/favicons?domain=…&amp;sz=64</code>，
@@ -432,7 +432,7 @@
         </div>
 
         <div class="tblwrap"><table class="tbl">
-          <caption>要交付的文件（4 个第三方品牌）</caption>
+          <caption>四个预设的出处与品牌色（已落地）</caption>
           <thead>
             <tr><th>品牌</th><th>域名</th><th>品牌色</th></tr>
           </thead>
@@ -446,22 +446,26 @@
 
         <div class="rules">
           <dl class="rule">
-            <dt>这四张不是设计件</dt>
-            <dd>都是第三方商标，正确做法是用各家官方的 SVG，不要自己重画，也不要改色。我们需要的是<b>四个官方文件</b>，不是新设计。</dd>
+            <dt>已怎么做</dt>
+            <dd>四个 SVG 取自 <code>@lobehub/icons-static-svg</code> 1.94.0，放在
+              <code>assets/mcp-logos/</code>，<b>和 <code>channel-logos/</code>、<code>agent-logos/</code> 同一个做法</b>。
+              出处记在旁边的 <code>THIRD_PARTY_NOTICES.md</code>。</dd>
           </dl>
           <dl class="rule">
-            <dt>规格</dt>
-            <dd>方形、透明底、SVG 优先（PNG 要 96×96 以上）。卡片上的显示框是 <code>48×48</code>，白色底。</dd>
+            <dt>不需要设计</dt>
+            <dd>都是第三方商标，只有官方文件是对的，不要重画也不要改色。所以这一节<b>不用你出图</b>。</dd>
           </dl>
           <dl class="rule">
-            <dt>浅底可见</dt>
-            <dd>Figma（#F24E1E）、Firecrawl（#EB5E28）、Brave（#FB542B）三个都是暖橙红，在白卡片上对比度偏低。官方都有带描边或深色背景的版本，优先用那个。</dd>
+            <dt>为什么选 LobeHub</dt>
+            <dd>它是唯一四个都齐的源。Composio 那个只有 Firecrawl/Figma/Exa 是真图，Brave 返回的是灰色占位网格；
+              DuckDuckGo 和 Clearbit 在这里超时；Google 那套本来就不通。</dd>
           </dl>
           <dl class="rule">
-            <dt>备选方案</dt>
-            <dd>如果拿不到某个官方文件，退而求其次：<b>用品牌色画一个字母方块</b>（E / B / F / Fg），比放一个灰扑扑的占位图好。设计上我们这边兜底就行。</dd>
+            <dt>加新预设时</dt>
+            <dd>补一张 SVG 进 <code>assets/mcp-logos/</code>、在 <code>mcp-tools-section.tsx</code> 的 <code>mcpPresetLogos</code>
+              里登记即可，不用改后端。没登记的预设会自动退回到通用服务器图标，不会再出现空白方块。</dd>
           </dl>
-        </div>
+        </div></div>
       </div>
     </div>
   </section>
@@ -626,7 +630,7 @@
 
       <ul class="check">
         <li><label><input type="checkbox"><span><em>P0 · 应用图标</em> — 一个 1024×1024 源文件（含圆角与不透明处理），以及菜单栏那张单色模板图。这两件落地之后，01 节整节都可以勾掉（7 + 2 个文件）。</span></label></li>
-        <li><label><input type="checkbox"><span><em>P0 · MCP 四图</em> — Exa / Brave / Firecrawl / Figma 的官方 SVG。不是设计件，拿到官方文件即可。</span></label></li>
+        <li><label><input type="checkbox" checked><span><em>P0 · MCP 四图</em> — 已从 LobeHub 打包四个官方 SVG 进仓库，不再走网络。新增预设时要补一张（见 04 节）。</span></label></li>
         <li><label><input type="checkbox"><span><em>P1 · DMG 背景</em> — 一张 540×380 的底图（文字改成 Cuby），其余三个尺寸我们导出。</span></label></li>
         <li><label><input type="checkbox"><span><em>P1 · cuby-cover</em> — 模型列表里「Cuby」那一行的头部特写，512×512 透明 PNG。</span></label></li>
         <li><label><input type="checkbox"><span><em>P2 · 五个姿态</em> — work / point / box / wrench / peek，沿用现有画布规格。</span></label></li>
