@@ -2,11 +2,11 @@
 import { createContext, useContext, useMemo, useState, type Dispatch, type ReactNode, type SetStateAction } from "react";
 import type { AppClients } from "../api/client-types.js";
 import { I18nProvider } from "../i18n/i18n-provider.js";
+import type { ResolvedLanguage } from "../i18n/messages.js";
 import { TaskBusProvider } from "../lib/task-bus.js";
 import { AppStateProvider, useAppState } from "../state/app-state.js";
 import { ThemeProvider } from "../theme/theme-provider.js";
 import { useWindowFullScreenSync } from "../utils/window-fullscreen.js";
-import { resolveDesktopDisplayLanguage } from "./account-channel.js";
 
 /** Contract for api clients context value. */
 export interface ApiClientsContextValue {
@@ -40,7 +40,7 @@ function ApiClientsProvider(props: { children: ReactNode }) {
 /** Handles visual providers. */
 function VisualProviders(props: { children: ReactNode }) {
   const { state } = useAppState();
-  const language = resolveDesktopDisplayLanguage(state.bootstrap?.app.language);
+  const language = resolveDisplayLanguage(state.bootstrap?.app.language);
   const theme = state.bootstrap?.app.theme ?? "system";
   useWindowFullScreenSync();
 
@@ -65,4 +65,28 @@ export function useApiClients(): ApiClientsContextValue {
 /** Handles use optional api clients. */
 export function useOptionalApiClients(): ApiClientsContextValue {
   return useContext(ApiClientsContext) ?? { clients: null, setClients: () => undefined };
+}
+
+/**
+ * Resolves the interface language.
+ *
+ * An explicit user choice wins. The stored default is "system", and a Chinese system has to
+ * mean Chinese: reading that setting as "the edition's language" handed a Chinese Windows an
+ * English UI because the package was built as the international edition. Every other locale
+ * keeps following the edition, which is what decides between the two languages this app ships.
+ *
+ * @param configuredLanguage The language stored in the app settings.
+ * @returns The concrete language to render.
+ */
+export function resolveDisplayLanguage(configuredLanguage: string | undefined): ResolvedLanguage {
+  if (configuredLanguage === "zh-CN" || configuredLanguage === "en-US") {
+    return configuredLanguage;
+  }
+
+  const systemLanguage = typeof navigator === "undefined" ? "" : navigator.language?.toLowerCase() ?? "";
+  if (systemLanguage.startsWith("zh")) {
+    return "zh-CN";
+  }
+
+  return import.meta.env.MEMMY_APP_EDITION === "intl" ? "en-US" : "zh-CN";
 }

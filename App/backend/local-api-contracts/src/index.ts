@@ -1155,7 +1155,7 @@ export const AsrTranscriptionResponseSchema = z.object({
 });
 export type AsrTranscriptionResponse = z.infer<typeof AsrTranscriptionResponseSchema>;
 
-export const AccountChannelSchema = z.enum(["email", "phone"]);
+export const AccountChannelSchema = z.enum(["email", "phone", "cuberouter"]);
 export type AccountChannel = z.infer<typeof AccountChannelSchema>;
 
 /**
@@ -1236,7 +1236,12 @@ export const AccountProfileViewSchema = z.object({
     planType: z.string().nullable(),
     hasFinishedGuide: z.boolean().nullable(),
     region: z.string().nullable(),
-    registeredAt: z.string().datetime().nullable()
+    registeredAt: z.string().datetime().nullable(),
+    identityProvider: z.enum(["memmy_cloud", "cuberouter"]).default("memmy_cloud"),
+    /** cuberouter 登录用户名（这两个实例上就是邮箱）；其它身份为 null。 */
+    username: z.string().nullable().optional(),
+    /** 用户所属组织名（单组织假设）；无组织或非 cuberouter 为 null。 */
+    organizationName: z.string().nullable().optional()
 });
 export type AccountProfileView = z.infer<typeof AccountProfileViewSchema>;
 
@@ -1252,6 +1257,102 @@ export const AccountSessionViewSchema = z.discriminatedUnion("authenticated", [
     })
 ]);
 export type AccountSessionView = z.infer<typeof AccountSessionViewSchema>;
+
+/** 定义 cuberouter 注册/登录入参，规则对齐 cuberouter 的 User 校验。 */
+export const CuberouterAuthInputSchema = z.object({
+    username: z.string().trim().min(1).max(50),
+    password: z.string().min(8).max(20),
+    /** 仅当目标实例开启邮箱验证时携带；登录不需要。 */
+    email: z.string().trim().email().max(50).optional(),
+    /** 与 email 成对出现，来自目标实例发出的验证码邮件。 */
+    verificationCode: z.string().trim().min(1).max(20).optional(),
+    /** 注册时选定的线路；缺省时后端使用探测默认值。 */
+    nodeId: z.string().trim().min(1).max(32).optional()
+});
+export type CuberouterAuthInput = z.infer<typeof CuberouterAuthInputSchema>;
+
+/** 线路查询参数：读取某个具体节点的注册要求。 */
+export const CuberouterNodeIdQuerySchema = z.object({
+    nodeId: z.string().trim().min(1).max(32).optional()
+});
+
+/** 配置的线路与当前生效的那一条。 */
+export const CuberouterNodesViewSchema = z.object({
+    nodes: z.array(z.string()),
+    currentNodeId: z.string().nullable()
+});
+export type CuberouterNodesView = z.infer<typeof CuberouterNodesViewSchema>;
+
+/** One selectable cuberouter key, with the pool its spend lands on. */
+export const CuberouterKeyOptionSchema = z.object({
+    scope: z.enum(["organization", "personal"]),
+    id: z.number().int(),
+    name: z.string(),
+    /** Organization keys carry the plaintext the instance returns; personal keys never do. */
+    secret: z.string().optional(),
+    status: z.number().int().optional(),
+    usable: z.boolean(),
+    billing: z.union([
+        z.object({ kind: z.literal("personal"), remainingQuota: z.number().nullable() }),
+        z.object({
+            kind: z.literal("organization"),
+            organizationName: z.string(),
+            remainingQuota: z.number().nullable()
+        })
+    ])
+});
+export type CuberouterKeyOption = z.infer<typeof CuberouterKeyOptionSchema>;
+
+/** The model page's data: my keys with billing, the selectable models. */
+export const CuberouterModelChoicesViewSchema = z.object({
+    account: z.object({ username: z.string(), organizationName: z.string().nullable() }),
+    apiBase: z.string(),
+    keys: z.array(CuberouterKeyOptionSchema),
+    models: z.array(z.string())
+});
+export type CuberouterModelChoicesView = z.infer<typeof CuberouterModelChoicesViewSchema>;
+
+export const CuberouterPersonalKeyViewSchema = z.object({ key: z.string() });
+export type CuberouterPersonalKeyView = z.infer<typeof CuberouterPersonalKeyViewSchema>;
+
+/** 探测结果：首次注册默认该用哪条线路（null = 都没探到）。 */
+export const CuberouterNodeProbeViewSchema = z.object({
+    nodes: z.array(z.string()),
+    defaultNodeId: z.string().nullable()
+});
+export type CuberouterNodeProbeView = z.infer<typeof CuberouterNodeProbeViewSchema>;
+
+/** 定义注册前从目标实例探测到的注册要求，用于决定注册表单的形态。 */
+export const CuberouterRegistrationRequirementsSchema = z.object({
+    /** 目标实例开启了邮箱验证：注册必须带 email + verification_code。 */
+    emailVerificationRequired: z.boolean(),
+    /** 目标实例要求 Turnstile：本版本不支持，只能提示。 */
+    turnstileRequired: z.boolean()
+});
+export type CuberouterRegistrationRequirements = z.infer<typeof CuberouterRegistrationRequirementsSchema>;
+
+/** 定义发送邮箱验证码的入参。 */
+export const CuberouterEmailCodeInputSchema = z.object({
+    email: z.string().trim().email().max(50),
+    /** 注册时选定的线路；验证码是实例本地的，必须向同一条线路索取。 */
+    nodeId: z.string().trim().min(1).max(32).optional()
+});
+export type CuberouterEmailCodeInput = z.infer<typeof CuberouterEmailCodeInputSchema>;
+
+/** 定义注册/登录后返回的模型供给信息。 */
+export const CuberouterProvisioningSchema = z.object({
+    apiKey: z.string().min(1),
+    apiBase: z.string().url(),
+    model: z.string().min(1)
+});
+export type CuberouterProvisioning = z.infer<typeof CuberouterProvisioningSchema>;
+
+/** Schema for cuberouter auth result. */
+export const CuberouterAuthResultSchema = z.object({
+    session: AccountSessionViewSchema,
+    provisioning: CuberouterProvisioningSchema
+});
+export type CuberouterAuthResult = z.infer<typeof CuberouterAuthResultSchema>;
 
 /** One-time invitation outcome returned only by account login. */
 export const InvitationResultSchema = z.discriminatedUnion("status", [

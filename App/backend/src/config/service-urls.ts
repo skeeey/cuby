@@ -1,5 +1,6 @@
 /** Service urls module. */
 import { resolveCloudServiceBaseUrl } from "@memmy/local-api-contracts";
+import type { CuberouterSettings } from "../infrastructure/memmy-config/cuberouter-access.js";
 
 export interface CloudClientConfig {
   /** Cloud API base URL. */
@@ -13,5 +14,23 @@ export function resolveCloudClientConfig(env: NodeJS.ProcessEnv): CloudClientCon
   return {
     baseUrl: env.MEMMY_CLOUD_URL?.trim() || resolveCloudServiceBaseUrl(env.MEMMY_CLOUD_SERVICE),
     timeoutMs: Number.parseInt(env.MEMMY_CLOUD_TIMEOUT_MS ?? "5000", 10)
+  };
+}
+
+export interface CuberouterClientConfig {
+  /** Fixed model provisioned for desktop users. */
+  model: string;
+  /** Timeout ms. */
+  timeoutMs: number;
+}
+
+/** Handles resolve cuberouter client config. Environment wins over the config file. */
+export function resolveCuberouterClientConfig(
+  env: NodeJS.ProcessEnv,
+  settings: CuberouterSettings = {}
+): CuberouterClientConfig {
+  return {
+    model: env.MEMMY_CUBEROUTER_MODEL?.trim() || settings.model?.trim() || "deepseek-v4.1-flash",
+    timeoutMs: Number.parseInt(env.MEMMY_CUBEROUTER_TIMEOUT_MS ?? "", 10) || settings.timeoutMs || 10_000
   };
 }

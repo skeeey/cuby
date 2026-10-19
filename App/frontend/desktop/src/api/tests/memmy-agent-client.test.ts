@@ -2186,6 +2186,111 @@ describe("memmy-agent client", () => {
     expect(sessionKeyToChatId("websocket:chat-1")).toBe("chat-1");
     expect(sessionKeyToChatId("legacy-session")).toBe("legacy-session");
   });
+
+  describe("mcp presets", () => {
+    const emptyPayload = { presets: [], installed_count: 0 };
+
+    it("lists MCP presets from the agent settings surface", async () => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        expect(url.pathname).toBe("/api/settings/mcp-presets");
+        return json(emptyPayload);
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(client.listMcpPresets()).resolves.toEqual(emptyPayload);
+    });
+
+    it("enables a preset through the values header and forwards values verbatim", async () => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        expect(url.pathname).toBe("/api/settings/mcp-presets/enable");
+        expect(init?.method).toBe("POST");
+        const headers = new Headers(init?.headers);
+        expect(headers.get("x-memmy-agent-mcp-values")).toBe(
+          JSON.stringify({ name: "brave-search", brave_api_key: " BSA_test " })
+        );
+        return json({ presets: [], installed_count: 1 });
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(client.enableMcpPreset("brave-search", { brave_api_key: " BSA_test " })).resolves.toEqual({
+        presets: [],
+        installed_count: 1
+      });
+    });
+
+    it("posts a custom MCP server with its structured fields intact", async () => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        expect(url.pathname).toBe("/api/settings/mcp-presets/custom");
+        const headers = new Headers(init?.headers);
+        expect(JSON.parse(String(headers.get("x-memmy-agent-mcp-values")))).toEqual({
+          name: "my-server",
+          transport: "stdio",
+          command: "npx",
+          args: ["-y", "my-server"]
+        });
+        return json(emptyPayload);
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(
+        client.addCustomMcpServer({ name: "my-server", transport: "stdio", command: "npx", args: ["-y", "my-server"] })
+      ).resolves.toEqual(emptyPayload);
+    });
+
+    it("escapes non-ASCII values so the header stays a valid ByteString", async () => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        const raw = String(new Headers(init?.headers).get("x-memmy-agent-mcp-values"));
+        expect(raw).toMatch(/^[\x20-\x7e]*$/);
+        expect(JSON.parse(raw)).toEqual({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" });
+        return json(emptyPayload);
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(
+        client.addCustomMcpServer({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" })
+      ).resolves.toEqual(emptyPayload);
+    });
+
+    it.each([
+      ["removeMcpServer", "/api/settings/mcp-presets/remove"],
+      ["testMcpServer", "/api/settings/mcp-presets/test"]
+    ] as const)("%s posts the server name to %s", async (method, path) => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        expect(url.pathname).toBe(path);
+        expect(init?.method).toBe("POST");
+        const headers = new Headers(init?.headers);
+        expect(JSON.parse(String(headers.get("x-memmy-agent-mcp-values")))).toEqual({ name: "exa" });
+        return json(emptyPayload);
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(client[method]("exa")).resolves.toEqual(emptyPayload);
+    });
+
+    it("surfaces the agent error message verbatim when an action is rejected", async () => {
+      const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+        const url = new URL(String(input));
+        if (url.pathname === "/webui/bootstrap") return json(bootstrap);
+        return new Response("MCP settings payload is too large", { status: 400 });
+      });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+
+      await expect(client.enableMcpPreset("exa")).rejects.toMatchObject({
+        message: "MCP settings payload is too large",
+        status: 400
+      });
+    });
+  });
 });
 
 function json(data: unknown, status = 200): Response {

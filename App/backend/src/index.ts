@@ -21,10 +21,12 @@ import {
   createMemoryScanPreferencesStore,
   ensureMemoryScanPreferences
 } from "./infrastructure/memmy-config/agent-access.js";
+import { readCuberouterSettings } from "./infrastructure/memmy-config/cuberouter-access.js";
+import { resolveCuberouterNodes } from "./config/cuberouter-nodes.js";
 import { createPermissionManager } from "./permission/index.js";
 import { createLocalApiServer } from "./adapters/inbound/local-api/server.js";
 import { createBackendServices, type BootstrapScenario } from "./services/index.js";
-import { resolveCloudClientConfig, type CloudClientConfig } from "./config/service-urls.js";
+import { resolveCloudClientConfig, resolveCuberouterClientConfig, type CloudClientConfig } from "./config/service-urls.js";
 import { resetAccountRuntimeForDesktopInstallChange } from "./services/desktop-install-state-service.js";
 import {
   syncRuntimeConfigForStartup,
@@ -129,6 +131,8 @@ export async function createLocalBackend(options: CreateLocalBackendOptions): Pr
       cloudConfig,
       tryGetInstallationId(appStateStore)
     );
+    const cuberouterSettings = await readCuberouterSettings(memmyConfigPath);
+    const cuberouterConfig = resolveCuberouterClientConfig(process.env, cuberouterSettings);
     const agentAdapterRegistry =
       options.agentAdapterRegistry ??
       createDefaultAgentAdapterRegistry({
@@ -145,7 +149,8 @@ export async function createLocalBackend(options: CreateLocalBackendOptions): Pr
       memmyConfigWriter,
       memmyConfigPath,
       scanPreferencesStore,
-      accountChannel: options.accountChannel,
+      cuberouterNodes: resolveCuberouterNodes({ env: process.env, settings: cuberouterSettings }),
+      cuberouterConfig,
       memmyAgentAdminClient: options.memmyAgentAdminClient,
       memmyAgentAdminBootstrapSecret: await readAgentGatewayBootstrapSecret(memmyConfigPath)
     });

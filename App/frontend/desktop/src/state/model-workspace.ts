@@ -275,6 +275,164 @@ export function upsertByokPreset(
   return { workspace: createModelWorkspace(next), presetId, endpointId: endpoint.endpointId };
 }
 
+/** The cuberouter-managed selection, in model names (what the panel edits). */
+export interface CuberouterSelection {
+  agent: { models: string[]; default?: string };
+  memorySummary: string;
+  memoryEvolution: string;
+}
+
+export interface CuberouterSelectionInput {
+  apiBase: string;
+  protocol: ModelEndpointProtocol;
+  /** Plaintext only when the key changed; omitted keeps the stored secret. */
+  apiKey?: string;
+  selection: CuberouterSelection;
+}
+
+/** Reads the current selection back out of a stored catalog (empty when unset). */
+export function readCuberouterSelection(catalog: ModelConfigView, apiBase: string): CuberouterSelection {
+  const normalized = apiBase.trim().replace(/\/+$/, "");
+  const provider = cuberouterProvider(catalog.providers);
+  const endpoint = provider?.endpoints.find((item) => item.apiBase.replace(/\/+$/, "") === normalized);
+  // Presets carry endpointId, not apiBase: the endpoint lookup is what pins them to this line.
+  const presets = (provider?.models ?? []).filter((preset) => (
+    preset.source === "byok" && endpoint !== undefined && preset.endpointId === endpoint.endpointId
+  ));
+  const modelOf = (presetId: string | undefined) => presets.find((preset) => preset.presetId === presetId)?.model ?? "";
+  const assignment = catalog.modelAssignments.byok;
+  const agentModels = assignment.agent.candidates
+    .map((presetId) => modelOf(presetId))
+    .filter(Boolean);
+  const agentDefault = modelOf(assignment.agent.default ?? undefined);
+  return {
+    agent: { models: agentModels, ...(agentDefault ? { default: agentDefault } : {}) },
+    memorySummary: modelOf(assignment.memorySummary ?? undefined),
+    memoryEvolution: modelOf(assignment.memoryEvolution ?? undefined)
+  };
+}
+
+/**
+ * Materializes one cuberouter selection at one endpoint: a byok preset per distinct model (its
+ * capabilities are the slots it serves), the assignments pointing at them, and a prune of the
+ * endpoint's presets the selection no longer uses.
+ */
+export function applyCuberouterSelection(workspace: ModelWorkspace, input: CuberouterSelectionInput): ModelWorkspace {
+  const providerId = CUBEROUTER_PROVIDER_ID;
+  const apiBase = input.apiBase.trim().replace(/\/+$/, "");
+  if (!isHttpUrl(apiBase)) throw new Error("invalid cuberouter endpoint");
+  const selection = input.selection;
+  const slots: Array<{ capability: "agent" | "memory_summary" | "memory_evolution"; models: string[] }> = [
+    { capability: "agent", models: unique(selection.agent.models.map((model) => model.trim()).filter(Boolean)) },
+    { capability: "memory_summary", models: selection.memorySummary.trim() ? [selection.memorySummary.trim()] : [] },
+    { capability: "memory_evolution", models: selection.memoryEvolution.trim() ? [selection.memoryEvolution.trim()] : [] }
+  ];
+
+  const next = cloneCatalog(workspace.catalog);
+  let provider = cuberouterProvider(next.providers);
+  if (!provider) {
+    if (!input.apiKey) throw new Error("cuberouter endpoint has no credential yet");
+    provider = {
+      provider: providerId,
+      configured: true,
+      hasApiKey: true,
+      apiKeyMasked: maskApiKey(input.apiKey),
+      apiKey: "",
+      endpoints: [],
+      accountManaged: false,
+      editable: true,
+      models: []
+    };
+    next.providers.push(provider);
+  }
+  let endpoint = provider.endpoints.find((item) => item.apiBase.replace(/\/+$/, "") === apiBase);
+  if (!endpoint) {
+    if (!input.apiKey) throw new Error("cuberouter endpoint has no credential yet");
+    endpoint = {
+      endpointId: newId("endpoint"),
+      apiBase,
+      protocol: input.protocol,
+      hasApiKey: true,
+      apiKeyMasked: maskApiKey(input.apiKey),
+      apiKey: input.apiKey
+    };
+    provider.endpoints.push(endpoint);
+  } else if (input.apiKey) {
+    endpoint.apiKey = input.apiKey;
+    endpoint.apiKeyMasked = maskApiKey(input.apiKey);
+    endpoint.hasApiKey = true;
+  }
+
+  // One preset per model, carrying every slot it serves.
+  const capabilitiesByModel = new Map<string, Set<CatalogCapability>>();
+  for (const slot of slots) {
+    for (const model of slot.models) {
+      const set = capabilitiesByModel.get(model) ?? new Set<CatalogCapability>();
+      set.add(slot.capability);
+      capabilitiesByModel.set(model, set);
+    }
+  }
+  const keepPresetIds = new Set<string>();
+  const presetIdByModel = new Map<string, string>();
+  for (const [model, capabilities] of capabilitiesByModel) {
+    // Matched inside this endpoint only, as `upsertByokPreset` does: another connection may carry a
+    // model of the same name and must keep its own preset, endpoint and capabilities.
+    const existing = provider.models.find((item) => (
+      item.source === "byok" && item.endpointId === endpoint!.endpointId && item.model === model
+    ));
+    const presetId = existing?.presetId ?? newClientPresetId();
+    const preset = {
+      presetId,
+      provider: providerId,
+      endpointId: endpoint.endpointId,
+      protocol: input.protocol,
+      model,
+      source: "byok" as const,
+      capabilities: [...capabilities].sort() as CatalogCapability[],
+      available: true
+    };
+    if (existing) Object.assign(existing, preset);
+    else provider.models.push(preset);
+    keepPresetIds.add(presetId);
+    presetIdByModel.set(model, presetId);
+  }
+  provider.models = provider.models.filter((item) => (
+    item.endpointId !== endpoint!.endpointId
+    || item.source !== "byok"
+    || keepPresetIds.has(item.presetId)
+  ));
+
+  // Every preset still in the catalog: the endpoint prune above removed only this endpoint's stale
+  // presets, so these ids are exactly the ones assignments may still reference.
+  const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
+  const assignment = next.modelAssignments.byok;
+  const agentIds = slots[0]!.models.flatMap((model) => presetIdByModel.get(model) ?? []);
+  // Candidates enrolled from other connections stay enrolled, but only while their preset still serves
+  // the agent slot: the loop above just rewrote the capabilities of this endpoint's presets, and the
+  // backend rejects an agent candidate whose preset no longer supports `agent`.
+  const agentCandidateIds = new Set(
+    visiblePresets(next, "byok")
+      .filter((preset) => preset.capabilities.includes("agent"))
+      .map((preset) => preset.presetId)
+  );
+  assignment.agent.candidates = unique([
+    ...assignment.agent.candidates.filter((id) => agentCandidateIds.has(id)),
+    ...agentIds
+  ]);
+  const defaultModel = selection.agent.default?.trim();
+  assignment.agent.default = defaultModel && presetIdByModel.has(defaultModel)
+    ? presetIdByModel.get(defaultModel)!
+    : agentIds[0] ?? null;
+  assignment.memorySummary = presetIdByModel.get(selection.memorySummary.trim()) ?? null;
+  assignment.memoryEvolution = presetIdByModel.get(selection.memoryEvolution.trim()) ?? null;
+  // Prune against every preset still in the catalog (as `deleteModelConnection` does), not just this
+  // selection's: assignments pointing at another endpoint's presets must survive, while references to
+  // the presets the endpoint prune above just removed are cleared.
+  pruneInvalidAssignmentReferences(assignment, remainingIds);
+  refreshEffectiveCandidates(next);
+  return createModelWorkspace(next);
+}
+
 /** Assigns one preset in one mode without touching the other mode. */
 export function assignCatalogPreset(
   workspace: ModelWorkspace,
@@ -737,6 +895,15 @@ function cloneAssignments(assignments: ModelConfigView["modelAssignments"]): Mod
 
 function cloneAssignment<T extends Omit<ModelAssignment, "ownerAccountId"> | ModelAssignment>(assignment: T): T {
   return { ...assignment, agent: { candidates: [...assignment.agent.candidates], default: assignment.agent.default } };
+}
+
+/** The single BYOK provider cuberouter owns; the reader and the writer must look up the same one. */
+const CUBEROUTER_PROVIDER_ID: CatalogProviderId = "openai";
+
+function cuberouterProvider(
+  providers: ModelConfigView["providers"]
+): ModelConfigView["providers"][number] | undefined {
+  return providers.find((item) => item.provider === CUBEROUTER_PROVIDER_ID && !item.accountManaged);
 }
 
 function normalizeProvider(provider: string): CatalogProviderId | null {

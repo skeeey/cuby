@@ -1,76 +1,98 @@
 /** Account module. */
 import {
   AccountInvitationViewSchema,
-  AccountLoginResultViewSchema,
   AccountProfileViewSchema,
   AccountSessionViewSchema,
   AvatarOptionSchema,
-  LotteryRewardAckInputSchema,
-  LotteryRewardSchema,
+  CuberouterAuthInputSchema,
+  CuberouterAuthResultSchema,
+  CuberouterEmailCodeInputSchema,
+  CuberouterModelChoicesViewSchema,
+  CuberouterNodeIdQuerySchema,
+  CuberouterNodeProbeViewSchema,
+  CuberouterNodesViewSchema,
+  CuberouterPersonalKeyViewSchema,
+  CuberouterProvisioningSchema,
+  CuberouterRegistrationRequirementsSchema,
   OkResponseSchema,
-  SendCodeInputSchema,
-  SendCodeResponseSchema,
   SetAvatarInputSchema,
-  SocialLoginStatusInputSchema,
-  SocialLoginStatusResponseSchema,
-  StartSocialLoginInputSchema,
-  StartSocialLoginResponseSchema,
-  UpdateAccountProfileInputSchema,
-  VerifyCodeInputSchema
+  UpdateAccountProfileInputSchema
 } from "@memmy/local-api-contracts";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import type { AccountService } from "../../../../services/account-service.js";
 import type { AppConfigService } from "../../../../services/app-config-service.js";
+import type { CuberouterAccountService } from "../../../../services/cuberouter-account-service.js";
 import { withErrorEnvelope } from "../../../../services/error-envelope.js";
 
 /** Contract for register account routes options. */
 export interface RegisterAccountRoutesOptions {
   account: AccountService;
   appConfig: AppConfigService;
+  cuberouterAccount: CuberouterAccountService;
   authenticateRuntimeToken: (request: FastifyRequest, reply: FastifyReply) => Promise<unknown>;
 }
 
 /** Registers register account routes. */
 export function registerAccountRoutes(app: FastifyInstance, options: RegisterAccountRoutesOptions): void {
   app.post(
-    "/api/account/send-code",
+    "/api/account/register",
     { preHandler: options.authenticateRuntimeToken },
     withErrorEnvelope(async (request, reply) => {
-      const input = SendCodeInputSchema.parse(request.body);
-      const response = SendCodeResponseSchema.parse(await options.account.sendCode(input));
+      const input = CuberouterAuthInputSchema.parse(request.body);
+      const response = CuberouterAuthResultSchema.parse(await options.cuberouterAccount.register(input));
       return reply.send(response);
     })
   );
 
   app.post(
-    "/api/account/verify-code",
+    "/api/account/login",
     { preHandler: options.authenticateRuntimeToken },
     withErrorEnvelope(async (request, reply) => {
-      const input = VerifyCodeInputSchema.parse(request.body);
-      const response = AccountLoginResultViewSchema.parse(await options.account.verifyCode(input));
+      const input = CuberouterAuthInputSchema.parse(request.body);
+      const response = CuberouterAuthResultSchema.parse(await options.cuberouterAccount.login(input));
       return reply.send(response);
     })
   );
 
-  app.post(
-    "/api/account/oauth/start",
+  app.get(
+    "/api/account/registration-requirements",
     { preHandler: options.authenticateRuntimeToken },
     withErrorEnvelope(async (request, reply) => {
-      const input = StartSocialLoginInputSchema.parse(request.body);
-      const response = StartSocialLoginResponseSchema.parse(
-        await options.account.startSocialLogin(input)
+      // The line matters: the two deployments can differ in what they demand (email
+      // verification, Turnstile), so the caller says which one it is showing.
+      const { nodeId } = CuberouterNodeIdQuerySchema.parse(request.query);
+      const response = CuberouterRegistrationRequirementsSchema.parse(
+        await options.cuberouterAccount.getRegistrationRequirements(nodeId)
       );
       return reply.send(response);
     })
   );
 
+  app.get(
+    "/api/account/nodes",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (_request, reply) => {
+      const response = CuberouterNodesViewSchema.parse(await options.cuberouterAccount.getNodes());
+      return reply.send(response);
+    })
+  );
+
   app.post(
-    "/api/account/oauth/status",
+    "/api/account/nodes/probe",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (_request, reply) => {
+      const response = CuberouterNodeProbeViewSchema.parse(await options.cuberouterAccount.probeNodes());
+      return reply.send(response);
+    })
+  );
+
+  app.post(
+    "/api/account/email-code",
     { preHandler: options.authenticateRuntimeToken },
     withErrorEnvelope(async (request, reply) => {
-      const input = SocialLoginStatusInputSchema.parse(request.body);
-      const response = SocialLoginStatusResponseSchema.parse(
-        await options.account.getSocialLoginStatus(input)
+      const input = CuberouterEmailCodeInputSchema.parse(request.body);
+      const response = OkResponseSchema.parse(
+        await options.cuberouterAccount.sendEmailVerificationCode(input.email, input.nodeId)
       );
       return reply.send(response);
     })
@@ -125,25 +147,6 @@ export function registerAccountRoutes(app: FastifyInstance, options: RegisterAcc
   );
 
   app.get(
-    "/api/account/lottery/reward",
-    { preHandler: options.authenticateRuntimeToken },
-    withErrorEnvelope(async (_request, reply) => {
-      const response = LotteryRewardSchema.parse(await options.account.getLotteryReward());
-      return reply.send(response);
-    })
-  );
-
-  app.post(
-    "/api/account/lottery/reward/ack",
-    { preHandler: options.authenticateRuntimeToken },
-    withErrorEnvelope(async (request, reply) => {
-      const input = LotteryRewardAckInputSchema.parse(request.body);
-      const response = OkResponseSchema.parse(await options.account.ackLotteryReward(input));
-      return reply.send(response);
-    })
-  );
-
-  app.get(
     "/api/account/avatars",
     { preHandler: options.authenticateRuntimeToken },
     withErrorEnvelope(async (_request, reply) => {
@@ -158,6 +161,40 @@ export function registerAccountRoutes(app: FastifyInstance, options: RegisterAcc
     withErrorEnvelope(async (request, reply) => {
       const input = SetAvatarInputSchema.parse(request.body);
       return reply.send(await options.appConfig.setAvatar(input));
+    })
+  );
+
+  app.get(
+    "/api/account/cuberouter/model-choices",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (_request, reply) => {
+      const response = CuberouterModelChoicesViewSchema.parse(
+        await options.cuberouterAccount.readModelChoices()
+      );
+      return reply.send(response);
+    })
+  );
+
+  app.post(
+    "/api/account/cuberouter/personal-keys/:id/key",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (request, reply) => {
+      const { id } = request.params as { id: string };
+      const response = CuberouterPersonalKeyViewSchema.parse(
+        await options.cuberouterAccount.getPersonalKey(Number.parseInt(id, 10))
+      );
+      return reply.send(response);
+    })
+  );
+
+  app.post(
+    "/api/account/cuberouter/provision-key",
+    { preHandler: options.authenticateRuntimeToken },
+    withErrorEnvelope(async (_request, reply) => {
+      const response = CuberouterProvisioningSchema.parse(
+        await options.cuberouterAccount.reprovisionKey()
+      );
+      return reply.send(response);
     })
   );
 }

@@ -1,6 +1,6 @@
 /** Service urls tests. */
 import { describe, expect, it } from "vitest";
-import { resolveCloudClientConfig } from "../service-urls.js";
+import { resolveCloudClientConfig, resolveCuberouterClientConfig } from "../service-urls.js";
 
 describe("service URL config", () => {
   it("默认网关来自 MEMMY_CLOUD_SERVICE", () => {
@@ -40,5 +40,30 @@ describe("service URL config", () => {
         MEMMY_CLOUD_SERVICE: "https://gw.example.cn"
       }).baseUrl
     ).toBe("http://127.0.0.1:3000");
+  });
+});
+
+describe("resolveCuberouterClientConfig", () => {
+  it("falls back to the shipped model and timeout", () => {
+    expect(resolveCuberouterClientConfig({})).toMatchObject({
+      model: "deepseek-v4.1-flash",
+      timeoutMs: 10_000
+    });
+  });
+
+  it("honors model and timeout overrides", () => {
+    expect(
+      resolveCuberouterClientConfig({
+        MEMMY_CUBEROUTER_MODEL: "kimi-k3-a",
+        MEMMY_CUBEROUTER_TIMEOUT_MS: "1500"
+      })
+    ).toMatchObject({ model: "kimi-k3-a", timeoutMs: 1_500 });
+  });
+
+  it("prefers env over the config file for the model and timeout", () => {
+    expect(resolveCuberouterClientConfig(
+      { MEMMY_CUBEROUTER_MODEL: "from-env" },
+      { model: "from-file", timeoutMs: 20_000 }
+    )).toMatchObject({ model: "from-env", timeoutMs: 20_000 });
   });
 });

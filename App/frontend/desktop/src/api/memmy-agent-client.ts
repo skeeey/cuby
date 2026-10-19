@@ -216,6 +216,99 @@ const AgentSettingsSchema = z.object({
   model_presets: z.array(ChatModelPresetSchema)
 }).passthrough();
 
+const MCP_VALUES_HEADER = "x-memmy-agent-mcp-values";
+
+/**
+ * Serialize MCP settings values for the values header.
+ *
+ * Header values must be single-byte (ByteString), and JSON.stringify leaves
+ * non-ASCII characters raw — a CJK path in the custom-server form would make
+ * the request throw before it is sent. Escaping to \uXXXX keeps the header
+ * ASCII while JSON.parse restores the exact characters agent-side.
+ *
+ * @param values The values to serialize.
+ * @returns A header map carrying the ASCII-escaped JSON payload.
+ */
+function mcpValuesHeader(values: unknown): Record<string, string> {
+  const json = JSON.stringify(values).replace(
+    /[^\x20-\x7e]/g,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, "0")}`
+  );
+  return { [MCP_VALUES_HEADER]: json };
+}
+
+export const McpPresetFieldSchema = z.object({
+  name: z.string(),
+  label: z.string(),
+  secret: z.boolean().optional(),
+  required: z.boolean().optional(),
+  env_var: z.string().nullable().optional(),
+  placeholder: z.string().optional(),
+  configured: z.boolean().optional()
+});
+
+export const McpPresetSchema = z
+  .object({
+    name: z.string(),
+    display_name: z.string(),
+    category: z.string().optional(),
+    description: z.string().optional(),
+    docs_url: z.string().optional(),
+    transport: z.string().optional(),
+    install_supported: z.boolean().optional(),
+    installed: z.boolean(),
+    configured: z.boolean().optional(),
+    available: z.boolean().optional(),
+    status: z.string(),
+    logo_url: z.string().nullable().optional(),
+    brand_color: z.string().optional(),
+    requires: z.string().optional(),
+    note: z.string().optional(),
+    group: z.string().optional(),
+    required_fields: z.array(McpPresetFieldSchema).default([]),
+    connection_summary: z.string().optional(),
+    enabled_tools: z.array(z.string()).optional(),
+    source: z.string(),
+    custom: z.boolean().optional(),
+    tool_names: z.array(z.string()).optional()
+  })
+  .passthrough();
+
+export const McpPresetsPayloadSchema = z
+  .object({
+    presets: z.array(McpPresetSchema),
+    installed_count: z.number().optional(),
+    requires_restart: z.boolean().optional(),
+    last_action: z
+      .object({
+        ok: z.boolean().optional(),
+        message: z.string().optional(),
+        error: z.string().optional(),
+        tool_count: z.number().optional(),
+        tool_names: z.array(z.string()).optional(),
+        checked_at: z.string().optional()
+      })
+      .passthrough()
+      .optional()
+  })
+  .passthrough();
+
+export type McpPresetField = z.infer<typeof McpPresetFieldSchema>;
+export type McpPresetPayload = z.infer<typeof McpPresetSchema>;
+export type McpPresetsPayload = z.infer<typeof McpPresetsPayloadSchema>;
+
+export interface McpCustomServerInput {
+  name: string;
+  transport: "stdio" | "sse" | "streamableHttp";
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  cwd?: string;
+  url?: string;
+  headers?: Record<string, string>;
+  tool_timeout?: number;
+}
+
 const SessionSummarySchema = z.object({
   key: z.string(),
   title: z.string().optional(),
@@ -708,6 +801,11 @@ export type MemmyAgentRunLifecycleEvent = MemmyAgentWsEvent & {
 export interface MemmyAgentClient {
   bootstrap(options?: { force?: boolean }): Promise<MemmyAgentBootstrap>;
   getSettings(): Promise<MemmyAgentSettings>;
+  listMcpPresets(): Promise<McpPresetsPayload>;
+  enableMcpPreset(name: string, values?: Record<string, string>): Promise<McpPresetsPayload>;
+  removeMcpServer(name: string): Promise<McpPresetsPayload>;
+  testMcpServer(name: string): Promise<McpPresetsPayload>;
+  addCustomMcpServer(input: McpCustomServerInput): Promise<McpPresetsPayload>;
   getComputerHistory(): Promise<ComputerHistorySnapshot>;
   setComputerHistoryModel(preset: string | null): Promise<ComputerHistorySnapshot>;
   checkComputerHistoryPermissions(): Promise<ComputerHistoryPermissions>;
@@ -1059,6 +1157,38 @@ class HttpMemmyAgentClient implements MemmyAgentClient {
 
   async getSettings(): Promise<MemmyAgentSettings> {
     return this.request("/api/settings", AgentSettingsSchema);
+  }
+
+  async listMcpPresets(): Promise<McpPresetsPayload> {
+    return this.request("/api/settings/mcp-presets", McpPresetsPayloadSchema);
+  }
+
+  async enableMcpPreset(name: string, values: Record<string, string> = {}): Promise<McpPresetsPayload> {
+    return this.request("/api/settings/mcp-presets/enable", McpPresetsPayloadSchema, {
+      method: "POST",
+      headers: mcpValuesHeader({ name, ...values })
+    });
+  }
+
+  async removeMcpServer(name: string): Promise<McpPresetsPayload> {
+    return this.request("/api/settings/mcp-presets/remove", McpPresetsPayloadSchema, {
+      method: "POST",
+      headers: mcpValuesHeader({ name })
+    });
+  }
+
+  async testMcpServer(name: string): Promise<McpPresetsPayload> {
+    return this.request("/api/settings/mcp-presets/test", McpPresetsPayloadSchema, {
+      method: "POST",
+      headers: mcpValuesHeader({ name })
+    });
+  }
+
+  async addCustomMcpServer(input: McpCustomServerInput): Promise<McpPresetsPayload> {
+    return this.request("/api/settings/mcp-presets/custom", McpPresetsPayloadSchema, {
+      method: "POST",
+      headers: mcpValuesHeader(input)
+    });
   }
 
   async setComputerHistoryModel(preset: string | null): Promise<ComputerHistorySnapshot> {
@@ -3008,8 +3138,20 @@ async function parseRequestError(response: Response): Promise<{
   code: string | null;
   data?: { sidebarState: MemmyAgentSidebarState };
 }> {
+  let raw = "";
   try {
-    const body = await response.json();
+    raw = await response.text();
+  } catch {
+    raw = "";
+  }
+  const trimmed = raw.trim();
+  // The agent's own error responses carry the message as a plain-text body
+  // (websocket.ts httpError), so a non-JSON body is the message, not noise.
+  if (trimmed && !trimmed.startsWith("{")) {
+    return { message: trimmed, code: null };
+  }
+  try {
+    const body = trimmed ? JSON.parse(trimmed) : null;
     if (body && typeof body === "object" && !Array.isArray(body)) {
       const record = body as Record<string, unknown>;
       const code = typeof record.code === "string" ? record.code : null;

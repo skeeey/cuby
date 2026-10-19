@@ -9,10 +9,12 @@ import { Banner } from "../components/banner.js";
 import { ConnectChannelModal } from "../components/connect-channel-modal.js";
 import { ConnectIntegrationModal } from "../components/connect-integration-modal.js";
 import { IntegrationCard } from "../components/integration-card.js";
+import { McpToolsSection, type McpPresetsClient } from "../components/mcp-tools-section.js";
 import { Memmy } from "../components/mascot/memmy.js";
 import { CATEGORY_TABS, getAllIntegrationMeta, type IntegrationCategoryTab, type IntegrationMeta } from "../integrations/integration-meta.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { appActions, loadToolConnectionRecords, toolsActions } from "../state/app-actions.js";
+import { canUseCloudFeatures } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import { selectConnectionForIntegration, selectStatusPrioritizedIntegrations, selectVisibleIntegrations, type ToolsState } from "../state/tools-slice.js";
 import { AppFrame } from "./app-frame.js";
@@ -24,6 +26,8 @@ export interface ToolsPageViewProps {
   tools: ToolsState;
   client?: IntegrationsClient;
   channelsClient?: ChannelsClient;
+  mcpClient?: McpPresetsClient | null;
+  integrationsEnabled?: boolean;
   search?: string;
   activeCategory?: IntegrationCategoryTab;
   onSearchChange: (value: string) => void;
@@ -37,19 +41,25 @@ export interface ToolsPageViewProps {
 export function ToolsPage() {
   const { state, dispatch } = useAppState();
   const { clients } = useApiClients();
+  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<IntegrationCategoryTab>("All");
+  const integrationsEnabled = canUseCloudFeatures(state);
 
   useEffect(() => {
     if (!clients || !shouldLoadConnectionsForPage(state.tools.status)) {
       return;
     }
 
-    void toolsActions.loadConnections(clients.integrations, clients.channels, dispatch);
-  }, [clients, dispatch, state.tools.status]);
+    if (integrationsEnabled) {
+      void toolsActions.loadConnections(clients.integrations, clients.channels, dispatch);
+    } else {
+      void toolsActions.loadChannelConnections(clients.channels, dispatch);
+    }
+  }, [clients, dispatch, state.tools.status, integrationsEnabled]);
 
   useEffect(() => {
-    if (!clients || state.tools.status !== "ready") {
+    if (!clients || state.tools.status !== "ready" || !integrationsEnabled) {
       return undefined;
     }
 
@@ -58,7 +68,7 @@ export function ToolsPage() {
     }, CONNECTION_REFRESH_INTERVAL_MS);
 
     return () => window.clearInterval(interval);
-  }, [clients, dispatch, state.tools.status]);
+  }, [clients, dispatch, state.tools.status, integrationsEnabled]);
 
   const openIntegration = useCallback(
     (integration: IntegrationMeta) => {
@@ -76,14 +86,20 @@ export function ToolsPage() {
       return;
     }
 
-    void toolsActions.refreshConnections(clients.integrations, clients.channels, dispatch);
-  }, [clients, dispatch]);
+    if (integrationsEnabled) {
+      void toolsActions.refreshConnections(clients.integrations, clients.channels, dispatch);
+    } else {
+      void toolsActions.refreshChannelConnections(clients.channels, dispatch);
+    }
+  }, [clients, dispatch, integrationsEnabled]);
 
   return (
     <ToolsPageView
       tools={state.tools}
       client={clients?.integrations}
       channelsClient={clients?.channels}
+      mcpClient={clients?.memmyAgent ?? null}
+      integrationsEnabled={integrationsEnabled}
       search={search}
       activeCategory={activeCategory}
       onSearchChange={setSearch}
@@ -161,6 +177,9 @@ export function ToolsPageView(props: ToolsPageViewProps) {
             </div>
           </section>
 
+          <McpToolsSection client={props.mcpClient ?? null} />
+
+          {props.integrationsEnabled !== false && (
           <section>
             <div className="mb-4 flex items-center gap-2.5">
               <span className="text-base font-semibold text-text-ink">{t("tools.integrations")}</span>
@@ -209,6 +228,7 @@ export function ToolsPageView(props: ToolsPageViewProps) {
               ))}
             </div>
           </section>
+          )}
         </div>
       </div>
 

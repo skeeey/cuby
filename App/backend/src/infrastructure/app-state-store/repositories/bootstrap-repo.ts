@@ -18,6 +18,7 @@ import {
 } from "@memmy/local-api-contracts";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import { INSTALLATION_SCAN_SCOPE_UUID } from "../../installation-scan-scope.js";
+import { isCuberouterAccountRow } from "./account-session-repo.js";
 import {
   ensureAccountDefaults,
   ensureLocalByokAccount,
@@ -530,11 +531,14 @@ function toSqlInputValue(value: unknown): SQLInputValue {
  * @returns the uuid used for onboarding.
  */
 function resolveOnboardingUuidWithDefaults(db: DatabaseSync): string {
-  if (!isByokUserMode(db)) {
-    const uuid = getActiveUuidWithDefaults(db);
-    if (uuid) {
-      return uuid;
-    }
+  const activeUuid = getActiveUuidWithDefaults(db);
+  // A cuberouter identity owns its own row even though it runs in byok mode: scoping by userMode
+  // alone let its completion land in the local row while the next launch read the account row
+  // back as unfinished, so the guidance replayed. The test is the account's channel, not a
+  // pattern on its uuid — an id scheme is not a contract — and a plain BYOK user keeps the
+  // local row, including when a leftover active pointer still names an old cloud account.
+  if (activeUuid && (isCuberouterAccountRow(db, activeUuid) || !isByokUserMode(db))) {
+    return activeUuid;
   }
 
   ensureLocalOnboardingDefaults(db);

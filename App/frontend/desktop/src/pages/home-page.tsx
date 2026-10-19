@@ -41,6 +41,7 @@ import { useTaskBus, type TaskBusAgentMessage } from "../lib/task-bus.js";
 import type { AppAction } from "../state/app-actions.js";
 import { agentActions, appActions, createAgentOperationError } from "../state/app-actions.js";
 import { type AgentChatMessage, type AgentState } from "../state/agent-chat-slice.js";
+import { canUseCloudFeatures } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
 import {
@@ -882,6 +883,7 @@ export function HomePage() {
   const draftTargetRevisionRef = useRef(state.agent.draftTargetRevisionByScope);
   draftTargetRevisionRef.current = state.agent.draftTargetRevisionByScope;
   const asrRecorder = useAsrRecorder(clients?.asr, { emptyAudioMessage: t("home.asrEmptyAudio") });
+  const cloudFeaturesEnabled = canUseCloudFeatures(state);
   const chatScopeKey = agentChatScopeKey(state.agent.currentChatId, state.agent.newChatRequestId);
   const modelSelectionScopeKey = state.agent.currentChatId ?? NEW_TASK_MODEL_SCOPE_KEY;
   const modelWorkspaceMode = state.bootstrap?.app.userMode === "byok" ? "byok" : "account";
@@ -2758,16 +2760,18 @@ export function HomePage() {
                   >
                     <Plus size={15} strokeWidth={2} />
                   </button>
-                  <button
-                    type="button"
-                    aria-label={t("home.voiceInput")}
-                    title={t("home.voiceInput")}
-                    disabled={asrRecorder.isTranscribing || asrRecorder.isStarting}
-                    onClick={toggleVoiceInput}
-                    className={`composer-action-btn${asrRecorder.isRecording ? " composer-action-btn--active" : ""}`}
-                  >
-                    {asrRecorder.isRecording ? <Pause size={15} strokeWidth={2} /> : <Mic size={15} strokeWidth={2} />}
-                  </button>
+                  {cloudFeaturesEnabled && (
+                    <button
+                      type="button"
+                      aria-label={t("home.voiceInput")}
+                      title={t("home.voiceInput")}
+                      disabled={asrRecorder.isTranscribing || asrRecorder.isStarting}
+                      onClick={toggleVoiceInput}
+                      className={`composer-action-btn${asrRecorder.isRecording ? " composer-action-btn--active" : ""}`}
+                    >
+                      {asrRecorder.isRecording ? <Pause size={15} strokeWidth={2} /> : <Mic size={15} strokeWidth={2} />}
+                    </button>
+                  )}
                   <ComposerSubmitButton
                     isSending={isCurrentAgentRunning}
                     disabled={composerSubmitDisabled}
@@ -2977,16 +2981,18 @@ export function HomePage() {
                         >
                           <Plus size={15} strokeWidth={2} />
                         </button>
-                        <button
-                          type="button"
-                          aria-label={t("home.voiceInput")}
-                          title={t("home.voiceInput")}
-                          disabled={asrRecorder.isTranscribing || asrRecorder.isStarting}
-                          onClick={toggleVoiceInput}
-                          className={`composer-action-btn${asrRecorder.isRecording ? " composer-action-btn--active" : ""}`}
-                        >
-                          {asrRecorder.isRecording ? <Pause size={15} strokeWidth={2} /> : <Mic size={15} strokeWidth={2} />}
-                        </button>
+                        {cloudFeaturesEnabled && (
+                          <button
+                            type="button"
+                            aria-label={t("home.voiceInput")}
+                            title={t("home.voiceInput")}
+                            disabled={asrRecorder.isTranscribing || asrRecorder.isStarting}
+                            onClick={toggleVoiceInput}
+                            className={`composer-action-btn${asrRecorder.isRecording ? " composer-action-btn--active" : ""}`}
+                          >
+                            {asrRecorder.isRecording ? <Pause size={15} strokeWidth={2} /> : <Mic size={15} strokeWidth={2} />}
+                          </button>
+                        )}
                         <ComposerSubmitButton
                           isSending={composerPrimaryAction === "stop"}
                           disabled={composerSubmitDisabled}

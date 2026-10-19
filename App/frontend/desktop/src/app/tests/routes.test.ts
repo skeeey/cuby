@@ -194,6 +194,73 @@ describe("desktop route table", () => {
     })).toBe("/main");
   });
 
+  it("keeps a guided BYOK machine out of onboarding even when its row does not say completed", () => {
+    // The machine-level marker is the one answer that cannot flap: scoping the same question to
+    // an account row let logout and re-login hand the guidance back (the row moved between
+    // scopes and identities), while "this machine has run the guidance" stays true.
+    const guidedButUnfinishedRow = {
+      ...baseBootstrap,
+      app: { ...baseBootstrap.app, userMode: "byok" as const },
+      onboarding: {
+        ...baseBootstrap.onboarding,
+        completed: false,
+        currentStep: "scan_permission_required" as const,
+        completedAt: null
+      }
+    };
+
+    expect(resolveInitialView({
+      bootstrap: guidedButUnfinishedRow,
+      preferredMode: "full",
+      guidanceCompleted: true,
+      modelConfig: {
+        catalog: {
+          modelAssignments: {
+            byok: { agent: { candidates: ["local-agent"] } }
+          }
+        }
+      }
+    })).toBe("/main");
+  });
+
+  it("still shows the guidance to a machine that has never run it", () => {
+    const unfinished = {
+      ...baseBootstrap,
+      app: { ...baseBootstrap.app, userMode: "byok" as const },
+      onboarding: {
+        ...baseBootstrap.onboarding,
+        completed: false,
+        currentStep: "scan_permission_required" as const,
+        completedAt: null
+      }
+    };
+
+    expect(resolveInitialView({
+      bootstrap: unfinished,
+      preferredMode: "full",
+      guidanceCompleted: false,
+      modelConfig: {
+        catalog: {
+          modelAssignments: {
+            byok: { agent: { candidates: ["local-agent"] } }
+          }
+        }
+      }
+    })).toBe("/onboarding");
+  });
+
+  it("does not send a guided machine back into onboarding after logging in", () => {
+    const onboarding = {
+      ...baseBootstrap.onboarding,
+      completed: false,
+      currentStep: "scan_permission_required" as const,
+      completedAt: null
+    };
+
+    expect(resolvePostLoginRoute({ onboarding, guidanceCompleted: true })).toBe("/main");
+    expect(resolvePostLoginRoute({ onboarding })).toBe("/onboarding");
+  });
+
   it("keeps a pending BYOK first report after completion carryover once a model is configured", () => {
     const carriedBootstrap = {
       ...baseBootstrap,
@@ -373,6 +440,150 @@ describe("desktop route table", () => {
         accountSession: { authenticated: false }
       })
     ).toBe("/pet");
+  });
+
+  it("opens a cuberouter build on the login form whenever nobody is signed in", () => {
+    // The welcome page of such a build carries no sign-up gift and no "use your own API key"
+    // bypass, so signing in is its one way forward. A model config left behind by an earlier run
+    // is enough to empty the catalog, and reading that first would park a visitor on the API-key
+    // page with no route to the login form — permanently, since nothing rewrites the stored mode.
+    const byok = {
+      ...baseBootstrap,
+      app: { ...baseBootstrap.app, userMode: "byok" as const },
+      onboarding: {
+        ...baseBootstrap.onboarding,
+        completed: true,
+        currentStep: "completed" as const,
+        completedAt: "2026-06-01T00:00:00.000Z"
+      }
+    };
+
+    expect(
+      resolveInitialView({
+        bootstrap: byok,
+        preferredMode: "full",
+        accountSession: { authenticated: false },
+        cuberouterAccountBackend: true,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: [] } } } } }
+      })
+    ).toBe("/welcome");
+
+    // Same machine after onboarding, signed out, with a model that still works.
+    expect(
+      resolveInitialView({
+        bootstrap: byok,
+        preferredMode: "full",
+        accountSession: { authenticated: false },
+        cuberouterAccountBackend: true,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: ["local-agent"] } } } } }
+      })
+    ).toBe("/welcome");
+  });
+
+  it("sends a signed-in cuberouter machine with no model back to the form that fetches one", () => {
+    // Signing in is what fetches this account's key, and this build hides the welcome page's
+    // "use your own API key" bypass, so nobody here chose to supply their own — an empty catalog
+    // means the stored config is gone, not that its owner picked another path. Leaving them on
+    // the API-key page would ask a cuberouter identity for a key its account already supplies.
+    // The login form repairs it: signing in re-reads the organization key, and the answer comes
+    // back on that form when it cannot (the key was withdrawn, say) instead of nowhere.
+    expect(
+      resolveInitialView({
+        bootstrap: {
+          ...baseBootstrap,
+          app: { ...baseBootstrap.app, userMode: "byok" as const }
+        },
+        preferredMode: "full",
+        accountSession: { authenticated: true },
+        cuberouterAccountBackend: true,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: [] } } } } }
+      })
+    ).toBe("/welcome");
+  });
+
+  it("leaves a signed-in cuberouter machine with a working model where it was", () => {
+    // The rule above answers an empty catalog only. A catalog that resolves must keep taking its
+    // owner to the workspace, or every launch of a healthy machine would ask for a password.
+    expect(
+      resolveInitialView({
+        bootstrap: {
+          ...baseBootstrap,
+          app: { ...baseBootstrap.app, userMode: "byok" as const },
+          onboarding: {
+            ...baseBootstrap.onboarding,
+            completed: true,
+            currentStep: "completed" as const,
+            completedAt: "2026-06-01T00:00:00.000Z"
+          }
+        },
+        preferredMode: "full",
+        accountSession: { authenticated: true },
+        cuberouterAccountBackend: true,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: ["local-agent"] } } } } }
+      })
+    ).toBe("/main");
+  });
+
+  it("leaves a build that offers its own BYOK entry on the existing rules", () => {
+    // Such a welcome page offers "use your own API key", so an account-less machine there is a
+    // visitor who chose that path rather than someone who has to sign in.
+    expect(
+      resolveInitialView({
+        bootstrap: {
+          ...baseBootstrap,
+          app: { ...baseBootstrap.app, userMode: "byok" as const }
+        },
+        preferredMode: "full",
+        accountSession: { authenticated: false },
+        cuberouterAccountBackend: false,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: [] } } } } }
+      })
+    ).toBe("/api-key");
+  });
+
+  it("keeps the existing rules for a cuberouter caller that passes no session", () => {
+    // The pet window rebuilds a session from a lossy summary and hands none over in byok mode,
+    // which is every cuberouter identity. Reading that absence as "signed out" would send the
+    // pet window's own "open the full window" to the login form.
+    expect(
+      resolveInitialView({
+        bootstrap: {
+          ...baseBootstrap,
+          app: { ...baseBootstrap.app, userMode: "byok" as const },
+          onboarding: {
+            ...baseBootstrap.onboarding,
+            completed: true,
+            currentStep: "completed" as const,
+            completedAt: "2026-06-01T00:00:00.000Z"
+          }
+        },
+        preferredMode: "full",
+        cuberouterAccountBackend: true,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: ["local-agent"] } } } } }
+      })
+    ).toBe("/main");
+
+    // The same caller with an empty catalog keeps the API-key rule. This caller really does reach
+    // that rule — it hands over the whole app state, which carries a model config — so the only
+    // thing keeping it out of the rule above is the session it does not have. Reading that
+    // absence as "signed in" would send a pet window whose config was wiped to the login form.
+    expect(
+      resolveInitialView({
+        bootstrap: {
+          ...baseBootstrap,
+          app: { ...baseBootstrap.app, userMode: "byok" as const },
+          onboarding: {
+            ...baseBootstrap.onboarding,
+            completed: true,
+            currentStep: "completed" as const,
+            completedAt: "2026-06-01T00:00:00.000Z"
+          }
+        },
+        preferredMode: "full",
+        cuberouterAccountBackend: true,
+        modelConfig: { catalog: { modelAssignments: { byok: { agent: { candidates: [] } } } } }
+      })
+    ).toBe("/api-key");
   });
 
   it("only shows the token exhausted modal for account users with zero remaining tokens", () => {

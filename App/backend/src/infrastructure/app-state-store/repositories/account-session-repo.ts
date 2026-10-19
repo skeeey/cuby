@@ -1,6 +1,7 @@
 /** Account session repo module. */
 import { createHash } from "node:crypto";
 import {
+  AccountChannelSchema,
   AccountProfileViewSchema,
   AccountSessionViewSchema,
   type AccountChannel,
@@ -69,6 +70,18 @@ interface VerificationThrottleRow {
 const LOCAL_AUTH_CHANNEL_FIELD = "_memmyAuthChannel";
 
 /** Creates create account session repository. */
+/**
+ * Reads whether an account row belongs to a cuberouter identity. The channel is stored in the
+ * row's raw profile, so this answers "who is this account" without depending on how its uuid
+ * happens to be spelled.
+ */
+export function isCuberouterAccountRow(db: DatabaseSync, uuid: string): boolean {
+  const row = db
+    .prepare("SELECT raw_profile_json FROM cloud_accounts WHERE uuid = ?")
+    .get(uuid) as Pick<AccountSessionRow, "raw_profile_json"> | undefined;
+  return Boolean(row) && resolveAccountAuthChannel(row as AccountSessionRow) === "cuberouter";
+}
+
 export function createAccountSessionRepository(db: DatabaseSync, secretStore: SecretStore): AccountSessionRepository {
   return {
     get() {
@@ -209,7 +222,10 @@ export function createAccountSessionRepository(db: DatabaseSync, secretStore: Se
           planType: input.profile.planType,
           hasFinishedGuide: input.profile.hasFinishedGuide,
           region: input.profile.region,
-          registeredAt
+          registeredAt,
+          identityProvider: input.profile.identityProvider,
+          username: input.profile.username ?? null,
+          organizationName: input.profile.organizationName ?? null
         })
       });
     },
@@ -384,7 +400,8 @@ function resolveAccountAuthChannel(row: AccountSessionRow | null): AccountChanne
 function resolveExplicitAccountAuthChannel(row: AccountSessionRow | null): AccountChannel | null {
   if (!row?.raw_profile_json) return null;
   const value = parseRawProfile(row.raw_profile_json)?.[LOCAL_AUTH_CHANNEL_FIELD];
-  return value === "email" || value === "phone" ? value : null;
+  const parsed = AccountChannelSchema.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }
 
 /**
@@ -434,6 +451,10 @@ function readRawProfileString(value: unknown): string | null {
  * @returns an account profile view without the cloud uuid.
  */
 function toProfileView(row: AccountSessionRow): AccountProfileView {
+  const isCuberouter = resolveAccountAuthChannel(row) === "cuberouter";
+  // The cuberouter identity's login name and organization live next to its auth channel in the
+  // raw profile; they are what the sidebar renders after a restart.
+  const rawProfile = isCuberouter && row.raw_profile_json ? parseRawProfile(row.raw_profile_json) : null;
   return AccountProfileViewSchema.parse({
     userId: row.user_id,
     email: row.email,
@@ -443,7 +464,10 @@ function toProfileView(row: AccountSessionRow): AccountProfileView {
     planType: row.plan_type,
     hasFinishedGuide: row.has_finished_guide === null ? null : row.has_finished_guide === 1,
     region: row.region,
-    registeredAt: row.registered_at
+    registeredAt: row.registered_at,
+    identityProvider: isCuberouter ? "cuberouter" : "memmy_cloud",
+    username: rawProfile ? readRawProfileString(rawProfile.username) : null,
+    organizationName: rawProfile ? readRawProfileString(rawProfile.organizationName) : null
   });
 }
 

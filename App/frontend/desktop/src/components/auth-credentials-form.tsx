@@ -1,0 +1,225 @@
+/** Auth credentials form module. */
+import { nodeDisplayName } from "../i18n/messages.js";
+import { useTranslation } from "../i18n/use-translation.js";
+
+/** Contract for auth credentials form props. */
+export interface AuthCredentialsFormProps {
+  mode: "register" | "login";
+  username: string;
+  password: string;
+  /** Only rendered in register mode. */
+  confirmPassword?: string;
+  /** Rendered in register mode only, and only when the instance demands email verification. */
+  emailVerificationRequired?: boolean;
+  /** Lines an account can be registered on or signed in to; shown only when there is a choice. */
+  nodes?: string[];
+  selectedNodeId?: string | null;
+  /** True while the lines are being measured; the submit button waits and says so. */
+  probingLine?: boolean;
+  onNodeChange?: (nodeId: string) => void;
+  email?: string;
+  verificationCode?: string;
+  sendingCode?: boolean;
+  /** Seconds left before the code can be requested again; 0 means the button is ready. */
+  codeSecondsLeft?: number;
+  feedback?: { text: string; tone: "error" | "success" } | null;
+  disabled?: boolean;
+  onUsernameChange: (value: string) => void;
+  onPasswordChange: (value: string) => void;
+  onConfirmPasswordChange?: (value: string) => void;
+  onEmailChange?: (value: string) => void;
+  onVerificationCodeChange?: (value: string) => void;
+  onSendCode?: () => void;
+  onSubmit: () => void;
+  onModeChange: (mode: "register" | "login") => void;
+  onOpenTerms?: () => void;
+  onOpenDataAgreement?: () => void;
+}
+
+const inputClassName = "auth-code-form-input w-full px-5 py-3 border rounded-input text-sm bg-canvas-oat/30 focus:outline-none";
+
+/** Handles auth credentials form. */
+export function AuthCredentialsForm(props: AuthCredentialsFormProps) {
+  const { t } = useTranslation();
+  const errorFeedback = props.feedback?.tone === "error" ? props.feedback : null;
+
+  function submitOnEnter(event: { key: string }) {
+    if (event.key === "Enter" && !props.disabled && !props.probingLine) {
+      props.onSubmit();
+    }
+  }
+
+  const showEmailVerification = props.mode === "register" && props.emailVerificationRequired === true;
+  const codeBlocked = props.sendingCode || (props.codeSecondsLeft ?? 0) > 0;
+  // Only the submit waits for the line probe: switching halves or typing while it runs is fine.
+  const submitDisabled = Boolean(props.disabled) || Boolean(props.probingLine);
+
+  return (
+    <div className="space-y-3.5">
+      {/*
+        Both halves show it, and only when there is a real choice: an account lives on one
+        deployment, so signing in needs to say which — registration decides it just as much.
+      */}
+      {(props.nodes?.length ?? 0) > 1 ? (
+        <fieldset className="space-y-2 text-left">
+          <legend className="text-xs text-text-ink/60">
+            {props.mode === "register" ? t("account.line") : t("account.line.login")}
+          </legend>
+          {/* Bordered options, not bare radios: two short labels sit next to each other here, and
+              without a boundary they read as one string. */}
+          <div className="flex flex-wrap gap-2.5">
+            {props.nodes?.map((id) => (
+              <label
+                key={id}
+                className={`cuberouter-line-option flex items-center gap-2 px-3.5 py-2 text-sm rounded-input border transition-colors cursor-pointer ${
+                  props.selectedNodeId === id
+                    ? "border-action-sky text-action-sky bg-action-sky/5"
+                    : "border-border-stone/50 text-text-ink/75 hover:border-border-stone"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="cuberouter-line"
+                  value={id}
+                  checked={props.selectedNodeId === id}
+                  disabled={props.disabled}
+                  onChange={() => props.onNodeChange?.(id)}
+                />
+                {nodeDisplayName(id, t)}
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      ) : null}
+      <input
+        type="text"
+        autoComplete="username"
+        autoCapitalize="none"
+        spellCheck={false}
+        maxLength={50}
+        placeholder={t("account.usernamePlaceholder")}
+        value={props.username}
+        aria-invalid={Boolean(errorFeedback)}
+        onChange={(event) => props.onUsernameChange(event.target.value)}
+        onKeyDown={submitOnEnter}
+        className={inputClassName}
+      />
+      {showEmailVerification ? (
+        <input
+          type="email"
+          autoComplete="email"
+          autoCapitalize="none"
+          spellCheck={false}
+          maxLength={50}
+          placeholder={t("account.emailPlaceholder")}
+          value={props.email ?? ""}
+          aria-invalid={Boolean(errorFeedback)}
+          onChange={(event) => props.onEmailChange?.(event.target.value)}
+          onKeyDown={submitOnEnter}
+          className={inputClassName}
+        />
+      ) : null}
+      <input
+        type="password"
+        autoComplete={props.mode === "register" ? "new-password" : "current-password"}
+        placeholder={t("account.passwordPlaceholder")}
+        value={props.password}
+        aria-invalid={Boolean(errorFeedback)}
+        onChange={(event) => props.onPasswordChange(event.target.value)}
+        onKeyDown={submitOnEnter}
+        className={inputClassName}
+      />
+      {props.mode === "register" ? (
+        <input
+          type="password"
+          autoComplete="new-password"
+          placeholder={t("account.confirmPasswordPlaceholder")}
+          value={props.confirmPassword ?? ""}
+          aria-invalid={Boolean(errorFeedback)}
+          onChange={(event) => props.onConfirmPasswordChange?.(event.target.value)}
+          onKeyDown={submitOnEnter}
+          className={inputClassName}
+        />
+      ) : null}
+      {showEmailVerification ? (
+        <div className="flex items-stretch gap-2">
+          <input
+            type="text"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={20}
+            placeholder={t("account.verificationCodePlaceholder")}
+            value={props.verificationCode ?? ""}
+            aria-invalid={Boolean(errorFeedback)}
+            onChange={(event) => props.onVerificationCodeChange?.(event.target.value)}
+            onKeyDown={submitOnEnter}
+            className={`${inputClassName} flex-1 min-w-0`}
+          />
+          {/*
+            The cooldown state is meant to be read, not just disabled: dimming it to the usual
+            disabled opacity turned "60s 后重发" into what looked like a dead button, so the
+            counting label keeps its own readable styling and only the ready state is accented.
+          */}
+          <button
+            type="button"
+            disabled={props.disabled || codeBlocked}
+            onClick={props.onSendCode}
+            aria-live="polite"
+            className={`auth-code-send shrink-0 px-3 text-xs rounded-input border tabular-nums transition-colors ${
+              codeBlocked
+                ? "border-border-stone/40 text-text-ink/60 cursor-not-allowed"
+                : "border-action-sky/40 text-action-sky hover:bg-action-sky/10 cursor-pointer"
+            } disabled:cursor-not-allowed`}
+          >
+            {props.codeSecondsLeft && props.codeSecondsLeft > 0
+              ? t("account.resendCode", { seconds: props.codeSecondsLeft })
+              : t("account.sendCode")}
+          </button>
+        </div>
+      ) : null}
+
+      {errorFeedback ? (
+        <p
+          role="alert"
+          aria-live="polite"
+          title={errorFeedback.text}
+          className="text-left text-[12px] font-normal leading-5 text-status-error"
+        >
+          {errorFeedback.text}
+        </p>
+      ) : null}
+
+      <p className="auth-code-form-terms text-[10px] text-text-ink/50 text-left leading-snug">
+        {t("login.termsPrefix")}
+        <button type="button" onClick={props.onOpenTerms} className="text-action-sky hover:underline cursor-pointer">
+          {t("login.termsLink")}
+        </button>
+        {t("login.termsConnector")}
+        <button type="button" onClick={props.onOpenDataAgreement} className="text-action-sky hover:underline cursor-pointer">
+          {t("login.dataAgreementLink")}
+        </button>
+        {t("login.termsSuffix")}
+      </p>
+
+      <button
+        type="button"
+        disabled={submitDisabled}
+        onClick={props.onSubmit}
+        className="w-full py-3 bg-action-sky text-white font-semibold rounded-btn hover:bg-action-sky-hover transition-all cursor-pointer shadow-md hover:shadow-lg active:scale-[0.98] disabled:opacity-40 disabled:cursor-not-allowed"
+      >
+        {props.probingLine
+          ? t("account.probingLine")
+          : props.mode === "register" ? t("account.register") : t("account.login")}
+      </button>
+
+      <button
+        type="button"
+        disabled={props.disabled}
+        onClick={() => props.onModeChange(props.mode === "register" ? "login" : "register")}
+        className="w-full text-center text-xs text-text-ink/60 hover:text-action-sky transition-colors cursor-pointer disabled:opacity-40"
+      >
+        {props.mode === "register" ? t("account.switchToLogin") : t("account.switchToRegister")}
+      </button>
+    </div>
+  );
+}

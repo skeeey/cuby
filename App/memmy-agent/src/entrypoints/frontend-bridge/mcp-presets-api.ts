@@ -56,6 +56,8 @@ const ATTACHMENT_KEYS = ["name", "display_name", "category", "transport", "logo_
 const MAX_TEST_TOOLS = 16;
 const DEFAULT_TEST_TIMEOUT = 20;
 const DEFAULT_CUSTOM_TIMEOUT = 30;
+/** Presets that target developers; the desktop UI folds them into a collapsed group. */
+export const DEV_PRESET_NAMES = new Set(["figma", "firecrawl"]);
 const CUSTOM_ACTIONS = new Set(["custom", "import", "import-cursor", "tools"]);
 
 class McpPresetTestTimeoutError extends Error {}
@@ -65,35 +67,6 @@ function favicon(domain: string): string {
 }
 
 export const MCP_PRESETS = [
-  new McpPreset(
-    "browserbase",
-    "Browserbase",
-    "browser",
-    "Cloud browser automation through Browserbase's hosted MCP server.",
-    "https://docs.browserbase.com/integrations/mcp/setup",
-    "streamableHttp",
-    true,
-    "browserbase.com",
-    "#111827",
-    { type: "streamableHttp", url: "https://mcp.browserbase.com/mcp", tool_timeout: 60 },
-    [new McpPresetField("browserbase_api_key", "Browserbase API key", ["url_param", "browserbaseApiKey"], true, true, "BROWSERBASE_API_KEY", "bb_live_...")],
-    "Browserbase API key",
-  ),
-  new McpPreset(
-    "context7",
-    "Context7",
-    "docs",
-    "Fetch current library docs and code examples while the agent works.",
-    "https://context7.com/docs/resources/all-clients",
-    "stdio",
-    true,
-    "context7.com",
-    "#111827",
-    { type: "stdio", command: "npx", args: ["-y", "@upstash/context7-mcp@latest"], tool_timeout: 45 },
-    [new McpPresetField("context7_api_key", "Context7 API key", ["arg", "--api-key"], true, false, "CONTEXT7_API_KEY", "ctx7_...")],
-    "Node.js and npx; API key optional",
-    "Works without a key for basic public docs; add a key for higher limits or private docs.",
-  ),
   new McpPreset(
     "firecrawl",
     "Firecrawl",
@@ -124,41 +97,6 @@ export const MCP_PRESETS = [
     "Hosted Exa MCP endpoint currently does not require an API key.",
   ),
   new McpPreset(
-    "microsoft-learn",
-    "Microsoft Learn",
-    "docs",
-    "Search and fetch official Microsoft Learn documentation through Microsoft's hosted MCP server.",
-    "https://learn.microsoft.com/en-us/training/support/mcp",
-    "streamableHttp",
-    true,
-    "learn.microsoft.com",
-    "#0078D4",
-    { type: "streamableHttp", url: "https://learn.microsoft.com/api/mcp", tool_timeout: 45 },
-    [],
-    "Network access",
-    "Public documentation only; no authentication required.",
-  ),
-  new McpPreset(
-    "aws-docs",
-    "AWS Documentation",
-    "docs",
-    "Search AWS documentation and service guidance through AWS Labs' documentation MCP server.",
-    "https://awslabs.github.io/mcp/servers/aws-documentation-mcp-server/",
-    "stdio",
-    true,
-    "aws.amazon.com",
-    "#FF9900",
-    {
-      type: "stdio",
-      command: "uvx",
-      args: ["awslabs.aws-documentation-mcp-server@latest"],
-      env: { FASTMCP_LOG_LEVEL: "ERROR", AWS_DOCUMENTATION_PARTITION: "aws" },
-      tool_timeout: 60,
-    },
-    [],
-    "uvx",
-  ),
-  new McpPreset(
     "brave-search",
     "Brave Search",
     "web",
@@ -171,20 +109,6 @@ export const MCP_PRESETS = [
     { type: "stdio", command: "npx", args: ["-y", "@brave/brave-search-mcp-server@latest", "--transport", "stdio"], tool_timeout: 45 },
     [new McpPresetField("brave_api_key", "Brave Search API key", ["env", "BRAVE_API_KEY"], true, true, "BRAVE_API_KEY", "BSA...")],
     "Node.js, npx, and Brave Search API key",
-  ),
-  new McpPreset(
-    "postman",
-    "Postman",
-    "api",
-    "Inspect and manage Postman APIs, collections, and workspaces through the local MCP server.",
-    "https://learning.postman.com/docs/developer/postman-api/postman-mcp-server/postman-mcp-local-server",
-    "stdio",
-    true,
-    "postman.com",
-    "#FF6C37",
-    { type: "stdio", command: "npx", args: ["-y", "@postman/postman-mcp-server@latest", "--full"], tool_timeout: 60 },
-    [new McpPresetField("postman_api_key", "Postman API key", ["env", "POSTMAN_API_KEY"], true, true, "POSTMAN_API_KEY", "PMAK-...")],
-    "Node.js, npx, and Postman API key",
   ),
   new McpPreset(
     "figma",
@@ -200,40 +124,6 @@ export const MCP_PRESETS = [
     [],
     "Figma desktop app with MCP enabled",
     "Requires Figma Desktop Dev Mode MCP to be running locally.",
-  ),
-  new McpPreset(
-    "github",
-    "GitHub",
-    "code",
-    "Repository, issue, and pull request workflows via GitHub's official MCP server.",
-    "https://github.com/github/github-mcp-server",
-    "stdio",
-    true,
-    "github.com",
-    "#24292F",
-    {
-      type: "stdio",
-      command: "docker",
-      args: ["run", "-i", "--rm", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"],
-      tool_timeout: 60,
-    },
-    [new McpPresetField("github_token", "GitHub token", ["env", "GITHUB_PERSONAL_ACCESS_TOKEN"], true, true, "GITHUB_PERSONAL_ACCESS_TOKEN", "ghp_...")],
-    "Docker and GitHub token",
-  ),
-  new McpPreset(
-    "supabase",
-    "Supabase",
-    "database",
-    "Inspect and manage Supabase projects through the Supabase MCP server.",
-    "https://supabase.com/docs/guides/ai-tools/mcp",
-    "stdio",
-    true,
-    "supabase.com",
-    "#3ECF8E",
-    { type: "stdio", command: "npx", args: ["-y", "@supabase/mcp-server-supabase@latest", "--read-only"], tool_timeout: 60 },
-    [new McpPresetField("supabase_access_token", "Supabase access token", ["env", "SUPABASE_ACCESS_TOKEN"], true, true, "SUPABASE_ACCESS_TOKEN", "sbp_...")],
-    "Node.js, npx, and Supabase access token",
-    "MVP config starts read-only by default.",
   ),
 ];
 
@@ -571,6 +461,7 @@ function presetPayload(preset: McpPreset, configuredServers: Record<string, MCPS
     name: preset.name,
     display_name: preset.displayName,
     category: preset.category,
+    group: DEV_PRESET_NAMES.has(preset.name) ? "dev" : "",
     description: preset.description,
     docs_url: preset.docsUrl,
     transport: preset.transport,

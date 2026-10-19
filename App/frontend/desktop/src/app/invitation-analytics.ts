@@ -1,4 +1,4 @@
-import type { AccountChannel, InvitationResult, SocialLoginProvider } from "@memmy/local-api-contracts";
+import type { InvitationResult } from "@memmy/local-api-contracts";
 import type {
   AnalyticsEvent,
   InviteCodeCopiedEvent,
@@ -9,8 +9,11 @@ import type {
 export type TrackAnalyticsEvent = (event: AnalyticsEvent) => void;
 
 export interface InvitationSignupEventInput {
-  channel: AccountChannel | SocialLoginProvider;
+  /** How the account was created: a contact channel, or the cuberouter register/login flow. */
+  channel: "email" | "phone" | "cuberouter";
   isNewUser: boolean;
+  /** The user mode this signup lands on; the cuberouter panel always selects BYOK. */
+  userMode: "account" | "byok";
   invitationCode?: string;
 }
 
@@ -23,7 +26,7 @@ export function buildInvitationSignupEvent(
     params: {
       method: input.channel,
       is_new_user: input.isNewUser,
-      user_mode: "account",
+      user_mode: input.userMode,
       invite_code_provided: Boolean(input.invitationCode?.trim())
     },
     consentTier: "basic"

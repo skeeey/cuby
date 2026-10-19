@@ -29,6 +29,7 @@ import type { AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import type { ModelWorkspaceMode } from "../state/model-workspace.js";
 import { AppFrame } from "./app-frame.js";
+import { CuberouterModelSection } from "./cuberouter-model-section.js";
 import { ModelWorkspaceSection } from "./model-workspace-section.js";
 import {
   MEMORY_TOKEN_BUDGET_SECTION_ID,
@@ -92,6 +93,7 @@ import {
 } from "./model-config.js";
 import { ValidationMessage } from "./api-key-form-fields.js";
 import { OverflowTooltipText } from "../components/overflow-tooltip-text.js";
+import { nodeDisplayName } from "../i18n/messages.js";
 import { Tooltip } from "../components/tooltip.js";
 import type { MessageKey, MessageValues } from "../i18n/messages.js";
 
@@ -469,13 +471,43 @@ export function SettingsPageView(props: SettingsPageViewProps) {
   const [imageGenWarningAcknowledged, setImageGenWarningAcknowledged] = useState(false);
   const [memoryModel, setMemoryModel] = useState<ModelConfig>(() => initialModelForm.memoryModel);
   const [skillModel, setSkillModel] = useState<ModelConfig>(() => initialModelForm.skillModel);
+  // Which cuberouter deployment the account lives on. Read-only on purpose: the two hold
+  // separate accounts, so changing it is not a setting — it would mean a different account.
+  const [currentNodeId, setCurrentNodeId] = useState<string | null>(null);
+  useEffect(() => {
+    const client = accountClient;
+    if (!client?.getNodes) {
+      return undefined;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const nodes = await client.getNodes();
+        if (!cancelled) {
+          setCurrentNodeId(nodes.currentNodeId);
+        }
+      } catch (error) {
+        console.warn("reading the cuberouter line failed", error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [accountClient]);
+  // The account card follows the session, not the user mode. A cuberouter login persists
+  // "byok", so a mode-first question labelled a signed-in account "not signed in" (and gating
+  // the logout entry on account mode once left the only way to sign out unreachable).
+  const isSignedIn = Boolean(state.account.userId);
   const accountIdentifier = resolveAccountIdentifier(state);
   const maskedAccountIdentifier = maskAccountIdentifier(accountIdentifier);
-  const accountName = isByokMode
-    ? resolveAccountFallback(t)
-    : state.account.nickname || maskedAccountIdentifier || resolveAccountFallback(t);
+  // Signed in is a question about the session, not about the mode: a cuberouter identity runs in
+  // byok mode and still has an account, so asking the mode first labelled it "not signed in"
+  // right next to its sign-out button.
+  const accountName = isSignedIn
+    ? state.account.nickname || maskedAccountIdentifier || resolveAccountFallback(t)
+    : resolveAccountFallback(t);
   const accountMeta = isByokMode ? resolveAccountMeta(appSettings?.userMode, t) : maskedAccountIdentifier || resolveAccountMeta(appSettings?.userMode, t);
-  const accountInitial = isByokMode ? "·" : resolveAccountInitials(accountName);
+  const accountInitial = isSignedIn ? resolveAccountInitials(accountName) : "·";
   const registeredAtText = formatRegisteredAt(state.account.registeredAt, t);
   const defaultLaunchMode = appSettings?.defaultLaunchMode ?? state.navigation.preferredMode ?? "last";
   const autoUpdateEnabled = appSettings?.autoUpdateEnabled ?? true;
@@ -1509,10 +1541,15 @@ export function SettingsPageView(props: SettingsPageViewProps) {
                   ) : (
                     <OverflowTooltipText className="settings-account-meta-line block truncate" text={accountMeta} />
                   )}
+                  {currentNodeId ? (
+                    <div className="settings-account-line text-text-ink/45">
+                      {t("settings.account.line", { value: nodeDisplayName(currentNodeId, t) })}
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
-            {isAccountMode && (
+            {isSignedIn && (
               <button
                 type="button"
                 onClick={() => setConfirm("logout")}
@@ -1522,7 +1559,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
                 <LogOut size={12} /> {t("settings.logout")}
               </button>
             )}
-            {isByokMode && (
+            {isByokMode && !isSignedIn && (
               <button
                 type="button"
                 onClick={() => dispatch(appActions.navigate("/welcome"))}
@@ -1577,24 +1614,35 @@ export function SettingsPageView(props: SettingsPageViewProps) {
           hidden={activeTab !== "model"}
         >
         <div id="model-config">
-          <ModelWorkspaceSection
-            mode={workspaceMode}
-            seedConfig={state.modelConfig}
-            configClient={configClient}
-            onConfigSaved={(saved) => dispatch(appActions.modelConfigUpdated(saved))}
-            onFinishSetup={setupReturnRoute === "/onboarding"
-              ? () => {
-                  window.sessionStorage.removeItem(SETTINGS_ADD_MODEL_RETURN_STORAGE_KEY);
-                  const nextUrl = `${window.location.pathname}${window.location.search}`;
-                  window.history.replaceState(window.history.state, "", nextUrl);
-                  dispatch(appActions.navigate("/onboarding"));
-                }
-              : undefined}
-            onReturnToMain={() => dispatch(appActions.navigate("/main"))}
-            autoOpenAddConnection={
-              setupReturnRoute === "/main"
-            }
-          />
+          {state.account.identityProvider === "cuberouter" ? (
+            <CuberouterModelSection
+              username={state.account.username}
+              organizationName={state.account.organizationName}
+              seedConfig={state.modelConfig}
+              configClient={configClient}
+              accountClient={accountClient}
+              onConfigSaved={(saved) => dispatch(appActions.modelConfigUpdated(saved))}
+            />
+          ) : (
+            <ModelWorkspaceSection
+              mode={workspaceMode}
+              seedConfig={state.modelConfig}
+              configClient={configClient}
+              onConfigSaved={(saved) => dispatch(appActions.modelConfigUpdated(saved))}
+              onFinishSetup={setupReturnRoute === "/onboarding"
+                ? () => {
+                    window.sessionStorage.removeItem(SETTINGS_ADD_MODEL_RETURN_STORAGE_KEY);
+                    const nextUrl = `${window.location.pathname}${window.location.search}`;
+                    window.history.replaceState(window.history.state, "", nextUrl);
+                    dispatch(appActions.navigate("/onboarding"));
+                  }
+                : undefined}
+              onReturnToMain={() => dispatch(appActions.navigate("/main"))}
+              autoOpenAddConnection={
+                setupReturnRoute === "/main"
+              }
+            />
+          )}
         </div>
         </div>
 

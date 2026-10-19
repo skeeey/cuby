@@ -5,7 +5,7 @@ import { AppProviders } from "../../app/providers.js";
 import { TokenDetailPage } from "../token-detail-page.js";
 
 describe("TokenDetailPage", () => {
-  it("渲染原型 Token 赠送卡片和真实验证码登录表单", () => {
+  it("渲染原型 Token 赠送卡片和共用的 cuberouter 面板", () => {
     const html = renderToString(
       <AppProviders>
         <TokenDetailPage />
@@ -19,8 +19,10 @@ describe("TokenDetailPage", () => {
     expect(html).toContain("可发起约 30 次完整 Agent 对话");
     expect(html).toContain("可自动整理 5000+ 条历史对话为记忆");
     expect(html).toContain("覆盖全功能");
-    expect(html).toContain("请输入手机号");
-    expect(html).toContain("获取验证码");
-    expect(html).toContain("登录 / 注册");
+    expect(html).toContain("用户名");
+    expect(html).toContain("密码");
+    // The card opens on the login form, with the register link below it.
+    expect(html).toContain(">登录</button>");
+    expect(html).toContain("没有账号？去注册");
   });
 });

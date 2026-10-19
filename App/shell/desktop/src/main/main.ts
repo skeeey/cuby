@@ -121,6 +121,7 @@ import {
   setWindowsLaunchAtLogin,
   type WindowsLaunchAtLoginEnvironment
 } from "./windows-launch-at-login.js";
+import { applySystemLanguageSwitch, resolveSystemLanguage } from "./system-locale.js";
 import { resolveComputerHistoryMarkdownPath } from "./computer-history-markdown.js";
 
 let mainWindow: BrowserWindow | null = null;
@@ -4887,6 +4888,11 @@ async function sendAppExitEventBeforeQuit(): Promise<void> {
   const exitEvent = sendAppExitEvent();
   await Promise.race([exitEvent, delay(APP_QUIT_ANALYTICS_GRACE_MS)]);
 }
+
+// Before anything asks the renderer what language it is in: the switch has to be in place for
+// the first paint, and Chromium only reads it during startup — which is also why this reads the
+// locale from Node's ICU rather than from app.getSystemLocale(), whose API is not available yet.
+applySystemLanguageSwitch(app, resolveSystemLanguage);
 
 let hasSingleInstanceLock = app.requestSingleInstanceLock();
 let lastSecondInstanceActivateAt = 0;

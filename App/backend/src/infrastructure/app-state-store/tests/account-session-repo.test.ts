@@ -32,6 +32,48 @@ describe("account session repository", () => {
     expect(rows[0]?.channel).toBe("email");
   });
 
+  it("keeps the cuberouter username and organization across reads", () => {
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-account-session-"));
+    const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
+
+    store.repositories.accountSession.upsert({
+      profile: {
+        userId: "7",
+        email: null,
+        phoneNumber: null,
+        nickname: "Alice",
+        avatarUrl: null,
+        planType: null,
+        hasFinishedGuide: null,
+        region: null,
+        registeredAt: null,
+        identityProvider: "cuberouter",
+        username: "alice@yeebo.com.cn",
+        organizationName: "yeebo",
+        rawProfile: {
+          username: "alice@yeebo.com.cn",
+          displayName: "Alice",
+          organizationName: "yeebo"
+        }
+      },
+      uuid: "cuberouter:7",
+      cloudUuid: "jwt-1",
+      authChannel: "cuberouter"
+    });
+
+    const session = store.repositories.accountSession.get();
+    store.close();
+
+    expect(session).toMatchObject({
+      authenticated: true,
+      profile: {
+        identityProvider: "cuberouter",
+        username: "alice@yeebo.com.cn",
+        organizationName: "yeebo"
+      }
+    });
+  });
+
   it("stores cloud accounts by uuid and switches the active account", () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-account-session-"));
     const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
@@ -364,6 +406,35 @@ describe("account session repository", () => {
     expect(store.repositories.accountSession.activateByCloudUuid("cloud.login.uuid.both", "phone")).toBe(false);
     expect(store.repositories.accountSession.get()).toEqual({ authenticated: false });
     expect(store.repositories.accountSession.activateByCloudUuid("cloud.login.uuid.both", "email")).toBe(true);
+    store.close();
+  });
+
+  it("round-trips a cuberouter identity and channel", () => {
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-account-session-"));
+    const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
+
+    store.repositories.accountSession.upsert({
+      uuid: "cuberouter:7",
+      cloudUuid: "jwt-1",
+      authChannel: "cuberouter",
+      profile: {
+        userId: "7",
+        email: null,
+        phoneNumber: null,
+        nickname: "Alice",
+        avatarUrl: null,
+        planType: null,
+        hasFinishedGuide: null,
+        region: null,
+        registeredAt: null,
+        identityProvider: "cuberouter",
+        rawProfile: {}
+      }
+    });
+
+    expect(store.repositories.accountSession.getAuthChannel()).toBe("cuberouter");
+    expect(store.repositories.accountSession.get().profile.identityProvider).toBe("cuberouter");
+    expect(store.repositories.accountSession.getCloudUuid()).toBe("jwt-1");
     store.close();
   });
 

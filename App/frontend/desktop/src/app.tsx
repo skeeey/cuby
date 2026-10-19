@@ -9,6 +9,7 @@ import { trackCloudAnalyticsEvent } from "./analytics/cloud-analytics.js";
 import { trackAgentSourceScanOutcome } from "./analytics/memory-ui-analytics.js";
 import { useAnalytics } from "./analytics/use-analytics.js";
 import { buildInvitationToastEvent } from "./app/invitation-analytics.js";
+import { isCuberouterAccountBackend } from "./app/account-backend.js";
 import {
   AgentRuntimeBridge,
   createAgentTaskStateCoordinator,
@@ -21,7 +22,6 @@ import { CampaignPromptHost } from "./components/campaign-prompt-host.js";
 import { GithubStarPromptHost } from "./components/github-star-prompt-host.js";
 import { InviteResultToast } from "./components/invite-result-toast.js";
 import { NotificationCenterProvider } from "./components/notification-center.js";
-import { TokenCreditToastHost } from "./components/token-credit-toast-host.js";
 import {
   FOCUSED_AGENT_CHAT_STORAGE_KEY,
   readGuidanceCompleted,
@@ -228,7 +228,8 @@ function RuntimeApp() {
           preferredMode: launchModeOverride ?? persistedPreferredMode,
           accountSession,
           guidanceCompleted,
-          modelConfig
+          modelConfig,
+          cuberouterAccountBackend: isCuberouterAccountBackend()
         });
         const initialPath = resolveLaunchInitialView({
           defaultPath: defaultInitialPath,
@@ -277,7 +278,10 @@ function RuntimeApp() {
             email: accountSession.profile.email ?? "",
             phoneNumber: accountSession.profile.phoneNumber,
             nickname: accountSession.profile.nickname,
-            registeredAt: accountSession.profile.registeredAt
+            registeredAt: accountSession.profile.registeredAt,
+            identityProvider: accountSession.profile.identityProvider,
+            username: accountSession.profile.username ?? null,
+            organizationName: accountSession.profile.organizationName ?? null
           }));
         } else if (effectiveBootstrap.app.userMode === "byok") {
           const localNickname = readLocalNickname(typeof window === "undefined" ? undefined : window.localStorage);
@@ -361,7 +365,6 @@ function RuntimeApp() {
         <NotificationCenterProvider>
           <AppRouter onRetry={retry} />
           <CampaignPromptHost />
-          <TokenCreditToastHost />
           <GithubStarPromptHost />
           {state.invitationToast ? (
           <InviteResultToast

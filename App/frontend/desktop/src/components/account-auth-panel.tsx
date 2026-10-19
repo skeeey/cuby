@@ -1,0 +1,349 @@
+/** Account auth panel module. */
+import type { CuberouterAuthResult, OnboardingStateDto } from "@memmy/local-api-contracts";
+import { useEffect, useRef, useState } from "react";
+import { setAnalyticsUserId } from "../analytics/analytics-context.js";
+import { useAnalytics } from "../analytics/use-analytics.js";
+import type { ModelProviderConfig } from "../api/config-client.js";
+import { buildInvitationSignupEvent } from "../app/invitation-analytics.js";
+import { persistLoginModeSelection } from "../app/login-mode.js";
+import { useApiClients } from "../app/providers.js";
+import { buildAccountOnboardingStartPatch, readGuidanceCompleted, resolvePostLoginRoute } from "../app/routes.js";
+import { useTranslation } from "../i18n/use-translation.js";
+import { getLegalLinkUrl } from "../legal/legal-links.js";
+import { appActions } from "../state/app-actions.js";
+import { useAppState } from "../state/app-state.js";
+import {
+  cuberouterKeySelectionStorage,
+  clearCuberouterKeySelection,
+  readCuberouterKeySelection,
+  writeCuberouterKeySelection
+} from "../state/cuberouter-key-selection.js";
+import { provisionCuberouterKey, resolveCuberouterLoginKey } from "../state/model-provisioning.js";
+import { createModelWorkspace } from "../state/model-workspace.js";
+import { openExternalUrl } from "../utils/open-url.js";
+import { AuthCredentialsForm } from "./auth-credentials-form.js";
+import { toFeedbackText, useAccountAuth, useEmailVerificationCode } from "./use-account-auth.js";
+
+/** Cuberouter-backed register/login panel shared by the welcome and login pages. */
+export function AccountAuthPanel() {
+  const { state, dispatch } = useAppState();
+  const { clients } = useApiClients();
+  const { track } = useAnalytics();
+  const { t, language } = useTranslation();
+  const auth = useAccountAuth();
+  const code = useEmailVerificationCode();
+  // Login first: a returning user opens this card far more often than a new one, and the
+  // register link sits right below the button for the rest.
+  const [mode, setMode] = useState<"register" | "login">("login");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [email, setEmail] = useState("");
+  const [verificationCode, setVerificationCode] = useState("");
+  const [emailVerificationRequired, setEmailVerificationRequired] = useState(false);
+  const [continuing, setContinuing] = useState(false);
+  const [warning, setWarning] = useState<string | null>(null);
+
+  // The line decides which deployment the account lands on, and that decision is permanent
+  // (the two hold separate accounts), so the probe only picks a default and the user can change it.
+  const [nodes, setNodes] = useState<string[]>([]);
+  const [nodeId, setNodeId] = useState<string | null>(null);
+  const [probingLine, setProbingLine] = useState(false);
+
+  useEffect(() => {
+    if (!clients?.account) {
+      return undefined;
+    }
+    let cancelled = false;
+    setProbingLine(true);
+    void (async () => {
+      try {
+        const probe = await clients.account.probeNodes();
+        if (cancelled) {
+          return;
+        }
+        setNodes(probe.nodes);
+        // Never preselect something the picker does not offer: a stale or unknown id would
+        // silently submit a line the user cannot see.
+        setNodeId(
+          probe.defaultNodeId && probe.nodes.includes(probe.defaultNodeId)
+            ? probe.defaultNodeId
+            : probe.nodes[0] ?? null
+        );
+      } catch (error) {
+        console.warn("cuberouter node probe failed", error);
+        if (!cancelled) {
+          setNodes([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setProbingLine(false);
+        }
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clients]);
+
+  // The instance decides the form's shape, so ask it instead of guessing: a mismatch here
+  // is what produced "email verification is enabled" only after a doomed submit. It is asked
+  // per line, because the two deployments can demand different things.
+  const lastRequirementsLine = useRef<string | null | undefined>(undefined);
+  useEffect(() => {
+    if (!clients?.account) {
+      return undefined;
+    }
+    let cancelled = false;
+    void (async () => {
+      try {
+        const requirements = await clients.account.getRegistrationRequirements(nodeId ?? undefined);
+        if (cancelled) {
+          return;
+        }
+        // Only a change of line invalidates the previous verdict — clearing on every run would
+        // also wipe the model self-check's warning, which this effect knows nothing about.
+        const lineChanged = lastRequirementsLine.current !== nodeId;
+        lastRequirementsLine.current = nodeId;
+        if (lineChanged) {
+          setWarning(null);
+        }
+        setEmailVerificationRequired(requirements.emailVerificationRequired);
+        if (requirements.turnstileRequired) {
+          setWarning(t("account.warning.turnstileRequired"));
+        }
+      } catch (error) {
+        // Unreachable, or an instance that does not answer: fall back to the plain form, but
+        // say so. Silently showing the plain form is indistinguishable from an instance that
+        // needs nothing, which turns a misconfigured server address into a mystery: the
+        // fields are simply missing and nothing explains why.
+        console.warn("registration requirements probe failed", error);
+        setWarning(toFeedbackText(error, t));
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [clients, nodeId, t]);
+  // An authenticated result whose continuation failed; a retry must re-run only the
+  // continuation, never the register/login call (re-registering would fail outright).
+  const [pendingAuthResult, setPendingAuthResult] = useState<CuberouterAuthResult | null>(null);
+
+  /** Drops a stored authentication result: new credentials must authenticate from scratch. */
+  function clearPendingAuthResult() {
+    setPendingAuthResult(null);
+  }
+
+  /** Requests a code and surfaces either outcome in the form's own feedback slot. */
+  async function sendVerificationCode() {
+    setWarning(null);
+    auth.clearFeedback();
+    const outcome = await code.send(email, nodeId ?? undefined);
+    if (!outcome.ok && outcome.text) {
+      auth.setFailure({ text: outcome.text, tone: "error" });
+    }
+  }
+
+  async function submit() {
+    // Both halves submit the line they picked, so both wait for the probe rather than sending
+    // a guess the user cannot see.
+    if (auth.pending || continuing || probingLine) return;
+    setWarning(null);
+    if (pendingAuthResult) {
+      await continueAfterAuth(pendingAuthResult);
+      return;
+    }
+    const credentials = {
+      username,
+      password,
+      // Only registration compares the confirmation; login has no such field on screen, and
+      // the empty state string would otherwise fail the match check.
+      confirmPassword: mode === "register" ? confirmPassword : undefined,
+      // The email pair is scoped the same way: the requirement describes registration, and
+      // in login mode the fields are not on screen, so enforcing them there would reject
+      // every login with a demand for an address the user was never shown a field for.
+      email: mode === "register" ? email : undefined,
+      verificationCode: mode === "register" ? verificationCode : undefined,
+      emailVerificationRequired: mode === "register" && emailVerificationRequired,
+      // Which deployment the account is looked up on: registration creates it there, and
+      // signing in has to reach the same one.
+      nodeId: nodeId ?? undefined
+    };
+    const result = mode === "register"
+      ? await auth.register(credentials)
+      : await auth.login(credentials);
+    if (!result || !result.session.authenticated) return;
+    setAnalyticsUserId(result.session.profile.userId);
+    // Emitted once per authentication, never on a continuation retry, and it describes this
+    // flow: the method is the cuberouter identity and the mode the panel selects is BYOK.
+    track(buildInvitationSignupEvent({
+      channel: "cuberouter",
+      isNewUser: result.session.isNewUser === true,
+      userMode: "byok"
+    }));
+    await continueAfterAuth(result);
+  }
+
+  async function continueAfterAuth(result: CuberouterAuthResult) {
+    const session = result.session;
+    if (!session.authenticated) return;
+
+    dispatch(appActions.accountUpdated({
+      userId: session.profile.userId,
+      email: session.profile.email ?? "",
+      phoneNumber: session.profile.phoneNumber,
+      nickname: session.profile.nickname,
+      registeredAt: session.profile.registeredAt,
+      identityProvider: session.profile.identityProvider,
+      username: session.profile.username ?? null,
+      organizationName: session.profile.organizationName ?? null
+    }));
+
+    if (!clients?.config) {
+      auth.setFailure({ text: t("account.error.provisionFailed"), tone: "error" });
+      return;
+    }
+
+    try {
+      setContinuing(true);
+      const username = session.profile.username ?? "";
+      // The catalog is read fresh: the app's own snapshot may predate this login, and the
+      // "keep" decision below turns on whether a cuberouter connection is already written.
+      const stored = await clients.config.getModelConfig();
+      const decision = await resolveCuberouterLoginKey({
+        apiBase: result.provisioning.apiBase,
+        catalog: createModelWorkspace(stored).catalog,
+        record: username ? readCuberouterKeySelection(username, cuberouterKeySelectionStorage()) : null,
+        getModelChoices: () => clients.account.getModelChoices(),
+        revealPersonalKey: (tokenId) => clients.account.revealPersonalKey(tokenId)
+      });
+
+      let saved: ModelProviderConfig;
+      if (decision.action === "keep") {
+        // The instance could not be asked and a cuberouter connection already exists: the read
+        // taken above is fresh enough for the self-check, and a transient outage must not
+        // overwrite the user's key — write nothing.
+        saved = stored;
+      } else {
+        saved = await provisionCuberouterKey({
+          configClient: clients.config,
+          endpoint: {
+            apiBase: result.provisioning.apiBase,
+            protocol: "openai-chat-completions",
+            apiKey: decision.action === "reuse" ? decision.apiKey : result.provisioning.apiKey
+          },
+          defaultModel: result.provisioning.model,
+          // Only a provision carries the instance's model list; a reuse never asked for it, so the
+          // list reads as unknown and the seeding falls back to the build-time default model.
+          availableModels: decision.action === "provision" ? decision.availableModels : null
+        });
+        const storage = cuberouterKeySelectionStorage();
+        if (decision.action === "reuse") {
+          writeCuberouterKeySelection(decision.record, storage);
+        } else if (username) {
+          // The remembered key is gone: drop the record so the panel stops calling it selected.
+          // find-or-create is name-based, so the key it just wrote shows up in the panel's list.
+          clearCuberouterKeySelection(username, storage);
+        }
+      }
+      dispatch(appActions.modelConfigUpdated(saved));
+
+      // The self-check needs its own guard: it either returns { ok: false } (no quota yet, or
+      // the model is missing from the target instance's capability table) or throws outright
+      // (the probe request itself failed). Neither may block: the account and the model config
+      // are already written, so bailing out here would strand the user on the auth page.
+      try {
+        const test = await clients.config.testModelConfig(saved, "chat");
+        if (!test.ok) {
+          setWarning(t("account.warning.modelUnavailable", { reason: test.message }));
+        }
+      } catch (error) {
+        console.warn("model connection self-check failed", error);
+        setWarning(t("account.warning.modelUnavailable", { reason: t("account.error.requestFailed") }));
+      }
+    } catch (error) {
+      console.error("provision model config failed", error);
+      auth.setFailure({ text: t("account.error.provisionFailed"), tone: "error" });
+      return;
+    } finally {
+      setContinuing(false);
+    }
+
+    // `profile.hasFinishedGuide` is always null for a cuberouter identity, so the returning
+    // user has to be recognised from `isNewUser` (the repository computes it from whether an
+    // account row already existed) plus the onboarding state already persisted locally.
+    // Only a brand-new identity may start onboarding: persisting the start patch for a
+    // returning user resets onboarding for good, because the reset survives restarts.
+    const onboardingPatch: Partial<OnboardingStateDto> = session.isNewUser === true
+      ? buildAccountOnboardingStartPatch(state.bootstrap?.onboarding)
+      : {};
+    const nextOnboarding = {
+      ...buildAccountOnboardingStartPatch(state.bootstrap?.onboarding),
+      ...state.bootstrap?.onboarding,
+      ...onboardingPatch
+    };
+
+    try {
+      setContinuing(true);
+      const persisted = await persistLoginModeSelection({
+        configClient: clients.config,
+        dispatch,
+        userMode: "byok",
+        onboarding: onboardingPatch
+      });
+      setPendingAuthResult(null);
+      // Route on the state the backend just read back, not on the snapshot taken before the
+      // login: that snapshot may have been scoped to a different account row, which is how a
+      // completed account came back as "not completed" and replayed the guidance.
+      dispatch(appActions.navigate(
+        resolvePostLoginRoute({
+          onboarding: { ...nextOnboarding, ...(persisted.onboarding ?? {}) },
+          preferredMode: state.navigation.preferredMode,
+          // This machine's own answer to "has the guidance run here", which a logout cannot
+          // move: the stored onboarding row can change scope or identity across a re-login.
+          guidanceCompleted: readGuidanceCompleted(
+            typeof window === "undefined" ? undefined : window.localStorage
+          )
+        })
+      ));
+    } catch (error) {
+      console.error("persist byok mode failed", error);
+      setPendingAuthResult(result);
+      auth.setFailure({ text: t("login.error.modePersistenceFailed"), tone: "error" });
+    } finally {
+      setContinuing(false);
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      <AuthCredentialsForm
+        mode={mode}
+        username={username}
+        password={password}
+        confirmPassword={mode === "register" ? confirmPassword : undefined}
+        emailVerificationRequired={emailVerificationRequired}
+        email={email}
+        verificationCode={verificationCode}
+        nodes={nodes}
+        selectedNodeId={nodeId}
+        probingLine={probingLine}
+        sendingCode={code.sending}
+        codeSecondsLeft={code.secondsLeft}
+        disabled={auth.pending || continuing}
+        feedback={auth.feedback ?? (warning ? { text: warning, tone: "error" } : null)}
+        onUsernameChange={(next) => { clearPendingAuthResult(); setUsername(next); }}
+        onPasswordChange={(next) => { clearPendingAuthResult(); setPassword(next); }}
+        onConfirmPasswordChange={(next) => { clearPendingAuthResult(); setConfirmPassword(next); }}
+        onEmailChange={(next) => { clearPendingAuthResult(); setEmail(next); }}
+        onVerificationCodeChange={(next) => { clearPendingAuthResult(); setVerificationCode(next); }}
+        onNodeChange={(next) => { clearPendingAuthResult(); setNodeId(next); }}
+        onSendCode={() => void sendVerificationCode()}
+        onModeChange={(next) => { auth.clearFeedback(); clearPendingAuthResult(); setMode(next); }}
+        onSubmit={() => void submit()}
+        onOpenTerms={() => void openExternalUrl(getLegalLinkUrl("terms", language, state.bootstrap?.legal))}
+        onOpenDataAgreement={() => void openExternalUrl(getLegalLinkUrl("data", language, state.bootstrap?.legal))}
+      />
+    </div>
+  );
+}

@@ -1,4 +1,3 @@
-import type { AccountChannel } from "@memmy/local-api-contracts";
 import { dirname, join } from "node:path";
 import type { AppStateStore } from "../infrastructure/app-state-store/index.js";
 import { type MemmyConfigWriter } from "../infrastructure/memmy-config/index.js";
@@ -13,7 +12,13 @@ import { createHttpMemmyAgentAdminClient } from "../adapters/outbound/memmy-agen
 import type { MemmyAgentAdminClient } from "../adapters/outbound/memmy-agent-admin-client/index.js";
 import type { SkillTargetRegistry } from "../adapters/outbound/skill-writer/target-registry.js";
 import type { CloudClient } from "../adapters/outbound/cloud-client/index.js";
+import type { CuberouterClient } from "../adapters/outbound/cuberouter-client/index.js";
+import { createHttpCuberouterClient } from "../adapters/outbound/cuberouter-client/index.js";
+import type { CuberouterNode } from "../config/cuberouter-nodes.js";
+import { createCuberouterNodeRouter } from "./cuberouter-node-router.js";
+import { readCuberouterSettings, writeCuberouterBaseUrl } from "../infrastructure/memmy-config/cuberouter-access.js";
 import type { MemoryClient } from "../adapters/outbound/memory-client/index.js";
+import type { CuberouterClientConfig } from "../config/service-urls.js";
 import type { PermissionManager } from "../permission/index.js";
 import {
   createAgentSourceLifecycleAnalytics,
@@ -39,6 +44,10 @@ import {
   type BootstrapService
 } from "./bootstrap-service.js";
 import { createChannelService, type ChannelService } from "./channel-service.js";
+import {
+  createCuberouterAccountService,
+  type CuberouterAccountService
+} from "./cuberouter-account-service.js";
 import { createIntegrationService, type IntegrationService } from "./integration-service.js";
 import { createIngestionService, type IngestionService } from "./ingestion-service.js";
 import { createLocalDataService, type LocalDataService } from "./local-data-service.js";
@@ -65,6 +74,8 @@ export interface BackendServices {
   bootstrap: BootstrapService;
   appConfig: AppConfigService;
   account: AccountService;
+  /** cuberouter-backed register/login. */
+  cuberouterAccount: CuberouterAccountService;
   /** Integrations. */
   integrations: IntegrationService;
   /** Channels. */
@@ -106,13 +117,37 @@ export interface CreateBackendServicesOptions {
   memmyAgentAdminClient?: MemmyAgentAdminClient;
   /** Memmy agent admin bootstrap secret. */
   memmyAgentAdminBootstrapSecret?: string | null;
-  /** Verification channel supported by the current desktop package. */
-  accountChannel?: AccountChannel;
+  /** Node table the cuberouter register/login routes may choose from (empty = single default line). */
+  cuberouterNodes: CuberouterNode[];
+  /** cuberouter configuration (default base URL and provisioned model). */
+  cuberouterConfig: CuberouterClientConfig;
   scanPreferencesStore?: ScanPreferencesStore;
 }
 
 export function createBackendServices(options: CreateBackendServicesOptions): BackendServices {
   const progressBus = options.progressBus ?? createProgressBus();
+
+  // The line the app is on lives in config.yaml, next to everything else the desktop can
+  // inspect and hand-edit; the node table itself is build-time configuration.
+  const cuberouterNodeRouter = createCuberouterNodeRouter({
+    nodes: options.cuberouterNodes,
+    clientFor: (url) => createHttpCuberouterClient({ baseUrl: url, timeoutMs: options.cuberouterConfig.timeoutMs }),
+    readPreferredNodeId: async () => {
+      if (!options.memmyConfigPath) {
+        return null;
+      }
+      const settings = await readCuberouterSettings(options.memmyConfigPath);
+      return options.cuberouterNodes.find((node) => node.url === settings.baseUrl)?.id ?? null;
+    },
+    writePreferredNodeId: async (nodeId) => {
+      const url = options.cuberouterNodes.find((node) => node.id === nodeId)?.url;
+      if (url && options.memmyConfigPath) {
+        await writeCuberouterBaseUrl(options.memmyConfigPath, url);
+      }
+    },
+    language: () => options.appStateStore.repositories.bootstrap.getAppSettings().language,
+    log: (message) => console.info(message)
+  });
   const sourceRegistry =
     options.sourceRegistry ??
     createBuiltinAgentSourceRegistry();
@@ -129,6 +164,9 @@ export function createBackendServices(options: CreateBackendServicesOptions): Ba
     createHttpMemmyAgentAdminClient({ bootstrapSecret: options.memmyAgentAdminBootstrapSecret });
   const memmyConfigWriter = options.memmyConfigWriter ?? createUnavailableMemmyConfigWriter();
   const accountSessionRepository = options.appStateStore.repositories.accountSession;
+  // A cuberouter session stores its cuberouter JWT as the cloud credential, so every service
+  // that would send that credential to the memmy cloud takes this predicate and skips the call.
+  const isCuberouterSession = () => accountSessionRepository.getAuthChannel() === "cuberouter";
   const resolveAnalyticsUserId = () => {
     const session = accountSessionRepository.get();
     if (!session.authenticated) return null;
@@ -180,7 +218,8 @@ export function createBackendServices(options: CreateBackendServicesOptions): Ba
     agentAdapterRegistry: options.agentAdapterRegistry,
     bootstrap: createBootstrapService({
       ...options,
-      scanPreferencesStore: options.scanPreferencesStore
+      scanPreferencesStore: options.scanPreferencesStore,
+      isCuberouterSession
     }),
     appConfig: createAppConfigService({
       bootstrapRepository: options.appStateStore.repositories.bootstrap,
@@ -188,15 +227,23 @@ export function createBackendServices(options: CreateBackendServicesOptions): Ba
       accountSessionRepository: options.appStateStore.repositories.accountSession,
       memmyConfigWriter: options.memmyConfigWriter,
       memoryClient: options.memoryClient,
-      scanPreferencesStore: options.scanPreferencesStore
+      scanPreferencesStore: options.scanPreferencesStore,
+      isCuberouterSession
     }),
     account: createAccountService({
       cloudClient: options.cloudClient,
       accountSessionRepository: options.appStateStore.repositories.accountSession,
       bootstrapRepository: options.appStateStore.repositories.bootstrap,
       memmyConfigWriter: options.memmyConfigWriter,
-      memoryClient: options.memoryClient,
-      accountChannel: options.accountChannel
+      memoryClient: options.memoryClient
+    }),
+    cuberouterAccount: createCuberouterAccountService({
+      clientFor: (url) => createHttpCuberouterClient({ baseUrl: url, timeoutMs: options.cuberouterConfig.timeoutMs }),
+      accountSessionRepository: options.appStateStore.repositories.accountSession,
+      accountNodes: options.appStateStore.repositories.cuberouterAccountNode,
+      nodeRouter: cuberouterNodeRouter,
+      model: options.cuberouterConfig.model,
+      log: (message) => console.info(message)
     }),
     integrations: createIntegrationService({
       cloudClient: options.cloudClient,
@@ -255,11 +302,13 @@ export function createBackendServices(options: CreateBackendServicesOptions): Ba
       bootstrapRepository: options.appStateStore.repositories.bootstrap,
       accountSessionRepository: options.appStateStore.repositories.accountSession,
       memmyConfigWriter,
-      cloudClient: options.cloudClient
+      cloudClient: options.cloudClient,
+      isCuberouterSession
     }),
     tokenQuota: createTokenQuotaService({
       cloudClient: options.cloudClient,
-      accountSessionRepository: options.appStateStore.repositories.accountSession
+      accountSessionRepository: options.appStateStore.repositories.accountSession,
+      isCuberouterSession
     })
   };
 }

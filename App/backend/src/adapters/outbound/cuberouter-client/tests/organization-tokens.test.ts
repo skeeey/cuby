@@ -1,0 +1,198 @@
+/** Cuberouter organization token tests. */
+import { describe, expect, it, vi } from "vitest";
+import { createHttpCuberouterClient } from "../http-cuberouter-client.js";
+
+function clientWith(fetchImpl: typeof fetch) {
+  return createHttpCuberouterClient({
+    baseUrl: "http://127.0.0.1:3000",
+    timeoutMs: 1000,
+    fetchImpl
+  });
+}
+
+function jsonResponse(body: unknown): Response {
+  return new Response(JSON.stringify(body), {
+    status: 200,
+    headers: { "content-type": "application/json" }
+  });
+}
+
+describe("cuberouter organizations", () => {
+  it("lists the organizations the member belongs to, with their local ids", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        message: "",
+        data: [
+          { id: 7, name: "MemTensor", role: "owner" },
+          { id: 3, name: "Research", role: "member", status: 1 }
+        ]
+      })
+    );
+
+    const organizations = await clientWith(fetchImpl as unknown as typeof fetch).listOrganizations("jwt-1");
+
+    expect(organizations).toEqual([
+      { id: "7", name: "MemTensor" },
+      { id: "3", name: "Research" }
+    ]);
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://127.0.0.1:3000/api/organizations");
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer jwt-1");
+  });
+
+  it("drops organization rows without a usable id or name", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ success: true, message: "", data: [{ id: 7 }, { name: "no-id" }, "nonsense"] })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).listOrganizations("jwt-1")
+    ).resolves.toEqual([]);
+  });
+});
+
+describe("cuberouter organization tokens", () => {
+  it("lists the organization's enabled tokens with their plaintext keys", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        message: "",
+        data: {
+          items: [
+            { id: 11, name: "memmy-desktop", key: "sk-org-desktop", key_preview: "sk-org**********top" },
+            { id: 9, name: "batch-job", key: "sk-org-batch" }
+          ],
+          total: 2,
+          page_size: 100
+        }
+      })
+    );
+
+    const tokens = await clientWith(fetchImpl as unknown as typeof fetch)
+      .listOrganizationTokens("jwt-1", "7", "memmy-desktop");
+
+    expect(tokens).toEqual([
+      { id: 11, name: "memmy-desktop", key: "sk-org-desktop" },
+      { id: 9, name: "batch-job", key: "sk-org-batch" }
+    ]);
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    // Only enabled tokens, narrowed to the desktop name, and authenticated as the user.
+    expect(url).toBe("http://127.0.0.1:3000/api/organizations/7/tokens?keyword=memmy-desktop&status=1&page_size=100");
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer jwt-1");
+    expect(init.method).toBe("GET");
+    // Organization routes act *as* the organization: without these the request is taken as a
+    // personal context and the instance answers 403 "organization context mismatch".
+    expect(init.headers).toMatchObject({
+      "X-Account-Context-Type": "organization",
+      "X-Account-Context-Id": "7"
+    });
+  });
+
+  it("looks for the token name the caller configured", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ success: true, message: "", data: { items: [], total: 0 } })
+    );
+
+    await clientWith(fetchImpl as unknown as typeof fetch).listOrganizationTokens("jwt-1", "7", "team-desktop");
+
+    const [url] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toContain("keyword=team-desktop");
+  });
+
+  it("drops entries without a usable id, name or key", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        message: "",
+        data: { items: [{ id: 1, name: "memmy-desktop" }, { id: 2, key: "sk-x" }, { name: "x", key: "sk-y" }], total: 3 }
+      })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).listOrganizationTokens("jwt-1", "7", "memmy-desktop")
+    ).resolves.toEqual([]);
+  });
+
+  it("surfaces the server message when the organization denies access", async () => {
+    // The middleware aborts with its own payload rather than the usual success envelope, so the
+    // message has to come from wherever it sits in the body.
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ code: "organization_access_denied", message: "permission denied" }), {
+        status: 403,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).listOrganizationTokens("jwt-1", "7", "memmy-desktop")
+    ).rejects.toMatchObject({ code: "rejected", message: "permission denied" });
+  });
+
+  it("maps a transport failure while listing to service_unavailable", async () => {
+    const fetchImpl = vi.fn(async () => {
+      throw new Error("Failed to fetch");
+    });
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).listOrganizationTokens("jwt-1", "7", "memmy-desktop")
+    ).rejects.toMatchObject({ code: "service_unavailable" });
+  });
+
+  it("creates the member's own key and returns its secret", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        message: "",
+        data: { id: 12, name: "cuby-desktop-alice", key: "sk-org-new", key_preview: "sk-o**********new" }
+      })
+    );
+
+    const created = await clientWith(fetchImpl as unknown as typeof fetch)
+      .createOrganizationToken("jwt-1", "7", { name: "cuby-desktop-alice", unlimitedQuota: true });
+
+    expect(created).toEqual({ id: 12, name: "cuby-desktop-alice", key: "sk-org-new" });
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://127.0.0.1:3000/api/organizations/7/tokens");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(String(init.body))).toEqual({
+      name: "cuby-desktop-alice",
+      visibility: "private",
+      unlimited_quota: true
+    });
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer jwt-1");
+    expect(init.headers).toMatchObject({
+      "X-Account-Context-Type": "organization",
+      "X-Account-Context-Id": "7"
+    });
+  });
+
+  it("surfaces the server message when creating the key is refused", async () => {
+    // A member who is not (or no longer) in the organization is refused here rather than at
+    // list time, so this message is what the desktop shows.
+    const fetchImpl = vi.fn(async () =>
+      new Response(JSON.stringify({ success: false, message: "permission denied" }), {
+        status: 400,
+        headers: { "content-type": "application/json" }
+      })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch)
+        .createOrganizationToken("jwt-1", "7", { name: "cuby-desktop-alice", unlimitedQuota: true })
+    ).rejects.toMatchObject({ code: "rejected", message: "permission denied" });
+  });
+
+  it("refuses a created token that carries no key", async () => {
+    // Provisioning would write an empty key into the model config and look like a working
+    // setup, so a response without the secret is an error rather than an empty token.
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ success: true, message: "", data: { id: 12, name: "cuby-desktop-alice" } })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch)
+        .createOrganizationToken("jwt-1", "7", { name: "cuby-desktop-alice", unlimitedQuota: true })
+    ).rejects.toMatchObject({ code: "rejected" });
+  });
+});

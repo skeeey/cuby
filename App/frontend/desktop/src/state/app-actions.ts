@@ -100,7 +100,17 @@ export type AppAction =
   | { type: "agentSources/scanCompletionExpired"; jobId: string }
   | { type: "scanPreferences/updated"; preferences: Partial<ScanPreferences> }
   | { type: "preferredMode/updated"; preferredMode: PreferredMode }
-  | { type: "account/updated"; userId?: string; email?: string; phoneNumber?: string | null; nickname?: string; registeredAt?: string | null }
+  | {
+      type: "account/updated";
+      userId?: string;
+      email?: string;
+      phoneNumber?: string | null;
+      nickname?: string;
+      registeredAt?: string | null;
+      identityProvider?: "memmy_cloud" | "cuberouter";
+      username?: string | null;
+      organizationName?: string | null;
+    }
   | { type: "account/cleared" }
   | { type: "modelConfig/updated"; config: Partial<ModelProviderConfig> }
   | { type: "modal/changed"; modal: "nickname" | "scanPermission" | "improvement" | "modelConfig" | "manualSource"; open: boolean };
@@ -210,7 +220,16 @@ export const appActions = {
   },
 
   /** Handles account updated. */
-  accountUpdated(input: { userId?: string; email?: string; phoneNumber?: string | null; nickname?: string; registeredAt?: string | null }): AppAction {
+  accountUpdated(input: {
+    userId?: string;
+    email?: string;
+    phoneNumber?: string | null;
+    nickname?: string;
+    registeredAt?: string | null;
+    identityProvider?: "memmy_cloud" | "cuberouter";
+    username?: string | null;
+    organizationName?: string | null;
+  }): AppAction {
     return { type: "account/updated", ...input };
   },
 
@@ -542,6 +561,19 @@ export const toolsActions = {
 
       dispatch({ type: "tools/connectionFailure", message: toErrorMessage(error) });
     }
+  },
+
+  /** Loads only the local message-channel connections, for identities without a memmy cloud account. */
+  async loadChannelConnections(channelsClient: ChannelsClient, dispatch: (action: ToolsAction) => void): Promise<void> {
+    dispatch({ type: "tools/loadStart" });
+    const connections = await listChannelConnections(channelsClient);
+    dispatch({ type: "tools/loadSuccess", connections });
+  },
+
+  /** Refreshes only the local message-channel connections. */
+  async refreshChannelConnections(channelsClient: ChannelsClient, dispatch: (action: ToolsAction) => void): Promise<void> {
+    const connections = await listChannelConnections(channelsClient);
+    dispatch({ type: "tools/connectionsUpdated", connections });
   }
 };
 

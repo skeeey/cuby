@@ -128,18 +128,18 @@ describe("WebSocket message envelopes with media paths", () => {
     await channel.dispatchEnvelope(connection, "client-1", {
       type: "message",
       chat_id: "abc123",
-      content: "please use @browserbase",
+      content: "please use @brave-search",
       webui: true,
       client_request_id: "11111111-1111-4111-8111-111111111111",
       target: { kind: "standalone" },
       mcp_presets: [
         {
-          name: "Browserbase",
-          display_name: "Browserbase",
-          category: "browser",
-          transport: "streamableHttp",
-          logo_url: "https://example.invalid/browserbase.svg",
-          brand_color: "#111111",
+          name: "brave-search",
+          display_name: "Brave Search",
+          category: "web",
+          transport: "stdio",
+          logo_url: "https://example.invalid/brave-search.svg",
+          brand_color: "#FB542B",
           configured: true,
         },
         { name: "unknown-mcp", transport: "stdio" },
@@ -150,12 +150,12 @@ describe("WebSocket message envelopes with media paths", () => {
     expect(metadata.webui).toBe(true);
     expect(metadata.mcp_presets).toEqual([
       {
-        name: "browserbase",
-        display_name: "Browserbase",
-        category: "browser",
-        transport: "streamableHttp",
-        logo_url: "https://example.invalid/browserbase.svg",
-        brand_color: "#111111",
+        name: "brave-search",
+        display_name: "Brave Search",
+        category: "web",
+        transport: "stdio",
+        logo_url: "https://example.invalid/brave-search.svg",
+        brand_color: "#FB542B",
         configured: true,
       },
     ]);

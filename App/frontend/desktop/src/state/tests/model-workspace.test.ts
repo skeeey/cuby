@@ -15,6 +15,7 @@ import {
 } from "../../../../../backend/src/infrastructure/memmy-config/model-config-catalog.js";
 import {
   MODEL_WORKSPACE_STORAGE_KEY,
+  applyCuberouterSelection,
   assignCatalogPreset,
   assignedCatalogEndpointId,
   clearLegacyModelWorkspace,
@@ -24,6 +25,7 @@ import {
   getModelCandidates,
   getTaskModelCandidates,
   modelConfigInput,
+  readCuberouterSelection,
   resolveModelSelection,
   setDefaultTaskModel,
   setModelAssignment,
@@ -1084,5 +1086,233 @@ describe("canonical model workspace adapter", () => {
     expect(serialized).not.toContain("label");
     expect(serialized).not.toContain("maxTokens");
     expect(serialized).not.toContain("dailyTokenLimit");
+  });
+});
+
+describe("cuberouter selection", () => {
+  const API_BASE = "https://cn.example/v1";
+
+  it("materializes per-model presets with the capability of each slot they serve", () => {
+    const workspace = createModelWorkspace(null);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: {
+        agent: { models: ["a", "b"], default: "a" },
+        memorySummary: "b",
+        memoryEvolution: "c"
+      }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    expect(provider?.endpoints[0]?.apiBase).toBe(API_BASE);
+    const byModel = Object.fromEntries(
+      (provider?.models ?? []).map((preset) => [preset.model, [...preset.capabilities].sort()])
+    );
+    expect(byModel).toEqual({
+      a: ["agent"],
+      b: ["agent", "memory_summary"],
+      c: ["memory_evolution"]
+    });
+    const assignment = next.catalog.modelAssignments.byok;
+    expect(assignment.agent.candidates).toHaveLength(2);
+    expect(assignment.memorySummary).toBe(
+      provider?.models.find((preset) => preset.model === "b")?.presetId
+    );
+  });
+
+  it("keeps the stored secret when no plaintext is given, and prunes dropped models", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"] }, memorySummary: "a", memoryEvolution: "b" }
+    });
+
+    const second = applyCuberouterSelection(first, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+    });
+
+    const provider = second.catalog.providers.find((item) => item.provider === "openai");
+    expect(provider?.models.map((preset) => preset.model)).toEqual(["a"]);
+    expect(second.catalog.modelAssignments.byok.agent.candidates).toHaveLength(1);
+  });
+
+  it("reads the selection back out of the stored catalog", () => {
+    const workspace = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"], default: "b" }, memorySummary: "a", memoryEvolution: "b" }
+    });
+
+    expect(readCuberouterSelection(workspace.catalog, API_BASE)).toEqual({
+      agent: { models: ["a", "b"], default: "b" },
+      memorySummary: "a",
+      memoryEvolution: "b"
+    });
+    expect(readCuberouterSelection(workspace.catalog, "https://other.example/v1")).toEqual({
+      agent: { models: [], default: undefined },
+      memorySummary: "",
+      memoryEvolution: ""
+    });
+  });
+
+  it("keeps assignments that point at other endpoints and clears the dropped preset's references", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"] }, memorySummary: "a", memoryEvolution: "b" }
+    });
+    const dropped = first.catalog.providers[0]!.models.find((preset) => preset.model === "b")!;
+    const image = upsertByokPreset(first, {
+      provider: "openai",
+      endpoint: "https://img.example/v1",
+      protocol: "openai-images",
+      apiKey: "sk-2",
+      model: "img-1",
+      capabilities: ["image_generation"]
+    });
+    const workspace = setModelAssignment(image.workspace, "byok", "image", image.presetId);
+
+    expect(workspace.catalog.modelAssignments.byok.memoryEvolution).toBe(dropped.presetId);
+    expect(workspace.catalog.modelAssignments.byok.imageGeneration).toBe(image.presetId);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "" }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    const assignment = next.catalog.modelAssignments.byok;
+    expect(provider?.models.map((preset) => preset.model)).toEqual(["a", "img-1"]);
+    expect(assignment.imageGeneration).toBe(image.presetId);
+    expect(provider?.models.map((preset) => preset.presetId)).not.toContain(dropped.presetId);
+    expect(assignment.memoryEvolution).toBeNull();
+    expect([
+      ...assignment.agent.candidates,
+      assignment.memorySummary,
+      assignment.memoryEvolution,
+      assignment.embedding,
+      assignment.asr,
+      assignment.imageGeneration
+    ]).not.toContain(dropped.presetId);
+  });
+
+  it("adds its own preset when another connection already has a model of the same name", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://personal.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-personal",
+      model: "x",
+      capabilities: ["agent"]
+    });
+
+    const next = applyCuberouterSelection(personal.workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["x"] }, memorySummary: "x", memoryEvolution: "" }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    const personalPreset = provider?.models.find((preset) => preset.presetId === personal.presetId);
+    expect(personalPreset?.endpointId).toBe(personal.endpointId);
+    expect([...(personalPreset?.capabilities ?? [])].sort()).toEqual(["agent"]);
+    const cuberouterPreset = provider?.models.find((preset) => (
+      preset.model === "x" && preset.endpointId !== personal.endpointId
+    ));
+    expect(provider?.models).toHaveLength(2);
+    expect(cuberouterPreset?.model).toBe("x");
+    expect(cuberouterPreset?.presetId).not.toBe(personal.presetId);
+    expect(cuberouterPreset?.capabilities).toEqual(["agent", "memory_summary"]);
+  });
+
+  it("keeps another connection's agent candidate enrolled", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://personal.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-personal",
+      model: "assistant",
+      capabilities: ["agent"]
+    });
+    const workspace = setTaskModelCandidates(personal.workspace, "byok", [personal.presetId]);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a", "b"], default: "b" }, memorySummary: "", memoryEvolution: "" }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    const selectionIds = (provider?.models ?? [])
+      .filter((preset) => preset.endpointId !== personal.endpointId)
+      .map((preset) => preset.presetId);
+    const candidates = next.catalog.modelAssignments.byok.agent.candidates;
+    expect(selectionIds).toHaveLength(2);
+    expect(candidates).toContain(personal.presetId);
+    expect(candidates).toEqual(expect.arrayContaining(selectionIds));
+    expect(next.catalog.modelAssignments.byok.agent.default)
+      .toBe(provider?.models.find((preset) => preset.model === "b")?.presetId);
+  });
+
+  it("reads the selection from the openai provider when another byok provider is listed first", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "anthropic",
+      endpoint: "https://api.anthropic.com/v1",
+      protocol: "anthropic-messages",
+      apiKey: "sk-anthropic",
+      model: "claude-sonnet",
+      capabilities: ["agent"]
+    });
+    const workspace = applyCuberouterSelection(personal.workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+    });
+
+    expect(workspace.catalog.providers.map((provider) => provider.provider)).toEqual(["anthropic", "openai"]);
+    expect(readCuberouterSelection(workspace.catalog, API_BASE)).toEqual({
+      agent: { models: ["a"], default: "a" },
+      memorySummary: "a",
+      memoryEvolution: "a"
+    });
+  });
+
+  it("drops a kept candidate whose preset stopped serving the agent slot", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a"] }, memorySummary: "", memoryEvolution: "" }
+    });
+
+    const next = applyCuberouterSelection(first, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      selection: { agent: { models: ["b"] }, memorySummary: "a", memoryEvolution: "" }
+    });
+
+    const assignment = next.catalog.modelAssignments.byok;
+    const presets = next.catalog.providers.flatMap((provider) => provider.models);
+    const kept = presets.find((preset) => preset.model === "a");
+    expect(kept?.capabilities).toEqual(["memory_summary"]);
+    expect(assignment.memorySummary).toBe(kept?.presetId);
+    expect(assignment.agent.candidates).not.toContain(kept?.presetId);
+    expect(assignment.agent.candidates).toEqual([presets.find((preset) => preset.model === "b")?.presetId]);
+    const byId = new Map(presets.map((preset) => [preset.presetId, preset]));
+    for (const candidateId of assignment.agent.candidates) {
+      expect(byId.get(candidateId)?.capabilities).toContain("agent");
+    }
   });
 });

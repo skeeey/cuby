@@ -43,6 +43,12 @@ export interface AccountState {
   phoneNumber: string | null;
   nickname: string;
   registeredAt: string | null;
+  /** Which backend issued the active session; cuberouter sessions have no memmy cloud account behind them. */
+  identityProvider: "memmy_cloud" | "cuberouter";
+  /** cuberouter 登录用户名（完整邮箱）；非 cuberouter 为 null。 */
+  username: string | null;
+  /** 所属组织名（单组织假设）；无组织为 null。 */
+  organizationName: string | null;
 }
 
 /** Contract for modal state. */
@@ -135,7 +141,10 @@ export function createInitialAppState(): AppState {
       email: "",
       phoneNumber: null,
       nickname: "",
-      registeredAt: null
+      registeredAt: null,
+      identityProvider: "memmy_cloud",
+      username: null,
+      organizationName: null
     },
     modelConfig: defaultModelConfig,
     agent: initialAgentState,
@@ -341,7 +350,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           email: action.email ?? state.account.email,
           phoneNumber: Object.prototype.hasOwnProperty.call(action, "phoneNumber") ? (action.phoneNumber ?? null) : state.account.phoneNumber,
           nickname: action.nickname ?? state.account.nickname,
-          registeredAt: Object.prototype.hasOwnProperty.call(action, "registeredAt") ? (action.registeredAt ?? null) : state.account.registeredAt
+          registeredAt: Object.prototype.hasOwnProperty.call(action, "registeredAt") ? (action.registeredAt ?? null) : state.account.registeredAt,
+          identityProvider: action.identityProvider ?? state.account.identityProvider,
+          username: Object.prototype.hasOwnProperty.call(action, "username") ? (action.username ?? null) : state.account.username,
+          organizationName: Object.prototype.hasOwnProperty.call(action, "organizationName") ? (action.organizationName ?? null) : state.account.organizationName
         }
       };
     case "account/cleared":
@@ -352,7 +364,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           email: "",
           phoneNumber: null,
           nickname: "",
-          registeredAt: null
+          registeredAt: null,
+          identityProvider: "memmy_cloud",
+          username: null,
+          organizationName: null
         }
       };
     case "modelConfig/updated":
@@ -377,6 +392,11 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         tools: toolsReducer(state.tools, action as ToolsAction)
       };
   }
+}
+
+/** True when the active identity still has a memmy cloud account behind it. */
+export function canUseCloudFeatures(state: Pick<AppState, "account">): boolean {
+  return state.account.identityProvider !== "cuberouter";
 }
 
 function isAgentChatViewPath(path: AppRoutePath): boolean {

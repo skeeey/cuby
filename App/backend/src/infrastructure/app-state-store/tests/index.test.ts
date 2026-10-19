@@ -131,8 +131,8 @@ describe("app state store migrations", () => {
     expect(settings.menuBarIconEnabled).toBe(true);
     expect(settings.stopMemoryServiceOnExit).toBe(false);
     expect(agentSources).toEqual([]);
-    expect(firstMigrationCount).toBe(34);
-    expect(secondMigrationCount).toBe(34);
+    expect(firstMigrationCount).toBe(35);
+    expect(secondMigrationCount).toBe(35);
   });
 
   it("preserves the authenticated account when upgrading the legacy 0007 database", () => {
@@ -2101,6 +2101,73 @@ describe("bootstrap repository writes", () => {
       completed: false,
       currentStep: "product_tour_required",
       scanPermission: "scan_only"
+    });
+  });
+
+  it("keeps a signed-in account's onboarding on its own row whatever its uuid looks like", () => {
+    // The account uuid is an internal identity, not a shape to pattern-match: an instance that
+    // numbers accounts plainly (a legacy import, or a future id scheme) still owns its row.
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
+    const store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
+    const now = new Date().toISOString();
+
+    // The channel decides, not the spelling of the id.
+    store.db.prepare(
+      "INSERT INTO cloud_accounts (uuid, user_id, raw_profile_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run("6", "6", JSON.stringify({ _memmyAuthChannel: "cuberouter" }), now, now);
+    store.db.prepare("UPDATE app_settings SET active_uuid = '6', user_mode = 'byok' WHERE id = 'default'").run();
+
+    store.repositories.bootstrap.updateOnboarding({
+      currentStep: "completed",
+      completed: true,
+      completedAt: "2026-09-24T14:38:27.621Z"
+    });
+    const accountRow = store.db
+      .prepare("SELECT has_finished_guide FROM account_onboarding_state WHERE uuid = ?")
+      .get("6") as { has_finished_guide: number } | undefined;
+    const localRow = store.db
+      .prepare("SELECT has_finished_guide FROM account_onboarding_state WHERE uuid = ?")
+      .get("local-byok-onboarding") as { has_finished_guide: number } | undefined;
+    store.close();
+
+    expect(accountRow?.has_finished_guide).toBe(1);
+    expect(localRow?.has_finished_guide ?? 0).toBe(0);
+  });
+
+  it("keeps a signed-in cuberouter account's onboarding on its own row", () => {
+    // A cuberouter identity is a signed-in account that runs in byok mode. Scoping the
+    // onboarding row by userMode put the completion in the local row while a launch that
+    // hydrated any other mode ("unset" is the schema default) read the account row back as
+    // unfinished — so the guidance replayed on every launch.
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
+    const databasePath = join(tempDir, "app.sqlite");
+    const store = createAppStateStore({ databasePath });
+    const now = new Date().toISOString();
+
+    store.db.prepare(
+      "INSERT INTO cloud_accounts (uuid, user_id, raw_profile_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run("cuberouter:10113", "10113", JSON.stringify({ _memmyAuthChannel: "cuberouter" }), now, now);
+    store.db.prepare("UPDATE app_settings SET active_uuid = 'cuberouter:10113', user_mode = 'byok' WHERE id = 'default'").run();
+
+    // What the desktop does once the account signs in.
+    store.repositories.bootstrap.updateOnboarding({
+      currentStep: "completed",
+      completed: true,
+      completedAt: "2026-09-20T07:38:27.621Z"
+    });
+    // The next launch may hydrate any mode; the completion must not depend on which.
+    store.db.prepare("UPDATE app_settings SET user_mode = 'unset' WHERE id = 'default'").run();
+    const accountRow = store.db
+      .prepare("SELECT has_finished_guide FROM account_onboarding_state WHERE uuid = ?")
+      .get("cuberouter:10113") as { has_finished_guide: number } | undefined;
+    const onboarding = store.repositories.bootstrap.getOnboardingState();
+    store.close();
+
+    expect(accountRow?.has_finished_guide).toBe(1);
+    expect(onboarding).toMatchObject({
+      completed: true,
+      currentStep: "completed",
+      completedAt: "2026-09-20T07:38:27.621Z"
     });
   });
 

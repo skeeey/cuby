@@ -66,6 +66,11 @@ export interface ResolveInitialViewInput {
   accountSession?: AccountSessionView;
   guidanceCompleted?: boolean;
   modelConfig?: ByokAgentModelAvailability | null;
+  /**
+   * Whether this build's accounts come from cuberouter. Its welcome page carries no sign-up gift
+   * and no "use your own API key" bypass, so signing in is the only way past it.
+   */
+  cuberouterAccountBackend?: boolean;
 }
 
 export interface ByokAgentModelAvailability {
@@ -87,6 +92,8 @@ export interface PetLaunchGuardInput {
 export interface ResolvePostLoginRouteInput {
   onboarding: OnboardingStateDto;
   preferredMode: PreferredMode | null;
+  /** The machine-level "guidance already ran here" marker. */
+  guidanceCompleted?: boolean;
 }
 
 /** Contract for resolve byok model completion input. */
@@ -145,12 +152,37 @@ export function resolveInitialView(input: ResolveInitialViewInput): AppRoutePath
   }
 
   if (input.bootstrap.app.userMode === "byok") {
+    // A build whose accounts come from cuberouter holds nothing on its welcome page but the
+    // sign-in form, so a visitor it knows has no session belongs there. Reading the catalog first
+    // would hand them the API-key page instead — a page that asks a cuberouter identity for a key
+    // its account already supplies, and offers the login form only behind a back link. A caller
+    // that cannot answer the question — the pet window rebuilds a session from a lossy summary and
+    // passes none in byok mode — keeps the rules below untouched.
+    if (input.cuberouterAccountBackend && input.accountSession && !input.accountSession.authenticated) {
+      return "/welcome";
+    }
+
     if (input.modelConfig !== undefined &&
       !input.modelConfig?.catalog?.modelAssignments.byok.agent.candidates.length) {
+      // A cuberouter identity's key is fetched by signing in, and this build hides the welcome
+      // page's "use your own API key" bypass, so an empty catalog means the stored config is gone
+      // rather than that its owner picked another path. The sign-in form is the one place that
+      // repairs it — and the place a repair that cannot succeed reports itself, since the missing
+      // key names itself there instead of nowhere.
+      //
+      // A caller that cannot answer the session question keeps the rule below rather than being
+      // read as signed out: the pet window passes no session in byok mode, which is every
+      // cuberouter identity, and "no answer" is not an answer.
+      if (input.cuberouterAccountBackend && input.accountSession?.authenticated === true) {
+        return "/welcome";
+      }
+
       return "/api-key";
     }
 
-    if (input.bootstrap.onboarding.completed) {
+    // The machine-level marker counts here as it does above: the guidance runs once per machine,
+    // and asking the account row instead let a logout and re-login hand it back.
+    if (input.bootstrap.onboarding.completed || input.guidanceCompleted) {
       return input.preferredMode === "pet" ? "/pet" : "/main";
     }
 
@@ -217,7 +249,9 @@ export function isAccountTokenQuotaExhausted(bootstrap: AppBootstrapResponse | n
 
 /** Handles resolve post login route. */
 export function resolvePostLoginRoute(input: ResolvePostLoginRouteInput): AppRoutePath {
-  if (!input.onboarding.completed) {
+  // Same rule as the startup view: a machine that has run the guidance does not run it again,
+  // whatever the stored row says after a logout moved its scope around.
+  if (!input.onboarding.completed && !input.guidanceCompleted) {
     return resolveOnboardingStep(input.onboarding.currentStep);
   }
 

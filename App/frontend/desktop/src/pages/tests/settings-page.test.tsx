@@ -40,6 +40,7 @@ const browserUpdateSourcePath = fileURLToPath(new URL("../../app/browser-update.
 const tokenUsageStylesPath = fileURLToPath(new URL("../settings-token-usage.module.css", import.meta.url));
 const modelConfigSourcePath = fileURLToPath(new URL("../model-config.ts", import.meta.url));
 const modelWorkspaceSourcePath = fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url));
+const modelLibrarySourcePath = fileURLToPath(new URL("../model-library-section.tsx", import.meta.url));
 const overflowTooltipSourcePath = fileURLToPath(new URL("../../components/overflow-tooltip-text.tsx", import.meta.url));
 
 function createMemoryStorage(): Storage {
@@ -187,7 +188,7 @@ describe("自定义模型能力选择", () => {
   });
 
   it("模型能力沿用标准 Select 四选一，不再拆分文本用途", () => {
-    const source = readFileSync(modelWorkspaceSourcePath, "utf8");
+    const source = readFileSync(modelLibrarySourcePath, "utf8");
 
     expect(source).toContain('const MODEL_KIND_OPTIONS = ["text", "embedding", "asr", "image"] as const;');
     expect(source).toContain("value={kind}");
@@ -439,7 +440,7 @@ describe("SettingsPageView", () => {
     expect(browserSource).toContain("manifest.code !== 0");
     expect(browserSource).toContain('readUpdateManifestRecord(manifest, "data") ?? {}');
     expect(browserSource).toContain('url.searchParams.set("platformType", resolveBrowserUpdatePlatformType())');
-    expect(browserSource).toContain('resolveDesktopAccountChannel() === "email" ? "intl" : "cn"');
+    expect(browserSource).toContain('import.meta.env.MEMMY_APP_EDITION === "intl" ? "intl" : "cn"');
     expect(browserSource).toContain('import.meta.env.MEMMY_PACKAGE_SIGNING === "unsigned" ? "unsigned" : "signed"');
     expect(browserSource).toContain('const UPDATE_MANIFEST_PATH = "/api/memmy/desktop/latest"');
     expect(browserSource).not.toContain("VITE_MEMMY_UPDATE_MANIFEST_URL");
@@ -742,7 +743,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型工作区测试连接按钮固定位置和尺寸，状态提示展示在按钮左侧", () => {
-    const workspaceSource = readFileSync(fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url)), "utf8");
+    const workspaceSource = readFileSync(modelLibrarySourcePath, "utf8");
     const fieldsSource = readFileSync(fileURLToPath(new URL("../api-key-form-fields.tsx", import.meta.url)), "utf8");
 
     expect(fieldsSource).toContain("inline-flex w-[112px] h-10 shrink-0 items-center justify-center px-4");
@@ -765,7 +766,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型工作区协议默认地址与模型配置常量保持一致", () => {
-    const workspaceSource = readFileSync(fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url)), "utf8");
+    const workspaceSource = readFileSync(modelLibrarySourcePath, "utf8");
     const modelSource = readFileSync(modelConfigSourcePath, "utf8");
 
     const defaults = [
@@ -849,7 +850,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型连接弹窗不展示高级选项和 Token 限额", () => {
-    const source = readFileSync(modelWorkspaceSourcePath, "utf8");
+    const source = readFileSync(modelLibrarySourcePath, "utf8");
 
     expect(source).not.toContain("showEditorAdvanced");
     expect(source).not.toContain('t("apiKey.advanced")');
@@ -883,13 +884,14 @@ describe("SettingsPageView", () => {
 
   it("catalog 读取或保存失败时在模型工作区展示错误", () => {
     const source = readFileSync(modelWorkspaceSourcePath, "utf8");
+    const librarySource = readFileSync(modelLibrarySourcePath, "utf8");
 
     expect(source).toContain("modelWorkspaceErrorText(error, t)");
     expect(source).not.toContain("MessageToast");
     expect(source).toContain('role="alert"');
     expect(source).toContain("{saveError}");
-    expect(source).toContain("mutationErrorText(result.error, t)");
-    expect(source.indexOf("{saveError}")).toBeLessThan(source.indexOf('t("settings.modelWorkspace.bindingTitle")'));
+    expect(librarySource).toContain("mutationErrorText(result.error, t)");
+    expect(source.indexOf("{saveError}")).toBeLessThan(source.indexOf("<ModelAssignmentSection"));
   });
 
   it("模型工作区用同步 busy gate 阻止快速连续 PUT，且迟到的初始 GET 不覆盖本地 mutation", () => {
@@ -904,7 +906,7 @@ describe("SettingsPageView", () => {
   });
 
   it("模型工作区连接编辑展示已保存脱敏 key，且保存不回传脱敏值", () => {
-    const workspaceSource = readFileSync(fileURLToPath(new URL("../model-workspace-section.tsx", import.meta.url)), "utf8");
+    const workspaceSource = readFileSync(modelLibrarySourcePath, "utf8");
     const fieldsSource = readFileSync(fileURLToPath(new URL("../api-key-form-fields.tsx", import.meta.url)), "utf8");
 
     expect(workspaceSource).toContain("maskedValue={editor.connectionId && !editorProviderChanged");
@@ -933,6 +935,38 @@ describe("SettingsPageView", () => {
     expect(source).toContain("accountClient?.updateProfile");
     expect(source).toContain("accountClient?.logout");
     expect(source).toContain("appActions.accountCleared()");
+  });
+
+  it("cuberouter 登录后 byok 模式下同样提供退出登录入口", () => {
+    const html = normalizeSsrHtml(renderSettingsPageView(createByokModeSignedInState()));
+    const source = readFileSync(settingsPageSourcePath, "utf8");
+
+    expect(html).toContain("退出登录");
+    // The logout entry follows the session instead of the mode, so the login prompt is not
+    // offered alongside it.
+    expect(html).not.toContain("登录 / 注册");
+    expect(source).toContain("const isSignedIn = Boolean(state.account.userId)");
+  });
+
+  it("cuberouter 身份把模型配置换成 key 卡，其他身份仍渲染模型库", () => {
+    const cuberouterHtml = normalizeSsrHtml(renderSettingsPageView(createCuberouterModeState()));
+    const localHtml = normalizeSsrHtml(renderSettingsPageView(createByokModeState()));
+    const cuberouterPanel = cuberouterHtml.slice(
+      cuberouterHtml.indexOf('id="model-config"'),
+      cuberouterHtml.indexOf('id="token-usage"')
+    );
+    const localPanel = localHtml.slice(
+      localHtml.indexOf('id="model-config"'),
+      localHtml.indexOf('id="token-usage"')
+    );
+
+    expect(cuberouterPanel).toContain("API Key");
+    expect(cuberouterPanel).toContain("选择用于模型调用的 key；每行标注计费主体与剩余额度。");
+    expect(cuberouterPanel).toContain("alice@a.com (yeebo)");
+    expect(cuberouterPanel).not.toContain("模型库");
+
+    expect(localPanel).toContain("模型库");
+    expect(localPanel).not.toContain("选择用于模型调用的 key");
   });
 
   it("退出登录后刷新 canonical 配置，并按实际 BYOK Agent 模型决定落点", async () => {
@@ -1264,6 +1298,7 @@ function createAccountModeState(): AppState {
   const accountReady = appReducer(
     bootstrapped,
     appActions.accountUpdated({
+      userId: "memmy-cloud-user-1",
       nickname: "",
       email: "grace@example.com",
       phoneNumber: null,
@@ -1378,6 +1413,35 @@ function createByokModeState(): AppState {
   const settingsReady = appReducer(staleAccountReady, appActions.settingsUpdated({ defaultLaunchMode: "pet", userMode: "byok" }));
 
   return settingsReady;
+}
+
+/**
+ * Creates a BYOK mode settings page state with an authenticated cuberouter session.
+ *
+ * @returns A BYOK settings page state whose account session is signed in.
+ */
+function createByokModeSignedInState(): AppState {
+  return appReducer(
+    createByokModeState(),
+    appActions.accountUpdated({ userId: "cuberouter:7", identityProvider: "cuberouter" })
+  );
+}
+
+/**
+ * Creates a BYOK mode settings page state signed in through cuberouter with an organization.
+ *
+ * @returns A BYOK settings page state carrying the cuberouter username and organization name.
+ */
+function createCuberouterModeState(): AppState {
+  return appReducer(
+    createByokModeState(),
+    appActions.accountUpdated({
+      userId: "cuberouter:7",
+      identityProvider: "cuberouter",
+      username: "alice@a.com",
+      organizationName: "yeebo"
+    })
+  );
 }
 
 function createByokModeWithSavedModelState(): AppState {

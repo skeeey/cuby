@@ -1,30 +1,14 @@
 /** Account service module. */
 import {
   AccountInvitationViewSchema,
-  AccountLoginResultViewSchema,
   AccountProfileViewSchema,
   AccountSessionViewSchema,
-  LotteryRewardSchema,
-  SendCodeResponseSchema,
-  SocialLoginStatusResponseSchema,
-  StartSocialLoginResponseSchema,
-  type AccountChannel,
   type AccountInvitationView,
-  type AccountLoginResultView,
   type AccountProfileView,
   type AccountSessionView,
-  type LotteryReward,
-  type LotteryRewardAckInput,
-  type SendCodeInput,
-  type SendCodeResponse,
-  type SocialLoginStatusInput,
-  type SocialLoginStatusResponse,
-  type StartSocialLoginInput,
-  type StartSocialLoginResponse,
-  type UpdateAccountProfileInput,
-  type VerifyCodeInput
+  type UpdateAccountProfileInput
 } from "@memmy/local-api-contracts";
-import type { CloudAccountProfile, CloudClient, CloudLoginResult } from "../adapters/outbound/cloud-client/index.js";
+import type { CloudAccountProfile, CloudClient } from "../adapters/outbound/cloud-client/index.js";
 import type {
   AccountSessionProfileInput,
   AccountSessionRepository
@@ -34,16 +18,8 @@ import type { MemmyConfigWriter, RuntimeProjectionResult } from "../infrastructu
 import type { MemoryClient } from "../adapters/outbound/memory-client/index.js";
 import type { OkResponse } from "@memmy/local-api-contracts";
 
-const RESEND_WINDOW_MS = 60_000;
-
 export interface AccountService {
-  sendCode(input: SendCodeInput): Promise<SendCodeResponse>;
-  verifyCode(input: VerifyCodeInput): Promise<AccountLoginResultView>;
-  startSocialLogin(input: StartSocialLoginInput): Promise<StartSocialLoginResponse>;
-  getSocialLoginStatus(input: SocialLoginStatusInput): Promise<SocialLoginStatusResponse>;
   getInvitation(): Promise<AccountInvitationView>;
-  getLotteryReward(): Promise<LotteryReward>;
-  ackLotteryReward(input: LotteryRewardAckInput): Promise<OkResponse>;
   updateProfile(input: UpdateAccountProfileInput): Promise<AccountProfileView>;
   markGuideFinished(): Promise<OkResponse>;
   logout(): Promise<OkResponse>;
@@ -61,75 +37,30 @@ export interface CreateAccountServiceOptions {
   memmyConfigWriter?: MemmyConfigWriter;
   /** Memory client. */
   memoryClient?: Pick<MemoryClient, "reloadConfig">;
-  /** Now. */
-  now?: () => Date;
-  /** Verification channel supported by the current desktop package. */
-  accountChannel?: AccountChannel;
 }
 
 /** Creates create account service. */
 export function createAccountService(options: CreateAccountServiceOptions): AccountService {
-  const now = options.now ?? (() => new Date());
+  // A cuberouter session stores the cuberouter JWT as its cloud credential, so every
+  // memmy-cloud call that would send it as a bearer has to be skipped: the cloud answers
+  // 401, and the guide refresh then wipes the session on each restart.
+  function isCuberouterSession(): boolean {
+    return options.accountSessionRepository.getAuthChannel() === "cuberouter";
+  }
 
   return {
-    async sendCode(input) {
-      assertExpectedAccountChannel(input.channel, options.accountChannel);
-      const key = toCodeKey(input);
-      const sentAt = options.accountSessionRepository.getLastCodeSentAt(key);
-      const remaining = getRemainingResendSeconds(sentAt, now());
-      if (remaining > 0) {
-        return SendCodeResponseSchema.parse({ ok: true, resendAfterSec: remaining });
-      }
-
-      if (input.channel === "email") {
-        await options.cloudClient.sendEmailCode({
-          email: requireAddress(input.email, "email"),
-          zhEnv: input.locale === "zh"
-        });
-      } else {
-        await options.cloudClient.sendPhoneCode({
-          phoneNumber: requireAddress(input.phoneNumber, "phoneNumber"),
-          zhEnv: input.locale === "zh"
-        });
-      }
-
-      const sentAtNow = now().toISOString();
-      options.accountSessionRepository.markCodeSent(key, sentAtNow);
-      return SendCodeResponseSchema.parse({ ok: true, resendAfterSec: 60 });
-    },
-
-    async verifyCode(input) {
-      assertExpectedAccountChannel(input.channel, options.accountChannel);
-      const loginResult = await options.cloudClient.login({
-        ...(input.email ? { email: input.email } : {}),
-        ...(input.phoneNumber ? { phoneNumber: input.phoneNumber } : {}),
-        verificationCode: input.verificationCode,
-        loginSource: input.loginSource,
-        ...(input.invitationCode ? { invitationCode: input.invitationCode } : {})
-      });
-      return finalizeCloudLogin(loginResult, input.channel, options);
-    },
-
-    async startSocialLogin(input) {
-      assertSocialLoginSupported(options.accountChannel);
-      return StartSocialLoginResponseSchema.parse(
-        await options.cloudClient.startSocialLogin(input)
-      );
-    },
-
-    async getSocialLoginStatus(input) {
-      assertSocialLoginSupported(options.accountChannel);
-      const status = await options.cloudClient.getSocialLoginStatus(input);
-      if (status.status !== "completed") {
-        return SocialLoginStatusResponseSchema.parse(status);
-      }
-      return SocialLoginStatusResponseSchema.parse({
-        status: "completed",
-        result: await finalizeCloudLogin(status.result, "email", options)
-      });
-    },
-
     async getInvitation() {
+      if (isCuberouterSession()) {
+        return AccountInvitationViewSchema.parse({
+          enabled: false,
+          invitationCode: null,
+          usedInviteSlotsToday: 0,
+          dailySuccessLimit: 0,
+          remainingInvitesToday: 0,
+          dailyLimitReached: false
+        });
+      }
+
       const cloudUuid = options.accountSessionRepository.getCloudUuid();
       if (!cloudUuid) {
         throw Object.assign(new Error("Account session is not authenticated"), {
@@ -141,32 +72,6 @@ export function createAccountService(options: CreateAccountServiceOptions): Acco
       );
     },
 
-    async getLotteryReward() {
-      const uuid = options.accountSessionRepository.getCloudUuid();
-      if (!uuid) {
-        return { hasReward: false };
-      }
-      try {
-        return LotteryRewardSchema.parse(await options.cloudClient.getLotteryReward({ uuid }));
-      } catch {
-        return { hasReward: false };
-      }
-    },
-
-    async ackLotteryReward(input) {
-      const uuid = options.accountSessionRepository.getCloudUuid();
-      if (!uuid) {
-        throw Object.assign(new Error("Account session is not authenticated"), {
-          code: "unauthorized" as const
-        });
-      }
-      await options.cloudClient.ackLotteryReward({
-        uuid,
-        ...(input.drawId ? { drawId: input.drawId } : {})
-      });
-      return { ok: true };
-    },
-
     async updateProfile(input) {
       const session = options.accountSessionRepository.get();
       if (!session.authenticated) {
@@ -174,7 +79,7 @@ export function createAccountService(options: CreateAccountServiceOptions): Acco
       }
 
       const cloudUuid = options.accountSessionRepository.getCloudUuid();
-      if (cloudUuid) {
+      if (cloudUuid && !isCuberouterSession()) {
         await options.cloudClient.updateAccountProfile({ uuid: cloudUuid, userName: input.nickname });
       }
 
@@ -197,6 +102,10 @@ export function createAccountService(options: CreateAccountServiceOptions): Acco
     },
 
     async markGuideFinished() {
+      if (isCuberouterSession()) {
+        return { ok: true };
+      }
+
       const uuid = options.accountSessionRepository.getCloudUuid();
       if (uuid) {
         await options.cloudClient.updateAccountGuide({ uuid, hasFinishedGuide: true });
@@ -209,7 +118,7 @@ export function createAccountService(options: CreateAccountServiceOptions): Acco
       const uuid = options.accountSessionRepository.getCloudUuid();
       const session = options.accountSessionRepository.get();
       options.bootstrapRepository.preserveCompletedOnboardingForLocalByok();
-      if (uuid) {
+      if (uuid && !isCuberouterSession()) {
         try {
           await options.cloudClient.logout({ uuid });
         } catch {
@@ -228,6 +137,10 @@ export function createAccountService(options: CreateAccountServiceOptions): Acco
 
     async getSession() {
       const session = AccountSessionViewSchema.parse(options.accountSessionRepository.get());
+      if (isCuberouterSession()) {
+        return session;
+      }
+
       const cloudUuid = session.authenticated ? options.accountSessionRepository.getCloudUuid() : null;
       return refreshCloudGuideState({
         cloudClient: options.cloudClient,
@@ -243,58 +156,6 @@ export function createAccountService(options: CreateAccountServiceOptions): Acco
       });
     }
   };
-}
-
-function assertExpectedAccountChannel(
-  actualChannel: AccountChannel,
-  expectedChannel: AccountChannel | undefined
-): void {
-  if (!expectedChannel || actualChannel === expectedChannel) return;
-  throw Object.assign(new Error(`Account channel ${actualChannel} is not supported by this desktop package`), {
-    code: "invalid_argument" as const
-  });
-}
-
-function assertSocialLoginSupported(accountChannel: AccountChannel | undefined): void {
-  if (accountChannel === "email") return;
-  throw Object.assign(new Error("Social login is not supported by this desktop package"), {
-    code: "invalid_argument" as const
-  });
-}
-
-async function finalizeCloudLogin(
-  loginResult: CloudLoginResult,
-  authChannel: AccountChannel,
-  options: CreateAccountServiceOptions
-): Promise<AccountLoginResultView> {
-  if (options.memmyConfigWriter) {
-    const projection = await options.memmyConfigWriter.writeAccountModelProjection({
-      cloudUuid: loginResult.uuid,
-      userId: loginResult.profile.userId
-    });
-    await reloadMemoryConfigIfNeeded(projection, options);
-  }
-
-  const session = AccountSessionViewSchema.parse(
-    options.accountSessionRepository.upsert({
-      profile: toSessionProfileInput(loginResult.profile),
-      uuid: loginResult.accountUuid,
-      cloudUuid: loginResult.uuid,
-      isNewUser: loginResult.isNewUser,
-      authChannel
-    })
-  );
-
-  const refreshedSession = await refreshCloudGuideState({
-    cloudClient: options.cloudClient,
-    accountSessionRepository: options.accountSessionRepository,
-    session,
-    cloudUuid: loginResult.uuid
-  });
-  return AccountLoginResultViewSchema.parse({
-    session: refreshedSession,
-    invitationResult: loginResult.invitationResult ?? { status: "not_provided" }
-  });
 }
 
 async function reloadMemoryConfigIfNeeded(
@@ -369,47 +230,6 @@ function isUnauthorized(error: unknown): boolean {
   return Boolean(error && typeof error === "object" && "code" in error && error.code === "unauthorized");
 }
 
-/** Handles to code key. */
-function toCodeKey(input: SendCodeInput): string {
-  const address = input.channel === "email" ? requireAddress(input.email, "email") : requireAddress(input.phoneNumber, "phoneNumber");
-  return `${input.channel}:${address}`;
-}
-
-/**
- * Reads a required account address.
- *
- * @param value Email or phone number.
- * @param field Field name.
- * @returns A non-empty string.
- */
-function requireAddress(value: string | undefined, field: string): string {
-  if (!value) {
-    throw Object.assign(new Error(`${field} is required`), { code: "invalid_argument" as const });
-  }
-
-  return value;
-}
-
-/**
- * Computes the seconds remaining before a resend is allowed.
- *
- * @param sentAt Time of the last send.
- * @param now Current time.
- * @returns Seconds still to wait.
- */
-function getRemainingResendSeconds(sentAt: string | null, now: Date): number {
-  if (!sentAt) {
-    return 0;
-  }
-
-  const elapsedMs = now.getTime() - new Date(sentAt).getTime();
-  if (elapsedMs >= RESEND_WINDOW_MS) {
-    return 0;
-  }
-
-  return Math.ceil((RESEND_WINDOW_MS - elapsedMs) / 1000);
-}
-
 /**
  * Converts a cloud-client profile into account session repository input.
  *
@@ -427,6 +247,8 @@ function toSessionProfileInput(profile: CloudAccountProfile): AccountSessionProf
     hasFinishedGuide: profile.hasFinishedGuide,
     region: profile.region,
     registeredAt: profile.registeredAt,
+    // Cloud profiles always come from the memmy_cloud identity provider.
+    identityProvider: "memmy_cloud",
     rawProfile: profile.rawProfile
   };
 }

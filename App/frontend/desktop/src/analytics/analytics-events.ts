@@ -36,9 +36,11 @@ export interface FeatureEvent {
 export interface SignupCompletedEvent {
   name: "signup_completed";
   params: {
-    method: "phone" | "email" | "google" | "github";
+    /** The identity a signup was created against: a contact channel, cuberouter, or a provider. */
+    method: "phone" | "email" | "cuberouter" | "google" | "github";
     is_new_user: boolean;
-    user_mode: "account";
+    /** The mode the signup selects; a cuberouter signup always lands on BYOK. */
+    user_mode: "account" | "byok";
     invite_code_provided: boolean;
   };
   consentTier: "basic";
