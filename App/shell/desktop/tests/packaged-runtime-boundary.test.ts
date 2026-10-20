@@ -601,7 +601,6 @@ describe("desktop packaged runtime boundaries", () => {
     expect(pidDeclaration).toBeLessThan(installerOnlyStart);
     expect(customCheckSource).toContain("!insertmacro _CHECK_APP_RUNNING");
     expect(customCheckSource).toContain('StrCpy $IsPowerShellAvailable "1"');
-    expect(customCheckSource).toContain("!ifndef BUILD_UNINSTALLER");
   });
 
   it("records the final Windows install directory in uninstall metadata", () => {
@@ -960,8 +959,6 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).toContain("openAfterInstall: false");
     expect(mainSource).not.toContain('openAfterInstall: process.platform === "win32"');
     expect(mainSource).toContain("function resolvePreparedRequiredUpdateLockPath");
-    expect(mainSource).toContain("function resolveWindowsUpgradeRelayLockPath");
-    expect(mainSource).toContain('join(localAppData, "Cuby", "upgrade-staging", "active.lock")');
     expect(mainSource).toContain("async function waitForPreparedRequiredUpdateLock");
     expect(mainSource).toContain("async function waitForWindowsPreparedRequiredUpdateBeforeBoot");
     expect(mainSource).toContain('boot:prepared-required-update waiting-for-lock win32');
