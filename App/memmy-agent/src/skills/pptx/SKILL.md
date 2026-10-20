@@ -59,7 +59,7 @@ match blocks delivery.
 Every script is a standalone Node CLI with `--help`, stable JSON on
 `--json`, non-zero status for missing or invalid inputs, and no shell command
 fallback. The renderer resolves the bundled Office payload through
-`MEMMY_OFFICE_RENDERING_ROOT`, the legacy `MEMMY_DOCX_RENDERING_ROOT` during
+`CUBY_OFFICE_RENDERING_ROOT`, the legacy `CUBY_DOCX_RENDERING_ROOT` during
 migration, the packaged `dist/extra-dependencies/office-rendering`, and then
 the source directory. It never silently uses a system PATH installation.
 

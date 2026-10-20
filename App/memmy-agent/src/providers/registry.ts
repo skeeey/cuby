@@ -3,20 +3,20 @@ import { resolveMemmyAccountHeaders } from "./memmy-account.js";
 type Dict<T = any> = Record<string, T>;
 type ProviderHeaders = Record<string, string>;
 
-// Memmy Account gateway API base: the gateway domain comes from the already resolved MEMMY_CLOUD_SERVICE.
+// Memmy Account gateway API base: the gateway domain comes from the already resolved CUBY_CLOUD_SERVICE.
 // Resolution is deferred to actual memmy_account usage (see memmyAccountApiBase below) instead of module
 // evaluation, so importing this module never throws for BYOK users who don't configure it.
 /**
- * Resolve the Memmy Account gateway API base from MEMMY_CLOUD_SERVICE.
+ * Resolve the Memmy Account gateway API base from CUBY_CLOUD_SERVICE.
  *
  * Call this only where the memmy_account provider is genuinely about to be used (e.g. building a real
  * request). Throws the same clear error as before when the env var is missing.
  */
 export function memmyAccountApiBase(): string {
-  const cloudService = process.env.MEMMY_CLOUD_SERVICE?.trim();
+  const cloudService = process.env.CUBY_CLOUD_SERVICE?.trim();
   if (!cloudService) {
     throw new Error(
-      "MEMMY_CLOUD_SERVICE 未配置:请确认外部环境、打包运行时清单或开发环境 .env 已提供网关地址。",
+      "CUBY_CLOUD_SERVICE 未配置:请确认外部环境、打包运行时清单或开发环境 .env 已提供网关地址。",
     );
   }
   return `${cloudService}/api/agentExternal/v1`;
@@ -287,7 +287,7 @@ export const PROVIDERS: ProviderSpec[] = [
   new ProviderSpec({
     name: "memmy_account",
     keywords: ["memmy-account", "memmy_account"],
-    displayName: "Memmy Account",
+    displayName: "Cuby Account",
     defaultApiBase: safeMemmyAccountApiBase(),
     resolveHeaders: resolveMemmyAccountHeaders,
   }),

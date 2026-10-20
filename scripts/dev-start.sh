@@ -3,36 +3,36 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
-MEMMY_AGENT_DIR="$ROOT_DIR/App/memmy-agent"
+CUBY_AGENT_DIR="$ROOT_DIR/App/memmy-agent"
 DESKTOP_DIR="$ROOT_DIR/App/shell/desktop"
 ELECTRON_PACKAGE_DIR="$DESKTOP_DIR/node_modules/electron"
 MEMORY_CLI_ENTRY="$ROOT_DIR/Memory/dist/src/cli/index.js"
-MEMMY_CONFIG_PATH="${MEMMY_CONFIG:-$HOME/.memmy/config.yaml}"
-MEMMY_WORKSPACE_IS_EXPLICIT=0
-if [[ -n "${MEMMY_WORKSPACE:-}" ]]; then
-  MEMMY_WORKSPACE_IS_EXPLICIT=1
+CUBY_CONFIG_PATH="${CUBY_CONFIG:-$HOME/.cuby/config.yaml}"
+CUBY_WORKSPACE_IS_EXPLICIT=0
+if [[ -n "${CUBY_WORKSPACE:-}" ]]; then
+  CUBY_WORKSPACE_IS_EXPLICIT=1
 fi
-MEMMY_WORKSPACE_DIR="${MEMMY_WORKSPACE:-$HOME/.memmy/workspace}"
-MEMMY_APP_DATABASE_FILE="${MEMMY_APP_DATABASE:-}"
-MEMMY_BIN_DIR="$HOME/.local/bin"
-MEMMY_MEMORY_BIND_HOST="${MEMMY_MEMORY_HOST:-${MEMORY_SERVICE_HOST:-127.0.0.1}}"
-MEMMY_MEMORY_PORT_VALUE="${MEMMY_MEMORY_PORT:-${MEMORY_SERVICE_PORT:-18960}}"
-MEMMY_MEMORY_CLIENT_HOST="$MEMMY_MEMORY_BIND_HOST"
-if [[ "$MEMMY_MEMORY_CLIENT_HOST" == "0.0.0.0" || "$MEMMY_MEMORY_CLIENT_HOST" == "::" ]]; then
-  MEMMY_MEMORY_CLIENT_HOST="127.0.0.1"
+CUBY_WORKSPACE_DIR="${CUBY_WORKSPACE:-$HOME/.cuby/workspace}"
+CUBY_APP_DATABASE_FILE="${CUBY_APP_DATABASE:-}"
+CUBY_BIN_DIR="$HOME/.local/bin"
+CUBY_MEMORY_BIND_HOST="${CUBY_MEMORY_HOST:-${MEMORY_SERVICE_HOST:-127.0.0.1}}"
+CUBY_MEMORY_PORT_VALUE="${CUBY_MEMORY_PORT:-${MEMORY_SERVICE_PORT:-28960}}"
+CUBY_MEMORY_CLIENT_HOST="$CUBY_MEMORY_BIND_HOST"
+if [[ "$CUBY_MEMORY_CLIENT_HOST" == "0.0.0.0" || "$CUBY_MEMORY_CLIENT_HOST" == "::" ]]; then
+  CUBY_MEMORY_CLIENT_HOST="127.0.0.1"
 fi
-MEMMY_MEMORY_ENDPOINT="${MEMMY_MEMORY_URL:-${MEMORY_SERVICE_URL:-http://$MEMMY_MEMORY_CLIENT_HOST:$MEMMY_MEMORY_PORT_VALUE}}"
-MEMMY_MEMORY_TOKEN_VALUE="${MEMMY_MEMORY_TOKEN:-${MEMORY_SERVICE_TOKEN:-}}"
+CUBY_MEMORY_ENDPOINT="${CUBY_MEMORY_URL:-${MEMORY_SERVICE_URL:-http://$CUBY_MEMORY_CLIENT_HOST:$CUBY_MEMORY_PORT_VALUE}}"
+CUBY_MEMORY_TOKEN_VALUE="${CUBY_MEMORY_TOKEN:-${MEMORY_SERVICE_TOKEN:-}}"
 CONCURRENTLY_BIN="$ROOT_DIR/node_modules/.bin/concurrently"
 WAIT_ON_BIN="$ROOT_DIR/node_modules/.bin/wait-on"
 LOG_DIR="$ROOT_DIR/.tmp/dev-stack"
 
-export MEMMY_CONFIG="$MEMMY_CONFIG_PATH"
-export MEMMY_MEMORY_URL="${MEMMY_MEMORY_URL:-$MEMMY_MEMORY_ENDPOINT}"
-export MEMMY_MEMORY_LAYER_URL="${MEMMY_MEMORY_LAYER_URL:-$MEMMY_MEMORY_ENDPOINT}"
-if [[ -n "$MEMMY_MEMORY_TOKEN_VALUE" ]]; then
-  export MEMMY_MEMORY_TOKEN="${MEMMY_MEMORY_TOKEN:-$MEMMY_MEMORY_TOKEN_VALUE}"
-  export MEMMY_MEMORY_LAYER_TOKEN="${MEMMY_MEMORY_LAYER_TOKEN:-$MEMMY_MEMORY_TOKEN_VALUE}"
+export CUBY_CONFIG="$CUBY_CONFIG_PATH"
+export CUBY_MEMORY_URL="${CUBY_MEMORY_URL:-$CUBY_MEMORY_ENDPOINT}"
+export CUBY_MEMORY_LAYER_URL="${CUBY_MEMORY_LAYER_URL:-$CUBY_MEMORY_ENDPOINT}"
+if [[ -n "$CUBY_MEMORY_TOKEN_VALUE" ]]; then
+  export CUBY_MEMORY_TOKEN="${CUBY_MEMORY_TOKEN:-$CUBY_MEMORY_TOKEN_VALUE}"
+  export CUBY_MEMORY_LAYER_TOKEN="${CUBY_MEMORY_LAYER_TOKEN:-$CUBY_MEMORY_TOKEN_VALUE}"
 fi
 
 log() {
@@ -52,7 +52,7 @@ read_dev_edition_from_env_file() {
     fi
 
     name="${BASH_REMATCH[2]}"
-    [[ "$name" == "MEMMY_APP_EDITION" ]] || continue
+    [[ "$name" == "CUBY_APP_EDITION" ]] || continue
 
     value="${BASH_REMATCH[3]}"
     value="${value#"${value%%[![:space:]]*}"}"
@@ -69,7 +69,7 @@ read_dev_edition_from_env_file() {
 
 configure_dev_edition() {
   local env_file="${1:-$ROOT_DIR/.env}"
-  local edition="${MEMMY_APP_EDITION:-}"
+  local edition="${CUBY_APP_EDITION:-}"
 
   if [[ -z "$edition" ]]; then
     edition="$(read_dev_edition_from_env_file "$env_file" || true)"
@@ -78,17 +78,17 @@ configure_dev_edition() {
 
   case "$edition" in
     cn)
-      export MEMMY_ACCOUNT_CHANNEL="phone"
+      export CUBY_ACCOUNT_CHANNEL="phone"
       ;;
     intl)
-      export MEMMY_ACCOUNT_CHANNEL="email"
+      export CUBY_ACCOUNT_CHANNEL="email"
       ;;
     *)
-      printf '[dev-start] MEMMY_APP_EDITION must be either cn or intl; received: %s\n' "$edition" >&2
+      printf '[dev-start] CUBY_APP_EDITION must be either cn or intl; received: %s\n' "$edition" >&2
       return 1
       ;;
   esac
-  export MEMMY_APP_EDITION="$edition"
+  export CUBY_APP_EDITION="$edition"
 }
 
 command_exists() {
@@ -241,7 +241,7 @@ ensure_memmy_agent_dependencies() {
   )
 
   for package in "${required_packages[@]}"; do
-    if ! node_can_resolve_from_dir "$MEMMY_AGENT_DIR" "$package"; then
+    if ! node_can_resolve_from_dir "$CUBY_AGENT_DIR" "$package"; then
       missing_packages+=("$package")
     fi
   done
@@ -251,11 +251,11 @@ ensure_memmy_agent_dependencies() {
   fi
 
   log "installing memmy-agent npm dependencies (missing: ${missing_packages[*]})"
-  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --prefix "$MEMMY_AGENT_DIR" --include=dev
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1 npm ci --prefix "$CUBY_AGENT_DIR" --include=dev
 
   missing_packages=()
   for package in "${required_packages[@]}"; do
-    if ! node_can_resolve_from_dir "$MEMMY_AGENT_DIR" "$package"; then
+    if ! node_can_resolve_from_dir "$CUBY_AGENT_DIR" "$package"; then
       missing_packages+=("$package")
     fi
   done
@@ -282,9 +282,9 @@ path_contains_dir() {
 }
 
 ensure_memmy_bin_on_path() {
-  mkdir -p "$MEMMY_BIN_DIR"
+  mkdir -p "$CUBY_BIN_DIR"
 
-  if path_contains_dir "$MEMMY_BIN_DIR"; then
+  if path_contains_dir "$CUBY_BIN_DIR"; then
     return
   fi
 
@@ -302,7 +302,7 @@ ensure_memmy_bin_on_path() {
       ;;
   esac
 
-  marker="# Memmy CLI PATH"
+  marker="# Cuby CLI PATH"
   if [[ -f "$profile" ]] && grep -Fq "$marker" "$profile"; then
     log "~/.local/bin PATH entry already managed in $profile"
   else
@@ -310,7 +310,7 @@ ensure_memmy_bin_on_path() {
     log "added ~/.local/bin to PATH in $profile; open a new terminal or run: source $profile"
   fi
 
-  export PATH="$MEMMY_BIN_DIR:$PATH"
+  export PATH="$CUBY_BIN_DIR:$PATH"
 }
 
 is_windows_shell() {
@@ -323,11 +323,11 @@ is_windows_shell() {
 user_cli_path() {
   local name="$1"
   if is_windows_shell; then
-    printf '%s/%s.cmd\n' "$MEMMY_BIN_DIR" "$name"
+    printf '%s/%s.cmd\n' "$CUBY_BIN_DIR" "$name"
     return
   fi
 
-  printf '%s/%s\n' "$MEMMY_BIN_DIR" "$name"
+  printf '%s/%s\n' "$CUBY_BIN_DIR" "$name"
 }
 
 is_managed_user_cli_target() {
@@ -336,8 +336,8 @@ is_managed_user_cli_target() {
   local expected_suffix contents
 
   case "$name" in
-    memmy-memory) expected_suffix="Memory/dist/src/cli/index.js" ;;
-    memmy) expected_suffix="App/memmy-agent/dist/main.js" ;;
+    cuby-memory | memmy-memory) expected_suffix="Memory/dist/src/cli/index.js" ;;
+    cuby | memmy) expected_suffix="App/memmy-agent/dist/main.js" ;;
     *) return 1 ;;
   esac
 
@@ -357,14 +357,17 @@ is_managed_user_cli_target() {
   if [[ "$contents" == $'#!/bin/sh\nexec env ELECTRON_RUN_AS_NODE=1 '*"$expected_suffix"*' "$@"' ]]; then
     return 0
   fi
-  [[ "$contents" == *'rem Managed by Memmy dev-start.'* ]] \
-    && [[ "$contents" == *'node "'*"$expected_suffix"'" %*'* ]]
+  if [[ "$contents" == *'rem Managed by Cuby dev-start.'* ]] || [[ "$contents" == *'rem Managed by Memmy dev-start.'* ]]; then
+    [[ "$contents" == *'node "'*"$expected_suffix"'" %*'* ]]
+    return
+  fi
+  return 1
 }
 
 install_user_cli_link() {
   local name="$1"
   local source="$2"
-  local legacy_target="$MEMMY_BIN_DIR/$name"
+  local legacy_target="$CUBY_BIN_DIR/$name"
   local target
   target="$(user_cli_path "$name")"
 
@@ -374,7 +377,7 @@ install_user_cli_link() {
   fi
 
   chmod +x "$source"
-  mkdir -p "$MEMMY_BIN_DIR"
+  mkdir -p "$CUBY_BIN_DIR"
 
   if is_windows_shell; then
     local candidate windows_source
@@ -392,7 +395,7 @@ install_user_cli_link() {
     done
 
     windows_source="$(cygpath -w "$source")"
-    printf '@echo off\r\nrem Managed by Memmy dev-start.\r\nnode "%s" %%*\r\nexit /b %%ERRORLEVEL%%\r\n' "$windows_source" > "$target"
+    printf '@echo off\r\nrem Managed by Cuby dev-start.\r\nnode "%s" %%*\r\nexit /b %%ERRORLEVEL%%\r\n' "$windows_source" > "$target"
     log "installed $name -> $source"
     return
   fi
@@ -420,30 +423,30 @@ build_and_install_memory_cli() {
   require_command node
   require_command npm
 
-  log "building memmy-memory CLI"
+  log "building cuby-memory CLI"
   cd "$ROOT_DIR"
   npm run memory:build
 
   ensure_memmy_bin_on_path
 
-  log "initializing memmy-memory config at $MEMMY_CONFIG_PATH"
-  if [[ -n "$MEMMY_MEMORY_TOKEN_VALUE" ]]; then
+  log "initializing cuby-memory config at $CUBY_CONFIG_PATH"
+  if [[ -n "$CUBY_MEMORY_TOKEN_VALUE" ]]; then
     node "$MEMORY_CLI_ENTRY" init \
-      --config "$MEMMY_CONFIG_PATH" \
-      --endpoint "$MEMMY_MEMORY_ENDPOINT" \
+      --config "$CUBY_CONFIG_PATH" \
+      --endpoint "$CUBY_MEMORY_ENDPOINT" \
       --skip-agent-skills \
-      --token "$MEMMY_MEMORY_TOKEN_VALUE" >/dev/null
+      --token "$CUBY_MEMORY_TOKEN_VALUE" >/dev/null
   else
     node "$MEMORY_CLI_ENTRY" init \
-      --config "$MEMMY_CONFIG_PATH" \
-      --endpoint "$MEMMY_MEMORY_ENDPOINT" \
+      --config "$CUBY_CONFIG_PATH" \
+      --endpoint "$CUBY_MEMORY_ENDPOINT" \
       --skip-agent-skills >/dev/null
   fi
 
-  install_user_cli_link "memmy-memory" "$MEMORY_CLI_ENTRY"
+  install_user_cli_link "cuby-memory" "$MEMORY_CLI_ENTRY"
 
-  "$(user_cli_path "memmy-memory")" --version >/dev/null
-  log "memmy-memory command is ready in $MEMMY_BIN_DIR"
+  "$(user_cli_path "cuby-memory")" --version >/dev/null
+  log "cuby-memory command is ready in $CUBY_BIN_DIR"
 }
 
 stop_existing_stack() {
@@ -451,16 +454,17 @@ stop_existing_stack() {
   pids="$(
     {
       lsof -tiTCP:19000 -sTCP:LISTEN || true
-      lsof -tiTCP:18960 -sTCP:LISTEN || true
-      lsof -tiTCP:"$MEMMY_MEMORY_PORT_VALUE" -sTCP:LISTEN || true
-      lsof -tiTCP:18970 -sTCP:LISTEN || true
-      lsof -tiTCP:18980 -sTCP:LISTEN || true
-      lsof -tiTCP:18990 -sTCP:LISTEN || true
+      lsof -tiTCP:28960 -sTCP:LISTEN || true
+      lsof -tiTCP:"$CUBY_MEMORY_PORT_VALUE" -sTCP:LISTEN || true
+      lsof -tiTCP:28970 -sTCP:LISTEN || true
+      lsof -tiTCP:28980 -sTCP:LISTEN || true
+      lsof -tiTCP:28990 -sTCP:LISTEN || true
       lsof -tiTCP:18997 -sTCP:LISTEN || true
       lsof -tiTCP:18999 -sTCP:LISTEN || true
       pgrep -f "electron dist/main/main.js" || true
       pgrep -f "Electron.app/Contents/MacOS/Electron dist/main/main.js" || true
       pgrep -f "/Memmy.app/Contents/MacOS/Memmy" || true
+      pgrep -f "/Cuby.app/Contents/MacOS/Cuby" || true
       pgrep -f "concurrently -k -n renderer,desktop" || true
       pgrep -f "npm run dev:desktop" || true
       pgrep -f "npm run dev -w @memmy/frontend-desktop" || true
@@ -488,11 +492,11 @@ stop_existing_stack() {
   still_running="$(
     {
       lsof -tiTCP:19000 -sTCP:LISTEN || true
-      lsof -tiTCP:18960 -sTCP:LISTEN || true
-      lsof -tiTCP:"$MEMMY_MEMORY_PORT_VALUE" -sTCP:LISTEN || true
-      lsof -tiTCP:18970 -sTCP:LISTEN || true
-      lsof -tiTCP:18980 -sTCP:LISTEN || true
-      lsof -tiTCP:18990 -sTCP:LISTEN || true
+      lsof -tiTCP:28960 -sTCP:LISTEN || true
+      lsof -tiTCP:"$CUBY_MEMORY_PORT_VALUE" -sTCP:LISTEN || true
+      lsof -tiTCP:28970 -sTCP:LISTEN || true
+      lsof -tiTCP:28980 -sTCP:LISTEN || true
+      lsof -tiTCP:28990 -sTCP:LISTEN || true
       lsof -tiTCP:18997 -sTCP:LISTEN || true
       lsof -tiTCP:18999 -sTCP:LISTEN || true
     } 2>/dev/null | sort -u
@@ -505,7 +509,7 @@ stop_existing_stack() {
 }
 
 config_has_agent_model() {
-  local node_command="${MEMMY_RUNTIME_NODE_PATH:-}"
+  local node_command="${CUBY_RUNTIME_NODE_PATH:-}"
   if [[ -z "$node_command" ]]; then
     if command_exists node; then
       node_command="$(command -v node)"
@@ -516,9 +520,9 @@ config_has_agent_model() {
     fi
   fi
 
-  local config_path_for_node="$MEMMY_CONFIG_PATH"
+  local config_path_for_node="$CUBY_CONFIG_PATH"
   if [[ "$node_command" == *.exe ]] && command_exists wslpath; then
-    config_path_for_node="$(wslpath -w "$MEMMY_CONFIG_PATH")"
+    config_path_for_node="$(wslpath -w "$CUBY_CONFIG_PATH")"
   fi
 
   "$node_command" --input-type=module - "$config_path_for_node" <<'NODE'
@@ -556,7 +560,7 @@ wait_for_agent_model_config() {
     return
   fi
 
-  log "waiting for model config in $MEMMY_CONFIG_PATH"
+  log "waiting for model config in $CUBY_CONFIG_PATH"
   log "finish account or BYOK setup in the desktop app; agent services will start automatically after config is written"
   while ! config_has_agent_model; do
     sleep 2
@@ -566,10 +570,10 @@ wait_for_agent_model_config() {
 
 run_agent_api() {
   require_command node
-  export MEMMY_AGENT_WORKSPACE="${MEMMY_AGENT_WORKSPACE:-$MEMMY_WORKSPACE_DIR}"
+  export CUBY_AGENT_WORKSPACE="${CUBY_AGENT_WORKSPACE:-$CUBY_WORKSPACE_DIR}"
   cd "$ROOT_DIR"
   wait_for_agent_model_config
-  cd "$MEMMY_AGENT_DIR"
+  cd "$CUBY_AGENT_DIR"
   exec node dist/main.js serve
 }
 
@@ -578,16 +582,16 @@ run_main() {
   require_command node
   require_command npm
   require_command lsof
-  export MEMMY_RUNTIME_NODE_PATH="${MEMMY_RUNTIME_NODE_PATH:-$(command -v node)}"
+  export CUBY_RUNTIME_NODE_PATH="${CUBY_RUNTIME_NODE_PATH:-$(command -v node)}"
   local runtime_node_dir
-  runtime_node_dir="$(cd "$(dirname "$MEMMY_RUNTIME_NODE_PATH")" && pwd)"
+  runtime_node_dir="$(cd "$(dirname "$CUBY_RUNTIME_NODE_PATH")" && pwd)"
   export PATH="$runtime_node_dir:$PATH"
   hash -r
-  log "using Node $("$MEMMY_RUNTIME_NODE_PATH" --version) from $MEMMY_RUNTIME_NODE_PATH"
-  log "using desktop edition $MEMMY_APP_EDITION with $MEMMY_ACCOUNT_CHANNEL account channel"
+  log "using Node $("$CUBY_RUNTIME_NODE_PATH" --version) from $CUBY_RUNTIME_NODE_PATH"
+  log "using desktop edition $CUBY_APP_EDITION with $CUBY_ACCOUNT_CHANNEL account channel"
 
-  if [[ -z "$MEMMY_APP_DATABASE_FILE" ]]; then
-    MEMMY_APP_DATABASE_FILE="$("$MEMMY_RUNTIME_NODE_PATH" --eval '
+  if [[ -z "$CUBY_APP_DATABASE_FILE" ]]; then
+    CUBY_APP_DATABASE_FILE="$("$CUBY_RUNTIME_NODE_PATH" --eval '
       const os = require("node:os");
       const path = require("node:path");
       const appData = process.platform === "win32"
@@ -595,7 +599,7 @@ run_main() {
         : process.platform === "darwin"
           ? path.join(os.homedir(), "Library", "Application Support")
           : (process.env.XDG_CONFIG_HOME || path.join(os.homedir(), ".config"));
-      process.stdout.write(path.resolve(appData, "Memmy", "app.sqlite"));
+      process.stdout.write(path.resolve(appData, "Cuby", "app.sqlite"));
     ')"
   fi
 
@@ -615,38 +619,38 @@ run_main() {
   log "building memmy-agent from current source"
   ensure_memmy_agent_dependencies
   if [[ "$(uname -s)" == "Darwin" ]]; then
-    MEMMY_DEV_COMPUTER_USE_BINARY="$(node "$ROOT_DIR/scripts/internal/mac/install-dev-computer-use.mjs" "$MEMMY_AGENT_DIR/node_modules/open-computer-use")"
-    export MEMMY_DEV_COMPUTER_USE_BINARY
+    CUBY_DEV_COMPUTER_USE_BINARY="$(node "$ROOT_DIR/scripts/internal/mac/install-dev-computer-use.mjs" "$CUBY_AGENT_DIR/node_modules/open-computer-use")"
+    export CUBY_DEV_COMPUTER_USE_BINARY
   fi
-  cd "$MEMMY_AGENT_DIR"
+  cd "$CUBY_AGENT_DIR"
   npm run build
 
   local config_parent config_name
-  config_parent="$(dirname "$MEMMY_CONFIG_PATH")"
-  config_name="$(basename "$MEMMY_CONFIG_PATH")"
+  config_parent="$(dirname "$CUBY_CONFIG_PATH")"
+  config_name="$(basename "$CUBY_CONFIG_PATH")"
   mkdir -p "$config_parent"
   config_parent="$(cd "$config_parent" && pwd -P)"
-  MEMMY_CONFIG_PATH="$config_parent/$config_name"
-  export MEMMY_CONFIG="$MEMMY_CONFIG_PATH"
+  CUBY_CONFIG_PATH="$config_parent/$config_name"
+  export CUBY_CONFIG="$CUBY_CONFIG_PATH"
 
   log "rebuilding better-sqlite3 for local Node runtime"
   cd "$ROOT_DIR"
   npm rebuild better-sqlite3
-  "$MEMMY_RUNTIME_NODE_PATH" --eval \
+  "$CUBY_RUNTIME_NODE_PATH" --eval \
     'const Database = require("better-sqlite3"); const db = new Database(":memory:"); db.close();'
 
-  unset MEMMY_MIGRATIONS_READY_CONFIG MEMMY_MIGRATIONS_READY_WORKSPACE MEMMY_MIGRATIONS_READY_SESSION_DAG MEMMY_MIGRATIONS_READY_APP_DATABASE
+  unset CUBY_MIGRATIONS_READY_CONFIG CUBY_MIGRATIONS_READY_WORKSPACE CUBY_MIGRATIONS_READY_SESSION_DAG CUBY_MIGRATIONS_READY_APP_DATABASE
   log "running startup migrations"
-  cd "$MEMMY_AGENT_DIR"
-  local migration_args=(dist/main.js migrate --config "$MEMMY_CONFIG_PATH" --app-database "$MEMMY_APP_DATABASE_FILE")
-  if [[ "$MEMMY_WORKSPACE_IS_EXPLICIT" == "1" ]]; then
-    mkdir -p "$MEMMY_WORKSPACE_DIR"
-    MEMMY_WORKSPACE_DIR="$(cd "$MEMMY_WORKSPACE_DIR" && pwd -P)"
-    migration_args+=(--workspace "$MEMMY_WORKSPACE_DIR")
+  cd "$CUBY_AGENT_DIR"
+  local migration_args=(dist/main.js migrate --config "$CUBY_CONFIG_PATH" --app-database "$CUBY_APP_DATABASE_FILE")
+  if [[ "$CUBY_WORKSPACE_IS_EXPLICIT" == "1" ]]; then
+    mkdir -p "$CUBY_WORKSPACE_DIR"
+    CUBY_WORKSPACE_DIR="$(cd "$CUBY_WORKSPACE_DIR" && pwd -P)"
+    migration_args+=(--workspace "$CUBY_WORKSPACE_DIR")
   fi
-  "$MEMMY_RUNTIME_NODE_PATH" "${migration_args[@]}"
+  "$CUBY_RUNTIME_NODE_PATH" "${migration_args[@]}"
 
-  MEMMY_WORKSPACE_DIR="$("$MEMMY_RUNTIME_NODE_PATH" - "$MEMMY_CONFIG_PATH" "$HOME/.memmy/workspace" <<'NODE'
+  CUBY_WORKSPACE_DIR="$("$CUBY_RUNTIME_NODE_PATH" - "$CUBY_CONFIG_PATH" "$HOME/.cuby/workspace" <<'NODE'
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
@@ -666,24 +670,24 @@ const expanded = selected === "~" || selected.startsWith("~/")
 process.stdout.write(path.resolve(expanded));
 NODE
 )"
-  mkdir -p "$MEMMY_WORKSPACE_DIR"
-  MEMMY_WORKSPACE_DIR="$(cd "$MEMMY_WORKSPACE_DIR" && pwd -P)"
-  export MEMMY_AGENT_WORKSPACE="$MEMMY_WORKSPACE_DIR"
-  export MEMMY_MIGRATIONS_READY_CONFIG="$MEMMY_CONFIG_PATH"
-  export MEMMY_MIGRATIONS_READY_WORKSPACE="$MEMMY_WORKSPACE_DIR"
-  export MEMMY_MIGRATIONS_READY_SESSION_DAG="${MEMMY_AGENT_SESSION_DAG_DIR:-$(dirname "$MEMMY_WORKSPACE_DIR")/session-dag}"
-  export MEMMY_APP_DATABASE="$MEMMY_APP_DATABASE_FILE"
-  export MEMMY_MIGRATIONS_READY_APP_DATABASE="$MEMMY_APP_DATABASE_FILE"
+  mkdir -p "$CUBY_WORKSPACE_DIR"
+  CUBY_WORKSPACE_DIR="$(cd "$CUBY_WORKSPACE_DIR" && pwd -P)"
+  export CUBY_AGENT_WORKSPACE="$CUBY_WORKSPACE_DIR"
+  export CUBY_MIGRATIONS_READY_CONFIG="$CUBY_CONFIG_PATH"
+  export CUBY_MIGRATIONS_READY_WORKSPACE="$CUBY_WORKSPACE_DIR"
+  export CUBY_MIGRATIONS_READY_SESSION_DAG="${CUBY_AGENT_SESSION_DAG_DIR:-$(dirname "$CUBY_WORKSPACE_DIR")/session-dag}"
+  export CUBY_APP_DATABASE="$CUBY_APP_DATABASE_FILE"
+  export CUBY_MIGRATIONS_READY_APP_DATABASE="$CUBY_APP_DATABASE_FILE"
 
   build_and_install_memory_cli
 
   ensure_electron_runtime
 
-  cd "$MEMMY_AGENT_DIR"
+  cd "$CUBY_AGENT_DIR"
 
-  install_user_cli_link "memmy" "$MEMMY_AGENT_DIR/dist/main.js"
-  "$(user_cli_path "memmy")" --version >/dev/null
-  log "memmy command is ready in $MEMMY_BIN_DIR"
+  install_user_cli_link "cuby" "$CUBY_AGENT_DIR/dist/main.js"
+  "$(user_cli_path "cuby")" --version >/dev/null
+  log "cuby command is ready in $CUBY_BIN_DIR"
 
   log "refreshing non-interactive memmy-agent onboard state"
   node dist/main.js onboard --defaults </dev/null
@@ -691,9 +695,9 @@ NODE
   log "starting agent API, frontend, and desktop backend; Electron manages Memory and supervises gateway"
   cd "$ROOT_DIR"
   mkdir -p "$LOG_DIR"
-  export MEMMY_STABLE_ELECTRON_DEMO="${MEMMY_STABLE_ELECTRON_DEMO:-1}"
-  if [[ "$MEMMY_STABLE_ELECTRON_DEMO" == "1" ]]; then
-    log "frontend source watching disabled for a stable Electron demo; set MEMMY_STABLE_ELECTRON_DEMO=0 to enable it"
+  export CUBY_STABLE_ELECTRON_DEMO="${CUBY_STABLE_ELECTRON_DEMO:-1}"
+  if [[ "$CUBY_STABLE_ELECTRON_DEMO" == "1" ]]; then
+    log "frontend source watching disabled for a stable Electron demo; set CUBY_STABLE_ELECTRON_DEMO=0 to enable it"
   fi
   exec "$CONCURRENTLY_BIN" -k -n agent-api,frontend,backend -c cyan,magenta,yellow \
     "bash -c 'set -o pipefail; bash scripts/dev-start.sh --agent-api 2>&1 | tee .tmp/dev-stack/agent-api.log'" \

@@ -3,12 +3,12 @@
 !include "LogicLib.nsh"
 !include "nsDialogs.nsh"
 
-!ifndef MEMMY_WM_SETTINGCHANGE
-  !define MEMMY_WM_SETTINGCHANGE 0x001A
+!ifndef CUBY_WM_SETTINGCHANGE
+  !define CUBY_WM_SETTINGCHANGE 0x001A
 !endif
 
-!ifndef MEMMY_LANG_SIMPCHINESE
-  !define MEMMY_LANG_SIMPCHINESE 2052
+!ifndef CUBY_LANG_SIMPCHINESE
+  !define CUBY_LANG_SIMPCHINESE 2052
 !endif
 
 !macro customHeader
@@ -19,7 +19,7 @@
 !macroend
 
 ; Force per-user installation by skipping the all-users versus current-user choice and using
-; %LOCALAPPDATA%\Programs\Memmy, which remains writable by the current user.
+; %LOCALAPPDATA%\Programs\Cuby, which remains writable by the current user.
 ; 1) Program Files requires elevation, and a locked uninstaller can make overwrite installation fail.
 ; 2) Silent background upgrades use NSIS /currentuser and must match the original installation scope.
 ; 3) A writable per-user directory enables zero-click silent upgrades without elevation.
@@ -34,7 +34,7 @@ Var pid
 ; Keep electron-builder's localized running-app prompt and its normal-then-forced termination
 ; retries. Force the exact-image/current-user cmd fallback instead of the default $INSTDIR prefix
 ; check: a custom-drive uninstaller can otherwise resolve a stale/default install directory, miss
-; the live Memmy process, and delete resources underneath the tray process. _CHECK_APP_RUNNING
+; the live Cuby process, and delete resources underneath the tray process. _CHECK_APP_RUNNING
 ; aborts before file or shortcut cleanup if the process still exists after the forced retry.
 !macro customCheckAppRunning
   !insertmacro IS_POWERSHELL_AVAILABLE
@@ -228,19 +228,19 @@ Function MemmyResolveMigrationPaths
   StrCpy $1 $0 1
   StrCmp $1 "C" memmy_resolve_use_profile
   StrCmp $1 "c" memmy_resolve_use_profile
-  StrCpy $MemmyTargetRuntimeHomePath "$0\MemmyData\.memmy"
+  StrCpy $MemmyTargetRuntimeHomePath "$0\CubyData\.cuby"
   Goto memmy_resolve_runtime_done
 
   memmy_resolve_use_profile:
-    StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\.memmy"
+    StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\.cuby"
 
   memmy_resolve_runtime_done:
-    StrCpy $MemmyTargetUserDataPath "$APPDATA\Memmy"
+    StrCpy $MemmyTargetUserDataPath "$APPDATA\Cuby"
     StrCpy $MemmyDataPointerPath "$MemmyTargetUserDataPath\data-root.txt"
-    StrCpy $MemmyMigrationStatePath "$LOCALAPPDATA\Memmy\data-migration\state.json"
-    StrCpy $MemmyInstallationRecordPath "$LOCALAPPDATA\Memmy\data-layout\last-install.json"
-    StrCpy $MemmyMigrationLockPath "$LOCALAPPDATA\Memmy\upgrade-staging\active.lock"
-    StrCpy $MemmyMigrationLogPath "$LOCALAPPDATA\Memmy\upgrade-logs\data-migration.log"
+    StrCpy $MemmyMigrationStatePath "$LOCALAPPDATA\Cuby\data-migration\state.json"
+    StrCpy $MemmyInstallationRecordPath "$LOCALAPPDATA\Cuby\data-layout\last-install.json"
+    StrCpy $MemmyMigrationLockPath "$LOCALAPPDATA\Cuby\upgrade-staging\active.lock"
+    StrCpy $MemmyMigrationLogPath "$LOCALAPPDATA\Cuby\upgrade-logs\data-migration.log"
     StrCmp $MemmyPreviousInstallDir "" 0 memmy_resolve_previous_source
     StrCpy $MemmyDirectSourceDataPath "$INSTDIR\data"
     StrCpy $MemmyDirectSourceInstallDir "$INSTDIR"
@@ -262,9 +262,9 @@ Function MemmyShowPreviousInstallDirectoryNotice
     Goto memmy_previous_notice_done
   ${EndIf}
 
-  StrCpy $R8 "Memmy is already installed at $\"$MemmyPreviousInstallDir$\".$\r$\nUse this directory to install the update. If you want to move Memmy, manually migrate your files before installing in another directory."
-  StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_previous_notice_show
-  StrCpy $R8 "Memmy 之前安装在“$MemmyPreviousInstallDir”。$\r$\n请使用此目录安装更新；如果要更换目录，请先手动迁移 Memmy 文件。"
+  StrCpy $R8 "Cuby is already installed at $\"$MemmyPreviousInstallDir$\".$\r$\nUse this directory to install the update. If you want to move Cuby, manually migrate your files before installing in another directory."
+  StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_previous_notice_show
+  StrCpy $R8 "Cuby 之前安装在“$MemmyPreviousInstallDir”。$\r$\n请使用此目录安装更新；如果要更换目录，请先手动迁移 Cuby 文件。"
 
   memmy_previous_notice_show:
     MessageBox MB_OK|MB_ICONINFORMATION "$R8"
@@ -350,9 +350,9 @@ Function MemmyValidateSelectedDirectories
   GetFullPathName $R6 "$INSTDIR"
   GetFullPathName $R7 "$MemmyPreviousInstallDir"
   StrCmp $R6 $R7 memmy_validate_resolve_paths
-  StrCpy $R8 "Memmy is already installed at $\"$MemmyPreviousInstallDir$\". Choose that directory to continue. If you want to move Memmy, manually migrate your files before installing in another directory."
-  StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_previous_directory_failed
-  StrCpy $R8 "Memmy 之前安装在“$MemmyPreviousInstallDir”。请返回并选择此目录继续安装；如果要更换目录，请先手动迁移 Memmy 文件。"
+  StrCpy $R8 "Cuby is already installed at $\"$MemmyPreviousInstallDir$\". Choose that directory to continue. If you want to move Cuby, manually migrate your files before installing in another directory."
+  StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_previous_directory_failed
+  StrCpy $R8 "Cuby 之前安装在“$MemmyPreviousInstallDir”。请返回并选择此目录继续安装；如果要更换目录，请先手动迁移 Cuby 文件。"
   Goto memmy_validate_previous_directory_failed
 
   memmy_validate_previous_directory_failed:
@@ -366,7 +366,7 @@ Function MemmyValidateSelectedDirectories
   Pop $0
   StrCmp $0 "1" memmy_validate_user_data
   StrCpy $R8 "The selected installation folder $\"$INSTDIR$\" does not have permission. Choose another folder."
-  StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_failed
+  StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_failed
   StrCpy $R8 "当前选择的安装文件夹“$INSTDIR”没有权限，请选择其它目录。"
   Goto memmy_validate_failed
 
@@ -375,9 +375,9 @@ Function MemmyValidateSelectedDirectories
     Call MemmyProbeWritableDirectory
     Pop $0
     StrCmp $0 "1" memmy_validate_runtime
-    StrCpy $R8 "The Memmy account data folder $\"$MemmyTargetUserDataPath$\" is not writable."
-    StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_failed
-    StrCpy $R8 "Memmy 登录数据目录“$MemmyTargetUserDataPath”没有写入权限，无法继续安装。"
+    StrCpy $R8 "The Cuby account data folder $\"$MemmyTargetUserDataPath$\" is not writable."
+    StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_failed
+    StrCpy $R8 "Cuby 登录数据目录“$MemmyTargetUserDataPath”没有写入权限，无法继续安装。"
     Goto memmy_validate_failed
 
   memmy_validate_runtime:
@@ -385,8 +385,8 @@ Function MemmyValidateSelectedDirectories
     Call MemmyProbeWritableDirectory
     Pop $0
     StrCmp $0 "1" memmy_validate_succeeded
-    StrCpy $R8 "The Memmy data folder $\"$MemmyTargetRuntimeHomePath$\" does not have permission. Choose another installation folder."
-    StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_failed
+    StrCpy $R8 "The Cuby data folder $\"$MemmyTargetRuntimeHomePath$\" does not have permission. Choose another installation folder."
+    StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_failed
     StrCpy $R8 "当前安装位置对应的数据文件夹“$MemmyTargetRuntimeHomePath”没有权限，请选择其它安装目录。"
     Goto memmy_validate_failed
 
@@ -402,16 +402,16 @@ Function MemmyExtractDataMigrationScript
   InitPluginsDir
   CreateDirectory "$PLUGINSDIR\MemmyDataMigration"
   SetOutPath "$PLUGINSDIR\MemmyDataMigration"
-  File /oname=MemmyWindowsDataMigration.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsDataMigration.ps1"
-  StrCpy $MemmyMigrationScriptPath "$PLUGINSDIR\MemmyDataMigration\MemmyWindowsDataMigration.ps1"
+  File /oname=CubyWindowsDataMigration.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsDataMigration.ps1"
+  StrCpy $MemmyMigrationScriptPath "$PLUGINSDIR\MemmyDataMigration\CubyWindowsDataMigration.ps1"
 FunctionEnd
 
 Function MemmyExtractStandardUpgradeCheckScript
   InitPluginsDir
   CreateDirectory "$PLUGINSDIR\MemmyStandardUpgradeCheck"
   SetOutPath "$PLUGINSDIR\MemmyStandardUpgradeCheck"
-  File /oname=MemmyWindowsStandardUpgradeCheck.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsStandardUpgradeCheck.ps1"
-  StrCpy $MemmyStandardUpgradeCheckScriptPath "$PLUGINSDIR\MemmyStandardUpgradeCheck\MemmyWindowsStandardUpgradeCheck.ps1"
+  File /oname=CubyWindowsStandardUpgradeCheck.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsStandardUpgradeCheck.ps1"
+  StrCpy $MemmyStandardUpgradeCheckScriptPath "$PLUGINSDIR\MemmyStandardUpgradeCheck\CubyWindowsStandardUpgradeCheck.ps1"
 FunctionEnd
 
 ; An installed application may bypass relay only when its completed external-v1 record, executable
@@ -457,7 +457,7 @@ Function MemmyEvaluateStandardUpgradeSafety
     Return
 
   memmy_standard_check_fresh:
-    DetailPrint "No installed Memmy.exe or trusted install-local source was found; using the standard NSIS install path."
+    DetailPrint "No installed Cuby.exe or trusted install-local source was found; using the standard NSIS install path."
     Return
 
   memmy_standard_check_blocked:
@@ -489,12 +489,12 @@ Function MemmyPrepareDirectDataMigration
     Pop $0
     Pop $1
     StrCmp $0 "0" memmy_direct_prepare_succeeded
-    DetailPrint "Memmy data migration was skipped after a safe rollback; installation will continue."
+    DetailPrint "Cuby data migration was skipped after a safe rollback; installation will continue."
     RMDir /r "$MemmyMigrationLockPath"
     Goto memmy_direct_prepare_skipped
 
   memmy_direct_prepare_failed:
-    DetailPrint "Memmy data migration helper is unavailable; installation will continue without automatic migration."
+    DetailPrint "Cuby data migration helper is unavailable; installation will continue without automatic migration."
 
   memmy_direct_prepare_skipped:
     StrCpy $MemmyDirectMigrationPrepared "0"
@@ -526,7 +526,7 @@ Function MemmyCompleteDirectDataMigration
   Pop $0
   Pop $1
   StrCmp $0 "0" memmy_direct_complete_succeeded
-  DetailPrint "Memmy data migration completion failed; the migration will be rolled back and installation will continue."
+  DetailPrint "Cuby data migration completion failed; the migration will be rolled back and installation will continue."
   Call MemmyRecoverDirectDataMigration
   Goto memmy_direct_complete_done
 
@@ -549,12 +549,12 @@ Function MemmyRecoverDirectDataMigration
   Goto memmy_direct_recover_done
 
   memmy_direct_recover_failed:
-    DetailPrint "Memmy data migration recovery failed with exit code $0; handing the prepared transaction to startup recovery."
+    DetailPrint "Cuby data migration recovery failed with exit code $0; handing the prepared transaction to startup recovery."
     nsExec::ExecToStack '$\"$R5$\" -NoProfile -NonInteractive -ExecutionPolicy Bypass -File $\"$MemmyMigrationScriptPath$\" -Mode RequireRecovery -SourceDataPath $\"$MemmyDirectSourceDataPath$\" -SourceAuthority $MemmyDirectSourceAuthority -SourceInstallDir $\"$MemmyDirectSourceInstallDir$\" -SourceInstalledVersion $\"$MemmyPreviousInstalledVersion$\" -InstallationRecordPath $\"$MemmyInstallationRecordPath$\" -LegacyRuntimeHomePath $\"$PROFILE\.memmy$\" -TargetUserDataPath $\"$MemmyTargetUserDataPath$\" -TargetRuntimeHomePath $\"$MemmyTargetRuntimeHomePath$\" -PointerPath $\"$MemmyDataPointerPath$\" -StatePath $\"$MemmyMigrationStatePath$\" -LockPath $\"$MemmyMigrationLockPath$\" -LogPath $\"$MemmyMigrationLogPath$\" -Owner installer'
     Pop $2
     Pop $3
     StrCmp $2 "0" memmy_direct_recover_handoff_done
-    DetailPrint "Memmy startup recovery marker could not be updated; startup will conservatively recover the remaining prepared state."
+    DetailPrint "Cuby startup recovery marker could not be updated; startup will conservatively recover the remaining prepared state."
 
   memmy_direct_recover_handoff_done:
     ; Never leave an installer-owned lock permanently after installation. Both `prepared`
@@ -592,7 +592,7 @@ Function MemmyValidateInstallPage
 
   memmy_validate_page_relayed_target_failed:
     StrCpy $R8 "The relayed upgrade target changed after compatibility migration started. Go back and select $\"$MemmyUpgradeTargetInstallDir$\"."
-    StrCmp $LANGUAGE ${MEMMY_LANG_SIMPCHINESE} 0 memmy_validate_page_show_error
+    StrCmp $LANGUAGE ${CUBY_LANG_SIMPCHINESE} 0 memmy_validate_page_show_error
     StrCpy $R8 "兼容迁移开始后安装目录发生了变化。请返回并选择“$MemmyUpgradeTargetInstallDir”。"
     Goto memmy_validate_page_show_error
 
@@ -649,20 +649,20 @@ Function MemmyRelayLegacyUpgrade
     ${GetProcessInfo} $2 $2 $3 $4 $5 $6
     StrCmp $3 "" memmy_relay_failed
     StrCmp $3 "0" memmy_relay_failed
-    StrCpy $R1 "$LOCALAPPDATA\Memmy\upgrade-staging\$2"
-    StrCpy $R3 "$R1\MemmyWindowsUpgradeRelay.ps1"
-    StrCpy $R4 "$R1\Memmy-${VERSION}-upgrade.exe"
+    StrCpy $R1 "$LOCALAPPDATA\Cuby\upgrade-staging\$2"
+    StrCpy $R3 "$R1\CubyWindowsUpgradeRelay.ps1"
+    StrCpy $R4 "$R1\Cuby-${VERSION}-upgrade.exe"
     StrCpy $R5 "$SYSDIR\WindowsPowerShell\v1.0\powershell.exe"
-    StrCpy $R7 "$LOCALAPPDATA\Memmy\upgrade-logs\windows-upgrade.log"
+    StrCpy $R7 "$LOCALAPPDATA\Cuby\upgrade-logs\windows-upgrade.log"
     StrCpy $R8 "$R1\relay-ready"
 
-    ; Direct/manual updates reopen Memmy. A prepared update without the boot-attempt marker was
+    ; Direct/manual updates reopen Cuby. A prepared update without the boot-attempt marker was
     ; launched during normal app shutdown and must remain closed. Boot fallback writes .attempt.
     StrCpy $R6 "1"
-    IfFileExists "$APPDATA\Memmy\prepared-required-update.json" memmy_relay_resolve_roaming_reopen memmy_relay_check_legacy_reopen
+    IfFileExists "$APPDATA\Cuby\prepared-required-update.json" memmy_relay_resolve_roaming_reopen memmy_relay_check_legacy_reopen
 
   memmy_relay_resolve_roaming_reopen:
-    IfFileExists "$APPDATA\Memmy\prepared-required-update.json.attempt" memmy_relay_stage
+    IfFileExists "$APPDATA\Cuby\prepared-required-update.json.attempt" memmy_relay_stage
     StrCpy $R6 "0"
     Goto memmy_relay_stage
 
@@ -682,15 +682,15 @@ Function MemmyRelayLegacyUpgrade
     ClearErrors
     CreateDirectory "$R1"
     SetOutPath "$R1"
-    File /oname=MemmyWindowsUpgradeRelay.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsUpgradeRelay.ps1"
+    File /oname=CubyWindowsUpgradeRelay.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsUpgradeRelay.ps1"
     IfErrors memmy_relay_failed
     IfFileExists "$R3" 0 memmy_relay_failed
-    File /oname=MemmyWindowsUpgradeCleanup.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsUpgradeCleanup.ps1"
+    File /oname=CubyWindowsUpgradeCleanup.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsUpgradeCleanup.ps1"
     IfErrors memmy_relay_failed
-    IfFileExists "$R1\MemmyWindowsUpgradeCleanup.ps1" 0 memmy_relay_failed
-    File /oname=MemmyWindowsDataMigration.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsDataMigration.ps1"
+    IfFileExists "$R1\CubyWindowsUpgradeCleanup.ps1" 0 memmy_relay_failed
+    File /oname=CubyWindowsDataMigration.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsDataMigration.ps1"
     IfErrors memmy_relay_failed
-    IfFileExists "$R1\MemmyWindowsDataMigration.ps1" 0 memmy_relay_failed
+    IfFileExists "$R1\CubyWindowsDataMigration.ps1" 0 memmy_relay_failed
 
     ClearErrors
     FileOpen $0 "$R4" w
@@ -741,11 +741,11 @@ FunctionEnd
 
 Function MemmyReadRelayedUpgradeContext
   StrCpy $MemmyIsRelayedUpgrade "0"
-  ReadEnvStr $MemmyUpgradeWorkDir "MEMMY_UPGRADE_WORK_DIR"
-  ReadEnvStr $MemmyUpgradeBackupRoot "MEMMY_UPGRADE_BACKUP_ROOT"
-  ReadEnvStr $MemmyUpgradeReopenAfterInstall "MEMMY_UPGRADE_REOPEN_AFTER_INSTALL"
-  ReadEnvStr $MemmyUpgradeSourceInstallDir "MEMMY_UPGRADE_SOURCE_INSTALL_DIR"
-  ReadEnvStr $MemmyUpgradeTargetInstallDir "MEMMY_UPGRADE_TARGET_INSTALL_DIR"
+  ReadEnvStr $MemmyUpgradeWorkDir "CUBY_UPGRADE_WORK_DIR"
+  ReadEnvStr $MemmyUpgradeBackupRoot "CUBY_UPGRADE_BACKUP_ROOT"
+  ReadEnvStr $MemmyUpgradeReopenAfterInstall "CUBY_UPGRADE_REOPEN_AFTER_INSTALL"
+  ReadEnvStr $MemmyUpgradeSourceInstallDir "CUBY_UPGRADE_SOURCE_INSTALL_DIR"
+  ReadEnvStr $MemmyUpgradeTargetInstallDir "CUBY_UPGRADE_TARGET_INSTALL_DIR"
   StrCmp $MemmyUpgradeWorkDir "" memmy_relay_context_failed
   StrCmp $MemmyUpgradeBackupRoot "" memmy_relay_context_failed
   StrCmp $MemmyUpgradeSourceInstallDir "" memmy_relay_context_failed
@@ -764,7 +764,7 @@ Function MemmyReadRelayedUpgradeContext
     StrCmp $4 $MemmyUpgradeWorkDir 0 memmy_relay_context_failed
     ; The backup root is optional when the previous installation has no data directory.
     ; Validate its exact deterministic path below without requiring it to exist yet.
-    StrCpy $0 "$LOCALAPPDATA\Memmy\upgrade-staging\"
+    StrCpy $0 "$LOCALAPPDATA\Cuby\upgrade-staging\"
     StrLen $1 $0
     StrLen $2 $MemmyUpgradeWorkDir
     IntCmp $2 $1 memmy_relay_context_failed memmy_relay_context_failed memmy_relay_context_compare_path
@@ -776,7 +776,7 @@ Function MemmyReadRelayedUpgradeContext
     StrCmp $4 "" memmy_relay_context_failed
     ${GetFileName} "$MemmyUpgradeWorkDir" $5
     StrCmp $4 $5 0 memmy_relay_context_failed
-    StrCpy $0 "$MemmyUpgradeSourceInstallDir.memmy-upgrade-backup\$4"
+    StrCpy $0 "$MemmyUpgradeSourceInstallDir.cuby-upgrade-backup\$4"
     StrCmp $MemmyUpgradeBackupRoot $0 0 memmy_relay_context_failed
     StrCpy $MemmyIsRelayedUpgrade "1"
     Return
@@ -826,8 +826,8 @@ FunctionEnd
 
 Function MemmyAddCliToUserPath
   StrCpy $0 "$INSTDIR\resources\cli"
-  IfFileExists "$0\memmy.cmd" 0 memmy_add_cli_done
-  IfFileExists "$0\memmy-memory.cmd" 0 memmy_add_cli_done
+  IfFileExists "$0\cuby.cmd" 0 memmy_add_cli_done
+  IfFileExists "$0\cuby-memory.cmd" 0 memmy_add_cli_done
 
   ReadRegStr $1 HKCU "Environment" "Path"
   StrCmp $1 "" memmy_add_cli_empty
@@ -844,33 +844,33 @@ Function MemmyAddCliToUserPath
     WriteRegExpandStr HKCU "Environment" "Path" "$0"
 
   memmy_add_cli_broadcast:
-    System::Call 'user32::SendMessageTimeout(i 0xffff, i ${MEMMY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
+    System::Call 'user32::SendMessageTimeout(i 0xffff, i ${CUBY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
 
   memmy_add_cli_done:
 FunctionEnd
 
 Function MemmyInstallLaunchProxy
-  StrCpy $0 "$LOCALAPPDATA\Memmy\launcher"
+  StrCpy $0 "$LOCALAPPDATA\Cuby\launcher"
   CreateDirectory "$0"
   SetOutPath "$0"
-  File /oname=Memmy.ico "${BUILD_RESOURCES_DIR}\icon.ico"
-  File /oname=MemmyUpdatePrompt.ps1 "${BUILD_RESOURCES_DIR}\MemmyUpdatePrompt.ps1"
-  File /oname=MemmyWindowsUpgradeRecovery.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsUpgradeRecovery.ps1"
-  File /oname=MemmyWindowsDataMigration.ps1 "${BUILD_RESOURCES_DIR}\MemmyWindowsDataMigration.ps1"
+  File /oname=Cuby.ico "${BUILD_RESOURCES_DIR}\icon.ico"
+  File /oname=CubyUpdatePrompt.ps1 "${BUILD_RESOURCES_DIR}\CubyUpdatePrompt.ps1"
+  File /oname=CubyWindowsUpgradeRecovery.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsUpgradeRecovery.ps1"
+  File /oname=CubyWindowsDataMigration.ps1 "${BUILD_RESOURCES_DIR}\CubyWindowsDataMigration.ps1"
 
-  FileOpen $1 "$0\MemmyLauncher.vbs" w
+  FileOpen $1 "$0\CubyLauncher.vbs" w
   FileWrite $1 "Set shell = CreateObject($\"WScript.Shell$\")$\r$\n"
   FileWrite $1 "Set fso = CreateObject($\"Scripting.FileSystemObject$\")$\r$\n"
   FileWrite $1 "appExe = $\"$INSTDIR\${PRODUCT_FILENAME}.exe$\"$\r$\n"
-  FileWrite $1 "userDataRoot = shell.ExpandEnvironmentStrings($\"%APPDATA%$\") & $\"\Memmy$\"$\r$\n"
+  FileWrite $1 "userDataRoot = shell.ExpandEnvironmentStrings($\"%APPDATA%$\") & $\"\Cuby$\"$\r$\n"
   FileWrite $1 "legacyUserDataRoot = $\"$INSTDIR\data\Memmy$\"$\r$\n"
   FileWrite $1 "powerShellPath = shell.ExpandEnvironmentStrings($\"%SystemRoot%$\") & $\"\System32\WindowsPowerShell\v1.0\powershell.exe$\"$\r$\n"
-  FileWrite $1 "promptPath = $\"$0\MemmyUpdatePrompt.ps1$\"$\r$\n"
-  FileWrite $1 "recoveryPath = $\"$0\MemmyWindowsUpgradeRecovery.ps1$\"$\r$\n"
-  FileWrite $1 "migrationRecoveryPath = $\"$0\MemmyWindowsDataMigration.ps1$\"$\r$\n"
-  FileWrite $1 "migrationStatePath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Memmy\data-migration\state.json$\"$\r$\n"
-  FileWrite $1 "migrationLogPath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Memmy\upgrade-logs\data-migration.log$\"$\r$\n"
-  FileWrite $1 "upgradeLogPath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Memmy\upgrade-logs\windows-upgrade.log$\"$\r$\n"
+  FileWrite $1 "promptPath = $\"$0\CubyUpdatePrompt.ps1$\"$\r$\n"
+  FileWrite $1 "recoveryPath = $\"$0\CubyWindowsUpgradeRecovery.ps1$\"$\r$\n"
+  FileWrite $1 "migrationRecoveryPath = $\"$0\CubyWindowsDataMigration.ps1$\"$\r$\n"
+  FileWrite $1 "migrationStatePath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Cuby\data-migration\state.json$\"$\r$\n"
+  FileWrite $1 "migrationLogPath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Cuby\upgrade-logs\data-migration.log$\"$\r$\n"
+  FileWrite $1 "upgradeLogPath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Cuby\upgrade-logs\windows-upgrade.log$\"$\r$\n"
   FileWrite $1 "languagePath = userDataRoot & $\"\update-prompt-language.txt$\"$\r$\n"
   FileWrite $1 "markerPath = userDataRoot & $\"\prepared-required-update.json$\"$\r$\n"
   FileWrite $1 "legacyMarkerPath = legacyUserDataRoot & $\"\prepared-required-update.json$\"$\r$\n"
@@ -879,7 +879,7 @@ Function MemmyInstallLaunchProxy
   FileWrite $1 "  languagePath = legacyUserDataRoot & $\"\update-prompt-language.txt$\"$\r$\n"
   FileWrite $1 "End If$\r$\n"
   FileWrite $1 "lockPath = markerPath & $\".lock$\"$\r$\n"
-  FileWrite $1 "relayLockPath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Memmy\upgrade-staging\active.lock$\"$\r$\n"
+  FileWrite $1 "relayLockPath = shell.ExpandEnvironmentStrings($\"%LOCALAPPDATA%$\") & $\"\Cuby\upgrade-staging\active.lock$\"$\r$\n"
   FileWrite $1 "If fso.FolderExists(relayLockPath) And fso.FileExists(recoveryPath) Then$\r$\n"
   FileWrite $1 "  shell.Run Chr(34) & powerShellPath & Chr(34) & $\" -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File $\" & Chr(34) & recoveryPath & Chr(34) & $\" -InstallDir $\" & Chr(34) & fso.GetParentFolderName(appExe) & Chr(34) & $\" -LockPath $\" & Chr(34) & relayLockPath & Chr(34) & $\" -LogPath $\" & Chr(34) & upgradeLogPath & Chr(34) & $\" -DirectMigrationStatePath $\" & Chr(34) & migrationStatePath & Chr(34) & $\" -DirectMigrationScriptPath $\" & Chr(34) & migrationRecoveryPath & Chr(34) & $\" -DirectMigrationLogPath $\" & Chr(34) & migrationLogPath & Chr(34), 0, True$\r$\n"
   FileWrite $1 "End If$\r$\n"
@@ -909,9 +909,9 @@ Function MemmyInstallLaunchProxy
 FunctionEnd
 
 !macro MemmyPointShortcutsToLaunchProxy
-  StrCpy $0 "$LOCALAPPDATA\Memmy\launcher"
-  StrCpy $1 "$0\MemmyLauncher.vbs"
-  StrCpy $2 "$0\Memmy.ico"
+  StrCpy $0 "$LOCALAPPDATA\Cuby\launcher"
+  StrCpy $1 "$0\CubyLauncher.vbs"
+  StrCpy $2 "$0\Cuby.ico"
   StrCpy $4 "0"
   IfFileExists "$1" 0 memmy_point_shortcuts_done
 
@@ -974,7 +974,7 @@ Function un.MemmyRemoveCliFromUserPath
   Call un.MemmyRemovePathSegment
   Pop $1
   WriteRegExpandStr HKCU "Environment" "Path" "$1"
-  System::Call 'user32::SendMessageTimeout(i 0xffff, i ${MEMMY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
+  System::Call 'user32::SendMessageTimeout(i 0xffff, i ${CUBY_WM_SETTINGCHANGE}, i 0, t "Environment", i 0x0002, i 5000, *i .r0)'
 
   memmy_remove_cli_done:
 FunctionEnd
@@ -1069,6 +1069,6 @@ Function un.MemmyRemoveLaunchProxy
     Delete "$DESKTOP\$0.lnk"
     Delete "$DESKTOP\${SHORTCUT_NAME}.lnk"
     ClearErrors
-    RMDir /r "$LOCALAPPDATA\Memmy\launcher"
+    RMDir /r "$LOCALAPPDATA\Cuby\launcher"
 FunctionEnd
 !endif

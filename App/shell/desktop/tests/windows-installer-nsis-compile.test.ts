@@ -34,11 +34,11 @@ describeOnWindows("Windows installer NSIS compilation", () => {
     temporaryDirectories.push(root);
     const prepackagedRoot = join(root, "win-unpacked");
     const outputRoot = join(root, "out");
-    const artifactPath = join(outputRoot, "Memmy-nsis-compile-check.exe");
+    const artifactPath = join(outputRoot, "Cuby-nsis-compile-check.exe");
     await mkdir(join(prepackagedRoot, "resources"), { recursive: true });
     await copyFile(
       join(process.env.SystemRoot ?? "C:\\Windows", "System32", "where.exe"),
-      join(prepackagedRoot, "Memmy.exe")
+      join(prepackagedRoot, "Cuby.exe")
     );
 
     await execFile(process.execPath, [
@@ -54,7 +54,7 @@ describeOnWindows("Windows installer NSIS compilation", () => {
       "--win",
       "nsis",
       "--x64",
-      "--config.artifactName=Memmy-nsis-compile-check.exe"
+      "--config.artifactName=Cuby-nsis-compile-check.exe"
     ], {
       cwd: desktopRoot,
       env: {

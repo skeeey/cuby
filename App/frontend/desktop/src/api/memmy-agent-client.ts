@@ -142,7 +142,7 @@ export function isAgentGoalState(value: unknown): value is AgentGoalState {
   return AgentGoalStateSchema.safeParse(value).success;
 }
 
-export const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:18980";
+export const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:28980";
 const WEBUI_TOKEN_REFRESH_SKEW_MS = 30_000;
 
 const ModelSelectionWireSchema = z.object({
@@ -216,7 +216,7 @@ const AgentSettingsSchema = z.object({
   model_presets: z.array(ChatModelPresetSchema)
 }).passthrough();
 
-const MCP_VALUES_HEADER = "x-memmy-agent-mcp-values";
+const MCP_VALUES_HEADER = "x-cuby-agent-mcp-values";
 
 /**
  * Serialize MCP settings values for the values header.
@@ -1140,7 +1140,7 @@ class HttpMemmyAgentClient implements MemmyAgentClient {
     this.bootRefreshPromise = this.request("/webui/bootstrap", BootstrapSchema, {
       includeToken: false,
       retryOnUnauthorized: false,
-      headers: this.bootstrapSecret ? { "X-Memmy-Agent-Auth": this.bootstrapSecret } : undefined
+      headers: this.bootstrapSecret ? { "X-Cuby-Agent-Auth": this.bootstrapSecret } : undefined
     }).then((boot) => {
       this.boot = boot;
       this.bootExpiresAtMs = Date.now() + Math.max(0, boot.expires_in) * 1000;

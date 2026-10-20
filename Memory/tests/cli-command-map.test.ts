@@ -21,11 +21,11 @@ afterEach(() => {
   }
 });
 
-describe("memmy CLI command map", () => {
+describe("cuby-memory CLI command map", () => {
   it("prints a complete help page", async () => {
     const help = await runCommand({ argv: ["--help"] });
 
-    expect(help).toContain(`memmy-memory ${PROJECT_VERSION}`);
+    expect(help).toContain(`cuby-memory ${PROJECT_VERSION}`);
     expect(help).toContain("Usage:");
     expect(help).toContain("init --agent codex");
     expect(help).toContain("init --skip-agent-skills");
@@ -70,7 +70,7 @@ describe("memmy CLI command map", () => {
     })).rejects.toThrow("--health-check-timeout-ms must be a positive integer");
   });
 
-  it("supports memmy-memory stop as an alias for service stop", async () => {
+  it("supports cuby-memory stop as an alias for service stop", async () => {
     const stop = vi.fn(async (home: string) => ({ ok: true, action: "stop", home }));
 
     await expect(runCommand({
@@ -399,7 +399,7 @@ describe("memmy CLI command map", () => {
       "--user_id", "user_cli_1"
     ]);
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_cli_1");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_cli_1");
   });
 
   it("sends source in the request body for CLI memory commands", async () => {
@@ -436,7 +436,7 @@ describe("memmy CLI command map", () => {
       fetch: mockFetch(requests)
     });
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_from_memory");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_from_memory");
   });
 
   it("uses the flat memory userId even when obsolete profile fields remain", async () => {
@@ -464,7 +464,7 @@ describe("memmy CLI command map", () => {
       fetch: mockFetch(requests)
     });
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_from_flat_memory");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_from_flat_memory");
   });
 
   it("lets explicit user-id override memmyMemory.userId from config", async () => {
@@ -479,7 +479,7 @@ describe("memmy CLI command map", () => {
       fetch: mockFetch(requests)
     });
 
-    expect(requests[0]?.headers["x-memmy-user-id"]).toBe("user_explicit");
+    expect(requests[0]?.headers["x-cuby-user-id"]).toBe("user_explicit");
   });
 
   it("rejects unknown commands", async () => {

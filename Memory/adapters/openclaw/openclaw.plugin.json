@@ -1,7 +1,7 @@
 {
   "id": "memmy-memory",
-  "name": "Memmy Memory",
-  "description": "Thin OpenClaw HTTP adapter for the standalone Memmy Memory service.",
+  "name": "Cuby Memory",
+  "description": "Thin OpenClaw HTTP adapter for the standalone Cuby Memory service.",
   "version": "2.1.0",
   "kind": "memory",
   "contracts": {

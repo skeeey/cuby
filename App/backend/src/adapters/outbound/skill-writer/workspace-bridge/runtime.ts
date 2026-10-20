@@ -34,7 +34,7 @@ import {
   type L3WorldModelRequestEnvelope,
 } from "@memmy/local-api-contracts";
 
-const DEFAULT_ENDPOINT = "http://127.0.0.1:18960";
+const DEFAULT_ENDPOINT = "http://127.0.0.1:28960";
 
 export interface RuntimeConfig {
   endpoint: string;
@@ -74,7 +74,7 @@ export interface LoadedRuntimeSession extends RuntimeSession {
 
 export async function readRuntimeConfig(configUrl: URL, pinnedOwner = false): Promise<RuntimeConfig> {
   const snapshot = objectValue(await readJson(configUrl));
-  const configPath = text(snapshot.memmy_config_path) || resolve(homedir(), ".memmy", "config.yaml");
+  const configPath = text(snapshot.memmy_config_path) || resolve(homedir(), ".cuby", "config.yaml");
   const yaml = objectValue(YAML.parse(await readFile(configPath, "utf8").catch(() => "{}")));
   const memory = objectValue(yaml.memmyMemory);
   const storage = objectValue(memory.storage);
@@ -518,7 +518,7 @@ class RuntimeHttpClient {
     try {
       response = await fetch(url, { ...init, headers, signal: AbortSignal.timeout(45_000) });
     } catch (error) {
-      throw new Error(`Memmy request to ${url} failed: ${formatErrorWithCause(error)}`, { cause: error });
+      throw new Error(`Cuby request to ${url} failed: ${formatErrorWithCause(error)}`, { cause: error });
     }
     const textValue = await response.text();
     const parsed = textValue.trim() ? JSON.parse(textValue) : null;
@@ -584,10 +584,10 @@ function envelopeGetTransport(
   const query = { adapterId: envelope.adapterId, source: envelope.namespace.source };
   const headers: Record<string, string> = { "x-request-id": envelope.requestId };
   const pairs = [
-    ["x-memmy-user-id", envelope.namespace.userId],
-    ["x-memmy-project-id", envelope.namespace.projectId],
-    ["x-memmy-profile-id", envelope.namespace.profileId],
-    ["x-memmy-session-key", envelope.namespace.sessionKey],
+    ["x-cuby-user-id", envelope.namespace.userId],
+    ["x-cuby-project-id", envelope.namespace.projectId],
+    ["x-cuby-profile-id", envelope.namespace.profileId],
+    ["x-cuby-session-key", envelope.namespace.sessionKey],
   ];
   for (const [key, value] of pairs) if (value) headers[key!] = value;
   return { query, headers };

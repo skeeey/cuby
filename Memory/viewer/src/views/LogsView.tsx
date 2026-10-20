@@ -150,7 +150,7 @@ export function LogsView() {
         </div>
       </div>
 
-      {/* Row 1: text and Agent source search, matching Memmy. */}
+      {/* Row 1: text and Agent source search, matching Cuby. */}
       <div class="toolbar">
         <AgentSearchBar
           query={query}

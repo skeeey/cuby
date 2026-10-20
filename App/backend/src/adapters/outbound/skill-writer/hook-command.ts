@@ -24,7 +24,7 @@ export function createNodeHookCommand(
 export function resolveNodeExecutable(runtime: NodeExecutableRuntime = defaultNodeExecutableRuntime()): string {
   const nodeName = runtime.platform === "win32" ? "node.exe" : "node";
   const candidates = [
-    runtime.env.MEMMY_HOOK_NODE,
+    runtime.env.CUBY_HOOK_NODE,
     runtime.env.NODE,
     runtime.execPath,
     join(runtime.hermesHomeDirectory, "node", "bin", nodeName),

@@ -6,10 +6,10 @@ import { buildAgentToolPromptDeepLink } from "../src/main/agent-tool-deeplink.js
 const mainSourcePath = fileURLToPath(new URL("../src/main/main.ts", import.meta.url));
 
 describe("agent tool prompt deeplinks", () => {
-  it("opens WorkBuddy via the task start deeplink with /memmy-memory prefixed", () => {
-    const prompt = "请接着我刚才在 Memmy 里的初见报告继续聊天。";
+  it("opens WorkBuddy via the task start deeplink with /cuby-memory prefixed", () => {
+    const prompt = "请接着我刚才在 Cuby 里的初见报告继续聊天。";
     expect(buildAgentToolPromptDeepLink("workbuddy", prompt)).toBe(
-      `workbuddy://task?action=start&prompt=${encodeURIComponent(`/memmy-memory ${prompt}`)}`
+      `workbuddy://task?action=start&prompt=${encodeURIComponent(`/cuby-memory ${prompt}`)}`
     );
   });
 

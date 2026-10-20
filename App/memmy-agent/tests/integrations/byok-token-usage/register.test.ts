@@ -57,7 +57,7 @@ describe("installByokTokenUsage", () => {
     expect(fetchImpl).toHaveBeenCalledTimes(1);
   });
 
-  it("reads runtime.json from MEMMY_HOME when the active development profile is relocated", async () => {
+  it("reads runtime.json from CUBY_HOME when the active development profile is relocated", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-home-"));
     const memmyHome = join(tempDir, "isolated-profile");
     mkdirSync(memmyHome, { recursive: true });
@@ -70,7 +70,7 @@ describe("installByokTokenUsage", () => {
 
     installByokTokenUsage(configFixture(), {
       hooks,
-      env: { MEMMY_HOME: memmyHome },
+      env: { CUBY_HOME: memmyHome },
       homeDir: join(tempDir, "user-home"),
       fetchImpl: fetchImpl as typeof fetch,
     });
@@ -90,9 +90,9 @@ describe("installByokTokenUsage", () => {
     );
   });
 
-  it("keeps the default user-home runtime path when MEMMY_HOME is not set", async () => {
+  it("keeps the default user-home runtime path when CUBY_HOME is not set", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-default-home-"));
-    const runtimeHome = join(tempDir, ".memmy");
+    const runtimeHome = join(tempDir, ".cuby");
     mkdirSync(runtimeHome, { recursive: true });
     writeFileSync(join(runtimeHome, "runtime.json"), JSON.stringify({
       baseUrl: "http://127.0.0.1:63003",
@@ -125,8 +125,8 @@ describe("installByokTokenUsage", () => {
 
   it("does not install a hook in Vitest runtime", () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(runtimeConfigPath, JSON.stringify({
       baseUrl: "http://127.0.0.1:62934",
       localToken: "runtime-token",
@@ -145,8 +145,8 @@ describe("installByokTokenUsage", () => {
 
   it("installs a hook using the latest runtime.json and resolves provider names from config", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(runtimeConfigPath, JSON.stringify({
       baseUrl: "http://127.0.0.1:62934",
       localToken: "runtime-token",
@@ -182,7 +182,7 @@ describe("installByokTokenUsage", () => {
     const [url, init] = fetchImpl.mock.calls[0] as unknown as [URL, RequestInit];
     expect(url.toString()).toBe("http://127.0.0.1:63000/api/app/byok-token-usage/events");
     expect(init.headers).toMatchObject({
-      "x-memmy-local-token": "runtime-token-2",
+      "x-cuby-local-token": "runtime-token-2",
     });
     expect(JSON.parse(String(init.body))).toMatchObject({
       kind: "agent_chat",
@@ -197,8 +197,8 @@ describe("installByokTokenUsage", () => {
 
   it("creates a standalone recorder that uses the existing agent_chat usage event shape", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-byok-token-recorder-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(runtimeConfigPath, JSON.stringify({
       baseUrl: "http://127.0.0.1:63001",
       localToken: "runtime-token",

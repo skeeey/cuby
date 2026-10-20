@@ -1,6 +1,6 @@
 # Automatic Sync Recipe Contract
 
-The first onboarding session must convert its format discovery into one declarative recipe. Memmy validates and stores the recipe, then uses it for every later GUI sync without starting another Agent session.
+The first onboarding session must convert its format discovery into one declarative recipe. Cuby validates and stores the recipe, then uses it for every later GUI sync without starting another Agent session.
 
 Copy the canonical property names exactly. The nested recipe uses camelCase even though the surrounding `memmy_agent_source` tool call uses snake_case. Do not invent aliases or retry by changing the discriminator at random.
 
@@ -71,9 +71,9 @@ These names are invalid and must not be used:
 
 Optional common fields:
 
-- `wslDistro`: include only when Memmy runs on Windows and `path` belongs to WSL. Keep `path` in absolute Linux form and use the exact distribution name returned by `wsl --list --quiet`; Memmy resolves it through that distribution for automatic sync.
-- `fields.messageId`: a stable source record id. If omitted for a file recipe, Memmy hashes the relative file path and record position.
-- `fields.conversationId`: a stable source conversation id. If omitted for a file recipe, Memmy hashes the relative file path.
+- `wslDistro`: include only when Cuby runs on Windows and `path` belongs to WSL. Keep `path` in absolute Linux form and use the exact distribution name returned by `wsl --list --quiet`; Cuby resolves it through that distribution for automatic sync.
+- `fields.messageId`: a stable source record id. If omitted for a file recipe, Cuby hashes the relative file path and record position.
+- `fields.conversationId`: a stable source conversation id. If omitted for a file recipe, Cuby hashes the relative file path.
 - `fields.workspacePath` and `fields.gitRoot`.
 - `roleMap`: exact source-role values mapped to `user`, `assistant`, `tool`, or `system`. Standard role names work without a map.
 
@@ -131,7 +131,7 @@ Use `format: "sqlite"` with one read-only `SELECT` statement. The query must con
 
 Use SQLite JSON functions in the `SELECT` when message fields are stored inside JSON columns.
 
-The SQLite extractor executes the query without parameter bindings. Do not include `?`, `$name`, or `:name` placeholders. Select the native records needed to reconstruct history; Memmy applies the permanent sync boundary after extraction.
+The SQLite extractor executes the query without parameter bindings. Do not include `?`, `$name`, or `:name` placeholders. Select the native records needed to reconstruct history; Cuby applies the permanent sync boundary after extraction.
 
 During Windows-to-WSL onboarding, a missing `sqlite3` executable does not block SQLite recipes. Inspect the schema and preflight the query with Python's standard-library `sqlite3` module, then save the absolute Linux `path` and exact `wslDistro`; the Windows backend performs later reads without depending on the WSL CLI:
 

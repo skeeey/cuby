@@ -47,9 +47,9 @@ describe("GitHub Copilot provider routing", () => {
   });
 
   it("stores GitHub Copilot OAuth tokens under the auth data directory", () => {
-    const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+    const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
     const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-copilot-storage-"));
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     try {
       const storage = getStorage();
       storage.save({ access: "gho_test", expires: 123 });
@@ -60,8 +60,8 @@ describe("GitHub Copilot provider routing", () => {
       storage.delete();
       expect(fs.existsSync(storage.getTokenPath())).toBe(false);
     } finally {
-      if (oldDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-      else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+      if (oldDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+      else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
       fs.rmSync(root, { recursive: true, force: true });
     }
   });

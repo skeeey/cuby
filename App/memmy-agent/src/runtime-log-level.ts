@@ -1,5 +1,5 @@
 /**
- * Runtime log-level gate: filter console output according to MEMMY_LOG_LEVEL.
+ * Runtime log-level gate: filter console output according to CUBY_LOG_LEVEL.
  * Used only in gateway daemon mode so the desktop "log level" setting affects
  * Agent Gateway.
  */
@@ -25,7 +25,7 @@ export interface ConsoleMethods {
 /**
  * Parse any input into a valid level, falling back to info for invalid values.
  *
- * @param value Any input, usually process.env.MEMMY_LOG_LEVEL.
+ * @param value Any input, usually process.env.CUBY_LOG_LEVEL.
  * @returns Valid log level.
  */
 export function parseLogLevel(value: unknown): LogLevel {
@@ -56,12 +56,12 @@ export function selectConsoleMethods(
 }
 
 /**
- * Read MEMMY_LOG_LEVEL and install the level gate on the global console.
+ * Read CUBY_LOG_LEVEL and install the level gate on the global console.
  *
- * @param level Target level, defaulting to process.env.MEMMY_LOG_LEVEL.
+ * @param level Target level, defaulting to process.env.CUBY_LOG_LEVEL.
  */
 export function installConsoleLevelGate(
-  level: LogLevel = parseLogLevel(process.env.MEMMY_LOG_LEVEL),
+  level: LogLevel = parseLogLevel(process.env.CUBY_LOG_LEVEL),
 ): void {
   Object.assign(console, selectConsoleMethods(level));
 }

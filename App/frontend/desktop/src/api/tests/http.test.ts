@@ -93,7 +93,7 @@ describe("requestJson", () => {
       new URL("/api/health", runtimeConfig.baseUrl),
       expect.objectContaining({
         headers: expect.objectContaining({
-          "x-memmy-time-zone": "+00:00"
+          "x-cuby-time-zone": "+00:00"
         })
       })
     );
@@ -116,7 +116,7 @@ describe("requestJson", () => {
       new URL("/api/health", runtimeConfig.baseUrl),
       expect.objectContaining({
         headers: expect.objectContaining({
-          "x-memmy-time-zone": detectedUserTimeZone()
+          "x-cuby-time-zone": detectedUserTimeZone()
         })
       })
     );

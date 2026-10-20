@@ -24,7 +24,7 @@ import {
   buildOnboardingStepCompletedEvent
 } from "../analytics/onboarding-analytics.js";
 import { resolveAnalyticsPageLocation } from "../analytics/page-location.js";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { agentActions, appActions } from "../state/app-actions.js";
 import { useAppState } from "../state/app-state.js";
@@ -658,7 +658,7 @@ export function OnboardingPage() {
 
   async function persistReportConversationCompletion(completionPatch: ReturnType<typeof buildOnboardingCompletionPatch>) {
     if (!clients) {
-      throw new Error("Memmy API client is not ready");
+      throw new Error("Cuby API client is not ready");
     }
 
     await clients.config.updatePreferredMode("full");
@@ -686,7 +686,7 @@ export function OnboardingPage() {
 
     try {
       if (!clients) {
-        throw new Error("Memmy API client is not ready");
+        throw new Error("Cuby API client is not ready");
       }
 
       await clients.config.updatePreferredMode(mode);
@@ -814,7 +814,7 @@ export function OnboardingPage() {
           <div className="bg-background-paper rounded-card-lg shadow-2xl w-full max-w-md mx-4 overflow-hidden border border-border-stone/30">
             <div className="px-7 pt-7 pb-5 text-center">
               <div className="flex justify-center mb-2">
-                <Memmy pose="shield" size={96} className="memmy-bob" />
+                <Cuby pose="shield" size={96} className="cuby-bob" />
               </div>
               <h2 className="text-lg font-bold text-text-ink">{t("onboarding.permission.title")}</h2>
               <p className="text-sm text-text-ink/50 mt-1.5">{t("onboarding.permission.subtitle")}</p>

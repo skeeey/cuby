@@ -4,11 +4,11 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { getConfigPath, setConfigPath } from "../../config/loader.js";
 
-export const MIGRATIONS_READY_CONFIG_ENV = "MEMMY_MIGRATIONS_READY_CONFIG";
-export const MIGRATIONS_READY_WORKSPACE_ENV = "MEMMY_MIGRATIONS_READY_WORKSPACE";
-export const MIGRATIONS_READY_SESSION_DAG_ENV = "MEMMY_MIGRATIONS_READY_SESSION_DAG";
-export const MIGRATIONS_READY_APP_DATABASE_ENV = "MEMMY_MIGRATIONS_READY_APP_DATABASE";
-export const APP_DATABASE_ENV = "MEMMY_APP_DATABASE";
+export const MIGRATIONS_READY_CONFIG_ENV = "CUBY_MIGRATIONS_READY_CONFIG";
+export const MIGRATIONS_READY_WORKSPACE_ENV = "CUBY_MIGRATIONS_READY_WORKSPACE";
+export const MIGRATIONS_READY_SESSION_DAG_ENV = "CUBY_MIGRATIONS_READY_SESSION_DAG";
+export const MIGRATIONS_READY_APP_DATABASE_ENV = "CUBY_MIGRATIONS_READY_APP_DATABASE";
+export const APP_DATABASE_ENV = "CUBY_APP_DATABASE";
 
 export interface StartupMigrationTarget {
   runtimeConfigFile: string;
@@ -52,14 +52,14 @@ export function resolveStartupMigrationTarget(
   env: NodeJS.ProcessEnv = process.env,
 ): StartupMigrationTarget {
   const runtimeConfigFile = normalizeConfigPath(
-    input.config ?? env.MEMMY_CONFIG ?? getConfigPath(),
+    input.config ?? env.CUBY_CONFIG ?? getConfigPath(),
     env,
   );
   if (input.config) setConfigPath(runtimeConfigFile);
   return resolveMigrationTargets({
     runtimeConfigFile,
-    agentWorkspaceOverride: input.workspace ?? env.MEMMY_AGENT_WORKSPACE,
-    sessionDagDirOverride: env.MEMMY_AGENT_SESSION_DAG_DIR,
+    agentWorkspaceOverride: input.workspace ?? env.CUBY_AGENT_WORKSPACE,
+    sessionDagDirOverride: env.CUBY_AGENT_SESSION_DAG_DIR,
     appDatabaseFile: input.appDatabase ?? env[APP_DATABASE_ENV],
     env,
   });

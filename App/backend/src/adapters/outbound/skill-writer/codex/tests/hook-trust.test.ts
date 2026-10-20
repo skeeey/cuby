@@ -15,28 +15,28 @@ afterEach(() => {
 });
 
 describe("Codex hook trust", () => {
-  it("persists and verifies trust for only the five Memmy user hooks", async () => {
+  it("persists and verifies trust for only the five Cuby user hooks", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-codex-hook-trust-"));
 
     await expect(trustMemmyCodexHooks({
       codexHomeDirectory: tempDir,
       hooksFilePath: join(tempDir, "hooks.json"),
-      hookCommand: `node '${join(tempDir, "hooks", "memmy-resume-hook.mjs")}'`,
+      hookCommand: `node '${join(tempDir, "hooks", "cuby-resume-hook.mjs")}'`,
       codexExecutable: process.execPath,
       appServerArguments: ["-e", FAKE_CODEX_APP_SERVER]
     })).resolves.toBeUndefined();
   });
 
-  it("rejects success when Codex does not discover every Memmy hook", async () => {
+  it("rejects success when Codex does not discover every Cuby hook", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-codex-hook-trust-missing-"));
 
     await expect(trustMemmyCodexHooks({
       codexHomeDirectory: tempDir,
       hooksFilePath: join(tempDir, "hooks.json"),
-      hookCommand: `node '${join(tempDir, "hooks", "memmy-resume-hook.mjs")}'`,
+      hookCommand: `node '${join(tempDir, "hooks", "cuby-resume-hook.mjs")}'`,
       codexExecutable: process.execPath,
       appServerArguments: ["-e", FAKE_CODEX_APP_SERVER, "missing-stop"]
-    })).rejects.toThrow("Codex did not discover every installed Memmy hook");
+    })).rejects.toThrow("Codex did not discover every installed Cuby hook");
   });
 });
 
@@ -45,7 +45,7 @@ const readline = require("node:readline");
 const path = require("node:path");
 const home = process.env.CODEX_HOME;
 const sourcePath = path.join(home, "hooks.json");
-const scriptPath = path.join(home, "hooks", "memmy-resume-hook.mjs");
+const scriptPath = path.join(home, "hooks", "cuby-resume-hook.mjs");
 const missingStop = process.argv.includes("missing-stop");
 let trusted = false;
 const hook = (key, eventName, hash, command = "node '" + scriptPath + "'") => ({

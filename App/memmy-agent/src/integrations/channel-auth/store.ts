@@ -35,7 +35,7 @@ function defaultLogger(): PairingLogger {
 }
 
 function memoryOnly(): boolean {
-  return !storePathOverride && process.env.NODE_ENV === "test" && !process.env.MEMMY_AGENT_DATA_DIR;
+  return !storePathOverride && process.env.NODE_ENV === "test" && !process.env.CUBY_AGENT_DATA_DIR;
 }
 
 export function storePath(): string {

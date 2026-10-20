@@ -30,7 +30,7 @@ describe("filesystem local data store", () => {
     store.close();
 
     expect(result.bytes).toBeGreaterThan(0);
-    expect(result.exportPath).toContain("memmy-export-");
+    expect(result.exportPath).toContain("cuby-export-");
     expect(existsSync(join(result.exportPath, "memory.json"))).toBe(true);
     expect(JSON.parse(readFileSync(join(result.exportPath, "memory.json"), "utf8"))).toMatchObject({
       manifest: { service: "memmy-memory-service" }

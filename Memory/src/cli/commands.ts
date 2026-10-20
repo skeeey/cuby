@@ -29,7 +29,7 @@ import {
 } from "./runtime-installer.js";
 
 type Method = "GET" | "POST" | "DELETE";
-const CLI_NAME = "memmy-memory";
+const CLI_NAME = "cuby-memory";
 const COMPACT_GET_TOOL_FIELD_CHARS = 1200;
 
 export interface CommandContext {
@@ -67,12 +67,12 @@ export async function runCommand(context: CommandContext): Promise<unknown> {
   }
 
   if (words[0] === "stop") {
-    const home = optionString(options, "home") ?? "~/.memmy";
+    const home = optionString(options, "home") ?? "~/.cuby";
     return (context.stopInstalledService ?? stopInstalledMemoryService)(home);
   }
 
   if (words[0] === "service") {
-    const home = optionString(options, "home") ?? "~/.memmy";
+    const home = optionString(options, "home") ?? "~/.cuby";
     if (words[1] === "start") return startInstalledMemoryService(home);
     if (words[1] === "stop") return (context.stopInstalledService ?? stopInstalledMemoryService)(home);
     if (words[1] === "repair-launcher") return (context.repairInstalledService ?? repairInstalledWindowsMemoryService)(home);
@@ -265,14 +265,14 @@ async function serveMemory(parsed: ParsedArgs): Promise<unknown> {
     loadCliMemoryConfig(configPath).config.endpoint ??
     DEFAULT_MEMORY_URL;
   return [
-    "memmy-memory serve is not bundled with this CLI package.",
+    "cuby-memory serve is not bundled with this CLI package.",
     "Run the local Memory service separately, or point this CLI at a cloud Memory endpoint.",
     "",
     `Current target endpoint: ${url}`,
     "",
     "Examples:",
-    "  memmy-memory health --url <memory-service-url>",
-    "  memmy-memory search \"project decisions\" --url <memory-service-url>"
+    "  cuby-memory health --url <memory-service-url>",
+    "  cuby-memory search \"project decisions\" --url <memory-service-url>"
   ].join("\n");
 }
 
@@ -469,7 +469,7 @@ function requestOptions(parsed: ParsedArgs, fetchImpl?: typeof fetch): CliReques
   const configPath = optionString(parsed.options, "config");
   const userId = userIdOption(parsed) ?? loadCliMemoryConfig(configPath).config.userId;
   const headers: Record<string, string> = {};
-  if (userId) headers["x-memmy-user-id"] = userId;
+  if (userId) headers["x-cuby-user-id"] = userId;
   return {
     url: optionString(parsed.options, "url"),
     token: optionString(parsed.options, "token"),
@@ -640,7 +640,7 @@ function helpText(): string {
     "  --token <token>              Memory HTTP bearer token",
     "  --user-id <id>               Memory namespace user id",
     "  --source <agent>             Calling agent/source id",
-    "  --config <path>              Memmy config path",
+    "  --config <path>              Cuby config path",
     "  --health-check-timeout-ms <ms> Activation health timeout for Memory install",
     "  --skip-agent-skills          Initialize config without installing agent skills",
     "  --config-source <agent>      Select openclaw or hermes legacy config",

@@ -33,7 +33,7 @@ export function createDeepseekHarnessSkillTarget(
   deps: CreateDeepseekHarnessSkillTargetDeps = {}
 ): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveDeepseekHarnessHomeDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
   const pluginDirectory = join(rootDirectory, "profiles", "node_modules", "@memmy", "memmy-memory");
   const patchPath = join(rootDirectory, "cordis.patch.yml");
 
@@ -64,7 +64,7 @@ export function createDeepseekHarnessSkillTarget(
       const pluginSource = await readTextFile(join(pluginDirectory, "index.mjs"));
       const clientSource = await readTextFile(join(pluginDirectory, "client.js"));
       const packageSource = await readTextFile(join(pluginDirectory, "package.json"));
-      const bridgeSource = await readTextFile(join(pluginDirectory, "memmy-workspace-bridge.mjs"));
+      const bridgeSource = await readTextFile(join(pluginDirectory, "cuby-workspace-bridge.mjs"));
       return patch.includes("name: " + yamlString(PLUGIN_PACKAGE_NAME)) &&
         pluginSource === DEEPSEEK_HARNESS_PLUGIN_INDEX &&
         clientSource === DEEPSEEK_HARNESS_PLUGIN_CLIENT &&
@@ -84,11 +84,11 @@ export function createDeepseekHarnessSkillTarget(
       await writeFileAtomically(join(pluginDirectory, "index.mjs"), DEEPSEEK_HARNESS_PLUGIN_INDEX);
       await writeFileAtomically(join(pluginDirectory, "client.js"), DEEPSEEK_HARNESS_PLUGIN_CLIENT);
       await writeFileAtomically(
-        join(pluginDirectory, "memmy-workspace-bridge.mjs"),
+        join(pluginDirectory, "cuby-workspace-bridge.mjs"),
         await loadMemmyWorkspaceBridgeRuntimeAsset()
       );
       await writeFileAtomically(
-        join(pluginDirectory, "memmy-memory-config.json"),
+        join(pluginDirectory, "cuby-memory-config.json"),
         JSON.stringify({ memmy_config_path: memmyConfigPath, ...(await readMemmyMemoryServiceConfig(memmyConfigPath)) }, null, 2) + "\n"
       );
       await upsertPatch(patchPath, renderPluginPatch(memmyConfigPath));
@@ -148,7 +148,7 @@ function removePatchBlock(value: string): string {
     const start = result.indexOf(PATCH_START);
     if (start < 0) return result;
     const end = result.indexOf(PATCH_END, start);
-    if (end < 0) throw new Error("Invalid Memmy patch block starting at " + PATCH_START);
+    if (end < 0) throw new Error("Invalid Cuby patch block starting at " + PATCH_START);
     const lineEnd = result.indexOf("\n", end + PATCH_END.length);
     const after = lineEnd < 0 ? result.length : lineEnd + 1;
     result = result.slice(0, start).trimEnd() + "\n" + result.slice(after).trimStart();

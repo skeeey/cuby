@@ -1,20 +1,20 @@
 import { mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { basename, dirname, join } from "node:path";
 import {
-  MEMMY_RESUME_SKILL_DIRECTORY_NAME,
-  MEMMY_SKILL_DIRECTORY_NAME,
+  CUBY_RESUME_SKILL_DIRECTORY_NAME,
+  CUBY_SKILL_DIRECTORY_NAME,
   renderMemmyResumeSkillFile,
   renderMemmySkillDirectoryFiles
 } from "./templates/memmy-skill-directory.js";
 import type { SkillManifest } from "./types.js";
 
 export async function replaceMemmySkillDirectory(rootDirectory: string, manifest: SkillManifest): Promise<void> {
-  const targetPath = join(rootDirectory, "skills", MEMMY_SKILL_DIRECTORY_NAME);
+  const targetPath = join(rootDirectory, "skills", CUBY_SKILL_DIRECTORY_NAME);
   await replaceDirectory(targetPath, renderMemmySkillDirectoryFiles(manifest));
 }
 
 export async function replaceMemmyResumeSkillDirectory(rootDirectory: string, source: string): Promise<void> {
-  const targetPath = join(rootDirectory, "skills", MEMMY_RESUME_SKILL_DIRECTORY_NAME);
+  const targetPath = join(rootDirectory, "skills", CUBY_RESUME_SKILL_DIRECTORY_NAME);
   await replaceDirectory(targetPath, [{ relativePath: "SKILL.md", content: renderMemmyResumeSkillFile(source) }]);
 }
 
@@ -51,11 +51,11 @@ async function replaceDirectory(
 }
 
 export async function removeMemmySkillDirectory(rootDirectory: string): Promise<void> {
-  await rm(join(rootDirectory, "skills", MEMMY_SKILL_DIRECTORY_NAME), { recursive: true, force: true });
+  await rm(join(rootDirectory, "skills", CUBY_SKILL_DIRECTORY_NAME), { recursive: true, force: true });
 }
 
 export async function removeMemmyResumeSkillDirectory(rootDirectory: string): Promise<void> {
-  await rm(join(rootDirectory, "skills", MEMMY_RESUME_SKILL_DIRECTORY_NAME), { recursive: true, force: true });
+  await rm(join(rootDirectory, "skills", CUBY_RESUME_SKILL_DIRECTORY_NAME), { recursive: true, force: true });
 }
 
 function temporarySiblingPath(path: string): string {

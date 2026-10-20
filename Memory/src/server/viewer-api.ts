@@ -77,7 +77,7 @@ export interface ViewerRouteResult {
 }
 
 export function isViewerApiRequest(request: IncomingMessage, url: URL): boolean {
-  return url.pathname === "/api/v1/events" || header(request, "x-memmy-viewer") === "1";
+  return url.pathname === "/api/v1/events" || header(request, "x-cuby-viewer") === "1";
 }
 
 export function assertLocalViewerRequest(request: IncomingMessage, url: URL): void {
@@ -105,8 +105,8 @@ export function assertLocalViewerRequest(request: IncomingMessage, url: URL): vo
     throw new MemoryServiceError("forbidden", "cross-site Viewer API requests are not allowed");
   }
   if (request.method !== "GET" && request.method !== "HEAD") {
-    if (header(request, "x-memmy-viewer") !== "1") {
-      throw new MemoryServiceError("forbidden", "Viewer write requests require x-memmy-viewer: 1");
+    if (header(request, "x-cuby-viewer") !== "1") {
+      throw new MemoryServiceError("forbidden", "Viewer write requests require x-cuby-viewer: 1");
     }
     const contentType = header(request, "content-type");
     if (!contentType?.toLowerCase().startsWith("application/json")) {
@@ -265,7 +265,7 @@ export async function routeViewerRequest(
         includeAudit: url.searchParams.get("includeAudit") === "true"
       }),
       headers: {
-        "content-disposition": `attachment; filename="memmy-memory-${new Date().toISOString().slice(0, 10)}.json"`
+        "content-disposition": `attachment; filename="cuby-memory-${new Date().toISOString().slice(0, 10)}.json"`
       }
     };
   }

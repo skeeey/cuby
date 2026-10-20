@@ -1154,10 +1154,10 @@ describe("HomePage", () => {
     expect(agentErrorText("home.modelSelector.unavailable")).toBe("当前模型或连接已失效，无法继续调用，需要切换模型。");
     expect(agentErrorText("message_request_rejected:model_selection_unavailable")).toBe("当前模型或连接已失效，无法继续调用，需要切换模型。");
     expect(agentErrorText("asr.error.microphonePermissionDenied.mac")).toBe(
-      "麦克风权限未开启。请到 系统设置 › 隐私与安全性 › 麦克风 中开启 Memmy"
+      "麦克风权限未开启。请到 系统设置 › 隐私与安全性 › 麦克风 中开启 Cuby"
     );
     expect(agentErrorText("asr.error.microphonePermissionDenied.windows")).toBe(
-      "麦克风权限未开启。请到 设置 › 隐私和安全性 › 麦克风 中开启 Memmy"
+      "麦克风权限未开启。请到 设置 › 隐私和安全性 › 麦克风 中开启 Cuby"
     );
     expect(agentErrorText("plain error")).toBe("操作未完成，请重试");
     expect(agentErrorText(null)).toBeNull();

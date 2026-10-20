@@ -62,7 +62,7 @@ describe("model config helpers", () => {
     expect(resolveTextProviderOption("google")?.protocol).toBe("gemini");
     expect(resolveTextProviderOption("kimi")?.protocol).toBe("moonshot");
     expect(resolveTextProviderOption("openrouter")).toBeNull();
-    expect(textProviderDisplayName("memmy_account", (key) => zhCNMessages[key])).toBe("Memmy");
+    expect(textProviderDisplayName("memmy_account", (key) => zhCNMessages[key])).toBe("Cuby");
   });
 
   it("桌面文本模型使用固定 API Type，不向用户暴露协议选择", () => {

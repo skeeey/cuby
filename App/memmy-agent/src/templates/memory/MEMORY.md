@@ -20,4 +20,4 @@ This file stores important information that should persist across sessions.
 
 ---
 
-*When there is important information to remember, memmy will automatically update this file.*
+*When there is important information to remember, Cuby will automatically update this file.*

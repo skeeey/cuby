@@ -72,7 +72,7 @@ export async function streamFirstEncounterReport(
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": config.localToken
+        "x-cuby-local-token": config.localToken
       },
       body: JSON.stringify(OnboardingInsightReportInputSchema.parse({
         locale: request.language,

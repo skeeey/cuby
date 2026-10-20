@@ -62,7 +62,7 @@ function decryptSecret(db: Database.Database, ref: string | null): string | null
     .get(ref) as { ciphertext: string; iv: string; auth_tag: string } | undefined;
   if (!row) throw secretError();
   try {
-    const keyMaterial = process.env.MEMMY_SECRET_KEY ?? DEFAULT_KEY_MATERIAL;
+    const keyMaterial = process.env.CUBY_SECRET_KEY ?? DEFAULT_KEY_MATERIAL;
     const key = createHash("sha256").update(keyMaterial).digest();
     const decipher = createDecipheriv("aes-256-gcm", key, Buffer.from(row.iv, "base64"));
     decipher.setAuthTag(Buffer.from(row.auth_tag, "base64"));

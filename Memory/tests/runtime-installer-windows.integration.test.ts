@@ -8,9 +8,9 @@ import { describe, expect, it } from "vitest";
 import { installMemoryRuntime, runtimeTarget } from "../src/cli/runtime-installer.js";
 
 // Opt in on an interactive Windows desktop with permission to create a user task:
-// MEMMY_WINDOWS_SERVICE_INTEGRATION=1 npm test -w @memmy/memory -- tests/runtime-installer-windows.integration.test.ts
+// CUBY_WINDOWS_SERVICE_INTEGRATION=1 npm test -w @memmy/memory -- tests/runtime-installer-windows.integration.test.ts
 // MainWindowHandle checks cannot replace a manual check for transient console flashes.
-const enabled = process.platform === "win32" && process.env.MEMMY_WINDOWS_SERVICE_INTEGRATION === "1";
+const enabled = process.platform === "win32" && process.env.CUBY_WINDOWS_SERVICE_INTEGRATION === "1";
 
 describe.skipIf(!enabled)("Windows scheduled Memory launcher integration", () => {
   it("remains supervised, ignores duplicate runs, and stops and starts its process tree", async () => {

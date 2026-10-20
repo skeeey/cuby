@@ -52,13 +52,13 @@ body{display:flex;align-items:center;justify-content:center;background:#1f2937;c
 .hint{font-size:13px;color:#9ca3af;text-align:center;padding:0 16px;}
 .spinner{width:28px;height:28px;border:3px solid rgba(255,255,255,.2);border-top-color:#34d399;border-radius:50%;animation:spin .8s linear infinite;}
 @keyframes spin{to{transform:rotate(360deg);}}
-</style></head><body><div class="box"><div class="spinner"></div><div class="title">Memmy</div><div class="hint">${hint}</div></div></body></html>`;
+</style></head><body><div class="box"><div class="spinner"></div><div class="title">Cuby</div><div class="hint">${hint}</div></div></body></html>`;
 }
 
 export function resolveUpdateSplashHtml(language: StartupSplashLanguage, version?: string): string {
-  const title = language === "en-US" ? "Completing Memmy update" : "正在完成 Memmy 更新";
+  const title = language === "en-US" ? "Completing Cuby update" : "正在完成 Cuby 更新";
   const detail = language === "en-US"
-    ? "Memmy will reopen automatically when the update is ready."
+    ? "Cuby will reopen automatically when the update is ready."
     : "安装完成后会自动打开新版。";
   const versionText = version?.trim()
     ? language === "en-US"

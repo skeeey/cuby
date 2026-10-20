@@ -1,6 +1,6 @@
 import { restartInstalledMemoryService } from "../cli/runtime-installer.js";
 
-export const DESKTOP_MANAGED_MEMORY_ENV = "MEMMY_DESKTOP_MANAGED_MEMORY";
+export const DESKTOP_MANAGED_MEMORY_ENV = "CUBY_DESKTOP_MANAGED_MEMORY";
 export const MEMORY_RESTART_IPC_TYPE = "memmy-memory:restart";
 
 export interface MemoryServiceRestartDependencies {

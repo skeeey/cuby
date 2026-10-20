@@ -8,7 +8,7 @@ import { useApiClients } from "../app/providers.js";
 import { resolveByokEntry } from "../app/routes.js";
 import { AccountAuthPanel } from "../components/account-auth-panel.js";
 import { LanguageToggleButton } from "../components/language-toggle-button.js";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { appActions } from "../state/app-actions.js";
 import { canUseCloudFeatures } from "../state/app-reducer.js";
@@ -87,7 +87,7 @@ export function WelcomePage() {
         <div className="w-full max-w-md flex flex-col items-center">
           <div className="text-center mb-6">
             <div className="welcome-brand-mascot flex justify-center">
-              <Memmy pose="wave" size={176} className="memmy-wave" />
+              <Cuby pose="wave" size={176} className="cuby-wave" />
             </div>
             <span className="text-3xl font-extrabold tracking-tight text-text-ink">{t("brand.name")}</span>
             <p className="welcome-brand-subtitle text-base text-text-ink/50">{t("brand.subtitle")}</p>

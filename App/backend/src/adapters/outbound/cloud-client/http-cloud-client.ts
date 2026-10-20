@@ -9,8 +9,6 @@ import {
   LegalAgreementUrlsSchema,
   IntegrationToolResultSchema,
   InvitationResultSchema,
-  LotteryRewardSchema,
-  LotteryStatusSchema,
   OkResponseSchema,
   PromotionFlagsSchema,
   QWEN_ASR_MODEL_ID,
@@ -22,8 +20,6 @@ import {
   type IntegrationConnection,
   type IntegrationConnectionsResponse,
   type LegalAgreementUrls,
-  type LotteryReward,
-  type LotteryStatus,
   type IntegrationToolResult,
   type OkResponse,
   type PromotionFlags,
@@ -49,12 +45,10 @@ import type {
   CloudStartSocialLoginResult,
   CloudLogoutInput,
   GetAccountInfoInput,
-  GetLotteryRewardInput,
   EnsureInvitationCodeInput,
   GetTokenQuotaEligibilityInput,
   GetTokenUsageInput,
   GrantTokensInput,
-  AckLotteryRewardInput,
   ReleaseCheckResult,
   RequestTokenQuotaInput,
   TokenQuotaApplyResult,
@@ -89,7 +83,7 @@ export interface CreateHttpCloudClientOptions {
 
 /** Creates create http cloud client. */
 export function createHttpCloudClient(options: CreateHttpCloudClientOptions = {}): CloudClient {
-  const baseUrl = normalizeBaseUrl(options.baseUrl ?? resolveCloudServiceBaseUrl(process.env.MEMMY_CLOUD_SERVICE));
+  const baseUrl = normalizeBaseUrl(options.baseUrl ?? resolveCloudServiceBaseUrl(process.env.CUBY_CLOUD_SERVICE));
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const fetchImpl = options.fetchImpl ?? globalThis.fetch;
   const deviceId = options.deviceId;
@@ -422,35 +416,6 @@ export function createHttpCloudClient(options: CreateHttpCloudClientOptions = {}
       }
     },
 
-    async getLotteryStatus(): Promise<LotteryStatus | undefined> {
-      try {
-        const data = await requestCloudData<unknown>(fetchImpl, baseUrl, timeoutMs, "/api/memmy/lottery/status", {
-          method: "GET",
-          lang: "zh"
-        });
-        const parsed = LotteryStatusSchema.safeParse(data);
-        return parsed.success ? parsed.data : undefined;
-      } catch {
-        return undefined;
-      }
-    },
-
-    async getLotteryReward(input: GetLotteryRewardInput): Promise<LotteryReward> {
-      const data = await requestCloudData<unknown>(fetchImpl, baseUrl, timeoutMs, "/api/memmy/lottery/reward", {
-        method: "GET",
-        lang: "zh",
-        bearerCredential: input.uuid
-      });
-      return LotteryRewardSchema.parse(data);
-    },
-
-    async ackLotteryReward(input: AckLotteryRewardInput): Promise<void> {
-      await requestBoolean(fetchImpl, baseUrl, timeoutMs, "/api/memmy/lottery/reward/ack", {
-        body: input.drawId ? { drawId: input.drawId } : {},
-        lang: "zh",
-        bearerCredential: input.uuid
-      });
-    }
   };
 }
 
@@ -516,9 +481,9 @@ async function requestCloudData<T>(
       ...(options.body === undefined ? {} : { "content-type": "application/json" }),
       lang: options.lang,
       ...(options.bearerCredential ? { authorization: `Bearer ${options.bearerCredential}` } : {}),
-      ...(options.composioMachineToken ? { "x-memmy-composio-token": options.composioMachineToken } : {}),
-      ...(options.deviceId ? { "x-memmy-device-id": options.deviceId } : {}),
-      "x-agent-region": normalizeAgentRegion(process.env.MEMMY_APP_EDITION)
+      ...(options.composioMachineToken ? { "x-cuby-composio-token": options.composioMachineToken } : {}),
+      ...(options.deviceId ? { "x-cuby-device-id": options.deviceId } : {}),
+      "x-agent-region": normalizeAgentRegion(process.env.CUBY_APP_EDITION)
     },
     body: options.body === undefined ? undefined : JSON.stringify(options.body),
     signal: AbortSignal.timeout(timeoutMs)
@@ -575,7 +540,7 @@ function preserveIntegerIdentifiers(raw: string): string {
 function toCloudAccountProfile(data: Record<string, unknown>): CloudAccountProfile {
   const email = readString(data.email);
   const phoneNumber = readString(data.phoneNumber) ?? readString(data.phone);
-  const nickname = readString(data.userName) ?? (email ? email.split("@")[0] : null) ?? "Memmy User";
+  const nickname = readString(data.userName) ?? (email ? email.split("@")[0] : null) ?? "Cuby User";
   const rawProfile = { ...data };
   delete rawProfile.token;
   delete rawProfile.uuid;

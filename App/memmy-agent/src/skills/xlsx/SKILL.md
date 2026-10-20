@@ -35,7 +35,7 @@ and objects that cannot be safely preserved fail closed.
 All commands are standalone Node CLIs. They write stable JSON with `--json`,
 diagnostics to stderr, and non-zero status for invalid input, missing Office,
 timeout, or unsafe preservation. The bundled renderer is resolved through
-`MEMMY_OFFICE_RENDERING_ROOT`, the legacy DOCX override during migration, the
+`CUBY_OFFICE_RENDERING_ROOT`, the legacy DOCX override during migration, the
 packaged Office payload, and the source payload; it never silently falls back
 to a system PATH installation.
 

@@ -44,7 +44,7 @@ describe("REST panel contract", () => {
       const viewerHtml = await viewerResponse.text();
       expect(viewerResponse.status).toBe(200);
       expect(viewerResponse.headers.get("content-type")).toContain("text/html");
-      expect(viewerHtml).toContain("<title>Memmy Memory — Memory Viewer</title>");
+      expect(viewerHtml).toContain("<title>Cuby Memory — Memory Viewer</title>");
       expect(viewerHtml).toContain("/viewer/assets/");
       const viewerScript = viewerHtml.match(/src="([^"]+\.js)"/)?.[1];
       expect(viewerScript).toBeTruthy();

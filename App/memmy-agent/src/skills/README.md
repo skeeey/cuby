@@ -1,4 +1,4 @@
-# Memmy Skills
+# Cuby Skills
 
 This directory contains the built-in skills bundled with `memmy-agent`.
 
@@ -9,7 +9,7 @@ Each skill is a directory containing a `SKILL.md` file with:
 - YAML frontmatter (name, description, metadata)
 - Markdown instructions for the agent
 
-When skills reference large local documentation or logs, prefer memmy's built-in
+When skills reference large local documentation or logs, prefer Cuby's built-in
 `grep` tool to narrow the search space before loading full files.
 Use `grep(output_mode="count")` / `files_with_matches` for broad searches first,
 use `head_limit` / `offset` to page through large result sets,
@@ -33,5 +33,5 @@ Runtime metadata uses memmy-agent's own `metadata.memmy` namespace.
 | `summarize`               | Summarize URLs, local files, podcasts, and YouTube videos.                                                                          |
 | `tmux`                    | Remote-control interactive terminal sessions.                                                                                       |
 | `ui-craft`                | Design and implement browser-visible interfaces with visual QA.                                                                     |
-| `update-setup`            | Configure a workspace-specific Memmy upgrade skill.                                                                                 |
+| `update-setup`            | Configure a workspace-specific Cuby upgrade skill.                                                                                 |
 | `weather`                 | Retrieve current weather and forecasts without an API key.                                                                          |

@@ -31,8 +31,8 @@ import { SourcesSubPage } from "../sources-sub-page.js";
 
 describe("SourcesSubPage", () => {
   it("为 Windows CLI 卡片提供 .cmd 命令入口而不是 macOS 安装路径", () => {
-    expect((zhCNMessages as Record<string, string>)["memory.cliPathWindows"]).toBe("memmy-memory.cmd");
-    expect((enUSMessages as Record<string, string>)["memory.cliPathWindows"]).toBe("memmy-memory.cmd");
+    expect((zhCNMessages as Record<string, string>)["memory.cliPathWindows"]).toBe("cuby-memory.cmd");
+    expect((enUSMessages as Record<string, string>)["memory.cliPathWindows"]).toBe("cuby-memory.cmd");
     expect(resolveMemoryCliPathMessageKey("win32", true, false)).toBe("memory.cliPathWindows");
     expect(resolveMemoryCliPathMessageKey("win32", false, false)).toBe("memory.cliPath");
     expect(resolveMemoryCliPathMessageKey("win32", true, true)).toBe("memory.cliPath");
@@ -104,10 +104,10 @@ describe("SourcesSubPage", () => {
 
     expect(html).toContain("跨Agent接入");
     expect(html).toContain("memory-sources-page");
-    expect(html).toContain("各 Agent 通过 Hook、插件或 Skill 接入 memmy-memory");
+    expect(html).toContain("各 Agent 通过 Hook、插件或 Skill 接入 cuby-memory");
     expect(html).toContain("发现新 Agent 时自动接入");
     expect(html).toContain("自动安装接入组件；关闭后只出现在下方列表，由你手动接入");
-    expect(html).toContain("~/.local/bin/memmy-memory");
+    expect(html).toContain("~/.local/bin/cuby-memory");
     expect(html).toContain('aria-label="查看记忆服务文档"');
     expect(html).toContain(">了解更多</span>");
     expect(html).toContain("lucide-external-link");
@@ -205,7 +205,7 @@ describe("SourcesSubPage", () => {
     expect(prompt).toContain("explicitly supplied by the user in the GUI");
     expect(prompt).toContain("inspect this scoped candidate first, and verify it before use");
     expect(prompt).toContain("ask for a corrected path instead of silently replacing it");
-    expect(prompt).toContain("If Memmy runs on Windows and the Agent data lives in WSL");
+    expect(prompt).toContain("If Cuby runs on Windows and the Agent data lives in WSL");
     expect(prompt).not.toMatch(/[\u3400-\u9fff]/u);
   });
 
@@ -276,7 +276,7 @@ describe("SourcesSubPage", () => {
   });
 
   it("从运行时 Memory URL 展示真实端口，不再写死旧地址", () => {
-    expect(formatMemoryServiceAddress("http://127.0.0.1:18960")).toBe("127.0.0.1:18960");
+    expect(formatMemoryServiceAddress("http://127.0.0.1:28960")).toBe("127.0.0.1:28960");
     expect(formatMemoryServiceAddress("http://localhost:18888/")).toBe("localhost:18888");
     expect(formatMemoryServiceAddress(undefined)).toBeUndefined();
     expect(zhCNMessages["memory.restartService"]).toBe("重启服务");

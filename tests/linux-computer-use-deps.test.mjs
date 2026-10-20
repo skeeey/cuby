@@ -64,7 +64,7 @@ describe("Linux Computer Use system dependency installation", () => {
     expect(result.log).toMatch(/^package update\npackage install/);
   });
   it("allows an explicit headless opt-out without privileges or a supported package manager", () => {
-    const result = fixture({ manager: null, sudo: false }).run({ MEMMY_INSTALL_COMPUTER_USE_DEPS: "0" });
+    const result = fixture({ manager: null, sudo: false }).run({ CUBY_INSTALL_COMPUTER_USE_DEPS: "0" });
     expect(result.status, result.stderr).toBe(0);
     expect(result.stdout).toContain("desktop automation may be unavailable");
     expect(result.log).toBe("");
@@ -78,7 +78,7 @@ describe("Linux Computer Use system dependency installation", () => {
     [{ manager: "dnf", FAIL_AT: "install" }, "dnf failed"],
     [{ manager: "pacman", FAIL_AT: "-S" }, "pacman failed"],
     [{ BROKEN_AFTER_INSTALL: "1" }, "custom Python"],
-    [{ MEMMY_INSTALL_COMPUTER_USE_DEPS: "yes" }, "must be 0 or 1"],
+    [{ CUBY_INSTALL_COMPUTER_USE_DEPS: "yes" }, "must be 0 or 1"],
   ])("reports failure instead of claiming dependencies are ready: %j", (options, message) => {
     const result = fixture(options).run();
     expect(result.status).not.toBe(0);

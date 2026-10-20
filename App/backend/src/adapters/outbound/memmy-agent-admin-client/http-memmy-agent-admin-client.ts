@@ -7,7 +7,7 @@ import {
 import { z } from "zod";
 import type { MemmyAgentAdminClient } from "./index.js";
 
-export const DEFAULT_MEMMY_AGENT_ADMIN_BASE_URL = "http://127.0.0.1:18980";
+export const DEFAULT_MEMMY_AGENT_ADMIN_BASE_URL = "http://127.0.0.1:28980";
 
 const BootstrapSchema = z.object({
   token: z.string().min(1)
@@ -128,7 +128,7 @@ class HttpMemmyAgentAdminClient implements MemmyAgentAdminClient {
     if (this.token) return this.token;
 
     const response = await this.fetchFn(new URL("/webui/bootstrap", this.baseUrl), {
-      headers: this.bootstrapSecret ? { "x-memmy-agent-auth": this.bootstrapSecret } : undefined,
+      headers: this.bootstrapSecret ? { "x-cuby-agent-auth": this.bootstrapSecret } : undefined,
       signal
     });
     if (!response.ok) {

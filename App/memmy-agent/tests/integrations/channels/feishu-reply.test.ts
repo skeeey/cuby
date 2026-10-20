@@ -186,7 +186,7 @@ function makeFeishuEvent({
 afterEach(() => {
   vi.restoreAllMocks();
   larkSdkMock.reset();
-  delete process.env.MEMMY_AGENT_DATA_DIR;
+  delete process.env.CUBY_AGENT_DATA_DIR;
 });
 
 describe("Feishu runtime startup", () => {
@@ -566,7 +566,7 @@ describe("Feishu inbound media", () => {
     const channel = makeFeishuChannel();
     channel.bus = bus;
     channel.downloadAndSaveMedia = vi.fn(async () => [
-      String.raw`C:\Users\dodre\.memmy\media\feishu\voice.ogg`,
+      String.raw`C:\Users\dodre\.cuby\media\feishu\voice.ogg`,
       "[audio: voice.ogg]",
     ]) as any;
     channel.transcribeAudio = vi.fn(async () => "hello from voice");
@@ -586,15 +586,15 @@ describe("Feishu inbound media", () => {
       "om_audio",
     );
     expect(channel.transcribeAudio).toHaveBeenCalledWith(
-      String.raw`C:\Users\dodre\.memmy\media\feishu\voice.ogg`,
+      String.raw`C:\Users\dodre\.cuby\media\feishu\voice.ogg`,
     );
-    expect(inbound.media).toEqual([String.raw`C:\Users\dodre\.memmy\media\feishu\voice.ogg`]);
+    expect(inbound.media).toEqual([String.raw`C:\Users\dodre\.cuby\media\feishu\voice.ogg`]);
     expect(inbound.content).toBe("[transcription: hello from voice]");
   });
 
   it("saves downloaded media with an absolute path in content text", async () => {
     const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), "feishu-data-"));
-    process.env.MEMMY_AGENT_DATA_DIR = tmpDir;
+    process.env.CUBY_AGENT_DATA_DIR = tmpDir;
     const channel = makeFeishuChannel();
     channel.downloadFileSync = vi.fn(() => [Buffer.from("voice-bytes"), null]) as any;
 

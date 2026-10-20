@@ -13,7 +13,7 @@ describe("Memmy Account provider headers", () => {
     [" INTL ", "intl"],
     ["unknown", "cn"],
   ] as const)("resolves edition %j to X-Agent-Region=%s", (edition, expected) => {
-    vi.stubEnv("MEMMY_APP_EDITION", edition);
+    vi.stubEnv("CUBY_APP_EDITION", edition);
 
     const provider = new OpenAICompatProvider({
       apiKey: "account-token",
@@ -25,7 +25,7 @@ describe("Memmy Account provider headers", () => {
   });
 
   it("defaults to the domestic region when the edition is unset", () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "");
+    vi.stubEnv("CUBY_APP_EDITION", "");
 
     const provider = new OpenAICompatProvider({
       apiKey: "account-token",
@@ -37,7 +37,7 @@ describe("Memmy Account provider headers", () => {
   });
 
   it("does not add X-Agent-Region to other providers", () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "intl");
+    vi.stubEnv("CUBY_APP_EDITION", "intl");
 
     const provider = new OpenAICompatProvider({
       apiKey: "sk-test",
@@ -49,7 +49,7 @@ describe("Memmy Account provider headers", () => {
   });
 
   it("allows configured extra headers to override provider defaults", () => {
-    vi.stubEnv("MEMMY_APP_EDITION", "cn");
+    vi.stubEnv("CUBY_APP_EDITION", "cn");
 
     const provider = new OpenAICompatProvider({
       apiKey: "account-token",

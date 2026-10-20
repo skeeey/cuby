@@ -2,11 +2,26 @@
 import { describe, expect, it, vi } from "vitest";
 import { createHttpCuberouterClient } from "../index.js";
 
-function jsonResponse(body: unknown, status = 200): Response {
+function jsonResponse(body: unknown, status = 200, headers: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
     status,
-    headers: { "content-type": "application/json" }
+    headers: { "content-type": "application/json", ...headers }
   });
+}
+
+const REFRESH_COOKIE = "new_api_refresh=rt-1; Path=/api/user/auth; Max-Age=2592000; HttpOnly; SameSite=Strict";
+
+function authPayload(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    success: true,
+    message: "",
+    data: {
+      access_token: "jwt-1",
+      access_expires_at: 1790456789,
+      user: { id: 7, username: "alice", display_name: "Alice", quota: 100 },
+      ...overrides
+    }
+  };
 }
 
 function clientWith(fetchImpl: typeof fetch) {
@@ -19,16 +34,7 @@ function clientWith(fetchImpl: typeof fetch) {
 
 describe("cuberouter client", () => {
   it("logs in and maps the dashboard access token", async () => {
-    const fetchImpl = vi.fn(async () =>
-      jsonResponse({
-        success: true,
-        message: "",
-        data: {
-          access_token: "jwt-1",
-          user: { id: 7, username: "alice", display_name: "Alice", quota: 100 }
-        }
-      })
-    );
+    const fetchImpl = vi.fn(async () => jsonResponse(authPayload(), 200, { "set-cookie": REFRESH_COOKIE }));
     const session = await clientWith(fetchImpl as unknown as typeof fetch).login({
       username: "alice",
       password: "Passw0rd1"
@@ -38,13 +44,54 @@ describe("cuberouter client", () => {
       accessToken: "jwt-1",
       userId: "7",
       username: "alice",
-      displayName: "Alice"
+      displayName: "Alice",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-1"
     });
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://127.0.0.1:3000/api/user/login");
     expect(init.method).toBe("POST");
     expect(JSON.parse(String(init.body))).toEqual({ username: "alice", password: "Passw0rd1" });
   });
+
+  it("keeps a session usable when the instance issues no refresh cookie", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse(authPayload()));
+
+    const session = await clientWith(fetchImpl as unknown as typeof fetch).login({
+      username: "alice",
+      password: "Passw0rd1"
+    });
+
+    expect(session.refreshToken).toBeNull();
+    expect(session.accessExpiresAt).toBe(1790456789);
+  });
+
+  it("refreshes the session with the stored refresh cookie", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse(
+        { success: true, message: "", data: { access_token: "jwt-2", access_expires_at: 1790456999 } },
+        200,
+        { "set-cookie": "new_api_refresh=rt-2; Path=/api/user/auth; HttpOnly" }
+      )
+    );
+
+    const rotated = await clientWith(fetchImpl as unknown as typeof fetch).refreshSession("rt-1");
+
+    expect(rotated).toEqual({ accessToken: "jwt-2", accessExpiresAt: 1790456999, refreshToken: "rt-2" });
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://127.0.0.1:3000/api/user/auth/refresh");
+    expect(init.method).toBe("POST");
+    expect((init.headers as Record<string, string>).cookie).toBe("new_api_refresh=rt-1");
+  });
+
+  it("reports a rejected access token as an expired session, not a plain rejection", async () => {
+    const fetchImpl = vi.fn(async () => jsonResponse({ success: false, message: "无权进行此操作" }, 401));
+
+    await expect(clientWith(fetchImpl as unknown as typeof fetch).getUserModels("jwt-stale")).rejects.toMatchObject({
+      code: "session_expired"
+    });
+  });
+
 
   it("reports two-factor logins instead of returning an unusable session", async () => {
     const fetchImpl = vi.fn(async () =>
@@ -64,14 +111,14 @@ describe("cuberouter client", () => {
     ).rejects.toMatchObject({ code: "rejected", message: "用户名已存在" });
   });
 
-  it("surfaces the server message when the auth middleware rejects the request", async () => {
+  it("surfaces the server message and marks an expired access token as an expired session", async () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse({ success: false, code: "unauthorized", message: "access token expired" }, 401)
     );
 
     await expect(
       clientWith(fetchImpl as unknown as typeof fetch).listOrganizationTokens("stale-token", "7")
-    ).rejects.toMatchObject({ code: "rejected", message: "access token expired" });
+    ).rejects.toMatchObject({ code: "session_expired", message: "access token expired" });
   });
 
   it("maps transport failures to service_unavailable", async () => {

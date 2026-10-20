@@ -21,7 +21,7 @@ const PROBE_TIMEOUT_MS = 1_500;
 const POLL_INTERVAL_MS = 150;
 const SERVICE_STABILITY_MS = 500;
 const MEMORY_SERVICE_NAME = "memmy-memory.service";
-const SYSTEMD_GATEWAY_ENV = "MEMMY_LINUX_SYSTEMD_GATEWAY";
+const SYSTEMD_GATEWAY_ENV = "CUBY_LINUX_SYSTEMD_GATEWAY";
 
 const PERSISTED_GATEWAY_ENV_KEYS = [
   "PATH",
@@ -69,10 +69,10 @@ const PERSISTED_GATEWAY_ENV_KEYS = [
   "CHATGPT_ACCESS_TOKEN",
   "OPENAI_CODEX_ACCOUNT_ID",
   "CHATGPT_ACCOUNT_ID",
-  "MEMMY_AGENT_PATH_APPEND",
-  "MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S",
-  "MEMMY_CLOUD_SERVICE",
-  "MEMMY_APP_EDITION",
+  "CUBY_AGENT_PATH_APPEND",
+  "CUBY_AGENT_STREAM_IDLE_TIMEOUT_S",
+  "CUBY_CLOUD_SERVICE",
+  "CUBY_APP_EDITION",
 ] as const;
 
 export class LinuxSystemdGatewayError extends Error {
@@ -165,7 +165,7 @@ function memoryServiceEndpoint(config: Config): MemoryServiceEndpoint {
   return {
     baseUrl: typeof storage.endpoint === "string" && storage.endpoint.trim()
       ? storage.endpoint.trim()
-      : "http://127.0.0.1:18960",
+      : "http://127.0.0.1:28960",
     token: typeof storage.token === "string" && storage.token.trim()
       ? storage.token.trim()
       : null,
@@ -287,7 +287,7 @@ export async function prepareLinuxGatewayConfig(
 
     websocket.enabled = true;
     websocket.host ??= "127.0.0.1";
-    websocket.port ??= 18980;
+    websocket.port ??= 28980;
     websocket.tokenTtlS ??= 86_400;
     websocket.websocketRequiresToken ??= true;
     websocket.allowFrom ??= ["*"];
@@ -300,7 +300,7 @@ export async function prepareLinuxGatewayConfig(
 
     gateway.enabled = true;
     gateway.host ??= "127.0.0.1";
-    gateway.port ??= 18970;
+    gateway.port ??= 28970;
 
     channels.websocket = websocket;
     root.channels = channels;
@@ -310,7 +310,7 @@ export async function prepareLinuxGatewayConfig(
 }
 
 function environmentFilePath(): string {
-  const configured = process.env.MEMMY_GATEWAY_ENV_FILE?.trim();
+  const configured = process.env.CUBY_GATEWAY_ENV_FILE?.trim();
   return configured ? path.resolve(configured) : path.join(getRuntimeSubdir("systemd"), "gateway.env");
 }
 
@@ -421,7 +421,7 @@ export async function enableSystemdGatewayService(
     throw new LinuxSystemdGatewayError(
       "Could not start memmy-gateway.service with systemd --user"
       + `${detail ? `: ${detail}` : "."} `
-      + "Install Memmy with the Linux installer and check "
+      + "Install Cuby with the Linux installer and check "
       + "`systemctl --user status memmy-gateway.service`.",
     );
   }
@@ -567,7 +567,7 @@ export async function runLinuxRootTerminal(
   if (result.status === "ready" && servicePid === null) {
     throw new LinuxSystemdGatewayError(
       "A compatible Gateway is already running outside memmy-gateway.service. "
-      + "Stop that Gateway before starting the installed Memmy CLI.",
+      + "Stop that Gateway before starting the installed Cuby CLI.",
     );
   }
   if (result.status === "unexpected" && servicePid === null) {
@@ -586,7 +586,7 @@ export async function runLinuxRootTerminal(
     if (result.status === "ready" && servicePid === null) {
       throw new LinuxSystemdGatewayError(
         "A compatible Gateway is already running outside memmy-gateway.service. "
-        + "Stop that Gateway before starting the installed Memmy CLI.",
+        + "Stop that Gateway before starting the installed Cuby CLI.",
       );
     }
     if (result.status === "unexpected" && servicePid === null) {

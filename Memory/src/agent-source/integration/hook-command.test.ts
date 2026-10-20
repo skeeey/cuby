@@ -17,7 +17,7 @@ describe("resolveNodeExecutable", () => {
   it("rejects packaged app hosts supplied through environment overrides", () => {
     const appHost = "/Applications/Memmy.app/Contents/MacOS/Memmy";
     expect(resolveNodeExecutable(runtime({
-      env: { MEMMY_HOOK_NODE: appHost, NODE: "/usr/local/bin/node" },
+      env: { CUBY_HOOK_NODE: appHost, NODE: "/usr/local/bin/node" },
       executable: [appHost, "/usr/local/bin/node"]
     }))).toBe("/usr/local/bin/node");
   });
@@ -30,7 +30,7 @@ describe("resolveNodeExecutable", () => {
 
   it("preserves override, process, known-path, and PATH fallback precedence", () => {
     expect(resolveNodeExecutable(runtime({
-      env: { MEMMY_HOOK_NODE: "/custom/bin/node" },
+      env: { CUBY_HOOK_NODE: "/custom/bin/node" },
       execPath: "/runtime/bin/node",
       executable: ["/custom/bin/node", "/runtime/bin/node"]
     }))).toBe("/custom/bin/node");
@@ -50,7 +50,7 @@ describe("resolveNodeExecutable", () => {
 
   it("skips absolute candidates that exist but are not executable files", () => {
     expect(resolveNodeExecutable(runtime({
-      env: { MEMMY_HOOK_NODE: "/custom/bin/node" },
+      env: { CUBY_HOOK_NODE: "/custom/bin/node" },
       executable: ["/opt/homebrew/bin/node"]
     }))).toBe("/opt/homebrew/bin/node");
   });
@@ -64,16 +64,16 @@ describe("createNodeHookCommand", () => {
 
   it("double-quotes paths on Windows so cmd.exe and PowerShell can run them", () => {
     const nodePath = "C:/Program Files/nodejs/node.exe";
-    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/memmy-resume-hook.mjs", runtime({
+    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/cuby-resume-hook.mjs", runtime({
       platform: "win32",
-      env: { MEMMY_HOOK_NODE: nodePath },
+      env: { CUBY_HOOK_NODE: nodePath },
       executable: [nodePath]
-    }))).toBe("\"C:/Program Files/nodejs/node.exe\" \"C:/Users/me/.codex/hooks/memmy-resume-hook.mjs\"");
+    }))).toBe("\"C:/Program Files/nodejs/node.exe\" \"C:/Users/me/.codex/hooks/cuby-resume-hook.mjs\"");
   });
 
   it("leaves a bare command name unquoted on Windows", () => {
-    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/memmy-resume-hook.mjs", runtime({ platform: "win32" })))
-      .toBe("node \"C:/Users/me/.codex/hooks/memmy-resume-hook.mjs\"");
+    expect(createNodeHookCommand("C:/Users/me/.codex/hooks/cuby-resume-hook.mjs", runtime({ platform: "win32" })))
+      .toBe("node \"C:/Users/me/.codex/hooks/cuby-resume-hook.mjs\"");
   });
 });
 

@@ -8,12 +8,12 @@ import {
 } from "../../../../src/core/agent-runtime/tools/browser-preview.js";
 
 const roots: string[] = [];
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function tmpRoot(prefix = "memmy-browser-preview-"): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = path.join(root, "data");
+  process.env.CUBY_AGENT_DATA_DIR = path.join(root, "data");
   return root;
 }
 
@@ -25,8 +25,8 @@ function write(root: string, relativePath: string, content: string | Buffer): st
 }
 
 afterEach(() => {
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const root of roots.splice(0)) {
     fs.rmSync(root, { recursive: true, force: true });
   }

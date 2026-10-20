@@ -18,7 +18,6 @@ import {
 import { AppProviders, useApiClients } from "./app/providers.js";
 import { AppRouter } from "./app/router.js";
 import { UpdateCoordinatorProvider } from "./app/update-coordinator.js";
-import { CampaignPromptHost } from "./components/campaign-prompt-host.js";
 import { GithubStarPromptHost } from "./components/github-star-prompt-host.js";
 import { InviteResultToast } from "./components/invite-result-toast.js";
 import { NotificationCenterProvider } from "./components/notification-center.js";
@@ -364,7 +363,6 @@ function RuntimeApp() {
       <AgentRuntimeBridge taskStateCoordinator={taskStateCoordinator ?? undefined}>
         <NotificationCenterProvider>
           <AppRouter onRetry={retry} />
-          <CampaignPromptHost />
           <GithubStarPromptHost />
           {state.invitationToast ? (
           <InviteResultToast

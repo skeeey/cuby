@@ -38,20 +38,20 @@ const discordSdkMock = vi.hoisted(() => {
 
 vi.mock("discord.js", () => ({ Client: discordSdkMock.Client }));
 
-const oldConfig = process.env.MEMMY_CONFIG;
+const oldConfig = process.env.CUBY_CONFIG;
 const roots: string[] = [];
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-discord-"));
   roots.push(root);
-  process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+  process.env.CUBY_CONFIG = path.join(root, "config.yaml");
   return root;
 }
 
 afterEach(() => {
   vi.restoreAllMocks();
   discordSdkMock.reset();
-  process.env.MEMMY_CONFIG = oldConfig;
+  process.env.CUBY_CONFIG = oldConfig;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

@@ -73,7 +73,7 @@ describe("memory runtime client", () => {
       new URL("/api/v1/health", runtimeConfig.baseUrl),
       expect.objectContaining({
         headers: expect.objectContaining({
-          "x-memmy-local-token": "local-token"
+          "x-cuby-local-token": "local-token"
         })
       })
     );
@@ -112,7 +112,7 @@ describe("memory runtime client", () => {
         body: JSON.stringify({ reason: "manual_reload" }),
         headers: expect.objectContaining({
           "content-type": "application/json",
-          "x-memmy-local-token": "local-token"
+          "x-cuby-local-token": "local-token"
         })
       })
     );

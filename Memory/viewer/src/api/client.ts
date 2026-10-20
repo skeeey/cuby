@@ -16,7 +16,7 @@ import {
 const DEFAULT_HEADERS: Record<string, string> = {
   "content-type": "application/json",
   accept: "application/json",
-  "x-memmy-viewer": "1",
+  "x-cuby-viewer": "1",
 };
 
 /**
@@ -101,7 +101,7 @@ async function blobRequest(
 ): Promise<Blob> {
   const res = await fetch(withAgentPrefix(path), {
     method: "GET",
-    headers: { ...apiKeyHeader(), "x-memmy-viewer": "1" },
+    headers: { ...apiKeyHeader(), "x-cuby-viewer": "1" },
     signal: opts.signal,
   });
   if (!res.ok) {
@@ -128,7 +128,7 @@ async function postRaw<T = unknown>(
   // break multipart parsing on the server side.
   const res = await fetch(withAgentPrefix(path), {
     method: "POST",
-    headers: { ...apiKeyHeader(), "x-memmy-viewer": "1" },
+    headers: { ...apiKeyHeader(), "x-cuby-viewer": "1" },
     body,
     signal: opts.signal,
   });

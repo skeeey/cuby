@@ -44,8 +44,8 @@ export async function runMemoryLayerSmoke(): Promise<MemoryLayerSmokeResult> {
   let server: Awaited<ReturnType<typeof listenMemoryHttpServer>> | undefined;
   let backend: LocalBackend | undefined;
   let primaryError: unknown;
-  const previousCloudService = process.env.MEMMY_CLOUD_SERVICE;
-  process.env.MEMMY_CLOUD_SERVICE = "http://127.0.0.1:9";
+  const previousCloudService = process.env.CUBY_CLOUD_SERVICE;
+  process.env.CUBY_CLOUD_SERVICE = "http://127.0.0.1:9";
 
   try {
     server = await listenMemoryHttpServer({
@@ -231,7 +231,7 @@ export async function runMemoryLayerSmoke(): Promise<MemoryLayerSmokeResult> {
       cleanupErrors.push(error);
     }
     try {
-      restoreEnv("MEMMY_CLOUD_SERVICE", previousCloudService);
+      restoreEnv("CUBY_CLOUD_SERVICE", previousCloudService);
     } catch (error) {
       cleanupErrors.push(error);
     }
@@ -274,7 +274,7 @@ async function backendRequest<T = unknown>(
   const response = await fetch(`${baseUrl}${path}`, {
     method,
     headers: {
-      "x-memmy-local-token": BACKEND_TOKEN,
+      "x-cuby-local-token": BACKEND_TOKEN,
       ...(body === undefined ? {} : { "content-type": "application/json" })
     },
     body: body === undefined ? undefined : JSON.stringify(body)

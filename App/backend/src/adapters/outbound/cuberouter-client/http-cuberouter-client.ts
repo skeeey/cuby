@@ -23,6 +23,16 @@ interface CuberouterEnvelope {
   data?: unknown;
 }
 
+/** The rotating refresh cookie the instance sets on login and on every refresh. */
+const REFRESH_COOKIE_NAME = "new_api_refresh";
+
+/**
+ * Fallback lifetime for an access token when the instance does not report `access_expires_at`.
+ * The instance's own default is 15 minutes; assuming a short life is the safe direction, since
+ * a token assumed to live forever is exactly the failure this renews away from.
+ */
+const DEFAULT_ACCESS_TOKEN_TTL_SECONDS = 15 * 60;
+
 /** Creates create http cuberouter client. */
 export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOptions): CuberouterClient {
   const baseUrl = options.baseUrl.replace(/\/+$/, "");
@@ -69,10 +79,16 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
     },
 
     async login(input) {
-      const data = await request<Record<string, unknown>>(fetchImpl, baseUrl, options.timeoutMs, "/api/user/login", {
-        method: "POST",
-        body: { username: input.username, password: input.password }
-      });
+      const { data, refreshToken } = await requestRaw<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        "/api/user/login",
+        {
+          method: "POST",
+          body: { username: input.username, password: input.password }
+        }
+      );
       if (data.require_2fa === true) {
         throw cuberouterError("two_factor_required", "该账号启用了两步验证，本版本不支持");
       }
@@ -87,7 +103,33 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
         accessToken,
         userId,
         username,
-        displayName: readString(user.display_name) ?? username
+        displayName: readString(user.display_name) ?? username,
+        accessExpiresAt: readEpochSeconds(data.access_expires_at) ?? nowSeconds() + DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+        refreshToken
+      };
+    },
+
+    async refreshSession(refreshToken) {
+      const { data, refreshToken: rotated } = await requestRaw<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        "/api/user/auth/refresh",
+        {
+          method: "POST",
+          headers: { cookie: `${REFRESH_COOKIE_NAME}=${refreshToken}` }
+        }
+      );
+      const accessToken = readString(data.access_token);
+      if (!accessToken) {
+        throw cuberouterError("session_expired", "cuberouter 刷新响应缺少访问令牌");
+      }
+      return {
+        accessToken,
+        accessExpiresAt: readEpochSeconds(data.access_expires_at) ?? nowSeconds() + DEFAULT_ACCESS_TOKEN_TTL_SECONDS,
+        // The instance rotates the cookie on every refresh. An instance that does not set a
+        // new one keeps the old secret usable inside its replay window, so hold on to it.
+        refreshToken: rotated ?? refreshToken
       };
     },
 
@@ -238,16 +280,38 @@ async function request<T>(
   baseUrl: string,
   timeoutMs: number,
   path: string,
-  input: {
-    method: "GET" | "POST";
-    body?: Record<string, unknown>;
-    accessToken?: string;
-    /** Extra request headers (organization routes need the account-context pair). */
-    headers?: Record<string, string>;
-    /** Error code to raise instead of "rejected" when this call answers 429. */
-    tooManyRequestsCode?: CuberouterErrorCode;
-  }
+  input: CuberouterRequestInput
 ): Promise<T> {
+  return (await requestRaw<T>(fetchImpl, baseUrl, timeoutMs, path, input)).data;
+}
+
+interface CuberouterRequestInput {
+  method: "GET" | "POST";
+  body?: Record<string, unknown>;
+  accessToken?: string;
+  /** Extra request headers (organization routes need the account-context pair). */
+  headers?: Record<string, string>;
+  /** Error code to raise instead of "rejected" when this call answers 429. */
+  tooManyRequestsCode?: CuberouterErrorCode;
+}
+
+interface CuberouterRawResponse<T> {
+  data: T;
+  /** The refresh cookie this response rotated to, if the instance set one. */
+  refreshToken: string | null;
+}
+
+/**
+ * Runs one request and keeps the response headers, which the login and refresh flows need:
+ * the instance hands the rotating refresh token back as a cookie, never in the body.
+ */
+async function requestRaw<T>(
+  fetchImpl: typeof fetch,
+  baseUrl: string,
+  timeoutMs: number,
+  path: string,
+  input: CuberouterRequestInput
+): Promise<CuberouterRawResponse<T>> {
   let response: Response;
   let text: string;
   try {
@@ -276,11 +340,43 @@ async function request<T>(
     throw cuberouterError(input.tooManyRequestsCode, envelope.message || "请求过于频繁，请稍后再试");
   }
 
+  // 401 is the instance saying the access token itself is no good. It has to stay distinct
+  // from a plain rejection: the caller can renew it, but only if it knows that is the problem.
+  if (response.status === 401) {
+    throw cuberouterError("session_expired", envelope.message || "cuberouter 登录已过期");
+  }
+
   if (!response.ok || envelope.success !== true) {
     throw cuberouterError("rejected", envelope.message || `cuberouter 请求失败（HTTP ${response.status}）`);
   }
 
-  return (envelope.data ?? {}) as T;
+  return { data: (envelope.data ?? {}) as T, refreshToken: readRefreshCookie(response.headers) };
+}
+
+/**
+ * Reads the refresh cookie out of a response. `getSetCookie` is the only accessor that keeps
+ * several `set-cookie` headers apart, which is why this does not go through `get`.
+ */
+function readRefreshCookie(headers: Headers): string | null {
+  for (const cookie of headers.getSetCookie?.() ?? []) {
+    const pair = cookie.split(";")[0] ?? "";
+    const separator = pair.indexOf("=");
+    if (separator === -1) continue;
+    if (pair.slice(0, separator).trim() === REFRESH_COOKIE_NAME) {
+      return pair.slice(separator + 1).trim() || null;
+    }
+  }
+  return null;
+}
+
+/** Epoch seconds, as the instance reports them. Anything else reads as "not reported". */
+function readEpochSeconds(value: unknown): number | null {
+  const seconds = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  return Number.isFinite(seconds) && seconds > 0 ? Math.floor(seconds) : null;
+}
+
+function nowSeconds(): number {
+  return Math.floor(Date.now() / 1000);
 }
 
 function parseEnvelope(text: string): CuberouterEnvelope {

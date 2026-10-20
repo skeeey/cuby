@@ -134,12 +134,12 @@ jobs:
     env:
       # The values the packaging chain reads from the repo-root .env. It refuses
       # to run without them, and they are public endpoint origins, not secrets.
-      MEMMY_LEGAL_CN_BASE_URL: https://memmy.cn
-      MEMMY_LEGAL_INTL_BASE_URL: https://memmy.bot
-      MEMMY_CLOUD_SERVICE: https://api.memmy.cn
+      CUBY_LEGAL_CN_BASE_URL: https://memmy.cn
+      CUBY_LEGAL_INTL_BASE_URL: https://memmy.bot
+      CUBY_CLOUD_SERVICE: https://api.memmy.cn
       # package-win-local.sh defaults this to cn, so a developer machine and CI
       # have been downloading their packaging binaries from different places.
-      MEMMY_PACKAGE_MIRROR: ${{ needs.resolve.outputs.mirror }}
+      CUBY_PACKAGE_MIRROR: ${{ needs.resolve.outputs.mirror }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -185,7 +185,7 @@ jobs:
       - name: Upload the installer
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ matrix.edition }}
+          name: cuby-windows-${{ needs.resolve.outputs.version }}-${{ matrix.edition }}
           path: App/shell/desktop/release/*.exe
           if-no-files-found: error
       - name: Zip the unpacked build
@@ -195,11 +195,11 @@ jobs:
           # local run script points at, so ship that too rather than only the
           # installer.
           cd App/shell/desktop/release
-          7z a -tzip "Memmy-${{ needs.resolve.outputs.version }}-win32-x64-${{ matrix.edition }}-unpacked.zip" win-unpacked >/dev/null
+          7z a -tzip "Cuby-${{ needs.resolve.outputs.version }}-win32-x64-${{ matrix.edition }}-unpacked.zip" win-unpacked >/dev/null
       - name: Upload the unpacked build
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ matrix.edition }}-unpacked
+          name: cuby-windows-${{ needs.resolve.outputs.version }}-${{ matrix.edition }}-unpacked
           path: App/shell/desktop/release/*-unpacked.zip
           if-no-files-found: error
 
@@ -213,10 +213,10 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
-      MEMMY_LEGAL_CN_BASE_URL: https://memmy.cn
-      MEMMY_LEGAL_INTL_BASE_URL: https://memmy.bot
-      MEMMY_CLOUD_SERVICE: https://api.memmy.cn
-      MEMMY_PACKAGE_MIRROR: ${{ needs.resolve.outputs.mirror }}
+      CUBY_LEGAL_CN_BASE_URL: https://memmy.cn
+      CUBY_LEGAL_INTL_BASE_URL: https://memmy.bot
+      CUBY_CLOUD_SERVICE: https://api.memmy.cn
+      CUBY_PACKAGE_MIRROR: ${{ needs.resolve.outputs.mirror }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -235,6 +235,6 @@ jobs:
       - name: Upload the image
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-macos-${{ needs.resolve.outputs.version }}-${{ matrix.arch }}-${{ matrix.edition }}
+          name: cuby-macos-${{ needs.resolve.outputs.version }}-${{ matrix.arch }}-${{ matrix.edition }}
           path: App/shell/desktop/release/*.dmg
           if-no-files-found: error

@@ -28,7 +28,7 @@ afterEach(async () => {
   await closeServer(cuberouterServer);
   cuberouterServer = undefined;
   if (cuberouterUrlWasSet) {
-    restoreOptionalEnv("MEMMY_CUBEROUTER_URLS", previousCuberouterUrls);
+    restoreOptionalEnv("CUBY_CUBEROUTER_URLS", previousCuberouterUrls);
     cuberouterUrlWasSet = false;
   }
 
@@ -39,9 +39,9 @@ afterEach(async () => {
 });
 
 describe("local api", () => {
-  it("requires an explicit Memmy config path instead of using the user's home directory", async () => {
-    const previousMemmyConfig = process.env.MEMMY_CONFIG;
-    delete process.env.MEMMY_CONFIG;
+  it("requires an explicit Cuby config path instead of using the user's home directory", async () => {
+    const previousMemmyConfig = process.env.CUBY_CONFIG;
+    delete process.env.CUBY_CONFIG;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-config-path-"));
 
     try {
@@ -53,9 +53,9 @@ describe("local api", () => {
           memoryClient: createMockMemoryClient(),
           cloudClient: createMockCloudClient()
         })
-      ).rejects.toThrow("memmyConfigPath or MEMMY_CONFIG is required");
+      ).rejects.toThrow("memmyConfigPath or CUBY_CONFIG is required");
     } finally {
-      restoreOptionalEnv("MEMMY_CONFIG", previousMemmyConfig);
+      restoreOptionalEnv("CUBY_CONFIG", previousMemmyConfig);
     }
   });
 
@@ -75,14 +75,14 @@ describe("local api", () => {
       databasePath: join(tempDir, "app.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       memoryClient,
       cloudClient: createMockCloudClient(),
       memmyConfigPath: join(tempDir, "config.yaml")
     });
 
     expect(reloadReasons).toEqual([{ reason: "desktop_startup" }]);
-    expect(backend.runtimeConfig.memory).toEqual({ baseUrl: "http://127.0.0.1:18960" });
+    expect(backend.runtimeConfig.memory).toEqual({ baseUrl: "http://127.0.0.1:28960" });
   });
 
   it("writes the resolved UI language into Memory config before the startup reload", async () => {
@@ -96,7 +96,7 @@ describe("local api", () => {
       databasePath: join(tempDir, "app.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       accountChannel: "phone",
       memoryClient: {
         ...baseClient,
@@ -121,7 +121,7 @@ describe("local api", () => {
       databasePath: join(tempDir, "app-email.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime-email.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       accountChannel: "email",
       memoryClient: createMockMemoryClient(),
       cloudClient: createMockCloudClient(),
@@ -165,7 +165,7 @@ describe("local api", () => {
           composio: {
             type: "streamableHttp",
             url: `${backend.runtimeConfig.baseUrl}/mcp/composio`,
-            headers: { "x-memmy-mcp-token": expect.stringMatching(/^mmt_/) }
+            headers: { "x-cuby-mcp-token": expect.stringMatching(/^mmt_/) }
           }
         }
       }
@@ -192,7 +192,7 @@ describe("local api", () => {
       databasePath: join(tempDir, "app.sqlite"),
       runtimeConfigPath: join(tempDir, "runtime.json"),
       localToken: "test-token",
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       memoryReady,
       memoryClient,
       cloudClient: createMockCloudClient(),
@@ -204,9 +204,9 @@ describe("local api", () => {
     await vi.waitFor(() => expect(reloadReasons).toEqual([{ reason: "desktop_startup" }]));
   });
 
-  it("uses the built-in default Cloud client when MEMMY_CLOUD_URL is missing", async () => {
-    const previousCloudUrl = process.env.MEMMY_CLOUD_URL;
-    delete process.env.MEMMY_CLOUD_URL;
+  it("uses the built-in default Cloud client when CUBY_CLOUD_URL is missing", async () => {
+    const previousCloudUrl = process.env.CUBY_CLOUD_URL;
+    delete process.env.CUBY_CLOUD_URL;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
 
     try {
@@ -220,7 +220,7 @@ describe("local api", () => {
 
       expect(backend.runtimeConfig.baseUrl).toMatch(/^http:\/\/127\.0\.0\.1:\d+$/);
     } finally {
-      restoreOptionalEnv("MEMMY_CLOUD_URL", previousCloudUrl);
+      restoreOptionalEnv("CUBY_CLOUD_URL", previousCloudUrl);
     }
   });
 
@@ -253,14 +253,14 @@ describe("local api", () => {
   });
 
   it("fails fast when no HTTP Memory Layer is configured", async () => {
-    const previousMemoryLayerUrl = process.env.MEMMY_MEMORY_LAYER_URL;
-    const previousMemoryDbPath = process.env.MEMMY_MEMORY_DB_PATH;
-    const previousMemosDbPath = process.env.MEMMY_MEMOS_DB_PATH;
-    const previousDisableSqlite = process.env.MEMMY_DISABLE_MEMOS_SQLITE;
-    delete process.env.MEMMY_MEMORY_LAYER_URL;
-    delete process.env.MEMMY_MEMORY_DB_PATH;
-    delete process.env.MEMMY_MEMOS_DB_PATH;
-    process.env.MEMMY_DISABLE_MEMOS_SQLITE = "1";
+    const previousMemoryLayerUrl = process.env.CUBY_MEMORY_LAYER_URL;
+    const previousMemoryDbPath = process.env.CUBY_MEMORY_DB_PATH;
+    const previousMemosDbPath = process.env.CUBY_MEMOS_DB_PATH;
+    const previousDisableSqlite = process.env.CUBY_DISABLE_MEMOS_SQLITE;
+    delete process.env.CUBY_MEMORY_LAYER_URL;
+    delete process.env.CUBY_MEMORY_DB_PATH;
+    delete process.env.CUBY_MEMOS_DB_PATH;
+    process.env.CUBY_DISABLE_MEMOS_SQLITE = "1";
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
 
     try {
@@ -272,30 +272,30 @@ describe("local api", () => {
           cloudClient: createMockCloudClient(),
           memmyConfigPath: join(tempDir, "config.yaml")
         })
-      ).rejects.toThrow("MEMMY_MEMORY_LAYER_URL is required");
+      ).rejects.toThrow("CUBY_MEMORY_LAYER_URL is required");
     } finally {
-      restoreOptionalEnv("MEMMY_MEMORY_LAYER_URL", previousMemoryLayerUrl);
-      restoreOptionalEnv("MEMMY_MEMORY_DB_PATH", previousMemoryDbPath);
-      restoreOptionalEnv("MEMMY_MEMOS_DB_PATH", previousMemosDbPath);
-      restoreOptionalEnv("MEMMY_DISABLE_MEMOS_SQLITE", previousDisableSqlite);
+      restoreOptionalEnv("CUBY_MEMORY_LAYER_URL", previousMemoryLayerUrl);
+      restoreOptionalEnv("CUBY_MEMORY_DB_PATH", previousMemoryDbPath);
+      restoreOptionalEnv("CUBY_MEMOS_DB_PATH", previousMemosDbPath);
+      restoreOptionalEnv("CUBY_DISABLE_MEMOS_SQLITE", previousDisableSqlite);
     }
   });
 
   it("uses a 20s default timeout for Memory Layer HTTP clients", () => {
     expect(readMemoryLayerConfig({
-      MEMMY_MEMORY_LAYER_URL: " http://127.0.0.1:18960 "
+      CUBY_MEMORY_LAYER_URL: " http://127.0.0.1:28960 "
     } as NodeJS.ProcessEnv)).toMatchObject({
-      baseUrl: "http://127.0.0.1:18960",
+      baseUrl: "http://127.0.0.1:28960",
       timeoutMs: 20_000
     });
   });
 
   it("accepts Memory service URL aliases for the writable Memory Layer client", () => {
     expect(readMemoryLayerConfig({
-      MEMMY_MEMORY_URL: " http://127.0.0.1:18960 ",
-      MEMMY_MEMORY_TOKEN: "memory-token"
+      CUBY_MEMORY_URL: " http://127.0.0.1:28960 ",
+      CUBY_MEMORY_TOKEN: "memory-token"
     } as NodeJS.ProcessEnv)).toMatchObject({
-      baseUrl: "http://127.0.0.1:18960",
+      baseUrl: "http://127.0.0.1:28960",
       token: "memory-token"
     });
     expect(readMemoryLayerConfig({
@@ -313,7 +313,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -345,7 +345,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -368,7 +368,7 @@ describe("local api", () => {
   it("hydrates app-state from runtime YAML before the first bootstrap response", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
     const databasePath = join(tempDir, "app.sqlite");
-    const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
+    const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
     const store = createAppStateStore({ databasePath });
     store.repositories.bootstrap.updateAppSettings({ userMode: "byok" });
     store.repositories.accountSession.upsert({
@@ -388,7 +388,7 @@ describe("local api", () => {
       cloudUuid: "cloud.login.uuid"
     });
     store.close();
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(
       memmyConfigPath,
       [
@@ -401,7 +401,7 @@ describe("local api", () => {
         "    apiKey: cloud.login.uuid",
         "    endpoints:",
         "      platform:",
-        `        apiBase: ${process.env.MEMMY_CLOUD_SERVICE}/api/agentExternal/v1`,
+        `        apiBase: ${process.env.CUBY_CLOUD_SERVICE}/api/agentExternal/v1`,
         "        protocol: memmy-account",
         "modelPresets:",
         "  account-agent:",
@@ -444,7 +444,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -453,11 +453,11 @@ describe("local api", () => {
     expect(parsed.app.userMode).toBe("account");
   });
 
-  it("uses MEMMY_CONFIG as the shared startup sync and settings writer path", async () => {
-    const previousMemmyConfig = process.env.MEMMY_CONFIG;
+  it("uses CUBY_CONFIG as the shared startup sync and settings writer path", async () => {
+    const previousMemmyConfig = process.env.CUBY_CONFIG;
     tempDir = mkdtempSync(join(tmpdir(), "memmy-backend-"));
-    const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
-    mkdirSync(join(tempDir, ".memmy"), { recursive: true });
+    const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
+    mkdirSync(join(tempDir, ".cuby"), { recursive: true });
     writeFileSync(
       memmyConfigPath,
       [
@@ -497,7 +497,7 @@ describe("local api", () => {
       ].join("\n"),
       "utf8"
     );
-    process.env.MEMMY_CONFIG = memmyConfigPath;
+    process.env.CUBY_CONFIG = memmyConfigPath;
 
     try {
       backend = await createLocalBackend({
@@ -511,13 +511,13 @@ describe("local api", () => {
       const bootstrapResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const currentModelConfigResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/model-config`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const currentModelConfig = await currentModelConfigResponse.json() as any;
@@ -525,7 +525,7 @@ describe("local api", () => {
         method: "PUT",
         headers: {
           "content-type": "application/json",
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         },
         body: JSON.stringify({
           configRevision: currentModelConfig.configRevision,
@@ -571,7 +571,7 @@ describe("local api", () => {
         protocol: "openai-chat-completions"
       });
     } finally {
-      restoreOptionalEnv("MEMMY_CONFIG", previousMemmyConfig);
+      restoreOptionalEnv("CUBY_CONFIG", previousMemmyConfig);
     }
   });
 
@@ -609,7 +609,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -628,7 +628,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/bootstrap`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "wrong-token"
+        "x-cuby-local-token": "wrong-token"
       }
     });
 
@@ -643,13 +643,13 @@ describe("local api", () => {
       headers: {
         origin: "http://127.0.0.1:5173",
         "access-control-request-method": "GET",
-        "access-control-request-headers": "x-memmy-local-token"
+        "access-control-request-headers": "x-cuby-local-token"
       }
     });
 
     expect(response.status).toBe(204);
     expect(response.headers.get("access-control-allow-origin")).toBe("http://127.0.0.1:5173");
-    expect(response.headers.get("access-control-allow-headers")).toContain("x-memmy-local-token");
+    expect(response.headers.get("access-control-allow-headers")).toContain("x-cuby-local-token");
   });
 
   it("rejects browser requests from non-local origins", async () => {
@@ -660,7 +660,7 @@ describe("local api", () => {
       headers: {
         origin: "https://example.com",
         "access-control-request-method": "GET",
-        "access-control-request-headers": "x-memmy-local-token"
+        "access-control-request-headers": "x-cuby-local-token"
       }
     });
 
@@ -692,7 +692,7 @@ describe("local api", () => {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       body: JSON.stringify({
         adapterId: "test-cli",
@@ -720,25 +720,25 @@ describe("local api", () => {
     const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const authResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/github/authorize`, {
       method: "POST",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const listResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const deleteResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections/conn-github`, {
       method: "DELETE",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -772,7 +772,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -796,7 +796,7 @@ describe("local api", () => {
     const currentModelConfigResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/app/model-config`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const currentModelConfig = await currentModelConfigResponse.json() as any;
@@ -804,7 +804,7 @@ describe("local api", () => {
       method: "PUT",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       body: JSON.stringify({
         configRevision: currentModelConfig.configRevision,
@@ -830,32 +830,32 @@ describe("local api", () => {
       method: "PATCH",
       headers: {
         "content-type": "application/json",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       body: JSON.stringify({ userMode: "byok" })
     });
     const sessionResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/account/session`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const connectionsResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const authResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/github/authorize`, {
       method: "POST",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -924,19 +924,19 @@ describe("local api", () => {
     const sessionResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/account/session`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
     const connectionsResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -955,7 +955,7 @@ describe("local api", () => {
   });
 
   it("default integrations routes proxy capabilities/authorize/list/delete to Cloud Service with machine token", async () => {
-    const previousCloudUrl = process.env.MEMMY_CLOUD_URL;
+    const previousCloudUrl = process.env.CUBY_CLOUD_URL;
     const requests: Array<{
       method?: string;
       url?: string;
@@ -972,7 +972,7 @@ describe("local api", () => {
         body: await readJson(request),
         apiKey: request.headers["x-api-key"] as string | undefined,
         authorization: request.headers.authorization,
-        machineComposioToken: request.headers["x-memmy-composio-token"] as string | undefined
+        machineComposioToken: request.headers["x-cuby-composio-token"] as string | undefined
       });
 
       if (request.method === "GET" && request.url === "/api/agentUser/info") {
@@ -1053,7 +1053,7 @@ describe("local api", () => {
     if (!address || typeof address === "string") {
       throw new Error("Mock integrations server did not bind to a port");
     }
-    process.env.MEMMY_CLOUD_URL = `http://127.0.0.1:${address.port}`;
+    process.env.CUBY_CLOUD_URL = `http://127.0.0.1:${address.port}`;
     await startMockCuberouterServer();
     const memmyConfigPath = join(tempDir, "config.yaml");
 
@@ -1073,25 +1073,25 @@ describe("local api", () => {
       const capabilitiesResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/capabilities`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/airtable/authorize`, {
         method: "POST",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const listResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections`, {
         method: "GET",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
       const deleteResponse = await fetch(`${backend.runtimeConfig.baseUrl}/api/v1/integrations/connections/conn-airtable`, {
         method: "DELETE",
         headers: {
-          "x-memmy-local-token": "test-token"
+          "x-cuby-local-token": "test-token"
         }
       });
 
@@ -1157,7 +1157,7 @@ describe("local api", () => {
         .map((request) => request.machineComposioToken);
       expect(new Set(composioTokens).size).toBe(1);
     } finally {
-      restoreOptionalEnv("MEMMY_CLOUD_URL", previousCloudUrl);
+      restoreOptionalEnv("CUBY_CLOUD_URL", previousCloudUrl);
     }
   });
 
@@ -1167,7 +1167,7 @@ describe("local api", () => {
     const response = await fetch(`${backend.runtimeConfig.baseUrl}/api/agent-sources`, {
       method: "GET",
       headers: {
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       }
     });
 
@@ -1248,11 +1248,11 @@ async function startMockCuberouterServer(): Promise<string> {
     throw new Error("Mock cuberouter server did not bind to a port");
   }
 
-  previousCuberouterUrls = process.env.MEMMY_CUBEROUTER_URLS;
+  previousCuberouterUrls = process.env.CUBY_CUBEROUTER_URLS;
   cuberouterUrlWasSet = true;
   const baseUrl = `http://127.0.0.1:${address.port}`;
   // One line, so the build under test never probes the shipped table.
-  process.env.MEMMY_CUBEROUTER_URLS = `cn=${baseUrl}`;
+  process.env.CUBY_CUBEROUTER_URLS = `cn=${baseUrl}`;
   return baseUrl;
 }
 
@@ -1272,7 +1272,7 @@ async function postAccountCredentials(path: string, body: Record<string, unknown
     method: "POST",
     headers: {
       "content-type": "application/json",
-      "x-memmy-local-token": "test-token"
+      "x-cuby-local-token": "test-token"
     },
     body: JSON.stringify(body)
   });

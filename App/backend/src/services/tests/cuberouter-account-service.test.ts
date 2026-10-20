@@ -10,7 +10,14 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
       accessToken: "jwt-1",
       userId: "7",
       username: "alice",
-      displayName: "Alice"
+      displayName: "Alice",
+      accessExpiresAt: 4102444800,
+      refreshToken: "rt-1"
+    })),
+    refreshSession: vi.fn(async () => ({
+      accessToken: "jwt-1",
+      accessExpiresAt: 4102444800,
+      refreshToken: "rt-1"
     })),
     getRegistrationRequirements: vi.fn(async () => ({
       emailVerificationRequired: false,
@@ -48,13 +55,13 @@ function fakeRepository() {
     profile: { ...input.profile, registeredAt: null }
   }));
   return {
-    repository: { upsert, clear: vi.fn() } as any,
+    repository: { upsert, clear: vi.fn(), setCuberouterCredential: vi.fn() } as any,
     upsert
   };
 }
 
 /** A repository whose active session is the cuberouter account the login produced. */
-function authenticatedRepository() {
+function authenticatedRepository(credential: any = null) {
   const view = {
     authenticated: true,
     isNewUser: false,
@@ -64,10 +71,18 @@ function authenticatedRepository() {
     get: vi.fn(() => view),
     getCloudUuid: vi.fn(() => "jwt-1"),
     getAuthChannel: vi.fn(() => "cuberouter"),
+    getCuberouterCredential: vi.fn(() => credential),
+    setCuberouterCredential: vi.fn(),
+    clearCuberouterCredential: vi.fn(),
     upsert: vi.fn(() => view),
     clear: vi.fn()
   } as any;
 }
+
+/** A credential the instance would have rejected long ago, kept for the renewal tests. */
+const EXPIRED_CREDENTIAL = { accessToken: "jwt-stale", accessExpiresAt: 1, refreshToken: "rt-1" };
+/** One that outlives the test by decades, so no renewal is due. */
+const LIVE_CREDENTIAL = { accessToken: "jwt-live", accessExpiresAt: 4102444800, refreshToken: "rt-1" };
 
 /** A create that answers the way the instance does: the key it was asked for, freshly made. */
 function createdKey(key = "sk-org-created") {
@@ -130,8 +145,16 @@ function createTestService(input: {
       },
       login: async () => {
         input.onLogin?.(url);
-        return { accessToken: `jwt-${url}`, userId: "7", username: "alice", displayName: "Alice" };
+        return {
+          accessToken: `jwt-${url}`,
+          userId: "7",
+          username: "alice",
+          displayName: "Alice",
+          accessExpiresAt: 4102444800,
+          refreshToken: "rt-1"
+        };
       },
+      refreshSession: async () => ({ accessToken: `jwt-refreshed`, accessExpiresAt: 4102444800, refreshToken: "rt-2" }),
       getRegistrationRequirements: async () => {
         input.onRequirements?.(url);
         return { emailVerificationRequired: false, turnstileRequired: false, serverAddress: url };
@@ -982,7 +1005,7 @@ describe("cuberouter key reprovision", () => {
     expect(client.createPersonalToken).not.toHaveBeenCalled();
   });
 
-  it("refuses to re-provision without a session", async () => {
+  it("refuses to re-provision without a session, on the local contract's code", async () => {
     const service = singleNodeService(fakeClient(), {
       get: () => ({ authenticated: false, profile: {} }),
       getCloudUuid: () => null,
@@ -990,9 +1013,112 @@ describe("cuberouter key reprovision", () => {
       clear: vi.fn()
     });
 
+    // Mapped out of cuberouter's own "rejected": that code is not on the local contract, so
+    // the envelope used to fold it into a 500 "internal" the desktop could say nothing about.
     await expect(service.reprovisionKey()).rejects.toMatchObject({
-      code: "rejected",
+      code: "invalid_argument",
       message: "尚未登录 cuberouter 账号"
+    });
+  });
+});
+
+describe("cuberouter credential renewal", () => {
+  it("stores the renewable credential the login handed back, after the account row exists", async () => {
+    const client = fakeClient({
+      login: vi.fn(async () => ({
+        accessToken: "jwt-1",
+        userId: "7",
+        username: "alice",
+        displayName: "Alice",
+        accessExpiresAt: 1790456789,
+        refreshToken: "rt-1"
+      }))
+    });
+    // The credential is keyed to the active account, and on a first login the row that becomes
+    // active is the one the upsert creates — so the order is the invariant, not just the call.
+    const order: string[] = [];
+    const { repository, upsert } = fakeRepository();
+    repository.upsert = upsert;
+    const service = singleNodeService(client, {
+      ...repository,
+      upsert: vi.fn((input: any) => {
+        order.push("upsert");
+        return (upsert as any)(input);
+      }),
+      setCuberouterCredential: vi.fn(() => {
+        order.push("setCuberouterCredential");
+      })
+    });
+
+    await service.login({ username: "alice", password: "Passw0rd1" });
+
+    expect(order).toEqual(["upsert", "setCuberouterCredential"]);
+  });
+
+  it("renews an expired access token before reading the model choices", async () => {
+    const listOrganizations = vi.fn(async () => [{ id: "7", name: "yeebo" }]);
+    const client = fakeClient({
+      listOrganizations,
+      refreshSession: vi.fn(async () => ({
+        accessToken: "jwt-renewed",
+        accessExpiresAt: 4102444800,
+        refreshToken: "rt-2"
+      }))
+    });
+    const repository = authenticatedRepository(EXPIRED_CREDENTIAL);
+
+    await singleNodeService(client, repository).readModelChoices();
+
+    expect(client.refreshSession).toHaveBeenCalledWith("rt-1");
+    expect(listOrganizations).toHaveBeenCalledWith("jwt-renewed");
+    expect(repository.setCuberouterCredential).toHaveBeenCalledWith({
+      accessToken: "jwt-renewed",
+      accessExpiresAt: 4102444800,
+      refreshToken: "rt-2"
+    });
+  });
+
+  it("uses a live access token without renewing it", async () => {
+    const listOrganizations = vi.fn(async () => [{ id: "7", name: "yeebo" }]);
+    const client = fakeClient({ listOrganizations, refreshSession: vi.fn() });
+    const repository = authenticatedRepository(LIVE_CREDENTIAL);
+
+    await singleNodeService(client, repository).readModelChoices();
+
+    expect(client.refreshSession).not.toHaveBeenCalled();
+    expect(listOrganizations).toHaveBeenCalledWith("jwt-live");
+  });
+
+  it("falls back to the cloud uuid for a session that predates the stored credential", async () => {
+    const listOrganizations = vi.fn(async () => [{ id: "7", name: "yeebo" }]);
+    const client = fakeClient({ listOrganizations, refreshSession: vi.fn() });
+
+    await singleNodeService(client, authenticatedRepository()).readModelChoices();
+
+    expect(client.refreshSession).not.toHaveBeenCalled();
+    expect(listOrganizations).toHaveBeenCalledWith("jwt-1");
+  });
+
+  it("reports an expired session it cannot renew instead of sending a dead token", async () => {
+    const client = fakeClient({ refreshSession: vi.fn() });
+    const repository = authenticatedRepository({ ...EXPIRED_CREDENTIAL, refreshToken: null });
+
+    await expect(singleNodeService(client, repository).readModelChoices()).rejects.toMatchObject({
+      code: "unauthorized"
+    });
+  });
+
+  it("reports a rejected renewal as an expired session, not a crash", async () => {
+    const client = fakeClient({
+      refreshSession: vi.fn(async () => {
+        throw Object.assign(new Error("登录已过期，请重新登录"), { code: "session_expired" });
+      })
+    });
+    const repository = authenticatedRepository(EXPIRED_CREDENTIAL);
+
+    await expect(singleNodeService(client, repository).readModelChoices()).rejects.toMatchObject({
+      code: "unauthorized",
+      message: "登录已过期，请重新登录"
     });
   });
 });

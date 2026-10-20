@@ -38,7 +38,7 @@ async function agent(f: ReturnType<typeof fixture>, respond: (request: any, sock
 const info = (f: ReturnType<typeof fixture>) => ({ bundleIdentifier: 'com.ifuryst.opencomputeruse', bundleURL: f.bundle, executableURL: f.binary });
 
 it('matches the native namespace hash and never falls back to the shared socket', () => {
-  expect(nativeAgentSocketPath('memmy:/Users/yicheng/Applications/Memmy Development/Open Computer Use.app', '/tmp')).toBe('/tmp/open-computer-use-agent-8f6a862c735ba596.sock');
+  expect(nativeAgentSocketPath('memmy:/Users/yicheng/Applications/Cuby Development/Open Computer Use.app', '/tmp')).toBe('/tmp/open-computer-use-agent-3ea0aa865f3b08de.sock');
 });
 it('verifies both paths, requests native termination, and waits for closure rather than just an ack', async () => {
   const f = fixture(); const requests: string[] = []; let close!: () => void;

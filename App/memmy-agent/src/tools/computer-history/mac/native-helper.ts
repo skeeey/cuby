@@ -18,13 +18,13 @@ export async function ensureNativeHistoryHelper(source: string, cacheDirectory: 
   } catch (error) {
     // Never hide a broken installation by compiling on the customer's machine.
     if (/[/\\]app\.asar(?:\.unpacked)?[/\\]/.test(source)) {
-      throw new Error(`Computer History packaged helper is missing or not executable: ${binary}. Reinstall Memmy.`, { cause: error });
+      throw new Error(`Computer History packaged helper is missing or not executable: ${binary}. Reinstall Cuby.`, { cause: error });
     }
   }
 
   const contents = fs.readFileSync(source);
   const hash = crypto.createHash("sha256").update(process.arch).update(contents).digest("hex").slice(0, 12);
-  const cache = path.join(os.homedir(), ".memmy", "tools", cacheDirectory);
+  const cache = path.join(os.homedir(), ".cuby", "tools", cacheDirectory);
   const cachedBinary = path.join(cache, `${name}-${hash}`);
   try {
     fs.accessSync(cachedBinary, fs.constants.X_OK);

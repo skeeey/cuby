@@ -55,8 +55,8 @@ describe("prototype style alignment", () => {
   });
 
   it("keeps prototype global interaction and mascot animations available", () => {
-    expect(globalCss).toContain("@keyframes memmy-bob");
-    expect(globalCss).toContain("@keyframes memmy-wave");
+    expect(globalCss).toContain("@keyframes cuby-bob");
+    expect(globalCss).toContain("@keyframes cuby-wave");
     expect(globalCss).toContain("@keyframes pet-idle-breath");
     expect(globalCss).toContain("@keyframes walkie-wave-pulse");
     expect(globalCss).toContain(".check-sky");
@@ -103,7 +103,7 @@ describe("prototype style alignment", () => {
     const dragRegionRule = globalCss.match(/\.window-drag-region\s*\{[^}]*\}/)?.[0] ?? "";
     const dragExclusionRule = globalCss.match(/\.window-drag-exclusion\s*\{[^}]*\}/)?.[0] ?? "";
     const sidebarToggleExclusionRule = globalCss.match(/\.window-drag-exclusion--sidebar-toggle\s*\{[^}]*\}/)?.[0] ?? "";
-    const edgeAlignedWindowControlsRule = globalCss.match(/body\.memmy-platform-windows,\s*body\.memmy-window-fullscreen\s*\{[^}]*\}/)?.[0] ?? "";
+    const edgeAlignedWindowControlsRule = globalCss.match(/body\.cuby-platform-windows,\s*body\.cuby-window-fullscreen\s*\{[^}]*\}/)?.[0] ?? "";
     const memoryDrawerDragTrimRule = globalCss.match(/body:has\(\.memory-drawer\)\s+\.window-drag-region\s*\{[^}]*\}/)?.[0] ?? "";
     const resizeHandleRule = Array.from(globalCss.matchAll(/^\.sidebar-resize-handle\s*\{[^}]*\}/gm)).at(-1)?.[0] ?? "";
 
@@ -144,7 +144,7 @@ describe("prototype style alignment", () => {
     expect(sidebarRestoreButtonRule).toContain("left: var(--codex-window-control-inset);");
     expect(globalCss).toContain(".app-frame-main--sidebar-hidden .app-frame-content-topbar");
     expect(globalCss).toContain("padding-left: var(--codex-sidebar-hidden-topbar-padding);");
-    expect(globalCss).toContain("body.memmy-window-fullscreen");
+    expect(globalCss).toContain("body.cuby-window-fullscreen");
     expect(edgeAlignedWindowControlsRule).toContain("--codex-window-control-inset: calc(");
     expect(edgeAlignedWindowControlsRule).toContain("var(--codex-sidebar-nav-icon-inset)");
     expect(edgeAlignedWindowControlsRule).toContain("--codex-sidebar-hidden-topbar-padding: calc(");
@@ -299,7 +299,7 @@ describe("prototype style alignment", () => {
 
   it("keeps the Windows memory refresh action below the native title-bar overlay", () => {
     const windowsMemoryHeaderRule = globalCss.match(
-      /body\.memmy-platform-windows \.memory-panel__header\s*\{[^}]*\}/
+      /body\.cuby-platform-windows \.memory-panel__header\s*\{[^}]*\}/
     )?.[0] ?? "";
 
     expect(windowsMemoryHeaderRule).toContain("padding-top: var(--codex-toolbar-height);");
@@ -307,7 +307,7 @@ describe("prototype style alignment", () => {
 
   it("keeps the Windows memory drawer close action below the native title-bar overlay", () => {
     const windowsMemoryDrawerRule = globalCss.match(
-      /body\.memmy-platform-windows \.memory-drawer\s*\{[^}]*\}/
+      /body\.cuby-platform-windows \.memory-drawer\s*\{[^}]*\}/
     )?.[0] ?? "";
 
     expect(windowsMemoryDrawerRule).toContain("padding-top: var(--codex-toolbar-height);");
@@ -349,15 +349,20 @@ describe("prototype style alignment", () => {
 
   it("copies mascot assets into the App source tree instead of referencing the prototype folder", () => {
     const assetNames = [
-      "memmy-rice.png",
-      "memmy-wave.png",
-      "memmy-think.png",
-      "memmy-work.png",
-      "memmy-celebrate.png",
-      "memmy-connect.png",
-      "memmy-read.png",
-      "memo-idle-alpha.webm",
-      "pet-entrance.webp"
+      "cuby-neutral.png",
+      "cuby-wave.png",
+      "cuby-think.png",
+      "cuby-celebrate.png",
+      "cuby-shield.png",
+      "cuby-read.png",
+      "cuby-connect.png",
+      "cuby-sleep.png",
+      "cuby-brain.png",
+      "cuby-chat.png",
+      "cuby-blush.png",
+      "cuby-hum.png",
+      "cuby-plead.png",
+      "cuby-sad.png"
     ];
 
     expect(assetNames.filter((assetName) => !existsSync(resolve(sourceRoot, "assets/mascot", assetName)))).toEqual([]);

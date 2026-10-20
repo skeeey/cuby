@@ -370,9 +370,9 @@ describe("config schema validation", () => {
     const websocket = new WebSocketConfig();
     const gateway = new GatewayConfig();
 
-    expect(api.port).toBe(18990);
-    expect(websocket.port).toBe(18980);
-    expect(gateway.port).toBe(18970);
+    expect(api.port).toBe(28990);
+    expect(websocket.port).toBe(28980);
+    expect(gateway.port).toBe(28970);
     expect(new Set([api.port, websocket.port, gateway.port]).size).toBe(3);
   });
 

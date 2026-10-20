@@ -570,7 +570,7 @@ describe("SessionManager history and previews", () => {
 
   it("does not paste assistant media paths into replay", () => {
     const session = new Session({ key: "test:assistant-media" });
-    session.messages.push({ role: "assistant", content: "来了 🎨", media: ["~/.memmy/media/generated/img_abc.png"] });
+    session.messages.push({ role: "assistant", content: "来了 🎨", media: ["~/.cuby/media/generated/img_abc.png"] });
 
     const history = session.getHistory({ maxMessages: 500 });
 
@@ -582,7 +582,7 @@ describe("SessionManager history and previews", () => {
     session.messages.push({
       role: "assistant",
       content:
-        "[Message Time: 2026-05-09 00:33:48]\n来了 🎨\n[image: ~/.memmy/media/generated/img_old.png]\n\ngenerate_image(\"16:9\")\nmessage(\"来了 🎨\")",
+        "[Message Time: 2026-05-09 00:33:48]\n来了 🎨\n[image: ~/.cuby/media/generated/img_old.png]\n\ngenerate_image(\"16:9\")\nmessage(\"来了 🎨\")",
     });
 
     const history = session.getHistory({ maxMessages: 500, includeTimestamps: true });

@@ -49,8 +49,8 @@ export function createWorkbuddySkillTarget(deps: CreateWorkbuddySkillTargetDeps 
       if (!root) {
         return false;
       }
-      const content = await readTextFile(join(root, "skills", "memmy-memory", "SKILL.md"));
-      return content.includes("name: memmy-memory") && content.includes("## Agent Loop");
+      const content = await readTextFile(join(root, "skills", "cuby-memory", "SKILL.md"));
+      return content.includes("name: cuby-memory") && content.includes("## Agent Loop");
     }
   };
 }

@@ -122,7 +122,7 @@ function ExportCard() {
       const a = document.createElement("a");
       const ts = new Date().toISOString().slice(0, 10);
       a.href = url;
-      a.download = `memmy-memory-export-${ts}.json`;
+      a.download = `cuby-memory-export-${ts}.json`;
       a.click();
       URL.revokeObjectURL(url);
     } finally {

@@ -10,7 +10,7 @@ import { ConnectChannelModal } from "../components/connect-channel-modal.js";
 import { ConnectIntegrationModal } from "../components/connect-integration-modal.js";
 import { IntegrationCard } from "../components/integration-card.js";
 import { McpToolsSection, type McpPresetsClient } from "../components/mcp-tools-section.js";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { CATEGORY_TABS, getAllIntegrationMeta, type IntegrationCategoryTab, type IntegrationMeta } from "../integrations/integration-meta.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { appActions, loadToolConnectionRecords, toolsActions } from "../state/app-actions.js";
@@ -151,7 +151,7 @@ export function ToolsPageView(props: ToolsPageViewProps) {
     <AppFrame title={t("tools.title")}>
       <div className="app-frame-page-content h-full overflow-y-auto py-6">
         <div className="mb-6 flex items-center gap-3 border-b border-border-stone/30 pb-4">
-          <Memmy pose="connect" size={56} />
+          <Cuby pose="connect" size={56} />
           <div>
             <h1 className="text-lg font-bold text-text-ink">{t("tools.title")}</h1>
             <p className="text-xs text-text-ink/65">{t("tools.subtitle")}</p>

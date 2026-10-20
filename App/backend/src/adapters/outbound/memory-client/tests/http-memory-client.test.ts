@@ -28,7 +28,7 @@ describe("HttpMemoryClient", () => {
     expect(calls).toHaveLength(1);
     expect(calls[0]?.url).toBe("http://memory.test/api/v1/source-turns/complete");
     expect(JSON.parse(String(calls[0]?.init?.body))).toEqual(input);
-    expect(new Headers(calls[0]?.init?.headers).get("x-memmy-user-id")).toBe("fixture-user");
+    expect(new Headers(calls[0]?.init?.headers).get("x-cuby-user-id")).toBe("fixture-user");
   });
   it("only defines path templates for the final memory HTTP APIs", () => {
     expect(Object.values(MEMORY_LAYER_PATHS)).toEqual([
@@ -81,8 +81,8 @@ describe("HttpMemoryClient", () => {
         method: request.method ?? "",
         path: new URL(request.url ?? "/", "http://localhost").pathname,
         authorization: request.headers.authorization,
-        timeZone: request.headers["x-memmy-time-zone"] as string | undefined,
-        userId: request.headers["x-memmy-user-id"] as string | undefined,
+        timeZone: request.headers["x-cuby-time-zone"] as string | undefined,
+        userId: request.headers["x-cuby-user-id"] as string | undefined,
         body
       });
       sendJson(response, fixtureFor(request.method ?? "", new URL(request.url ?? "/", "http://localhost").pathname, body));

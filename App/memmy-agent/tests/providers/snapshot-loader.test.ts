@@ -79,7 +79,7 @@ describe("provider snapshot loader", () => {
           apiKey: "cloud-login-uuid",
           endpoints: {
             platform: {
-              apiBase: `${process.env.MEMMY_CLOUD_SERVICE}/api/agentExternal/v1`,
+              apiBase: `${process.env.CUBY_CLOUD_SERVICE}/api/agentExternal/v1`,
               protocol: "memmy-account",
             },
           },

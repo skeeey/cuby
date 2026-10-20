@@ -41,7 +41,7 @@ function asarUnpacked(root) {
 
 async function resolveRenderer() {
   const roots = [];
-  for (const name of ["MEMMY_OFFICE_RENDERING_ROOT", "MEMMY_DOCX_RENDERING_ROOT"]) if (process.env[name]?.trim()) roots.push(path.resolve(process.env[name].trim()));
+  for (const name of ["CUBY_OFFICE_RENDERING_ROOT", "CUBY_DOCX_RENDERING_ROOT"]) if (process.env[name]?.trim()) roots.push(path.resolve(process.env[name].trim()));
   roots.push(DIST_ROOT, SOURCE_ROOT);
   for (const root of [...roots]) { const unpacked = asarUnpacked(root); if (unpacked) roots.push(unpacked); }
   const key = `${process.platform}-${process.arch}`;

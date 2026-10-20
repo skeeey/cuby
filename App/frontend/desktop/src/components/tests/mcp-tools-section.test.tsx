@@ -2,7 +2,7 @@
 import { renderToString } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import { I18nProvider } from "../../i18n/i18n-provider.js";
-import { McpToolsSectionView, mcpStatusKey, type McpToolsSectionViewProps } from "../mcp-tools-section.js";
+import { McpToolsSectionView, mcpStatusKey, mcpPresetLogos, resolveMcpLogoUrl, type McpToolsSectionViewProps } from "../mcp-tools-section.js";
 import type { McpPresetPayload } from "../../api/memmy-agent-client.js";
 
 function preset(overrides: Partial<McpPresetPayload> & Pick<McpPresetPayload, "name" | "display_name" | "status">): McpPresetPayload {
@@ -114,5 +114,42 @@ describe("McpToolsSectionView", () => {
     expect(mcpStatusKey("missing_credentials")).toBe("tools.mcp.status.missingCredentials");
     expect(mcpStatusKey("missing_dependency")).toBe("tools.mcp.status.missingDependency");
     expect(mcpStatusKey("coming_soon")).toBe("tools.mcp.status.comingSoon");
+  });
+
+  it("prefers the bundled logo over the payload's remote logo URL", () => {
+    const resolved = resolveMcpLogoUrl({ name: "exa", logo_url: "https://www.google.com/s2/favicons?domain=exa.ai&sz=64" });
+
+    expect(resolved).toBe(mcpPresetLogos.exa);
+  });
+
+  it("falls back to the payload's logo URL for a preset with no bundled asset", () => {
+    const resolved = resolveMcpLogoUrl({ name: "docker-thing", logo_url: "https://example.invalid/logo.svg" });
+
+    expect(resolved).toBe("https://example.invalid/logo.svg");
+  });
+
+  it("resolves no logo when a preset has neither a bundled asset nor a URL", () => {
+    expect(resolveMcpLogoUrl({ name: "docker-thing", logo_url: null })).toBeNull();
+  });
+
+  it("bundles a logo for every shipped preset", () => {
+    for (const name of ["exa", "brave-search", "firecrawl", "figma"]) {
+      expect(resolveMcpLogoUrl({ name, logo_url: null }), name).toBeTruthy();
+    }
+  });
+
+  it("renders the bundled logo image for a known preset", () => {
+    const html = renderView({
+      presets: [preset({ name: "exa", display_name: "Exa", status: "not_installed", logo_url: "https://www.google.com/s2/favicons?domain=exa.ai&sz=64" })]
+    });
+
+    expect(html).toContain("<img");
+    expect(html).not.toContain("google.com");
+  });
+
+  it("renders the generic icon when a preset has no logo", () => {
+    const html = renderView({ presets: [preset({ name: "docker-thing", display_name: "Docker Thing", status: "not_installed" })] });
+
+    expect(html).not.toContain("<img");
   });
 });

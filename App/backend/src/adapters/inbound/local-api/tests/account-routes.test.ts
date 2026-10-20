@@ -55,7 +55,7 @@ describe("account local api routes", () => {
     const session = await app.inject({
       method: "GET",
       url: "/api/account/session",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(invitation.json()).toMatchObject({
@@ -136,7 +136,7 @@ describe("account local api routes", () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/account/registration-requirements",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(response.statusCode).toBe(200);
@@ -203,7 +203,7 @@ describe("account local api routes", () => {
     const nodes = await app.inject({
       method: "GET",
       url: "/api/account/nodes",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const probe = await injectJson("POST", "/api/account/nodes/probe");
 
@@ -227,7 +227,7 @@ describe("account local api routes", () => {
     const response = await app.inject({
       method: "GET",
       url: "/api/account/registration-requirements?nodeId=hk",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(asked).toEqual(["hk"]);
@@ -252,12 +252,12 @@ describe("account local api routes", () => {
     const avatars = await app.inject({
       method: "GET",
       url: "/api/account/avatars",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const avatar = await app.inject({
       method: "PATCH",
       url: "/api/account/avatar",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: { avatarId: "memmy-default" }
     });
 
@@ -373,7 +373,7 @@ async function injectJson(method: string, url: string, payload: unknown) {
     method,
     url,
     headers: {
-      "x-memmy-local-token": "test-token"
+      "x-cuby-local-token": "test-token"
     },
     payload
   });

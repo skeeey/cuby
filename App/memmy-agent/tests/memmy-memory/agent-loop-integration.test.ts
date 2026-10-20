@@ -109,8 +109,8 @@ describe("AgentLoop memmy memory integration", () => {
     const modelMessages: Record<string, any>[][] = [];
     let contextVersion = 0;
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    vi.stubEnv("MEMMY_MEMORY_URL", "http://memory.test");
-    vi.stubEnv("MEMMY_HOME", memmyHome);
+    vi.stubEnv("CUBY_MEMORY_URL", "http://memory.test");
+    vi.stubEnv("CUBY_HOME", memmyHome);
     vi.stubGlobal("fetch", vi.fn(async (input: string | URL | Request, init?: RequestInit) => {
       const url = input instanceof Request ? new URL(input.url) : new URL(String(input));
       const body = typeof init?.body === "string" ? JSON.parse(init.body) : {};

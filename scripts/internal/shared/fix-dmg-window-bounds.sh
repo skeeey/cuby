@@ -5,7 +5,7 @@
 set -euo pipefail
 
 DMG_PATH="${1:?DMG path required}"
-VOLUME_TITLE="${2:-Memmy Installer}"
+VOLUME_TITLE="${2:-Cuby Installer}"
 DESKTOP_DIR="${3:-}"
 
 if [ ! -f "$DMG_PATH" ]; then

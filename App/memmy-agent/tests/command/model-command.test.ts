@@ -27,7 +27,7 @@ function provider(defaultModel: string, maxTokens = 123): any {
 const temporaryRoots: string[] = [];
 
 afterEach(() => {
-  delete process.env.MEMMY_CONFIG;
+  delete process.env.CUBY_CONFIG;
   for (const root of temporaryRoots.splice(0)) {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -94,7 +94,7 @@ function makeLoop(userMode: "byok" | "account" = "byok"): AgentLoop {
     "    model: base-model",
     "",
   ].join("\n"));
-  process.env.MEMMY_CONFIG = configPath;
+  process.env.CUBY_CONFIG = configPath;
   const config = new Config({
     providers: {
       openai: {

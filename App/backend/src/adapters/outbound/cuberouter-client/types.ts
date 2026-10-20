@@ -7,10 +7,24 @@ export type CuberouterErrorCode =
   /** The send-code endpoint's own rate limit (two sends per IP per 30s). */
   | "email_code_throttled"
   /** No provisioned organization key, or no permission to read it. */
-  | "organization_token_unavailable";
+  | "organization_token_unavailable"
+  /** The instance rejected the access token: it expired, or the session was revoked. */
+  | "session_expired";
 
-export interface CuberouterSession {
+/**
+ * The instance's rotating credentials. The access token is short-lived (15 minutes on the
+ * instance this was built against), so it has to be renewed from the refresh token rather
+ * than reused for the life of the login.
+ */
+export interface CuberouterAccess {
   accessToken: string;
+  /** Epoch seconds, as the instance reports it in `access_expires_at`. */
+  accessExpiresAt: number;
+  /** Absent when the instance issues no refresh cookie, so renewal stays impossible. */
+  refreshToken: string | null;
+}
+
+export interface CuberouterSession extends CuberouterAccess {
   userId: string;
   username: string;
   displayName: string;
@@ -75,6 +89,11 @@ export interface CuberouterClient {
     verificationCode?: string;
   }): Promise<void>;
   login(input: { username: string; password: string }): Promise<CuberouterSession>;
+  /**
+   * Renews the access token from the refresh cookie the login handed back. The instance
+   * rotates the cookie on every call, so the returned one replaces the stored one.
+   */
+  refreshSession(refreshToken: string): Promise<CuberouterAccess>;
   /** Reads the instance's public status so the form can match what it will accept. */
   getRegistrationRequirements(options?: { timeoutMs?: number }): Promise<CuberouterRegistrationRequirements>;
   /** Asks the instance to email a verification code. */

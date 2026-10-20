@@ -12,8 +12,8 @@ afterEach(() => {
 
 describe("browser update fallback", () => {
   it("builds the cloud manifest request from the configured service", () => {
-    vi.stubEnv("MEMMY_CLOUD_SERVICE", "https://updates.example.com/");
-    vi.stubEnv("MEMMY_PACKAGE_SIGNING", "unsigned");
+    vi.stubEnv("CUBY_CLOUD_SERVICE", "https://updates.example.com/");
+    vi.stubEnv("CUBY_PACKAGE_SIGNING", "unsigned");
 
     const manifestUrl = readBrowserUpdateManifestUrl("1.4.2");
     expect(manifestUrl).not.toBeNull();

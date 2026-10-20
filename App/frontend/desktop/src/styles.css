@@ -126,18 +126,18 @@ body {
 }
 
 /* Styles styles. */
-:root.memmy-pet-transparent,
-body.memmy-pet-transparent,
-body.memmy-pet-transparent #root {
+:root.cuby-pet-transparent,
+body.cuby-pet-transparent,
+body.cuby-pet-transparent #root {
   background: transparent !important;
 }
 
-body.memmy-pet-transparent {
+body.cuby-pet-transparent {
   overflow: hidden;
 }
 
-body.memmy-platform-windows,
-body.memmy-window-fullscreen {
+body.cuby-platform-windows,
+body.cuby-window-fullscreen {
   --codex-window-control-inset: calc(
     var(--codex-sidebar-nav-icon-inset) - (var(--codex-toolbar-button-size) - var(--codex-icon-xs)) / 2
   );
@@ -1528,80 +1528,6 @@ body:has(.memory-drawer) .window-drag-region {
   padding-top: var(--codex-toolbar-height);
 }
 
-.community-popover-grid {
-  align-items: center;
-  grid-template-columns: 118px auto;
-}
-
-.community-popover-wechat {
-  display: flex;
-  align-self: center;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 8px 9px;
-  border: 1px solid var(--border-content-panel);
-  border-radius: calc(var(--radius-card) / 2);
-  background: color-mix(in srgb, var(--color-canvas-oat) 30%, transparent);
-  box-shadow: none;
-}
-
-.community-popover-wechat-title {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  color: color-mix(in srgb, var(--color-text-ink) 65%, transparent);
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 16px;
-}
-
-.community-popover-qr {
-  width: 96px;
-  height: 96px;
-  object-fit: contain;
-}
-
-.community-popover-wechat-hint {
-  color: color-mix(in srgb, var(--color-text-ink) 40%, transparent);
-  font-size: 10px;
-  line-height: 12px;
-}
-
-.community-popover-links {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.community-link {
-  box-sizing: border-box;
-  width: 100%;
-  min-height: 32px;
-  padding: 5px 10px;
-  border: 1px solid var(--border-content-panel);
-  background: color-mix(in srgb, var(--color-background-paper) 76%, transparent);
-  box-shadow: none;
-  line-height: 1.15;
-}
-
-.community-link:hover {
-  background: color-mix(in srgb, var(--color-canvas-oat) 32%, transparent);
-  color: var(--color-action-sky);
-}
-
-.community-link-title {
-  font-size: 11px;
-  line-height: 14px;
-}
-
-.community-link-detail {
-  font-size: 9px;
-  line-height: 11px;
-  white-space: nowrap;
-}
-
 ::selection {
   background: var(--color-action-sky);
   color: white;
@@ -1633,7 +1559,7 @@ body:has(.memory-drawer) .window-drag-region {
 }
 
 /* Keep the home toolbar below Windows native controls; fullscreen has no overlay. */
-body.memmy-platform-windows:not(.memmy-window-fullscreen) .app-frame-main--windows-titlebar-safe {
+body.cuby-platform-windows:not(.cuby-window-fullscreen) .app-frame-main--windows-titlebar-safe {
   --app-frame-topbar-offset: var(--codex-toolbar-height);
 }
 
@@ -3951,7 +3877,7 @@ code {
   margin-bottom: 20px;
 }
 
-body.memmy-platform-windows .memory-panel__header {
+body.cuby-platform-windows .memory-panel__header {
   padding-top: var(--codex-toolbar-height);
 }
 
@@ -5135,7 +5061,7 @@ body.memmy-platform-windows .memory-panel__header {
   -webkit-app-region: no-drag;
 }
 
-body.memmy-platform-windows .memory-drawer {
+body.cuby-platform-windows .memory-drawer {
   padding-top: var(--codex-toolbar-height);
 }
 
@@ -6272,7 +6198,7 @@ input[type="checkbox"].check-sky:checked::after {
   transform: rotate(45deg);
 }
 
-@keyframes memmy-bob {
+@keyframes cuby-bob {
   0%,
   100% {
     transform: translateY(0);
@@ -6282,7 +6208,7 @@ input[type="checkbox"].check-sky:checked::after {
   }
 }
 
-@keyframes memmy-wave {
+@keyframes cuby-wave {
   0%,
   100% {
     transform: rotate(-3deg);
@@ -6369,13 +6295,13 @@ input[type="checkbox"].check-sky:checked::after {
   }
 }
 
-.memmy-bob {
-  animation: memmy-bob 3s ease-in-out infinite;
+.cuby-bob {
+  animation: cuby-bob 3s ease-in-out infinite;
   transform-origin: center;
 }
 
-.memmy-wave {
-  animation: memmy-wave 2.5s ease-in-out infinite;
+.cuby-wave {
+  animation: cuby-wave 2.5s ease-in-out infinite;
   transform-origin: center bottom;
 }
 
@@ -7057,7 +6983,7 @@ input[type="checkbox"].check-sky:checked::after {
   background: var(--color-action-sky-hover);
 }
 
-.memmy-notification-stack {
+.cuby-notification-stack {
   position: fixed;
   top: var(--codex-toolbar-height);
   right: var(--space-5);
@@ -7070,11 +6996,11 @@ input[type="checkbox"].check-sky:checked::after {
   pointer-events: none;
 }
 
-body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-stack {
+body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack {
   top: calc(var(--codex-toolbar-height) * 2);
 }
 
-.memmy-notification {
+.cuby-notification {
   pointer-events: auto;
   box-sizing: border-box;
   display: flex;
@@ -7086,22 +7012,22 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   border: 1px solid color-mix(in srgb, var(--color-border-stone) 50%, transparent);
   background: var(--color-background-paper);
   box-shadow: var(--shadow-soft);
-  animation: memmy-notification-in 180ms ease-out;
+  animation: cuby-notification-in 180ms ease-out;
 }
 
-.memmy-notification--success {
-  --memmy-notification-accent: var(--color-action-sky);
+.cuby-notification--success {
+  --cuby-notification-accent: var(--color-action-sky);
 }
 
-.memmy-notification--info {
-  --memmy-notification-accent: color-mix(in srgb, var(--color-text-ink) 55%, transparent);
+.cuby-notification--info {
+  --cuby-notification-accent: color-mix(in srgb, var(--color-text-ink) 55%, transparent);
 }
 
-.memmy-notification--warning {
-  --memmy-notification-accent: var(--color-accent-peach);
+.cuby-notification--warning {
+  --cuby-notification-accent: var(--color-accent-peach);
 }
 
-.memmy-notification__badge {
+.cuby-notification__badge {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
@@ -7109,11 +7035,11 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   height: 28px;
   margin-top: 1px;
   border-radius: 8px;
-  color: var(--memmy-notification-accent);
-  background: color-mix(in srgb, var(--memmy-notification-accent) 12%, var(--color-background-paper));
+  color: var(--cuby-notification-accent);
+  background: color-mix(in srgb, var(--cuby-notification-accent) 12%, var(--color-background-paper));
 }
 
-.memmy-notification__content {
+.cuby-notification__content {
   flex: 1 1 auto;
   min-width: 0;
   display: flex;
@@ -7121,14 +7047,14 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   gap: 4px;
 }
 
-.memmy-notification__header {
+.cuby-notification__header {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 8px;
 }
 
-.memmy-notification__title {
+.cuby-notification__title {
   margin: 0;
   min-width: 0;
   font-size: 13px;
@@ -7137,7 +7063,7 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   color: var(--color-text-ink);
 }
 
-.memmy-notification__emphasis {
+.cuby-notification__emphasis {
   margin: 0;
   font-size: 14px;
   font-weight: 700;
@@ -7145,7 +7071,7 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   color: var(--color-action-sky);
 }
 
-.memmy-notification__body {
+.cuby-notification__body {
   margin: 0;
   font-size: 12px;
   font-weight: 400;
@@ -7153,7 +7079,7 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   color: color-mix(in srgb, var(--color-text-ink) 58%, transparent);
 }
 
-.memmy-notification__action {
+.cuby-notification__action {
   align-self: flex-start;
   display: inline-flex;
   align-items: center;
@@ -7169,11 +7095,11 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   cursor: pointer;
 }
 
-.memmy-notification__action:hover {
+.cuby-notification__action:hover {
   color: var(--color-action-sky-hover);
 }
 
-.memmy-notification__close {
+.cuby-notification__close {
   flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
@@ -7190,18 +7116,18 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
   transition: color 150ms ease, background 150ms ease;
 }
 
-.memmy-notification__close:hover {
+.cuby-notification__close:hover {
   background: color-mix(in srgb, var(--color-canvas-oat) 70%, transparent);
   color: color-mix(in srgb, var(--color-text-ink) 70%, transparent);
 }
 
-@keyframes memmy-notification-in {
+@keyframes cuby-notification-in {
   from { opacity: 0; transform: translateY(-6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .memmy-notification { animation: none; }
+  .cuby-notification { animation: none; }
 }
 
 .banner {
@@ -9442,7 +9368,7 @@ body.memmy-platform-windows:not(.memmy-window-fullscreen) .memmy-notification-st
 }
 
 .pet-action-wave .pet-arm-right {
-  animation: memmy-wave 1.4s ease-in-out infinite;
+  animation: cuby-wave 1.4s ease-in-out infinite;
   transform-origin: top center;
 }
 

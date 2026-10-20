@@ -31,12 +31,12 @@ export function resolveDesktopPackageSigning(rawManifest: string | null | undefi
 
 export function desktopUserDataDirectoryName(edition: DesktopEdition): string {
   void edition;
-  return "Memmy";
+  return "Cuby";
 }
 
 export function desktopRuntimeHomeDirectoryName(edition: DesktopEdition): string {
   void edition;
-  return ".memmy";
+  return ".cuby";
 }
 
 function parseDesktopEditionManifest(rawManifest: string | null | undefined): DesktopEditionManifest | null {

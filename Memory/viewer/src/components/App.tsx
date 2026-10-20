@@ -27,7 +27,7 @@ export function App() {
       method: "POST",
       headers: {
         "content-type": "application/json",
-        "x-memmy-viewer": "1",
+        "x-cuby-viewer": "1",
       },
       body: "{}",
     }).catch(

@@ -9,7 +9,7 @@ const binaryPath = resolveBinaryPath();
 
 if (!existsSync(binaryPath)) {
   console.error("memmy-memory binary is not installed.");
-  console.error("Please reinstall the package or run npm install without MEMMY_MEMORY_INSTALL_SKIP_DOWNLOAD.");
+  console.error("Please reinstall the package or run npm install without CUBY_MEMORY_INSTALL_SKIP_DOWNLOAD.");
   process.exit(1);
 }
 

@@ -161,4 +161,25 @@ describe("McpToolsSection", () => {
     await render(null);
     expect(container.textContent).toContain("Loading");
   });
+
+  it("swaps in the generic icon when a preset logo fails to load", async () => {
+    await render(
+      createClient({
+        listMcpPresets: vi.fn(async () => ({
+          presets: [{ ...basePreset, logo_url: "https://example.invalid/broken.svg" }],
+          installed_count: 0
+        }))
+      })
+    );
+
+    const logo = container.querySelector("img.integration-card-logo");
+    expect(logo).not.toBeNull();
+
+    await act(async () => {
+      logo?.dispatchEvent(new Event("error", { bubbles: true }));
+    });
+
+    expect(container.querySelector("img.integration-card-logo")).toBeNull();
+    expect(container.querySelector(".integration-card-logo")).not.toBeNull();
+  });
 });

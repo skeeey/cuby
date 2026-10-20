@@ -34,7 +34,7 @@ export const unavailableSettings = (
   maxBases: 10,
 });
 
-/** Sends only a user's Memmy login credential to the developer-configured backend. */
+/** Sends only a user's Cuby login credential to the developer-configured backend. */
 export class ManagedKnowledgeClient implements KnowledgeRecallClient {
   constructor(private readonly options: ManagedKnowledgeOptions) {}
   async request(
@@ -44,7 +44,7 @@ export class ManagedKnowledgeClient implements KnowledgeRecallClient {
     signal?: AbortSignal,
   ): Promise<unknown> {
     const session = this.options.getSession();
-    if (!session) throw new KnowledgeError("请先登录 Memmy 后使用知识库", 401);
+    if (!session) throw new KnowledgeError("请先登录 Cuby 后使用知识库", 401);
     const base = new URL(this.options.baseUrl);
     if (
       base.username ||
@@ -141,7 +141,7 @@ export class ManagedKnowledgeClient implements KnowledgeRecallClient {
       });
       throw new KnowledgeError(
         response.status === 401 || response.status === 403
-          ? "请重新登录 Memmy"
+          ? "请重新登录 Cuby"
           : `[HTTP ${response.status}] ${serverMessage || fallback}`,
         response.status === 401 || response.status === 403
           ? 401

@@ -3242,7 +3242,7 @@ function memoryConfigLogFields(config: MemmyConfig): Record<string, unknown> {
 }
 
 function viewerUrlFromEndpoint(endpoint?: string): string {
-  const base = new URL(endpoint ?? "http://127.0.0.1:18960");
+  const base = new URL(endpoint ?? "http://127.0.0.1:28960");
   base.pathname = "/viewer";
   base.search = "";
   base.hash = "";
@@ -3297,7 +3297,7 @@ async function probeEmbedding(embedder: Embedder): Promise<ModelProbeResult> {
   const startedAt = Date.now();
   const status = embedder.status();
   try {
-    const vector = await embedder.embedOne("Memmy model connectivity test", "query");
+    const vector = await embedder.embedOne("Cuby model connectivity test", "query");
     if (vector.length === 0 || vector.some((value) => !Number.isFinite(value))) {
       throw new Error("embedding model returned an invalid vector");
     }

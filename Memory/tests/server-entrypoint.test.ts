@@ -15,7 +15,7 @@ describe("memmy memory server entrypoint", () => {
       storage: { mode: "local", backend: "sqlite", sqlitePath: join(root, "memory.sqlite") },
     } }));
     const listeners = ["SIGINT", "SIGTERM", "exit"].map((signal) => process.listenerCount(signal));
-    vi.stubEnv("MEMMY_DESKTOP_MANAGED_MEMORY", "1");
+    vi.stubEnv("CUBY_DESKTOP_MANAGED_MEMORY", "1");
     const originalRestart = memoryRestart.requestMemoryServiceRestart;
     vi.spyOn(memoryRestart, "requestMemoryServiceRestart").mockImplementation((dependencies) =>
       originalRestart({ ...dependencies, send: null }));
@@ -32,7 +32,7 @@ describe("memmy memory server entrypoint", () => {
       const endpoint = await waitForWrittenEndpoint(configPath);
       const response = await fetch(`${endpoint}/api/v1/system/restart`, {
         method: "POST",
-        headers: { "x-memmy-viewer": "1", "content-type": "application/json" },
+        headers: { "x-cuby-viewer": "1", "content-type": "application/json" },
         body: "{}",
       });
       expect(response.status).toBe(202);
@@ -84,7 +84,7 @@ describe("memmy memory server entrypoint", () => {
     }));
 
     try {
-      await writeCurrentEndpoint(configPath, "http://127.0.0.1:18960");
+      await writeCurrentEndpoint(configPath, "http://127.0.0.1:28960");
       const saved = YAML.parse(readFileSync(configPath, "utf8"));
       expect(saved).toMatchObject({
         futureSection: { keepMe: true },
@@ -100,7 +100,7 @@ describe("memmy memory server entrypoint", () => {
         memmyMemory: {
           futureMemoryField: "keep-memory",
           storage: {
-            endpoint: "http://127.0.0.1:18960",
+            endpoint: "http://127.0.0.1:28960",
             futureStorageField: "keep-storage"
           }
         }
@@ -151,7 +151,7 @@ async function waitForWrittenEndpoint(configPath: string): Promise<string> {
       memmyMemory?: { storage?: { endpoint?: unknown } };
     };
     const endpoint = config.memmyMemory?.storage?.endpoint;
-    if (typeof endpoint === "string" && !endpoint.endsWith(":18960")) {
+    if (typeof endpoint === "string" && !endpoint.endsWith(":28960")) {
       return endpoint;
     }
     await new Promise((resolveDelay) => setTimeout(resolveDelay, 25));

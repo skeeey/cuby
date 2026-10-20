@@ -1,6 +1,6 @@
-appId: cn.memtensor.memmy
-productName: Memmy
-artifactName: Memmy-${version}-${arch}-unsigned.${ext}
+appId: cn.memtensor.cuby
+productName: Cuby
+artifactName: Cuby-${version}-${arch}-unsigned.${ext}
 
 directories:
   output: release
@@ -78,4 +78,4 @@ nsis:
   allowToChangeInstallationDirectory: true
   createDesktopShortcut: false
   createStartMenuShortcut: true
-  shortcutName: Memmy
+  shortcutName: Cuby

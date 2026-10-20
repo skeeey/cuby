@@ -218,16 +218,16 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     const root = await mkdtemp(join(tmpdir(), "memmy-migration-state-"));
     temporaryDirectories.push(root);
     const layout: WindowsDataLayout = {
-      userDataPath: join(root, "AppData", "Roaming", "Memmy"),
-      runtimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
+      userDataPath: join(root, "AppData", "Roaming", "Cuby"),
+      runtimeHomePath: join(root, "new-drive", "MemmyData", ".cuby"),
       updatesPath: join(root, "new-drive", "MemmyData", "updates"),
-      pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
+      pointerPath: join(root, "AppData", "Roaming", "Cuby", "data-root.txt"),
       migrationStatePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),
       installationRecordPath: join(root, "AppData", "Local", "Memmy", "data-layout", "last-install.json"),
       legacyInstallDataPath: join(root, "new-install", "data")
     };
     const targetBackup = `${layout.runtimeHomePath}.migration-backup-0123456789abcdef0123456789abcdef`;
-    const relayBackupRoot = join(`${join(root, "new-install")}.memmy-upgrade-backup`, "1234");
+    const relayBackupRoot = join(`${join(root, "new-install")}.cuby-upgrade-backup`, "1234");
     const sourceDataPath = join(relayBackupRoot, "data-backup");
     await mkdir(targetBackup, { recursive: true });
     await mkdir(join(sourceDataPath, "Memmy"), { recursive: true });
@@ -266,10 +266,10 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     const layout = createLayout(root);
     const sourceInstallDir = join(root, "old-install");
     const targetInstallDir = dirname(layout.legacyInstallDataPath);
-    const relayBackupRoot = join(`${sourceInstallDir}.memmy-upgrade-backup`, "1234");
+    const relayBackupRoot = join(`${sourceInstallDir}.cuby-upgrade-backup`, "1234");
     const sourceDataPath = join(relayBackupRoot, "data-backup");
     const accountSourcePath = join(sourceDataPath, "Memmy");
-    const oldRuntimeHomePath = join(root, "old-drive", "MemmyData", ".memmy");
+    const oldRuntimeHomePath = join(root, "old-drive", "MemmyData", ".cuby");
     await Promise.all([
       mkdir(accountSourcePath, { recursive: true }),
       mkdir(oldRuntimeHomePath, { recursive: true }),
@@ -316,8 +316,8 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     const firstSourceInstallDir = join(root, "install-a");
     const intermediateInstallDir = join(root, "install-b");
     const activeInstallDir = dirname(layout.legacyInstallDataPath);
-    const firstRelayBackupRoot = join(`${firstSourceInstallDir}.memmy-upgrade-backup`, "1111");
-    const secondRelayBackupRoot = join(`${intermediateInstallDir}.memmy-upgrade-backup`, "2222");
+    const firstRelayBackupRoot = join(`${firstSourceInstallDir}.cuby-upgrade-backup`, "1111");
+    const secondRelayBackupRoot = join(`${intermediateInstallDir}.cuby-upgrade-backup`, "2222");
     const firstSourceDataPath = join(firstRelayBackupRoot, "data-backup");
     const secondSourceDataPath = join(secondRelayBackupRoot, "data-backup");
     const createRelayState = (
@@ -371,14 +371,14 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     temporaryDirectories.push(root);
     const layout: WindowsDataLayout = {
       userDataPath: join(root, "AppData", "Roaming", "Memmy"),
-      runtimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
+      runtimeHomePath: join(root, "new-drive", "MemmyData", ".cuby"),
       updatesPath: join(root, "new-drive", "MemmyData", "updates"),
       pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
       migrationStatePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),
       installationRecordPath: join(root, "AppData", "Local", "Memmy", "data-layout", "last-install.json"),
       legacyInstallDataPath: join(root, "new-install", "data")
     };
-    const unrelatedBackupRoot = join(`${join(root, "unrelated")}.memmy-upgrade-backup`, "1234");
+    const unrelatedBackupRoot = join(`${join(root, "unrelated")}.cuby-upgrade-backup`, "1234");
     const sourceDataPath = join(unrelatedBackupRoot, "data-backup");
     await mkdir(sourceDataPath, { recursive: true });
     await mkdir(join(layout.migrationStatePath, ".."), { recursive: true });
@@ -401,15 +401,15 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     temporaryDirectories.push(root);
     const layout: WindowsDataLayout = {
       userDataPath: join(root, "AppData", "Roaming", "Memmy"),
-      runtimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
+      runtimeHomePath: join(root, "new-drive", "MemmyData", ".cuby"),
       updatesPath: join(root, "new-drive", "MemmyData", "updates"),
       pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
       migrationStatePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),
       installationRecordPath: join(root, "AppData", "Local", "Memmy", "data-layout", "last-install.json"),
       legacyInstallDataPath: join(root, "new-install", "data")
     };
-    const trustedSource = join(root, "old-drive", "MemmyData", ".memmy");
-    const unrelatedSource = join(root, "unrelated", ".memmy");
+    const trustedSource = join(root, "old-drive", "MemmyData", ".cuby");
+    const unrelatedSource = join(root, "unrelated", ".cuby");
     await mkdir(trustedSource, { recursive: true });
     await mkdir(unrelatedSource, { recursive: true });
     await mkdir(layout.runtimeHomePath, { recursive: true });
@@ -443,11 +443,11 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
     const sourceInstallDir = join(root, "new-install");
     const sourceDataPath = join(sourceInstallDir, "data");
     const accountSourcePath = join(sourceDataPath, "Memmy");
-    const runtimeSourcePath = join(sourceDataPath, ".memmy");
+    const runtimeSourcePath = join(sourceDataPath, ".cuby");
     const unrelatedPath = join(sourceDataPath, "user-export");
     const layout: WindowsDataLayout = {
       userDataPath: join(root, "AppData", "Roaming", "Memmy"),
-      runtimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
+      runtimeHomePath: join(root, "new-drive", "MemmyData", ".cuby"),
       updatesPath: join(root, "new-drive", "MemmyData", "updates"),
       pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
       migrationStatePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),
@@ -522,7 +522,7 @@ describe.runIf(process.platform === "win32")("Windows data migration boot verifi
 function createLayout(root: string): WindowsDataLayout {
   return {
     userDataPath: join(root, "AppData", "Roaming", "Memmy"),
-    runtimeHomePath: join(root, "new-drive", "MemmyData", ".memmy"),
+    runtimeHomePath: join(root, "new-drive", "MemmyData", ".cuby"),
     updatesPath: join(root, "new-drive", "MemmyData", "updates"),
     pointerPath: join(root, "AppData", "Roaming", "Memmy", "data-root.txt"),
     migrationStatePath: join(root, "AppData", "Local", "Memmy", "data-migration", "state.json"),

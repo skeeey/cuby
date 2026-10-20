@@ -59,8 +59,8 @@ async function fixture(options: {
     configPath: join(home, "config.yaml"), agentWorkspace: join(home, "workspace"),
     memoryDatabasePath: join(home, "memory.sqlite"), memoryBaseUrl: `http://127.0.0.1:${port}`,
     memoryToken: "", memoryListenHost: "127.0.0.1", memoryListenPort: port,
-    agentGatewayBaseUrl: "http://127.0.0.1:18980", agentGatewayHealthHost: "127.0.0.1",
-    agentGatewayHealthPort: 18970, agentGatewayBootstrapSecret: "fixture",
+    agentGatewayBaseUrl: "http://127.0.0.1:28980", agentGatewayHealthHost: "127.0.0.1",
+    agentGatewayHealthPort: 28970, agentGatewayBootstrapSecret: "fixture",
   };
   const source = [
     "const fs = require('node:fs'); const path = require('node:path'); const http = require('node:http');",

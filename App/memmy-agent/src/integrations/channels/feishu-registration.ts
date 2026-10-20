@@ -47,7 +47,7 @@ export async function startFeishuRegistration(): Promise<FeishuRegistrationRespo
       const result = await lark.registerApp({
         source: "memmy-agent",
         signal: session.controller.signal,
-        appPreset: { name: "Memmy" },
+        appPreset: { name: "Cuby" },
         onQRCodeReady(info) {
           qrCodeReady = QRCode.toDataURL(info.url, {
             errorCorrectionLevel: "M",

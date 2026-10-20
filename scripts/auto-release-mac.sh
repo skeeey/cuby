@@ -18,7 +18,7 @@ set -euo pipefail
 # 1. Configuration (★ the two placeholder items must be filled first, or the script refuses to run)
 # ============================================================
 REPO_DIR="/Users/zongy/Documents/MemTensor/Memmy-agent"
-BRANCH="${MEMMY_RELEASE_BRANCH:-}"
+BRANCH="${CUBY_RELEASE_BRANCH:-}"
 
 # Backend for upload + querying the download list (cn/intl share the same one)
 API_BASE="https://api.memmy.cn"
@@ -49,7 +49,7 @@ die()  { echo "❌ $*" >&2; return 1; }
 notify() {
   local text="$1" sound="${2:-Glass}"
   osascript -e 'on run argv' \
-            -e 'display notification (item 1 of argv) with title "Memmy Auto Release" sound name (item 2 of argv)' \
+            -e 'display notification (item 1 of argv) with title "Cuby Auto Release" sound name (item 2 of argv)' \
             -e 'end run' \
             "$text" "$sound" >/dev/null 2>&1 || true
 }
@@ -72,7 +72,7 @@ case "$BRANCH" in
   release/v*.*.*)
     ;;
   *)
-    die "Packaging requires a release/vX.Y.Z branch; set MEMMY_RELEASE_BRANCH explicitly"
+    die "Packaging requires a release/vX.Y.Z branch; set CUBY_RELEASE_BRANCH explicitly"
     ;;
 esac
 
@@ -121,15 +121,15 @@ log "Verified source release version: $NEW_VERSION"
 # ============================================================
 # 4. Domestic network: local binaries, avoid GitHub downloads
 # ============================================================
-export MEMMY_ELECTRON_DIST="$REPO_DIR/App/shell/desktop/node_modules/electron/dist"
+export CUBY_ELECTRON_DIST="$REPO_DIR/App/shell/desktop/node_modules/electron/dist"
 export CUSTOM_DMGBUILD_PATH="$(find "$HOME/Library/Caches/electron-builder" -name dmgbuild -type f 2>/dev/null | head -1)"
-export MEMMY_DESKTOP_VERSION="$NEW_VERSION"
+export CUBY_DESKTOP_VERSION="$NEW_VERSION"
 
 RELEASE_DIR="$REPO_DIR/App/shell/desktop/release"
 
 # ---- Common: configure public runtime origin → build → upload ----
 set_cloud_service() {
-  export MEMMY_CLOUD_SERVICE="$1"
+  export CUBY_CLOUD_SERVICE="$1"
   echo "Cloud service configured for packaging."
 }
 
@@ -156,7 +156,7 @@ CURRENT_STEP="Build and upload Mac domestic signed package"
 log "$CURRENT_STEP"
 set_cloud_service "$CN_CLOUD_SERVICE"
 bash scripts/package-mac.sh --version "$NEW_VERSION" --arch arm64 --edition cn --sign signed
-upload_pkg "$RELEASE_DIR/Memmy-$NEW_VERSION-darwin-arm64-cn-signed.dmg" "darwin-arm64-cn-signed"
+upload_pkg "$RELEASE_DIR/Cuby-$NEW_VERSION-darwin-arm64-cn-signed.dmg" "darwin-arm64-cn-signed"
 
 # ============================================================
 # 6. Build + upload: international signed package (intl)
@@ -165,7 +165,7 @@ CURRENT_STEP="Build and upload Mac international signed package"
 log "$CURRENT_STEP"
 set_cloud_service "$INTL_CLOUD_SERVICE"
 bash scripts/package-mac.sh --version "$NEW_VERSION" --arch arm64 --edition intl --sign signed
-upload_pkg "$RELEASE_DIR/Memmy-$NEW_VERSION-darwin-arm64-intl-signed.dmg" "darwin-arm64-intl-signed"
+upload_pkg "$RELEASE_DIR/Cuby-$NEW_VERSION-darwin-arm64-intl-signed.dmg" "darwin-arm64-intl-signed"
 
 # ============================================================
 # 7. Done

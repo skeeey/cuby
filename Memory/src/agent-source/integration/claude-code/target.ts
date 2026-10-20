@@ -17,30 +17,30 @@ const CLAUDE_CODE_DISPLAY_NAME = "Claude Code";
 const TARGET_FILE_NAME = "CLAUDE.md";
 const SETTINGS_FILE_NAME = "settings.json";
 const HOOK_DIRECTORY_NAME = "hooks";
-const HOOK_SCRIPT_FILE_NAME = "memmy-resume-hook.mjs";
+const HOOK_SCRIPT_FILE_NAME = "cuby-resume-hook.mjs";
 const LEGACY_HOOK_SCRIPT_FILE_NAME = "memmy-memory-resume-hook.mjs";
-const HOOK_CONFIG_FILE_NAME = "memmy-memory-config.json";
-const WORKSPACE_BRIDGE_FILE_NAME = "memmy-workspace-bridge.mjs";
+const HOOK_CONFIG_FILE_NAME = "cuby-memory-config.json";
+const WORKSPACE_BRIDGE_FILE_NAME = "cuby-workspace-bridge.mjs";
 const HOOK_TIMEOUT_SECONDS = 60;
 const COMMAND_DIRECTORY_NAME = "commands";
-const RESUME_COMMAND_FILE_NAME = "memmy-resume.md";
+const RESUME_COMMAND_FILE_NAME = "cuby-resume.md";
 const LEGACY_TARGET_FILE_NAMES = ["claude.md"];
-const START_MARKER = "<!-- memmy:start v=1 -->";
-const END_MARKER = "<!-- memmy:end v=1 -->";
+const START_MARKER = "<!-- cuby:start v=1 -->";
+const END_MARKER = "<!-- cuby:end v=1 -->";
 const LEGACY_CLI_START_MARKER = "<!-- memmy-memory cli : start -->";
 const LEGACY_CLI_END_MARKER = "<!-- memmy-memory cli : end -->";
 
 export interface CreateClaudeCodeSkillTargetDeps {
   /** Root directory. */
   rootDirectory?: string;
-  /** Memmy config path. */
+  /** Cuby config path. */
   memmyConfigPath?: string;
 }
 
 /** Creates create claude code skill target. */
 export function createClaudeCodeSkillTarget(deps: CreateClaudeCodeSkillTargetDeps = {}): SkillTarget {
   const rootDirectory = deps.rootDirectory ?? resolveClaudeCodeHomeDirectory();
-  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".memmy", "config.yaml");
+  const memmyConfigPath = deps.memmyConfigPath ?? join(homedir(), ".cuby", "config.yaml");
 
   return {
     targetId: CLAUDE_CODE_TARGET_ID,
@@ -360,14 +360,14 @@ function isNodeError(error: unknown): error is NodeJS.ErrnoException {
 }
 
 const CLAUDE_CODE_RESUME_COMMAND = `---
-description: Fast Memmy resume lookup handled by the installed hook.
+description: Fast Cuby resume lookup handled by the installed hook.
 argument-hint: <query | 1-5 | cancel>
 ---
 
-MEMMY_RESUME_COMMAND_ARGUMENTS:
+CUBY_RESUME_COMMAND_ARGUMENTS:
 $ARGUMENTS
-MEMMY_RESUME_COMMAND_END
+CUBY_RESUME_COMMAND_END
 
-This slash command is a parser shim for the installed Memmy UserPromptSubmit hook.
-If this text reaches the model, respond only with: Memmy resume hook did not intercept this command; reinstall the Memmy Claude Code hook.
+This slash command is a parser shim for the installed Cuby UserPromptSubmit hook.
+If this text reaches the model, respond only with: Cuby resume hook did not intercept this command; reinstall the Cuby Claude Code hook.
 `;

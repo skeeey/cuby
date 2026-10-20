@@ -312,7 +312,7 @@ export class CommandOutputDecoder {
   private failureDiagnostic(): string {
     const codePage = this.resolveOemEncoding().codePage ?? "unknown";
     const omitted = Math.max(0, this.recordLength - this.recordPreview.length);
-    return `[Memmy: unable to decode Windows command output; OEMCP=${codePage}; first 64 bytes=${this.recordPreview.toString("hex")}; omitted=${omitted}]`;
+    return `[Cuby: unable to decode Windows command output; OEMCP=${codePage}; first 64 bytes=${this.recordPreview.toString("hex")}; omitted=${omitted}]`;
   }
 
   private appendReady(text: string): void {

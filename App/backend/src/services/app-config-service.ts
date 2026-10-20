@@ -78,19 +78,19 @@ export interface CreateAppConfigServiceOptions {
 const BUILT_IN_AVATARS = AvatarOptionSchema.array().parse([
   {
     id: "memmy-default",
-    displayName: "Memmy",
+    displayName: "Cuby",
     assetKey: "avatar.memmy.default",
     kind: "image"
   },
   {
     id: "memmy-focus",
-    displayName: "Memmy Focus",
+    displayName: "Cuby Focus",
     assetKey: "avatar.memmy.focus",
     kind: "image"
   },
   {
     id: "memmy-live",
-    displayName: "Memmy Live",
+    displayName: "Cuby Live",
     assetKey: "avatar.memmy.live",
     kind: "video"
   }
@@ -181,14 +181,14 @@ export function createAppConfigService(options: CreateAppConfigServiceOptions): 
 
     async getModelConfig() {
       if (!options.memmyConfigWriter?.readModelConfig) {
-        throw new Error("Memmy config writer is not configured");
+        throw new Error("Cuby config writer is not configured");
       }
       return options.memmyConfigWriter.readModelConfig();
     },
 
     async setModelConfig(input) {
       if (!options.memmyConfigWriter?.writeModelConfig) {
-        throw new Error("Memmy config writer is not configured");
+        throw new Error("Cuby config writer is not configured");
       }
       const config = await options.memmyConfigWriter.writeModelConfig(input);
       await options.memoryClient?.reloadConfig({ reason: "model_config_saved" });

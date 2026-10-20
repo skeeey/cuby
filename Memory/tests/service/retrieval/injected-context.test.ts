@@ -21,7 +21,7 @@ const {
 afterEach(cleanup);
 
 describe("MemoryService / retrieval / injected context", () => {
-  it("injects only the latest complete Memmy first report for bilingual handoff queries", async () => {
+  it("injects only the latest complete first report for bilingual handoff queries", async () => {
     const { db, service } = createTestService();
     const namespace = {
       source: "hermes",
@@ -92,8 +92,13 @@ describe("MemoryService / retrieval / injected context", () => {
     });
 
     for (const query of [
+      // Pre-rename spelling: the report used to be titled "Memmy 初见报告".
       "请接着我刚才在 Memmy 里的初见报告继续聊天。先告诉我我们已经确定了什么，再给出一个最合适的下一步。",
-      "Please continue from the first report I just had in Memmy. First tell me what we already decided, then give me the single best next step."
+      "Please continue from the first report I just had in Memmy. First tell me what we already decided, then give me the single best next step.",
+      // Post-rename spelling: these are the handoff queries the first-report
+      // writer itself generates, and what a user reading "Cuby 初见报告" types.
+      "请接着我刚才在 Cuby 里的初见报告继续聊天。先告诉我我们已经确定了什么，再给出一个最合适的下一步。",
+      "Please continue from the first report I just had in Cuby. First tell me what we already decided, then give me the single best next step."
     ]) {
       const recall = await service.search({
         sessionId: session.sessionId,

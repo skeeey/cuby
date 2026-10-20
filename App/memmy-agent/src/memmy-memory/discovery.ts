@@ -4,7 +4,7 @@ import path from "node:path";
 import YAML from "yaml";
 import type { MemmyMemoryConnection } from "./types.js";
 
-export const DEFAULT_MEMOS_MEMORY_URL = "http://127.0.0.1:18960";
+export const DEFAULT_MEMOS_MEMORY_URL = "http://127.0.0.1:28960";
 
 type DiscoveryEnv = Record<string, string | undefined>;
 
@@ -21,8 +21,8 @@ export function memmyMemoryConfigPaths(options: MemmyMemoryDiscoveryOptions = {}
   const env = options.env ?? process.env;
   const homeDir = options.homeDir ?? os.homedir();
   return [
-    env.MEMMY_CONFIG,
-    path.join(homeDir, ".memmy", "config.yaml"),
+    env.CUBY_CONFIG,
+    path.join(homeDir, ".cuby", "config.yaml"),
   ]
     .filter((value): value is string => Boolean(value))
     .map((value) => path.resolve(expandHome(value, homeDir)));
@@ -46,7 +46,7 @@ function readTokenFile(file: string | null | undefined, homeDir: string): string
 
 function runtimePath(env: DiscoveryEnv, homeDir: string): string {
   void env;
-  return path.join(homeDir, ".memmy", "memory-service", "runtime.json");
+  return path.join(homeDir, ".cuby", "memory-service", "runtime.json");
 }
 
 function readRuntimeDiscovery(env: DiscoveryEnv, homeDir: string): Record<string, any> {
@@ -75,14 +75,14 @@ export function discoverMemmyMemoryConnection(options: MemmyMemoryDiscoveryOptio
   const storage = memmyMemory.storage && typeof memmyMemory.storage === "object" ? memmyMemory.storage as Record<string, any> : {};
 
   const baseUrl =
-    env.MEMMY_MEMORY_URL ??
+    env.CUBY_MEMORY_URL ??
     env.MEMORY_SERVICE_URL ??
     runtime.url ??
     runtime.baseUrl ??
     storage.endpoint ??
     DEFAULT_MEMOS_MEMORY_URL;
   const token =
-    env.MEMMY_MEMORY_TOKEN ??
+    env.CUBY_MEMORY_TOKEN ??
     env.MEMORY_SERVICE_TOKEN ??
     runtime.token ??
     readTokenFile(runtime.tokenFile, homeDir) ??
@@ -92,7 +92,7 @@ export function discoverMemmyMemoryConnection(options: MemmyMemoryDiscoveryOptio
   return {
     baseUrl: normalizeMemmyMemoryBaseUrl(String(baseUrl)),
     token: token ? String(token) : null,
-    source: env.MEMMY_MEMORY_URL || env.MEMORY_SERVICE_URL
+    source: env.CUBY_MEMORY_URL || env.MEMORY_SERVICE_URL
       ? "env"
       : runtime.url || runtime.baseUrl
         ? runtimePath(env, homeDir)

@@ -73,7 +73,7 @@ describe("HomePage environment titlebar", () => {
       expect(window.getComputedStyle(toolbar!).minHeight).toBe("46px");
       expect(toolbar!.style.top).toBe("");
       if (platform === "win32" && !fullscreen) {
-        expect(styles).toMatch(/body\.memmy-platform-windows:not\(\.memmy-window-fullscreen\) \.app-frame-main--windows-titlebar-safe\s*{[^}]*--app-frame-topbar-offset:\s*var\(--codex-toolbar-height\);/s);
+        expect(styles).toMatch(/body\.cuby-platform-windows:not\(\.cuby-window-fullscreen\) \.app-frame-main--windows-titlebar-safe\s*{[^}]*--app-frame-topbar-offset:\s*var\(--codex-toolbar-height\);/s);
         expect(styles).toMatch(/\.app-frame-main--windows-titlebar-safe \.app-frame-content-topbar\s*{[^}]*top:\s*var\(--app-frame-topbar-offset, 0px\);/s);
         expect(appFrameSource).toContain('paddingTop: "calc(var(--codex-toolbar-height) + var(--app-frame-topbar-offset, 0px))"');
       } else {

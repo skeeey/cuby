@@ -1,20 +1,10 @@
 name: Windows 11 Computer History validation
 
+# Automatic triggers are disabled: this repository does not include the native
+# recorder sources under App/native-computer-history or
+# scripts/internal/win/verify-computer-history-runtime.mjs, so the workflow
+# cannot build or verify them. Keep manual dispatch for when they are added.
 on:
-  pull_request:
-    paths:
-      - ".github/workflows/windows-computer-history-validation.yml"
-      - "App/native-computer-history/**"
-      - "App/memmy-agent/src/tools/computer-history/**"
-      - "App/memmy-agent/tests/tools/computer-history/**"
-      - "App/memmy-agent/scripts/copy-build-assets.mjs"
-      - "App/shell/desktop/electron-builder.win*.yml"
-      - "scripts/internal/win/build-nsis.sh"
-      - "scripts/internal/win/*computer-history*"
-      - "App/shell/desktop/tests/packaged-runtime-boundary.test.ts"
-      - "tests/computer-history-packaging.test.mjs"
-      - "package.json"
-      - "package-lock.json"
   workflow_dispatch:
 
 permissions:

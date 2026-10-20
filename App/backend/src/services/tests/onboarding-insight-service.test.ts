@@ -97,8 +97,8 @@ describe("onboarding insight service", () => {
 
     expect(report.status).toBe("ready");
     expect(report.reportMarkdown).toBe([
-      "Memmy 已识别到这台设备上的 Codex，但首次轻量扫描暂时没有读到可用的对话历史。",
-      "之后用 Memmy 处理真实任务时，它会记住有用的背景、决策和下一步，方便新对话或其他 Agent 继续。"
+      "Cuby 已识别到这台设备上的 Codex，但首次轻量扫描暂时没有读到可用的对话历史。",
+      "之后用 Cuby 处理真实任务时，它会记住有用的背景、决策和下一步，方便新对话或其他 Agent 继续。"
     ].join("\n\n"));
     expect(report.reportMarkdown).not.toContain("not enough recent user messages");
     expect(report.diagnostics).toMatchObject({
@@ -131,7 +131,7 @@ describe("onboarding insight service", () => {
     expect(report.status).toBe("ready");
     expect(report.reportMarkdown).toBe([
       "There is no readable Agent history on this device yet, so there is nothing useful to pretend I already know.",
-      "Tell Memmy about one real task. It will preserve the useful background, decisions, and next step so a new conversation—or another Agent such as Cursor or Codex—can continue without making you explain it again."
+      "Tell Cuby about one real task. It will preserve the useful background, decisions, and next step so a new conversation—or another Agent such as Cursor or Codex—can continue without making you explain it again."
     ].join("\n\n"));
     expect(report.reportMarkdown).not.toContain("我没有在本机扫描到");
     expect(events).toEqual([
@@ -258,7 +258,7 @@ describe("onboarding insight service", () => {
       ],
       reportGenerator: {
         async generateReport() {
-          return "这是一段有效的模型报告。\n[MEMMY_ACTIONS_JSON]\n{invalid json";
+          return "这是一段有效的模型报告。\n[CUBY_ACTIONS_JSON]\n{invalid json";
         }
       },
       now: () => 100
@@ -1077,7 +1077,7 @@ describe("onboarding insight service", () => {
     expect(body.messages[0].content).toContain("不要生成按钮、行动卡片、CTA");
     expect(body.messages[0].content).toContain("不得包含任何原始 HTML 标签或样式");
     expect(body.messages[0].content).toContain("不要输出思考过程、执行计划、要求确认、Prompt 复述或起草说明");
-    expect(body.messages[0].content).not.toContain("[MEMMY_ACTIONS_JSON]");
+    expect(body.messages[0].content).not.toContain("[CUBY_ACTIONS_JSON]");
     const userPayload = JSON.parse(String(body.messages[1].content));
     expect(userPayload.reportGoal.primary).toBe("user_preferences_latest_project_memory_and_actionable_todos");
     expect(userPayload.reportGoal.lengthConstraint).toContain("300-500 Chinese characters");

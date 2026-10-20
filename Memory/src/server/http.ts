@@ -314,7 +314,7 @@ export async function listenMemoryHttpServer(options: MemoryHttpServerOptions & 
 }> {
   const server = createMemoryHttpServer(options);
   const host = options.host ?? "127.0.0.1";
-  const port = options.port ?? 18960;
+  const port = options.port ?? 28960;
   await new Promise<void>((resolve, reject) => {
     server.once("error", reject);
     server.listen(port, host, () => {
@@ -1363,15 +1363,15 @@ function tokenFromRequest(request: IncomingMessage, url: URL): string | undefine
 }
 
 function namespaceFromRequest(request: IncomingMessage, url: URL): RuntimeNamespace | undefined {
-  const userId = headerString(request, "x-memmy-user-id");
-  const tenantId = headerString(request, "x-memmy-tenant-id");
-  const projectId = headerString(request, "x-memmy-project-id");
-  const workspaceId = headerString(request, "x-memmy-workspace-id");
-  const workspacePath = headerString(request, "x-memmy-workspace-path");
+  const userId = headerString(request, "x-cuby-user-id");
+  const tenantId = headerString(request, "x-cuby-tenant-id");
+  const projectId = headerString(request, "x-cuby-project-id");
+  const workspaceId = headerString(request, "x-cuby-workspace-id");
+  const workspacePath = headerString(request, "x-cuby-workspace-path");
   const source = sourceString(url.searchParams.get("source"));
-  const profileId = headerString(request, "x-memmy-profile-id");
-  const profileLabel = headerString(request, "x-memmy-profile-label");
-  const sessionKey = headerString(request, "x-memmy-session-key");
+  const profileId = headerString(request, "x-cuby-profile-id");
+  const profileLabel = headerString(request, "x-cuby-profile-label");
+  const sessionKey = headerString(request, "x-cuby-session-key");
   const any = userId || tenantId || projectId || workspaceId || workspacePath || source ||
     profileId || profileLabel || sessionKey;
   if (!any) return undefined;
@@ -1522,7 +1522,7 @@ function parseV2OpenSessionRequest(value: Record<string, unknown>): SessionOpenR
 
 function requestTimeZone(request: IncomingMessage, configuredTimeZone?: string): string {
   try {
-    return resolveTimeZone(configuredTimeZone ?? headerString(request, "x-memmy-time-zone"));
+    return resolveTimeZone(configuredTimeZone ?? headerString(request, "x-cuby-time-zone"));
   } catch (error) {
     throw new MemoryServiceError(
       "invalid_argument",

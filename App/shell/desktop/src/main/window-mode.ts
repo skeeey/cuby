@@ -1,7 +1,7 @@
 export type DesktopWindowMode = "full" | "pet";
 
 export const PACKAGED_RENDERER_HOST = "127.0.0.1";
-export const PACKAGED_RENDERER_DEFAULT_PORT = 19100;
+export const PACKAGED_RENDERER_DEFAULT_PORT = 29100;
 
 export interface BootWindowModeInput {
   defaultLaunchMode: "full" | "pet" | "last";
@@ -54,7 +54,7 @@ export const fullWindowOptions = {
   height: 780,
   minWidth: 980,
   minHeight: 640,
-  title: "Memmy",
+  title: "Cuby",
   backgroundColor: "#f1f8f7"
 } as const;
 

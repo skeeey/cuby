@@ -1,5 +1,5 @@
 /**
- * Memmy WeChat channel implementation.
+ * Cuby WeChat channel implementation.
  *
  * This file handles WeChat QR-code login, long-poll message receiving, media
  * transfer, and reply delivery; the desktop UI only controls login through the
@@ -111,12 +111,12 @@ export function hasDownloadableMediaLocator(media: any): boolean {
 }
 
 /**
- * Memmy WeChat channel configuration.
+ * Cuby WeChat channel configuration.
  *
  * Field meanings:
  * - enabled: whether to enable the WeChat channel.
- * - allowFrom: WeChat user ID list allowed to access Memmy; `*` allows all users.
- * - appId: Memmy WeChat app ID used to generate QR-code authorization.
+ * - allowFrom: WeChat user ID list allowed to access Cuby; `*` allows all users.
+ * - appId: Cuby WeChat app ID used to generate QR-code authorization.
  * - baseUrl: WeChat bridge API root URL.
  * - cdnBaseUrl: WeChat media CDN root URL.
  * - routeTag: bridge service gray-release or routing tag.
@@ -324,7 +324,7 @@ export class WeixinChannel extends BaseChannel {
 
   private requireMemmyAppIdentity(): void {
     if (this.config.appId.trim()) return;
-    throw new Error("微信渠道还没有配置 Memmy 应用，无法生成授权二维码。");
+    throw new Error("微信渠道还没有配置 Cuby 应用，无法生成授权二维码。");
   }
 
   /**

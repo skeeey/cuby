@@ -59,7 +59,7 @@ describe("Windows Memory validation workflow", () => {
     expect(preflight.if).toBeUndefined();
     expect(preflight["continue-on-error"]).toBeUndefined();
     const native = steps[nativeIndex]!;
-    expect(native.env?.MEMMY_WINDOWS_SERVICE_INTEGRATION).toBe("1");
+    expect(native.env?.CUBY_WINDOWS_SERVICE_INTEGRATION).toBe("1");
     expect(native.if).toBeUndefined();
     expect(native["continue-on-error"]).toBeUndefined();
     expect(native.run).toContain("--reporter=json");
@@ -92,7 +92,7 @@ describe.skipIf(process.platform !== "win32" && !hasPowerShell)("Windows session
     const script = [
       "$ErrorActionPreference = 'Stop'",
       "$sessionId = 2",
-      "$fixture = $env:MEMMY_TEST_SESSION_QUERY | ConvertFrom-Json",
+      "$fixture = $env:CUBY_TEST_SESSION_QUERY | ConvertFrom-Json",
       "function query.exe { $global:LASTEXITCODE = 1; $fixture.output }",
       "function quser.exe { param([int]$id) if ($id -ne $sessionId) { throw 'Wrong query session' }; $global:LASTEXITCODE = $fixture.exitCode; $fixture.output }",
       "try {",
@@ -103,7 +103,7 @@ describe.skipIf(process.platform !== "win32" && !hasPowerShell)("Windows session
     const result = spawnSync(powershell, ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", script], {
       encoding: "utf8",
       timeout: 10_000,
-      env: { ...process.env, MEMMY_TEST_SESSION_QUERY: JSON.stringify({ output, exitCode }) },
+      env: { ...process.env, CUBY_TEST_SESSION_QUERY: JSON.stringify({ output, exitCode }) },
     });
     expect(result.error).toBeUndefined();
     expect(result.status, `${result.stdout}\n${result.stderr}`).toBe(accepted ? 0 : 1);

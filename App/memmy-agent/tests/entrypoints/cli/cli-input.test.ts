@@ -8,7 +8,7 @@ import { StreamRenderer, ThinkingSpinner } from "../../../src/entrypoints/cli/st
 import { getCliHistoryPath } from "../../../src/config/paths.js";
 
 const roots: string[] = [];
-const originalWorkspace = process.env.MEMMY_AGENT_WORKSPACE;
+const originalWorkspace = process.env.CUBY_AGENT_WORKSPACE;
 const originalIsTTY = (process.stdout as any).isTTY;
 
 function tmpRoot(): string {
@@ -34,8 +34,8 @@ function mockConsole() {
 afterEach(() => {
   vi.restoreAllMocks();
   commands.setPromptSessionForTest(null);
-  if (originalWorkspace === undefined) delete process.env.MEMMY_AGENT_WORKSPACE;
-  else process.env.MEMMY_AGENT_WORKSPACE = originalWorkspace;
+  if (originalWorkspace === undefined) delete process.env.CUBY_AGENT_WORKSPACE;
+  else process.env.CUBY_AGENT_WORKSPACE = originalWorkspace;
   (process.stdout as any).isTTY = originalIsTTY;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
@@ -64,7 +64,7 @@ describe("CLI input and streaming output", () => {
 
   it("initPromptSession creates a single-line prompt session with file history", () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_WORKSPACE = root;
+    process.env.CUBY_AGENT_WORKSPACE = root;
 
     const history = commands.initPromptSession();
 

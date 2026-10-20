@@ -12,12 +12,12 @@ import {
 import { extractText } from "../../../src/utils/document.js";
 
 const roots: string[] = [];
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function tempRoot(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-api-attachment-"));
   roots.push(dir);
-  process.env.MEMMY_AGENT_DATA_DIR = dir;
+  process.env.CUBY_AGENT_DATA_DIR = dir;
   return dir;
 }
 
@@ -65,8 +65,8 @@ async function docxDataUrl(text: string): Promise<string> {
 }
 
 afterEach(() => {
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

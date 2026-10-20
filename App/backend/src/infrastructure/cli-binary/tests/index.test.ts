@@ -17,7 +17,7 @@ afterEach(() => {
 describe("writeRuntimeConfigFile", () => {
   it("writes runtime config with owner-only file permissions", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-runtime-config-"));
-    const runtimeConfigPath = join(tempDir, ".memmy", "runtime.json");
+    const runtimeConfigPath = join(tempDir, ".cuby", "runtime.json");
 
     await writeRuntimeConfigFile(
       {
@@ -28,7 +28,7 @@ describe("writeRuntimeConfigFile", () => {
     );
 
     if (process.platform !== "win32") {
-      expect(statSync(join(tempDir, ".memmy")).mode & 0o777).toBe(0o700);
+      expect(statSync(join(tempDir, ".cuby")).mode & 0o777).toBe(0o700);
       expect(statSync(runtimeConfigPath).mode & 0o777).toBe(0o600);
     }
   });

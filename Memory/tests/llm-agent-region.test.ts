@@ -48,8 +48,8 @@ describe("memory account model agent region", () => {
     expect(resolveMemoryAgentRegion("memmy_account", {
       manifestPath: writeManifest(manifest),
       env: {
-        MEMMY_ACCOUNT_CHANNEL: expected === "intl" ? "phone" : "email",
-        MEMMY_APP_EDITION: expected === "intl" ? "cn" : "intl"
+        CUBY_ACCOUNT_CHANNEL: expected === "intl" ? "phone" : "email",
+        CUBY_APP_EDITION: expected === "intl" ? "cn" : "intl"
       }
     })).toBe(expected);
   });
@@ -59,19 +59,19 @@ describe("memory account model agent region", () => {
 
     expect(resolveMemoryAgentRegion("memmy_account", {
       manifestPath,
-      env: { MEMMY_ACCOUNT_CHANNEL: "email", MEMMY_APP_EDITION: "cn" }
+      env: { CUBY_ACCOUNT_CHANNEL: "email", CUBY_APP_EDITION: "cn" }
     })).toBe("cn");
     expect(resolveMemoryAgentRegion("memmy_account", {
       manifestPath,
-      env: { MEMMY_ACCOUNT_CHANNEL: "phone", MEMMY_APP_EDITION: "intl" }
+      env: { CUBY_ACCOUNT_CHANNEL: "phone", CUBY_APP_EDITION: "intl" }
     })).toBe("intl");
     expect(resolveMemoryAgentRegion("memmy_account", {
       manifestPath,
-      env: { MEMMY_ACCOUNT_CHANNEL: "email" }
+      env: { CUBY_ACCOUNT_CHANNEL: "email" }
     })).toBe("intl");
     expect(resolveMemoryAgentRegion("memmy_account", {
       manifestPath,
-      env: { MEMMY_ACCOUNT_CHANNEL: "phone" }
+      env: { CUBY_ACCOUNT_CHANNEL: "phone" }
     })).toBe("cn");
     expect(resolveMemoryAgentRegion("memmy_account", {
       manifestPath,
@@ -82,7 +82,7 @@ describe("memory account model agent region", () => {
   it("does not resolve an agent region outside account mode", () => {
     expect(resolveMemoryAgentRegion("openai", {
       manifestPath: writeManifest({ edition: "intl", accountChannel: "email" }),
-      env: { MEMMY_ACCOUNT_CHANNEL: "email" }
+      env: { CUBY_ACCOUNT_CHANNEL: "email" }
     })).toBeUndefined();
   });
 
@@ -99,7 +99,7 @@ describe("memory account model agent region", () => {
       headers: { "content-type": "application/json" }
     }));
     vi.stubGlobal("fetch", fetchMock);
-    vi.stubEnv("MEMMY_APP_EDITION", agentRegion);
+    vi.stubEnv("CUBY_APP_EDITION", agentRegion);
 
     const client = createLlmClient(llmConfig(modelRole), { modelRole });
     await expect(client.complete(

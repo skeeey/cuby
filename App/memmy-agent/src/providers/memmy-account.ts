@@ -2,7 +2,7 @@ export type MemmyAccountThinkingStyle = "enable_thinking" | "thinking_type" | ""
 export type MemmyAccountRegion = "cn" | "intl";
 
 export function resolveMemmyAccountRegion(
-  edition = process.env.MEMMY_APP_EDITION,
+  edition = process.env.CUBY_APP_EDITION,
 ): MemmyAccountRegion {
   return edition?.trim().toLowerCase() === "intl" ? "intl" : "cn";
 }

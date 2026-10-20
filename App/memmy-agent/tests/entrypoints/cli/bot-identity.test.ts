@@ -7,7 +7,7 @@ describe("CLI bot identity", () => {
   it("preserves default bot name and icon", () => {
     const defaults = new AgentDefaults();
 
-    expect(defaults.botName).toBe("memmy");
+    expect(defaults.botName).toBe("cuby");
     expect(defaults.botIcon).toBe("🍚");
   });
 

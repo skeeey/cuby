@@ -28,7 +28,7 @@ describe("SourcesSubPage local data path", () => {
   });
 
   it("loads the actual Windows data path without opening the directory", async () => {
-    const windowsDataPath = "C:\\Users\\memmy-user\\.memmy\\memory-service";
+    const windowsDataPath = "C:\\Users\\memmy-user\\.cuby\\memory-service";
     let resolvePath!: (result: { ok: true; dataPath: string }) => void;
     const pathPromise = new Promise<{ ok: true; dataPath: string }>((resolve) => {
       resolvePath = resolve;
@@ -40,7 +40,7 @@ describe("SourcesSubPage local data path", () => {
       runtimeConfig: {
         baseUrl: "http://127.0.0.1:18100",
         localToken: "local-token",
-        memory: { baseUrl: "http://127.0.0.1:18960" }
+        memory: { baseUrl: "http://127.0.0.1:28960" }
       },
       localData: {
         getPath,
@@ -78,7 +78,7 @@ describe("SourcesSubPage local data path", () => {
     expect(getPath).toHaveBeenCalledTimes(1);
     expect(listSources).toHaveBeenCalledTimes(1);
     expect(reveal).not.toHaveBeenCalled();
-    expect(container.textContent).not.toContain("~/.memmy/memory-service");
+    expect(container.textContent).not.toContain("~/.cuby/memory-service");
     expect(container.textContent).not.toContain(windowsDataPath);
 
     await act(async () => {
@@ -87,7 +87,7 @@ describe("SourcesSubPage local data path", () => {
     });
 
     expect(container.textContent).toContain(windowsDataPath);
-    expect(container.textContent).not.toContain("~/.memmy/memory-service");
+    expect(container.textContent).not.toContain("~/.cuby/memory-service");
   });
 });
 

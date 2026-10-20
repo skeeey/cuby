@@ -92,13 +92,13 @@ class FakeSlackWebClient {
   }
 }
 
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const tmpDirs: string[] = [];
 
 function tempDataDir(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-slack-test-"));
   tmpDirs.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
+  process.env.CUBY_AGENT_DATA_DIR = root;
   return root;
 }
 
@@ -106,8 +106,8 @@ afterEach(() => {
   vi.restoreAllMocks();
   slackSdkMock.reset();
   vi.unstubAllGlobals();
-  if (originalDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const dir of tmpDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 

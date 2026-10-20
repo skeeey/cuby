@@ -17,7 +17,7 @@ describe("account-client", () => {
       expect(input.toString()).toBe("http://127.0.0.1:18100/api/account/session");
       expect(init?.method).toBe("GET");
       expect(init?.headers).toMatchObject({
-        "x-memmy-local-token": "token"
+        "x-cuby-local-token": "token"
       });
 
       return new Response(
@@ -60,7 +60,7 @@ describe("account-client", () => {
       const url = input.toString();
       const body = init?.body ? JSON.parse(String(init.body)) : null;
       expect(init?.headers).toMatchObject({
-        "x-memmy-local-token": "token"
+        "x-cuby-local-token": "token"
       });
 
       if (url.endsWith("/api/account/register")) {

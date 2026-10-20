@@ -17,7 +17,7 @@ describe("byok-token-usage-client", () => {
       expect(input.toString()).toBe("http://127.0.0.1:18100/api/app/byok-token-usage/summary");
       expect(init?.method).toBe("GET");
       expect(init?.headers).toMatchObject({
-        "x-memmy-local-token": "token"
+        "x-cuby-local-token": "token"
       });
 
       return new Response(JSON.stringify({
@@ -55,7 +55,7 @@ describe("byok-token-usage-client", () => {
       expect(input.toString()).toBe("http://127.0.0.1:18100/api/app/byok-token-usage/memory-budget");
       expect(init?.method).toBe("GET");
       expect(init?.headers).toMatchObject({
-        "x-memmy-local-token": "token"
+        "x-cuby-local-token": "token"
       });
       return new Response(JSON.stringify({
         dailyLimitM: 10,

@@ -135,11 +135,11 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
 
     const embeddingSelect = getAssignmentCombobox("Embedding 检索");
     expect(embeddingSelect.disabled).toBe(false);
-    expect(embeddingSelect.textContent).toContain("Memmy Platform 本地 Embedding");
+    expect(embeddingSelect.textContent).toContain("Cuby Platform 本地 Embedding");
 
     act(() => embeddingSelect.click());
-    expect(getOption("Memmy Platform 本地 Embedding")).not.toBeNull();
-    expect(getOption("Memmy Platform 云端 Embedding")).toBeNull();
+    expect(getOption("Cuby Platform 本地 Embedding")).not.toBeNull();
+    expect(getOption("Cuby Platform 云端 Embedding")).toBeNull();
     expect([...container.querySelectorAll(".select-control__group-label")].map((node) => node.textContent))
       .toEqual(["平台模型"]);
   });
@@ -148,15 +148,15 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     renderWorkspace(createAccountSeedConfig(), "account");
 
     const embeddingSelect = getAssignmentCombobox("Embedding 检索");
-    expect(embeddingSelect.textContent).toContain("Memmy Platform 云端 Embedding");
+    expect(embeddingSelect.textContent).toContain("Cuby Platform 云端 Embedding");
     act(() => embeddingSelect.click());
 
     expect([...container.querySelectorAll(".select-control__group-label")].map((node) => node.textContent))
       .toEqual(["平台模型", "自定义模型"]);
     expect([...container.querySelectorAll('[role="option"]')].map((node) => node.textContent?.trim()))
       .toEqual([
-        "Memmy Platform 本地 Embedding",
-        "Memmy Platform 云端 Embedding",
+        "Cuby Platform 本地 Embedding",
+        "Cuby Platform 云端 Embedding",
         "OpenAI 兼容 · text-embedding-3-small"
       ]);
   });
@@ -194,7 +194,7 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     });
 
     act(() => getAssignmentCombobox("Embedding 检索").click());
-    const localOption = getOption("Memmy Platform 本地 Embedding");
+    const localOption = getOption("Cuby Platform 本地 Embedding");
     expect(localOption).not.toBeNull();
     act(() => localOption!.click());
 
@@ -208,7 +208,7 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     renderWorkspace(createAccountSeedConfig(), "account");
 
     const platformCard = [...container.querySelectorAll("article")]
-      .find((article) => article.querySelector("h4")?.textContent?.includes("Memmy Platform"))!;
+      .find((article) => article.querySelector("h4")?.textContent?.includes("Cuby Platform"))!;
     expect(platformCard).not.toBeNull();
     expect(platformCard.querySelector(".provider-model-list")).toBeNull();
     expect(container.querySelectorAll(".provider-model-list")).toHaveLength(1);
@@ -220,7 +220,7 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     const platformChoice = [...container.querySelectorAll<HTMLElement>(".task-model-picker__choice")]
       .find((choice) => choice.textContent?.includes("agent_chat"))!;
     expect(platformChoice.textContent).toContain("agent_chat");
-    expect(platformChoice.textContent).toContain("Memmy Platform");
+    expect(platformChoice.textContent).toContain("Cuby Platform");
     expect(platformChoice.textContent).not.toContain("通用文本");
   });
 

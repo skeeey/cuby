@@ -4,7 +4,7 @@ import { isMemoryViewerPath, memoryPanelHtml, memoryViewerAsset } from "../src/v
 describe("Memory Viewer assets", () => {
   it("serves the built Preact application shell", () => {
     const html = memoryPanelHtml();
-    expect(html).toContain("<title>Memmy Memory — Memory Viewer</title>");
+    expect(html).toContain("<title>Cuby Memory — Memory Viewer</title>");
     expect(html).toMatch(/<script[^>]+type="module"[^>]+\/viewer\/assets\//);
     expect(html).not.toContain("Memory Panel");
   });

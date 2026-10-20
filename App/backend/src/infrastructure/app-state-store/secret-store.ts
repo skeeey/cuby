@@ -24,7 +24,7 @@ export function createSqliteSecretStore(
     keyMaterial?: string;
   } = {}
 ): SecretStore {
-  const key = deriveKey(options.keyMaterial ?? process.env.MEMMY_SECRET_KEY ?? DEFAULT_KEY_MATERIAL);
+  const key = deriveKey(options.keyMaterial ?? process.env.CUBY_SECRET_KEY ?? DEFAULT_KEY_MATERIAL);
 
   return {
     set(ref, secret, metadata = {}) {

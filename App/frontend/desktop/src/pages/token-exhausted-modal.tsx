@@ -1,6 +1,6 @@
 /** Token exhausted modal module. */
 import { Gift } from "lucide-react";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 
 export interface TokenExhaustedModalProps {
@@ -24,7 +24,7 @@ export function TokenExhaustedModal(props: TokenExhaustedModalProps) {
         onClick={(event) => event.stopPropagation()}
       >
         <div className="token-exhausted-modal__content">
-          <Memmy pose="sad" size={130} className="token-exhausted-modal__mascot" />
+          <Cuby pose="sad" size={130} className="token-exhausted-modal__mascot" />
           <span className="token-exhausted-modal__badge">
             {t("tokenExhausted.title")}
           </span>

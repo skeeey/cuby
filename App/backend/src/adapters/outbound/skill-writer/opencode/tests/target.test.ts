@@ -18,11 +18,11 @@ afterEach(() => {
 });
 
 describe("opencode skill target", () => {
-  it("installs, replaces, and uninstalls the global Memmy bootstrap and Skill directory", async () => {
+  it("installs, replaces, and uninstalls the global Cuby bootstrap and Skill directory", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createOpencodeSkillTarget({ rootDirectory });
-    mkdirSync(join(rootDirectory, "skills", "memmy-memory", "references"), { recursive: true });
-    writeFileSync(join(rootDirectory, "skills", "memmy-memory", "references", "search.md"), "old reference", "utf8");
+    mkdirSync(join(rootDirectory, "skills", "cuby-memory", "references"), { recursive: true });
+    writeFileSync(join(rootDirectory, "skills", "cuby-memory", "references", "search.md"), "old reference", "utf8");
     writeFileSync(
       join(rootDirectory, "AGENTS.md"),
       ["manual", "<!-- memmy-memory cli : start -->", "old cli", "<!-- memmy-memory cli : end -->", ""].join("\n"),
@@ -30,23 +30,23 @@ describe("opencode skill target", () => {
     );
 
     await target.install(manifest);
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.");
-    expect(readTargetFile(rootDirectory)).not.toContain("Call memmy-memory search when context is needed.");
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
-    expect(skillFile).toContain("# Memmy");
-    expect(skillFile).toContain("Call memmy-memory search when context is needed.");
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "references"))).toBe(false);
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).not.toContain("Call cuby-memory search when context is needed.");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
+    expect(skillFile).toContain("# Cuby");
+    expect(skillFile).toContain("Call cuby-memory search when context is needed.");
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "references"))).toBe(false);
     await expect(target.isInstalled("opencode")).resolves.toBe(true);
 
     writeFileSync(
       join(rootDirectory, "AGENTS.md"),
-      ["manual prefix", "<!-- memmy:start v=1 -->", "old", "<!-- memmy:end v=1 -->", "manual suffix", ""].join("\n"),
+      ["manual prefix", "<!-- cuby:start v=1 -->", "old", "<!-- cuby:end v=1 -->", "manual suffix", ""].join("\n"),
       "utf8"
     );
     await target.install(manifest);
     await target.uninstall("opencode");
     expect(readTargetFile(rootDirectory)).toBe(["manual prefix", "manual suffix", ""].join("\n"));
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
   });
 
   it("initializes a missing Opencode config directory", async () => {
@@ -59,10 +59,10 @@ describe("opencode skill target", () => {
     await expect(target.isInstalled("opencode")).resolves.toBe(false);
     await target.install(manifest);
     expect(existsSync(join(rootDirectory, "AGENTS.md"))).toBe(true);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"))).toBe(true);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"))).toBe(true);
   });
 
-  it("installs and uninstalls the native OpenCode Memmy plugin", async () => {
+  it("installs and uninstalls the native OpenCode Cuby plugin", async () => {
     const { rootDirectory } = createFixture();
     const memmyConfigPath = join(rootDirectory, "memmy-config.yaml");
     writeFileSync(
@@ -75,9 +75,9 @@ describe("opencode skill target", () => {
 
     await target.installPlugin?.("opencode");
 
-    const pluginPath = join(rootDirectory, "plugins", "memmy-memory.js");
-    const pluginConfigPath = join(rootDirectory, "plugins", "memmy-memory-config.json");
-    const commandPath = join(rootDirectory, "commands", "memmy-resume.md");
+    const pluginPath = join(rootDirectory, "plugins", "cuby-memory.js");
+    const pluginConfigPath = join(rootDirectory, "plugins", "cuby-memory-config.json");
+    const commandPath = join(rootDirectory, "commands", "cuby-resume.md");
     const pluginSource = readFileSync(pluginPath, "utf8");
     const pluginConfig = JSON.parse(readFileSync(pluginConfigPath, "utf8")) as {
       endpoint?: string;
@@ -87,7 +87,7 @@ describe("opencode skill target", () => {
       workspaceHostId?: string;
     };
     const commandSource = readFileSync(commandPath, "utf8");
-    const skillSource = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const skillSource = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
 
     expect(pluginConfig).toMatchObject({
       memmy_config_path: memmyConfigPath,
@@ -96,7 +96,7 @@ describe("opencode skill target", () => {
       userId: "local-user",
       workspaceHostId: expect.stringMatching(/^[a-f0-9]{64}$/u)
     });
-    const bridgePath = join(rootDirectory, "plugins", "memmy-workspace-bridge.mjs");
+    const bridgePath = join(rootDirectory, "plugins", "cuby-workspace-bridge.mjs");
     expect(existsSync(bridgePath)).toBe(true);
     expect(pluginSource).toContain('import { tool } from "@opencode-ai/plugin";');
     expect(pluginSource).toContain("export const MemmyMemoryPlugin");
@@ -105,17 +105,17 @@ describe("opencode skill target", () => {
     expect(pluginSource).toContain('event: async ({ event }) =>');
     expect(pluginSource).toContain("dispose: async () =>");
     expect(pluginSource).toContain("memmy_memory_search: tool");
-    expect(pluginSource).toContain('"Memmy request to " + url + " failed: " + formatErrorWithCause(error)');
-    expect(commandSource).toContain("MEMMY_RESUME_COMMAND_ARGUMENTS:");
+    expect(pluginSource).toContain('"Cuby request to " + url + " failed: " + formatErrorWithCause(error)');
+    expect(commandSource).toContain("CUBY_RESUME_COMMAND_ARGUMENTS:");
     expect(commandSource).toContain("$ARGUMENTS");
-    expect(skillSource).toContain("# Memmy Memory");
-    expect(skillSource).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
+    expect(skillSource).toContain("# Cuby Memory");
+    expect(skillSource).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
     expect(skillSource).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
-    expect(skillSource).toContain('memmy-memory search "query text" --source opencode');
-    expect(skillSource).not.toContain("memmy-memory add");
-    expect(skillSource).not.toContain("Call memmy-memory search when context is needed.");
+    expect(skillSource).toContain('cuby-memory search "query text" --source opencode');
+    expect(skillSource).not.toContain("cuby-memory add");
+    expect(skillSource).not.toContain("Call cuby-memory search when context is needed.");
     expect(readTargetFile(rootDirectory)).toContain("manual instructions");
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed");
 
     await target.uninstallPlugin?.("opencode");
 
@@ -123,7 +123,7 @@ describe("opencode skill target", () => {
     expect(existsSync(pluginConfigPath)).toBe(false);
     expect(existsSync(bridgePath)).toBe(false);
     expect(existsSync(commandPath)).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
     expect(readTargetFile(rootDirectory)).toBe("manual instructions\n");
   });
 
@@ -241,7 +241,7 @@ describe("opencode skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -301,17 +301,17 @@ describe("opencode skill target", () => {
         messageID: "command-message",
         sessionID: "session-resume",
         type: "text",
-        text: "MEMMY_RESUME_COMMAND_ARGUMENTS:\n测试 query\nMEMMY_RESUME_COMMAND_END"
+        text: "CUBY_RESUME_COMMAND_ARGUMENTS:\n测试 query\nCUBY_RESUME_COMMAND_END"
       }];
       await hooks["chat.message"](
         { sessionID: "session-resume", messageID: "command-message", agent: "build" },
         { message: { id: "command-message" }, parts: commandParts }
       );
-      expect(commandParts[0]?.text).toContain('Memmy resume candidates for "测试 query"');
+      expect(commandParts[0]?.text).toContain('Cuby resume candidates for "测试 query"');
       expect(commandParts[0]?.text).toContain("1. episode-1");
       expect(requests.find((request) => request.path === "/api/v1/memory/search")?.body.query).toBe("测试 query");
       expect(requests.find((request) => request.path === "/api/v1/memory/search")?.origin).toBe(
-        "http://127.0.0.1:18960"
+        "http://127.0.0.1:28960"
       );
 
       const selectionParts: PluginPart[] = [{
@@ -368,7 +368,7 @@ interface OpencodePluginHooks {
 
 async function loadPluginHooks(rootDirectory: string): Promise<OpencodePluginHooks> {
   const pluginDirectory = join(rootDirectory, "plugins");
-  const pluginSource = readFileSync(join(pluginDirectory, "memmy-memory.js"), "utf8").replace(
+  const pluginSource = readFileSync(join(pluginDirectory, "cuby-memory.js"), "utf8").replace(
     'import { tool } from "@opencode-ai/plugin";',
     [
       "const schemaValue = () => ({ optional() { return this; } });",
@@ -376,7 +376,7 @@ async function loadPluginHooks(rootDirectory: string): Promise<OpencodePluginHoo
       "tool.schema = { string: schemaValue, enum: schemaValue, array: schemaValue };"
     ].join("\n")
   );
-  const runtimePath = join(pluginDirectory, `memmy-memory-runtime-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
+  const runtimePath = join(pluginDirectory, `cuby-memory-runtime-${Date.now()}-${Math.random().toString(36).slice(2)}.mjs`);
   writeFileSync(runtimePath, pluginSource, "utf8");
   const module = await import(pathToFileURL(runtimePath).href) as {
     MemmyMemoryPlugin(input: {
@@ -446,8 +446,8 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
-    marker: "<!-- memmy:start v=1 -->"
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
+    marker: "<!-- cuby:start v=1 -->"
   };
 }
 

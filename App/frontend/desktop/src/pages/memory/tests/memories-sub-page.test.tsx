@@ -56,7 +56,7 @@ describe("MemoriesSubPage", () => {
     expect(html).toContain('id="memory-l1-agent-filter"');
     expect(html).toContain("memory-source-filter__all-icon");
     expect(html.match(/memory-source-filter__all-avatar/g)).toHaveLength(3);
-    expect(html).toContain("memmy-rice.png");
+    expect(html).toContain("cuby-neutral.png");
     expect(html).not.toContain("lucide-bot");
     expect(html).toContain("全部 Agent");
     expect(html).toContain("按来源 Agent 筛选");
@@ -64,7 +64,7 @@ describe("MemoriesSubPage", () => {
 
   it("筛选器和详情共用统一的 Agent 名称格式", () => {
     expect(MEMORY_AGENT_SOURCE_VALUES.map(agentSourceDisplayName)).toEqual([
-      "Memmy",
+      "Cuby",
       "Cursor",
       "Claude Code",
       "Codex",
@@ -76,7 +76,7 @@ describe("MemoriesSubPage", () => {
       "Pi",
       "QwenWork"
     ]);
-    expect(agentSourceDisplayName("MEMMY_AGENT")).toBe("Memmy");
+    expect(agentSourceDisplayName("MEMMY_AGENT")).toBe("Cuby");
     expect(agentSourceDisplayName("claude-code")).toBe("Claude Code");
     expect(agentSourceDisplayName("OPENCLAW")).toBe("OpenClaw");
   });

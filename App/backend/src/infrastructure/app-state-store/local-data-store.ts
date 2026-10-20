@@ -25,7 +25,7 @@ export interface CreateFilesystemLocalDataStoreOptions {
   revealPath?: (dataPath: string) => void;
 }
 
-const DEFAULT_MEMORY_HOME = join(homedir(), ".memmy");
+const DEFAULT_MEMORY_HOME = join(homedir(), ".cuby");
 /** Creates create filesystem local data store. */
 export function createFilesystemLocalDataStore(options: CreateFilesystemLocalDataStoreOptions): LocalDataStore {
   const memoryDatabasePath = resolveMemoryDatabasePath(options);
@@ -42,7 +42,7 @@ export function createFilesystemLocalDataStore(options: CreateFilesystemLocalDat
 
     exportData(input, bundle) {
       const exportRoot = resolveExportRoot(input.targetPath, memoryDataPath);
-      const exportPath = join(exportRoot, `memmy-export-${toExportTimestamp(new Date())}`);
+      const exportPath = join(exportRoot, `cuby-export-${toExportTimestamp(new Date())}`);
       mkdirSync(exportPath, { recursive: true });
       writeFileSync(join(exportPath, "memory.json"), `${JSON.stringify(bundle, null, 2)}\n`, { encoding: "utf8", mode: 0o600 });
 
@@ -68,7 +68,7 @@ function resolveMemoryDatabasePath(options: CreateFilesystemLocalDataStoreOption
   }
 
   const env = options.env ?? process.env;
-  const explicitPath = (env.MEMMY_MEMORY_DB_PATH ?? env.MEMMY_MEMOS_DB_PATH ?? "").trim();
+  const explicitPath = (env.CUBY_MEMORY_DB_PATH ?? env.CUBY_MEMOS_DB_PATH ?? "").trim();
   if (explicitPath) {
     return resolve(expandHome(explicitPath));
   }
@@ -79,11 +79,11 @@ function resolveMemoryDatabasePath(options: CreateFilesystemLocalDataStoreOption
     return resolve(expandHome(configuredPath));
   }
 
-  return join(resolve(expandHome(env.MEMMY_HOME ?? DEFAULT_MEMORY_HOME)), "memory-service", "memory.sqlite");
+  return join(resolve(expandHome(env.CUBY_HOME ?? DEFAULT_MEMORY_HOME)), "memory-service", "memory.sqlite");
 }
 
 function resolveMemmyConfigPath(options: CreateFilesystemLocalDataStoreOptions, env: NodeJS.ProcessEnv): string {
-  return resolve(expandHome(options.memmyConfigPath ?? env.MEMMY_CONFIG ?? join(DEFAULT_MEMORY_HOME, "config.yaml")));
+  return resolve(expandHome(options.memmyConfigPath ?? env.CUBY_CONFIG ?? join(DEFAULT_MEMORY_HOME, "config.yaml")));
 }
 
 function readMemoryDatabasePathFromConfig(configPath: string): string | null {

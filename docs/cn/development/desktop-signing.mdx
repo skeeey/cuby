@@ -15,12 +15,12 @@ icon: KeyRound
 
 | 凭据 | 用途 | 默认位置 | 覆盖变量 |
 |---|---|---|---|
-| Developer ID Application 证书（`.p12`，含私钥） | 签名 App 与 DMG | `Mac软件打包/证书.p12` | `MEMMY_P12_FILE`、`MEMMY_MAC_CERT_DIR` |
-| `.p12` 密码 | 导入临时 keychain | `.signing-local/p12-password.txt` 或 `Mac软件打包/证书密码.txt` | `MEMMY_P12_PASSWORD_FILE` |
+| Developer ID Application 证书（`.p12`，含私钥） | 签名 App 与 DMG | `Mac软件打包/证书.p12` | `CUBY_P12_FILE`、`CUBY_MAC_CERT_DIR` |
+| `.p12` 密码 | 导入临时 keychain | `.signing-local/p12-password.txt` 或 `Mac软件打包/证书密码.txt` | `CUBY_P12_PASSWORD_FILE` |
 | App Store Connect API Key（`.p8`） | 提交 Apple 公证 | `Mac软件打包/AuthKey_CUARD5SC47.p8` | `APPLE_API_KEY` |
 | API Key ID | 公证认证 | `CUARD5SC47` | `APPLE_API_KEY_ID` |
 | Issuer ID | 公证认证 | `5ed1f28c-0bb2-4369-89fe-d04023d48d45` | `APPLE_API_ISSUER` |
-| 临时 keychain 密码 | `codesign` 访问证书 | 自动生成到 `.signing-local/keychain-password-<arch>.txt` | `MEMMY_KEYCHAIN_PASSWORD_FILE`、`CSC_KEYCHAIN` |
+| 临时 keychain 密码 | `codesign` 访问证书 | 自动生成到 `.signing-local/keychain-password-<arch>.txt` | `CUBY_KEYCHAIN_PASSWORD_FILE`、`CSC_KEYCHAIN` |
 
 前置条件：
 

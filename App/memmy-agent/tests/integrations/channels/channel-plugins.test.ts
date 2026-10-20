@@ -34,7 +34,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
   for (const dir of tmpDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
-  delete process.env.MEMMY_AGENT_CHANNEL_PLUGIN_PATHS;
+  delete process.env.CUBY_AGENT_CHANNEL_PLUGIN_PATHS;
   delete process.env[RESTART_NOTIFY_CHANNEL_ENV];
   delete process.env[RESTART_NOTIFY_CHAT_ID_ENV];
   delete process.env[RESTART_NOTIFY_METADATA_ENV];
@@ -108,7 +108,7 @@ function writePackagePlugin({
     memmyAgent: { channels },
   }, null, 2));
   fs.writeFileSync(path.join(packageDir, "index.cjs"), moduleSource);
-  process.env.MEMMY_AGENT_CHANNEL_PLUGIN_PATHS = nodeModules;
+  process.env.CUBY_AGENT_CHANNEL_PLUGIN_PATHS = nodeModules;
   return nodeModules;
 }
 

@@ -26,7 +26,7 @@ try {
 
   const target = resolveTarget(process.platform, process.arch);
   const assetName = `memmy-memory-${version}-${target}.tar.gz`;
-  const downloadUrl = process.env.MEMMY_MEMORY_BINARY_URL ||
+  const downloadUrl = process.env.CUBY_MEMORY_BINARY_URL ||
     `${defaultReleasesUrl}/download/memory-v${version}/${assetName}`;
   const archivePath = join(tmpdir(), `${assetName}.${process.pid}.download`);
 
@@ -48,7 +48,7 @@ try {
 }
 
 function shouldSkipDownload() {
-  const value = process.env.MEMMY_MEMORY_INSTALL_SKIP_DOWNLOAD;
+  const value = process.env.CUBY_MEMORY_INSTALL_SKIP_DOWNLOAD;
   return value === "1" || value?.toLowerCase() === "true";
 }
 

@@ -18,7 +18,7 @@ import {
   webuiTranscriptPath,
 } from "../../../src/entrypoints/frontend-bridge/transcript.js";
 
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const roots: string[] = [];
 
 function fixture(): {
@@ -30,7 +30,7 @@ function fixture(): {
 } {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-gui-sync-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
+  process.env.CUBY_AGENT_DATA_DIR = root;
   const workspace = path.join(root, "workspace");
   fs.mkdirSync(workspace, { recursive: true });
   const sessions = new SessionManager(path.join(workspace, "sessions"));
@@ -57,8 +57,8 @@ function saveProjectedSession(
 }
 
 afterEach(() => {
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

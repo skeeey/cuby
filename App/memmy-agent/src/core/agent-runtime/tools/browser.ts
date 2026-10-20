@@ -219,7 +219,7 @@ export class BrowserSessionManager {
     {
       runtimeLoader = defaultRuntimeLoader,
       preparationStateLoader = readBrowserPreparationState,
-      desktopManaged = process.env.MEMMY_DESKTOP_MANAGED_GATEWAY === "1",
+      desktopManaged = process.env.CUBY_DESKTOP_MANAGED_GATEWAY === "1",
       preparationAttemptId =
         process.env[BROWSER_PREPARATION_ATTEMPT_ID_ENV]?.trim() || null,
       restrictLocalFiles = false,

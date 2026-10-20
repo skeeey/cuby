@@ -16,6 +16,9 @@ import type { CuberouterAccountNodeRepository } from "../infrastructure/app-stat
 import type { ApiErrorCode } from "./error-envelope.js";
 import { FALLBACK_NODE_ID, type CuberouterNodeRouter } from "./cuberouter-node-router.js";
 
+/** Renew this long before the deadline, so a call in flight cannot outlive its token. */
+const ACCESS_TOKEN_RENEWAL_SKEW_SECONDS = 60;
+
 const CUBEROUTER_ERROR_CODES: Record<CuberouterErrorCode, ApiErrorCode> = {
   two_factor_required: "invalid_argument",
   rejected: "invalid_argument",
@@ -27,7 +30,10 @@ const CUBEROUTER_ERROR_CODES: Record<CuberouterErrorCode, ApiErrorCode> = {
   // and keeps cuberouter's own "wait N seconds" message.
   email_code_throttled: "rate_limited",
   // No provisioned key, or no permission to read it: the member has to ask an administrator.
-  organization_token_unavailable: "cuberouter_key_unavailable"
+  organization_token_unavailable: "cuberouter_key_unavailable",
+  // The access token was refused. Its own 401 code, so the desktop can tell "log in again"
+  // apart from the retryable failures it renders for everything else.
+  session_expired: "unauthorized"
 };
 
 /**
@@ -39,6 +45,25 @@ function cuberouterCode(error: unknown): CuberouterErrorCode | undefined {
   return error && typeof error === "object" && "code" in error
     ? (error as { code?: CuberouterErrorCode }).code
     : undefined;
+}
+
+/**
+ * Maps cuberouter's own codes onto the local API contract on the way out of a service call.
+ *
+ * Without this, `withErrorEnvelope` sees a code it does not know and answers a flat 500
+ * "internal", so a refused token, a rejected key and an unreachable instance all reached the
+ * desktop looking like a crash — and none of them could say which.
+ */
+function asApiErrors<TArgs extends unknown[], TResult>(
+  run: (...args: TArgs) => Promise<TResult>
+): (...args: TArgs) => Promise<TResult> {
+  return async (...args) => {
+    try {
+      return await run(...args);
+    } catch (error) {
+      throw toApiError(error);
+    }
+  };
 }
 
 /**
@@ -199,6 +224,40 @@ export function createCuberouterAccountService(
       .slice(0, 2);
   }
 
+  /**
+   * The access token to authenticate a call with.
+   *
+   * The instance issues a 15-minute access token and a 30-day refresh token. Until this
+   * renewed, a session only ever sent the login-time token, so a quarter of an hour in every
+   * call came back 401 and the model page showed its retry state — which could never succeed,
+   * because retrying resent the same dead token.
+   */
+  async function resolveAccessToken(client: CuberouterClient): Promise<string> {
+    const credential = options.accountSessionRepository.getCuberouterCredential();
+    if (!credential) {
+      // Sessions that logged in before the credential was stored have nothing to renew with;
+      // they keep their old behaviour until the next login writes one.
+      const legacy = options.accountSessionRepository.getCloudUuid();
+      if (!legacy) {
+        throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
+      }
+      return legacy;
+    }
+
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (nowSeconds < credential.accessExpiresAt - ACCESS_TOKEN_RENEWAL_SKEW_SECONDS) {
+      return credential.accessToken;
+    }
+
+    if (!credential.refreshToken) {
+      throw Object.assign(new Error("登录已过期，请重新登录"), { code: "session_expired" as const });
+    }
+
+    const renewed = await client.refreshSession(credential.refreshToken);
+    options.accountSessionRepository.setCuberouterCredential(renewed);
+    return renewed.accessToken;
+  }
+
   /** Runs one login against one node and records it as the account's line. */
   async function loginOnNode(
     nodeId: string,
@@ -246,6 +305,13 @@ export function createCuberouterAccountService(
           ...(organizationName ? { organizationName } : {})
         }
       }
+    });
+    // After the upsert, never before: the credential is keyed to the active account, and on a
+    // first login the row that becomes active does not exist until this call creates it.
+    options.accountSessionRepository.setCuberouterCredential({
+      accessToken: session.accessToken,
+      accessExpiresAt: session.accessExpiresAt,
+      refreshToken: session.refreshToken
     });
     options.accountNodes.set(username, nodeId);
     await options.nodeRouter.setPreferredNodeId(nodeId);
@@ -378,11 +444,11 @@ export function createCuberouterAccountService(
   /** The desktop's model page data: my keys with their billing, the selectable models, balance. */
   async function readModelChoices(): Promise<CuberouterModelChoices> {
     const session = options.accountSessionRepository.get();
-    const accessToken = options.accountSessionRepository.getCloudUuid();
-    if (!session.authenticated || !accessToken) {
+    if (!session.authenticated) {
       throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
     }
     const { client, url } = clientForNode(await currentOrProbedNodeId());
+    const accessToken = await resolveAccessToken(client);
 
     // Core reads propagate: the panel must show its retry state, not an empty key list that looks
     // like "the account has no keys". Only the balance degrades, because it is decoration.
@@ -445,11 +511,11 @@ export function createCuberouterAccountService(
 
   /** One personal key's plaintext, read at the moment the user selects it. */
   async function getPersonalKey(tokenId: number): Promise<{ key: string }> {
-    const accessToken = options.accountSessionRepository.getCloudUuid();
-    if (!options.accountSessionRepository.get().authenticated || !accessToken) {
+    if (!options.accountSessionRepository.get().authenticated) {
       throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
     }
     const { client } = clientForNode(await currentOrProbedNodeId());
+    const accessToken = await resolveAccessToken(client);
     return { key: await client.getPersonalTokenKey(accessToken, tokenId) };
   }
 
@@ -547,17 +613,17 @@ export function createCuberouterAccountService(
       throw lastError ?? rejection ?? Object.assign(new Error("cuberouter 登录失败"), { code: "internal" as const });
     },
 
-    readModelChoices,
+    readModelChoices: asApiErrors(readModelChoices),
 
-    getPersonalKey,
+    getPersonalKey: asApiErrors(getPersonalKey),
 
-    async reprovisionKey() {
+    reprovisionKey: asApiErrors(async () => {
       const session = options.accountSessionRepository.get();
-      const accessToken = options.accountSessionRepository.getCloudUuid();
-      if (!session.authenticated || !accessToken) {
+      if (!session.authenticated) {
         throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
       }
       const { client, url } = clientForNode(await currentOrProbedNodeId());
+      const accessToken = await resolveAccessToken(client);
       // Look first, as a re-login does: the desktop calls this to refresh a key that already
       // exists, and creating a second one under the same name would pool two keys for one account.
       const { apiKey, apiBase, model } = await provisionKey(
@@ -568,7 +634,7 @@ export function createCuberouterAccountService(
         false
       );
       return { apiKey, apiBase, model };
-    },
+    }),
 
     async logout() {
       options.accountSessionRepository.clear();

@@ -147,8 +147,8 @@ export async function installMemoryCli(options: MemoryCliSetupOptions = {}): Pro
     };
   }
 
-  const home = resolve(expandHome(options.home ?? "~/.memmy"));
-  const binPath = resolve(expandHome(options.binPath ?? join(home, "bin", "memmy-memory")));
+  const home = resolve(expandHome(options.home ?? "~/.cuby"));
+  const binPath = resolve(expandHome(options.binPath ?? join(home, "bin", "cuby-memory")));
   const source = resolve(expandHome(options.sourcePath ?? join(process.cwd(), "dist", "src", "cli", "index.js")));
 
   if (existsSync(binPath) && !options.force && !isExistingMemmyMemoryLink(binPath, source)) {
@@ -235,7 +235,7 @@ function setupPaths(options: MemoryCliSetupOptions): {
   dbPath: string;
   endpoint: string;
 } {
-  const home = resolve(expandHome(options.home ?? "~/.memmy"));
+  const home = resolve(expandHome(options.home ?? "~/.cuby"));
   const configPath = resolve(expandHome(options.configPath ?? join(home, "config.yaml")));
   const storage = existingMemoryStorage(configPath);
   return {
@@ -248,7 +248,7 @@ function setupPaths(options: MemoryCliSetupOptions): {
     )),
     endpoint: options.endpoint
       ?? optionalString(storage.endpoint)
-      ?? "http://127.0.0.1:18960"
+      ?? "http://127.0.0.1:28960"
   };
 }
 

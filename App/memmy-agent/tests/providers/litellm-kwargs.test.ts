@@ -46,7 +46,7 @@ describe("OpenAI-compatible request kwargs", () => {
     });
     expect(defaultProvider.defaultHeaders).toMatchObject({
       "HTTP-Referer": "https://github.com/MemTensor/memmy-agent",
-      "X-OpenRouter-Title": "Memmy Agent",
+      "X-OpenRouter-Title": "Cuby Agent",
       "X-OpenRouter-Categories": "personal-agent,cli-agent",
     });
     expect(defaultProvider.defaultHeaders["x-session-affinity"]).toBeTruthy();
@@ -276,7 +276,7 @@ describe("OpenAI-compatible request kwargs", () => {
     const provider = providerFor("openrouter", "anthropic/claude-sonnet-4-5", { apiBase: "https://openrouter.ai/api/v1" });
 
     expect(provider.defaultHeaders["HTTP-Referer"]).toBe("https://github.com/MemTensor/memmy-agent");
-    expect(provider.defaultHeaders["X-OpenRouter-Title"]).toBe("Memmy Agent");
+    expect(provider.defaultHeaders["X-OpenRouter-Title"]).toBe("Cuby Agent");
     expect(provider.defaultHeaders["X-OpenRouter-Categories"]).toBe("personal-agent,cli-agent");
     expect(provider.defaultHeaders["x-session-affinity"]).toBeTruthy();
   });
@@ -1150,8 +1150,8 @@ describe("OpenAI-compatible request kwargs", () => {
   });
 
   it("returns an error when a chat stream stalls", async () => {
-    const previous = process.env.MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S;
-    process.env.MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S = "0";
+    const previous = process.env.CUBY_AGENT_STREAM_IDLE_TIMEOUT_S;
+    process.env.CUBY_AGENT_STREAM_IDLE_TIMEOUT_S = "0";
     const stalledStream = {
       [Symbol.asyncIterator](): AsyncIterator<any> {
         return {
@@ -1167,8 +1167,8 @@ describe("OpenAI-compatible request kwargs", () => {
       expect(result.finishReason).toBe("error");
       expect(result.content).toContain("stream stalled");
     } finally {
-      if (previous == null) delete process.env.MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S;
-      else process.env.MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S = previous;
+      if (previous == null) delete process.env.CUBY_AGENT_STREAM_IDLE_TIMEOUT_S;
+      else process.env.CUBY_AGENT_STREAM_IDLE_TIMEOUT_S = previous;
     }
   });
 
