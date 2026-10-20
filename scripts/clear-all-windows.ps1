@@ -2,13 +2,13 @@
 
 <#
 .SYNOPSIS
-Removes the current user's Memmy and Cuby installations and local state on Windows.
+Removes the current user's Cuby installation and legacy Memmy local state on Windows.
 
 .DESCRIPTION
 The script runs unattended and deletes immediately with no confirmation prompt. Use -WhatIf
 to preview the exact set of changes without applying any of them.
 
-The script discovers Memmy and Cuby paths before changing environment variables. It supports
+The script discovers Cuby and legacy Memmy paths before changing environment variables. It supports
 the current per-user NSIS package, custom installation drives, the historical MSIX test package,
 legacy CLI launchers, and Cuby-specific data paths. The Memmy entries stay in place so the
 script still cleans up an install made before the rename. Source repositories and finished EXE or
@@ -65,8 +65,8 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 $ProgressPreference = "SilentlyContinue"
 
-$script:ProductName = "Memmy"
-$script:AppId = "cn.memtensor.memmy"
+$script:ProductName = "Cuby"
+$script:MemmyAppId = "cn.memtensor.memmy"
 $script:CubyAppId = "cn.memtensor.cuby"
 $script:NsisGuid = "886615f7-a04c-57ec-a2dd-9161dbe1a7c4"
 $script:LegacyMsixName = "Memmy.Development"
@@ -2052,7 +2052,7 @@ function Remove-MemmyRegistryTraces {
 
   $userKeys = @(
     "Registry::HKEY_CURRENT_USER\Software\Memmy",
-    "Registry::HKEY_CURRENT_USER\Software\$($script:AppId)",
+    "Registry::HKEY_CURRENT_USER\Software\$($script:MemmyAppId)",
     "Registry::HKEY_CURRENT_USER\Software\Classes\Applications\Memmy.exe",
     "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
     "Registry::HKEY_CURRENT_USER\Software\Cuby",
@@ -2067,7 +2067,7 @@ function Remove-MemmyRegistryTraces {
   if ($IncludeMachineScope) {
     foreach ($path in @(
       "Registry::HKEY_LOCAL_MACHINE\Software\Memmy",
-      "Registry::HKEY_LOCAL_MACHINE\Software\$($script:AppId)",
+      "Registry::HKEY_LOCAL_MACHINE\Software\$($script:MemmyAppId)",
       "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
       "Registry::HKEY_LOCAL_MACHINE\Software\Cuby",
       "Registry::HKEY_LOCAL_MACHINE\Software\$($script:CubyAppId)",
@@ -2093,7 +2093,7 @@ function Remove-MemmyRegistryTraces {
     }
     try {
       $properties = Get-ItemProperty -LiteralPath $runPath -ErrorAction Stop
-      foreach ($name in @("Memmy", $script:AppId, "Cuby", $script:CubyAppId)) {
+      foreach ($name in @("Memmy", $script:MemmyAppId, "Cuby", $script:CubyAppId)) {
         if ($null -ne $properties.PSObject.Properties[$name] -and
             $script:ShouldProcessHost.ShouldProcess("$($runPath)::$name", "Remove Memmy/Cuby startup value")) {
           Remove-ItemProperty -LiteralPath $runPath -Name $name -Force -ErrorAction Stop
@@ -2200,7 +2200,7 @@ function Test-RemainingState {
     "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Uninstall\$($script:NsisGuid)",
     "Registry::HKEY_CURRENT_USER\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$($script:NsisGuid)",
     "Registry::HKEY_CURRENT_USER\Software\Memmy",
-    "Registry::HKEY_CURRENT_USER\Software\$($script:AppId)",
+    "Registry::HKEY_CURRENT_USER\Software\$($script:MemmyAppId)",
     "Registry::HKEY_CURRENT_USER\Software\Classes\Applications\Memmy.exe",
     "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
     "Registry::HKEY_CURRENT_USER\Software\Cuby",
@@ -2215,7 +2215,7 @@ function Test-RemainingState {
       "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Uninstall\$($script:NsisGuid)",
       "Registry::HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$($script:NsisGuid)",
       "Registry::HKEY_LOCAL_MACHINE\Software\Memmy",
-      "Registry::HKEY_LOCAL_MACHINE\Software\$($script:AppId)",
+      "Registry::HKEY_LOCAL_MACHINE\Software\$($script:MemmyAppId)",
       "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
       "Registry::HKEY_LOCAL_MACHINE\Software\Cuby",
       "Registry::HKEY_LOCAL_MACHINE\Software\$($script:CubyAppId)",
@@ -2246,7 +2246,7 @@ function Test-RemainingState {
       continue
     }
     $properties = Get-ItemProperty -LiteralPath $runPath -ErrorAction SilentlyContinue
-    foreach ($name in @("Memmy", $script:AppId, "Cuby", $script:CubyAppId)) {
+    foreach ($name in @("Memmy", $script:MemmyAppId, "Cuby", $script:CubyAppId)) {
       if ($null -ne $properties -and $null -ne $properties.PSObject.Properties[$name]) {
         Add-ListItem $script:Failures "startup-registry-value-still-present: $($runPath)::$name"
       }

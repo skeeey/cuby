@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Wipe this machine's user-level Memmy/Cuby data/config/cache/state/preferences/logs, returning the App to a clean "freshly installed, never run" state.
+# Wipe this machine's user-level Cuby data/config/cache/state/preferences/logs plus legacy Memmy data, returning the App to a clean "freshly installed, never run" state.
 # Difference from clear-config.sh: this script keeps the installed App and its CLI symlink, deleting only rebuildable local data — no reinstall needed.
-# Covers both products and both appIds. rm -rf is irreversible, but everything deleted can be regenerated at runtime.
+# Covers Cuby and legacy Memmy paths and both appIds. rm -rf is irreversible, but everything deleted can be regenerated at runtime.
 
 # Installed apps (only used to quit processes / verify results, never deleted)
 APP_PATHS=(
-  "/Applications/Memmy.app"
   "/Applications/Cuby.app"
+  "/Applications/Memmy.app"
 )
 
 # User-level data/config/cache/state/preferences/logs (covers both products and both appIds)
@@ -38,10 +38,10 @@ USER_PATHS=(
   "$HOME/Library/WebKit/cn.memtensor.cuby"
 )
 
-# 1. Quit all Memmy and Cuby processes (app, helper, and the memory/agent runtimes they spawn) so files aren't locked and undeletable
-echo "==> Quitting Memmy/Cuby processes"
-osascript -e 'quit app "Memmy"' 2>/dev/null || true
+# 1. Quit all Cuby and legacy Memmy processes (app, helper, and the memory/agent runtimes they spawn) so files aren't locked and undeletable
+echo "==> Quitting Cuby/Memmy processes"
 osascript -e 'quit app "Cuby"' 2>/dev/null || true
+osascript -e 'quit app "Memmy"' 2>/dev/null || true
 sleep 1
 for app_path in "${APP_PATHS[@]}"; do
   pkill -f "$app_path" 2>/dev/null || true
