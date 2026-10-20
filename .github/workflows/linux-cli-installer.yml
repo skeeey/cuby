@@ -1,39 +1,9 @@
 name: Linux CLI installer
 
+# Automatic triggers are intentionally disabled: this repository does not ship
+# the Linux CLI right now. The workflow is kept for manual verification and
+# release-asset uploads.
 on:
-  release:
-    types: [published]
-  pull_request:
-    paths:
-      - ".github/workflows/linux-cli-installer.yml"
-      - "scripts/install.sh"
-      - "scripts/internal/linux/**"
-      - "App/memmy-agent/**"
-      - "Memory/**"
-      - "Migrations/**"
-      - "App/backend/**"
-      - "tests/linux-cli-packaging.test.mjs"
-      - "tests/linux-open-computer-use-bundle.test.mjs"
-      - "tests/linux-computer-use-deps.test.mjs"
-      - "scripts/internal/shared/check-open-computer-use.mjs"
-      - "package.json"
-      - "package-lock.json"
-  push:
-    branches: [main]
-    paths:
-      - ".github/workflows/linux-cli-installer.yml"
-      - "scripts/install.sh"
-      - "scripts/internal/linux/**"
-      - "App/memmy-agent/**"
-      - "Memory/**"
-      - "Migrations/**"
-      - "App/backend/**"
-      - "tests/linux-cli-packaging.test.mjs"
-      - "tests/linux-open-computer-use-bundle.test.mjs"
-      - "tests/linux-computer-use-deps.test.mjs"
-      - "scripts/internal/shared/check-open-computer-use.mjs"
-      - "package.json"
-      - "package-lock.json"
   workflow_dispatch:
     inputs:
       version:
@@ -58,7 +28,7 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # A branch may share the release tag's name; select the tag explicitly.
-          ref: ${{ github.event_name == 'release' && format('refs/tags/{0}', github.event.release.tag_name) || github.sha }}
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -68,7 +38,7 @@ jobs:
       - name: Resolve and verify version
         id: version
         env:
-          REQUESTED_VERSION: ${{ github.event_name == 'release' && github.event.release.tag_name || inputs.version }}
+          REQUESTED_VERSION: ${{ inputs.version }}
         run: |
           set -euo pipefail
           repository_version="$(node -p "require('./package.json').version")"
@@ -81,14 +51,14 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
       - name: Test Linux launcher and installer contracts
         env:
-          # Release packaging provisions the Office rendering executables; they are
-          # unavailable to pull request and branch builds.
-          MEMMY_LINUX_CLI_ALLOW_MISSING_OFFICE_PAYLOAD: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && '1' || '0' }}
+          # Office rendering executables are provisioned by release packaging;
+          # manual runs do not have them.
+          MEMMY_LINUX_CLI_ALLOW_MISSING_OFFICE_PAYLOAD: "0"
         run: npm run test:linux-cli
       - name: Build Linux CLI release assets
         env:
           VERSION: ${{ steps.version.outputs.version }}
-          MEMMY_LINUX_CLI_ALLOW_MISSING_OFFICE_PAYLOAD: ${{ (github.event_name == 'pull_request' || github.event_name == 'push') && '1' || '0' }}
+          MEMMY_LINUX_CLI_ALLOW_MISSING_OFFICE_PAYLOAD: "0"
         run: bash scripts/internal/linux/build-cli-archive.sh --version "$VERSION" --output release-assets
       - uses: actions/upload-artifact@v4
         with:
@@ -113,7 +83,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.event_name == 'release' && format('refs/tags/{0}', github.event.release.tag_name) || github.sha }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - uses: actions/download-artifact@v4
         with:
@@ -204,7 +174,7 @@ jobs:
           systemctl --user stop memmy-gateway.service
 
   upload:
-    if: ${{ github.event_name == 'release' || (github.event_name == 'workflow_dispatch' && inputs.upload_to_release == true) }}
+    if: ${{ inputs.upload_to_release == true }}
     needs: [build, install-smoke]
     runs-on: ubuntu-24.04
     permissions:

@@ -1,0 +1,159 @@
+---
+title: Desktop Signing & Certificates
+icon: KeyRound
+---
+
+Building signed desktop installers requires certificates from the Apple and Windows ecosystems. This page covers the credentials, configuration, and packaging flow for both platforms. Local development and CI smoke builds use unsigned mode and need no certificates — see "Unsigned Builds" at the end.
+
+> The repository does not contain, and must never contain, certificates or private keys. `Mac软件打包/` is ignored by `.gitignore`, and `.signing-local/` is covered by the `.*` rule.
+
+## macOS
+
+Signing entry point: `scripts/package-mac.sh --sign signed`, implemented by `scripts/internal/mac/signed-arm64.sh` / `signed-x64.sh`.
+
+### Required credentials
+
+| Credential | Purpose | Default location | Override |
+|---|---|---|---|
+| Developer ID Application certificate (`.p12` with private key) | Sign the app and the DMG | `Mac软件打包/证书.p12` | `MEMMY_P12_FILE`, `MEMMY_MAC_CERT_DIR` |
+| `.p12` password | Import into the temporary keychain | `.signing-local/p12-password.txt` or `Mac软件打包/证书密码.txt` | `MEMMY_P12_PASSWORD_FILE` |
+| App Store Connect API key (`.p8`) | Submit for Apple notarization | `Mac软件打包/AuthKey_CUARD5SC47.p8` | `APPLE_API_KEY` |
+| API key ID | Notarization authentication | `CUARD5SC47` | `APPLE_API_KEY_ID` |
+| Issuer ID | Notarization authentication | `5ed1f28c-0bb2-4369-89fe-d04023d48d45` | `APPLE_API_ISSUER` |
+| Temporary keychain password | Let `codesign` access the certificate | Generated at `.signing-local/keychain-password-<arch>.txt` | `MEMMY_KEYCHAIN_PASSWORD_FILE`, `CSC_KEYCHAIN` |
+
+Prerequisites:
+
+- An Apple Developer Program membership. Developer ID certificates are only available to that program.
+- The certificate must be a **Developer ID Application** certificate. Distribution is a DMG, so a Developer ID Installer certificate (used for `.pkg`) is not needed.
+- The account that owns the App Store Connect API key must have permission to notarize.
+
+### Certificate identity
+
+The scripts default to the publishing identity:
+
+```text
+Developer ID Application: XINYUE REN (S7NLXHGBJ2)
+```
+
+This is `CSC_NAME` (used by electron-builder to sign the app) and `CODESIGN_IDENTITY` (used to sign the outer DMG) in `signed-arm64.sh:17-18` / `signed-x64.sh:17-18`. If the `.p12` was issued to a different account or team, override both variables together, or electron-builder will not find a matching certificate:
+
+```bash
+export CSC_NAME="Developer ID Application: Your Name (TEAMID)"
+export CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
+```
+
+### Packaging flow
+
+1. Create a temporary keychain, import the `.p12`, and authorize `codesign` to use it (`signed-arm64.sh:88-113`).
+2. electron-builder signs the app with `CSC_NAME`, with hardened runtime and entitlements enabled (`App/shell/desktop/electron-builder.yml`).
+3. Build the DMG.
+4. Sign the outer DMG with `codesign`.
+5. Submit for notarization with `xcrun notarytool submit --key ... --wait`.
+6. Staple the notarization ticket with `xcrun stapler staple`.
+7. Verify with `hdiutil verify`, `stapler validate`, and `spctl`.
+
+`electron-builder.yml` sets `notarize: false`; notarization happens in the wrapper script after the DMG exists, not in electron-builder's built-in flow.
+
+### Commands
+
+```bash
+bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --edition cn --sign signed
+bash scripts/package-mac.sh --version 1.2.3 --arch x64 --edition intl --sign signed
+```
+
+This must run on macOS (`codesign`, `notarytool`, and `stapler` are Apple tools), and the build machine must stay online and awake.
+
+### Entitlements
+
+Signed builds use two plists:
+
+- `App/shell/desktop/build/entitlements.mac.plist`
+- `App/shell/desktop/build/entitlements.mac.inherit.plist`
+
+They currently grant JIT, unsigned executable memory, disabled library validation, microphone access, and Apple Events (Computer History asks browsers whether a window is private). If new functionality needs another system capability, update both files too; otherwise it fails silently under hardened runtime.
+
+## Windows
+
+Signing entry point: `scripts/package-win.sh --sign signed` → `scripts/internal/win/signed-x64.sh` → `build-nsis.sh`.
+
+### Required credentials
+
+You need a Windows **Authenticode code-signing certificate** issued by a public CA. `electron-builder.win.yml` sets `forceCodeSigning: true`, so a missing certificate fails the build.
+
+Two ways to provide it:
+
+**Option A: PFX file** (certificate private key is exportable)
+
+```bash
+export WIN_CSC_LINK=/absolute/path/to/windows-code-signing.pfx
+export WIN_CSC_KEY_PASSWORD=...
+# electron-builder's standard variables also work:
+# export CSC_LINK=/absolute/path/to/windows-code-signing.pfx
+# export CSC_KEY_PASSWORD=...
+```
+
+**Option B: Certificate already in the Windows certificate store** (hardware token, SimplySign, or another cloud signing service where the private key cannot be exported)
+
+```bash
+export WIN_CSC_SHA1=<certificate SHA1 thumbprint>
+# Or match by certificate subject name:
+# export WIN_CSC_SUBJECT_NAME=<certificate subject name>
+# Optional, defaults to http://timestamp.digicert.com
+export WIN_CSC_TIMESTAMP_SERVER=http://timestamp.digicert.com
+```
+
+In option B the script passes the SHA1 or subject name plus the RFC3161 timestamp server to electron-builder.
+
+### Other requirements
+
+- The signing hash is fixed to SHA-256 (`electron-builder.win.yml:72-74`).
+- Always timestamp. Without it, the signature on already-distributed installers becomes invalid once the certificate expires. electron-builder handles this by default for PFX; option B uses `WIN_CSC_TIMESTAMP_SERVER`.
+- It relies on `signtool` from the Windows SDK, so build on Windows (the script uses `cygpath` to handle Git Bash paths).
+- `signAndEditExecutable: true` also writes version resources.
+
+### Command
+
+```bash
+WIN_CSC_LINK=/abs/path/code-signing.pfx \
+WIN_CSC_KEY_PASSWORD=... \
+bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign signed
+```
+
+### SmartScreen
+
+- EV certificates usually earn SmartScreen reputation immediately.
+- OV certificates need accumulated downloads before the "Unknown publisher" prompt disappears.
+- Unsigned packages trigger a prominent Windows security warning.
+
+## Unsigned Builds
+
+Local development and CI smoke builds need no certificates:
+
+```bash
+bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --edition cn --sign unsigned
+bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign unsigned
+```
+
+- macOS: `electron-builder.unsigned.yml` sets `identity: null` and disables hardened runtime and notarization. The output is for local testing only; Gatekeeper blocks it when distributed.
+- Windows: `electron-builder.win.unsigned.yml` sets `signExecutable: false`; the output shows an "Unknown publisher" warning.
+
+## Signing in CI
+
+- `.github/workflows/build-desktop.yml` always uses `--sign unsigned`; GitHub Actions holds no signing credentials.
+- `.github/workflows/github-draft-release-v2.yml` does not build installers. It downloads the six already-signed installers (Windows cn/intl plus macOS arm64/x64 cn/intl) from the OSS CDN, verifies their integrity, and creates the Draft Release.
+- Signed installers are produced by an internal packaging machine outside this repository and uploaded to OSS. The GitHub repository therefore needs no Apple or Windows signing secrets.
+
+## Handling Credentials
+
+- `Mac软件打包/` (certificates, `.p8`, password files) is ignored by `.gitignore`.
+- `.signing-local/` is covered by the `.*` rule and stores the generated keychain password.
+- Never commit `.p12` / `.p8` files or passwords, and never paste them into issues or logs.
+- The temporary keychain lives at `/private/tmp/memmy-build-<arch>.keychain-db` and is recreated for every build. On shared or multi-account build machines, point `CSC_KEYCHAIN` at a dedicated path.
+
+## Minimum Credential Checklist
+
+| Platform | Required | Optional |
+|---|---|---|
+| macOS | Apple Developer Program membership; Developer ID Application `.p12` + password; App Store Connect API key `.p8` + key ID + issuer ID | Custom `CSC_NAME` / `CODESIGN_IDENTITY` |
+| Windows | Authenticode code-signing certificate from a public CA: PFX + password, or a certificate-store SHA1 / subject name | Custom timestamp server |

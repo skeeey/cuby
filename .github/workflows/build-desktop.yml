@@ -1,7 +1,8 @@
 name: Build desktop installers
 
-# Manual only, and artifacts only: nothing here publishes a release, so a build
-# can be produced and inspected before anyone decides what to do with it.
+# Runs after every merge to main, and on manual dispatch. Artifacts only:
+# nothing here publishes a release, so a build can be produced and inspected
+# before anyone decides what to do with it.
 #
 # Upstream's own release workflow downloads finished installers from OSS rather
 # than building them — their binaries come from internal CI — so this is ours to
@@ -13,6 +14,8 @@ name: Build desktop installers
 # same trade the local packaging scripts already make.
 
 on:
+  push:
+    branches: [main]
   workflow_dispatch:
     inputs:
       version:
@@ -22,11 +25,12 @@ on:
       edition:
         description: Desktop edition
         required: false
-        default: intl
+        default: all
         type: choice
         options:
-          - intl
+          - all
           - cn
+          - intl
       platforms:
         description: Which installers to build
         required: false
@@ -48,6 +52,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: build-desktop-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   resolve:
     runs-on: ubuntu-latest
@@ -56,6 +64,8 @@ jobs:
       edition: ${{ steps.version.outputs.edition }}
       platforms: ${{ steps.version.outputs.platforms }}
       mirror: ${{ steps.version.outputs.mirror }}
+      windows_matrix: ${{ steps.version.outputs.windows_matrix }}
+      macos_matrix: ${{ steps.version.outputs.macos_matrix }}
     steps:
       - uses: actions/checkout@v4
       - id: version
@@ -70,14 +80,55 @@ jobs:
           if [ -z "$version" ]; then
             version="$(node -p "require('./App/shell/desktop/package.json').version")"
           fi
+          edition="${INPUT_EDITION:-all}"
+          platforms="${INPUT_PLATFORMS:-all}"
+          mirror="${INPUT_MIRROR:-off}"
+
+          case "$edition" in
+            all) editions=(cn intl) ;;
+            cn|intl) editions=("$edition") ;;
+            *) echo "Unsupported edition: $edition" >&2; exit 1 ;;
+          esac
+          case "$platforms" in
+            all|windows|macos) ;;
+            *) echo "Unsupported platforms: $platforms" >&2; exit 1 ;;
+          esac
+
+          # Build the job matrices here so an edition/platform filter removes
+          # the job instead of starting a runner only to skip it.
+          windows=()
+          macos=()
+          if [ "$platforms" != "macos" ]; then
+            for entry in "${editions[@]}"; do
+              windows+=("{\"edition\":\"$entry\"}")
+            done
+          fi
+          if [ "$platforms" != "windows" ]; then
+            for entry in "${editions[@]}"; do
+              macos+=("{\"runner\":\"macos-14\",\"arch\":\"arm64\",\"edition\":\"$entry\"}")
+              macos+=("{\"runner\":\"macos-15-intel\",\"arch\":\"x64\",\"edition\":\"$entry\"}")
+            done
+          fi
+
+          json_array() {
+            local IFS=,
+            printf '[%s]' "$*"
+          }
+
           echo "version=$version" >> "$GITHUB_OUTPUT"
-          echo "edition=${INPUT_EDITION:-intl}" >> "$GITHUB_OUTPUT"
-          echo "platforms=${INPUT_PLATFORMS:-all}" >> "$GITHUB_OUTPUT"
-          echo "mirror=${INPUT_MIRROR:-off}" >> "$GITHUB_OUTPUT"
+          echo "edition=$edition" >> "$GITHUB_OUTPUT"
+          echo "platforms=$platforms" >> "$GITHUB_OUTPUT"
+          echo "mirror=$mirror" >> "$GITHUB_OUTPUT"
+          echo "windows_matrix=$(json_array "${windows[@]}")" >> "$GITHUB_OUTPUT"
+          echo "macos_matrix=$(json_array "${macos[@]}")" >> "$GITHUB_OUTPUT"
 
   windows:
     needs: resolve
-    if: needs.resolve.outputs.platforms != 'macos'
+    if: ${{ needs.resolve.outputs.windows_matrix != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.resolve.outputs.windows_matrix) }}
     runs-on: windows-latest
     timeout-minutes: 60
     env:
@@ -129,12 +180,12 @@ jobs:
           bash scripts/package-win.sh \
             --version "${{ needs.resolve.outputs.version }}" \
             --arch x64 \
-            --edition "${{ needs.resolve.outputs.edition }}" \
+            --edition "${{ matrix.edition }}" \
             --sign unsigned
       - name: Upload the installer
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}
+          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ matrix.edition }}
           path: App/shell/desktop/release/*.exe
           if-no-files-found: error
       - name: Zip the unpacked build
@@ -144,18 +195,22 @@ jobs:
           # local run script points at, so ship that too rather than only the
           # installer.
           cd App/shell/desktop/release
-          7z a -tzip "Memmy-${{ needs.resolve.outputs.version }}-win32-x64-${{ needs.resolve.outputs.edition }}-unpacked.zip" win-unpacked >/dev/null
+          7z a -tzip "Memmy-${{ needs.resolve.outputs.version }}-win32-x64-${{ matrix.edition }}-unpacked.zip" win-unpacked >/dev/null
       - name: Upload the unpacked build
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}-unpacked
+          name: memmy-windows-${{ needs.resolve.outputs.version }}-${{ matrix.edition }}-unpacked
           path: App/shell/desktop/release/*-unpacked.zip
           if-no-files-found: error
 
   macos:
     needs: resolve
-    if: needs.resolve.outputs.platforms != 'windows'
-    runs-on: macos-14
+    if: ${{ needs.resolve.outputs.macos_matrix != '[]' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include: ${{ fromJSON(needs.resolve.outputs.macos_matrix) }}
+    runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
       MEMMY_LEGAL_CN_BASE_URL: https://memmy.cn
@@ -174,12 +229,12 @@ jobs:
         run: |
           bash scripts/package-mac.sh \
             --version "${{ needs.resolve.outputs.version }}" \
-            --arch arm64 \
-            --edition "${{ needs.resolve.outputs.edition }}" \
+            --arch "${{ matrix.arch }}" \
+            --edition "${{ matrix.edition }}" \
             --sign unsigned
       - name: Upload the image
         uses: actions/upload-artifact@v4
         with:
-          name: memmy-macos-${{ needs.resolve.outputs.version }}-${{ needs.resolve.outputs.edition }}
+          name: memmy-macos-${{ needs.resolve.outputs.version }}-${{ matrix.arch }}-${{ matrix.edition }}
           path: App/shell/desktop/release/*.dmg
           if-no-files-found: error

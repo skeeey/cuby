@@ -1,11 +1,9 @@
 name: GitHub Draft Release v2
 
+# Automatic release creation is intentionally disabled while desktop releases
+# are on hold. The workflow stays manual-only so the release path can be
+# exercised later; re-enable the pull_request_target trigger when needed.
 on:
-  # Use the base repository's trusted workflow and admit only its canonical
-  # release branches in the job guard below.
-  pull_request_target:
-    types: [closed]
-    branches: [main]
   workflow_dispatch:
     inputs:
       version:

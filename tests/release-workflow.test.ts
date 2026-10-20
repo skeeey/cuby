@@ -235,12 +235,11 @@ describe("GitHub Draft Release v2 workflow", () => {
     }
   });
 
-  it("creates Draft Releases only from merged release/vX.Y.Z PRs and keeps manual fallback", () => {
-    expect(draftWorkflow.on.pull_request_target).toEqual({
-      types: ["closed"],
-      branches: ["main"],
-    });
+  it("keeps the manual Draft Release fallback and release/vX.Y.Z guard while automatic release is disabled", () => {
+    expect(draftWorkflow.on.pull_request_target).toBeUndefined();
     expect(draftWorkflow.on.pull_request).toBeUndefined();
+    expect(draftWorkflow.on.push).toBeUndefined();
+    expect(draftWorkflow.on.workflow_dispatch).toBeDefined();
     expect(draftWorkflow.on.workflow_dispatch.inputs.version.required).toBe(true);
     expect(draftWorkflow.on.workflow_dispatch.inputs.target_sha.required).toBe(false);
     expect(draftWorkflow.on.workflow_dispatch.inputs.preflight_level.default).toBe("smoke");

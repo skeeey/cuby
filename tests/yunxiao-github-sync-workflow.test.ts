@@ -9,13 +9,10 @@ const workflowSource = readFileSync(workflowPath, "utf8");
 const workflow = YAML.parse(workflowSource) as Record<string, any>;
 
 describe("GitHub to Yunxiao sync workflow", () => {
-  it("handles issue and trusted pull request lifecycle events", () => {
-    expect(workflow.on.issues.types).toEqual(["opened", "closed", "reopened"]);
-    expect(workflow.on.pull_request_target.types).toEqual([
-      "opened",
-      "closed",
-      "reopened",
-    ]);
+  it("is manual-only while automatic synchronization is disabled", () => {
+    expect(workflow.on.workflow_dispatch).toBeDefined();
+    expect(workflow.on.issues).toBeUndefined();
+    expect(workflow.on.pull_request_target).toBeUndefined();
     expect(workflow.on.pull_request).toBeUndefined();
   });
 

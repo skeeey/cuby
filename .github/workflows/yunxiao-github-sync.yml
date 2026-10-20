@@ -1,10 +1,9 @@
 name: Sync GitHub to Yunxiao
 
+# Automatic triggers are intentionally disabled until the Yunxiao mapping is
+# configured for this repository. Manual preflight/backfill remains available
+# through workflow_dispatch.
 on:
-  issues:
-    types: [opened, closed, reopened]
-  pull_request_target:
-    types: [opened, closed, reopened]
   workflow_dispatch:
     inputs:
       mode:
@@ -44,8 +43,8 @@ jobs:
     timeout-minutes: 30
 
     steps:
-      # pull_request_target uses the trusted default branch. Never execute the
-      # workflow or script from an untrusted PR branch.
+      # Always run the trusted default branch, never an untrusted feature
+      # branch.
       - uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}

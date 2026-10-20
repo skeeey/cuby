@@ -1,5 +1,5 @@
 {
   "title": "Development",
   "icon": "Code",
-  "pages": ["local-dev"]
+  "pages": ["local-dev", "desktop-signing"]
 }
