@@ -130,7 +130,7 @@ describe("codex skill target", () => {
   it("marks a hook without a stored revision as outdated and refreshes it in place", async () => {
     const { rootDirectory, memmyConfigPath } = createFixture();
     const target = createCodexSkillTarget({ rootDirectory, memmyConfigPath, trustHooks: noOpTrustHooks });
-    const configPath = join(rootDirectory, "hooks", "memmy-memory-config.json");
+    const configPath = join(rootDirectory, "hooks", "cuby-memory-config.json");
 
     await target.installPlugin?.("codex");
     const installed = JSON.parse(readFileSync(configPath, "utf8")) as { hook_revision?: string };
