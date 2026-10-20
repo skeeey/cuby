@@ -14,7 +14,6 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
-import { runInNewContext } from "node:vm";
 import { afterEach, describe, expect, it } from "vitest";
 import YAML from "yaml";
 
@@ -396,33 +395,12 @@ describe("Linux CLI package boundary", () => {
     expect(integrationImport.status, integrationImport.stderr).toBe(0);
   }, 120_000);
 
-  it.each([
-    { event: "release", expectedRef: "refs/tags/v1.1.3" },
-    { event: "pull_request", expectedRef: "a".repeat(40) },
-    { event: "workflow_dispatch", expectedRef: "a".repeat(40) },
-  ])("selects an unambiguous checkout ref for $event", ({ event, expectedRef }) => {
+  it("checks out the triggering commit", () => {
     const workflow = YAML.parse(readFileSync(linuxWorkflowPath, "utf8"));
     const checkout = workflow.jobs.build.steps.find((step) =>
       step.uses?.startsWith("actions/checkout@"));
-    const ref = checkout.with.ref;
-    expect(ref.startsWith("${{")).toBe(true);
-    expect(ref.endsWith("}}")).toBe(true);
 
-    // This expression uses the shared JavaScript/Actions comparison and boolean
-    // subset. Evaluate the workflow itself, including Actions' format function.
-    const resolvedRef = runInNewContext(ref.slice(3, -2), {
-      github: {
-        event_name: event,
-        sha: "a".repeat(40),
-        event: { release: { tag_name: "v1.1.3" } },
-      },
-      format: (template, ...values) => template.replace(/\{(\d+)\}/g,
-        (_, index) => String(values[Number(index)])),
-    });
-
-    // actions/checkout prefers a branch for bare vX.Y.Z when both refs exist.
-    // A release must explicitly select the tag; other runs keep their event SHA.
-    expect(resolvedRef).toBe(expectedRef);
+    expect(checkout.with.ref).toBe("${{ github.sha }}");
   });
 
   it("keeps Linux publication isolated from the desktop Draft Release", () => {
@@ -430,7 +408,9 @@ describe("Linux CLI package boundary", () => {
     const desktopWorkflow = readFileSync(desktopReleaseWorkflowPath, "utf8");
 
     expect(linuxWorkflow).toContain("ubuntu-24.04-arm");
-    expect(linuxWorkflow).toContain("types: [published]");
+    // Automatic triggers are intentionally disabled; Linux CLI builds are manual only.
+    expect(linuxWorkflow).toContain("workflow_dispatch:");
+    expect(linuxWorkflow).not.toMatch(/^\s{2}(pull_request|push|release):/m);
     expect(linuxWorkflow).toContain("needs: [build, install-smoke]");
     expect(linuxWorkflow).toContain("gh release upload");
     expect(linuxWorkflow).toContain("MEMMY_SMOKE_SECRET");
