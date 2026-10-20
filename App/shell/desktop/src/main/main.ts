@@ -4876,12 +4876,6 @@ app.whenReady().then(async () => {
     return;
   }
 
-  const windowsUpgradeLockPath = resolveWindowsUpgradeRelayLockPath();
-  if (windowsUpgradeLockPath && existsSync(windowsUpgradeLockPath)) {
-    app.exit(0);
-    return;
-  }
-
   await boot();
 }).catch(handleStartupFailure);
 
