@@ -79,7 +79,6 @@ import {
 import { StreamRenderer, ThinkingSpinner } from "./stream.js";
 import { prepareStartupMigrations } from "./startup-migrations.js";
 import { parseRootTerminalOptions } from "./root-terminal-options.js";
-import { runLinuxRootTerminal } from "./linux-systemd-gateway.js";
 
 const CLI_TEMPLATES_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../templates");
 
@@ -548,15 +547,7 @@ export async function main(argv: string[] = process.argv): Promise<void> {
   const rootTarget = parseRootTerminalOptions(argv);
   if (rootTarget) {
     await prepareStartupMigrations();
-    if (rootInteractiveRunnerForTest) {
-      await runRootInteractiveAgent(rootTarget);
-      return;
-    }
-    await runLinuxRootTerminal({
-      loadConfig: () => loadRuntimeConfig(null, null),
-      onboardWizard: () => onboard(),
-      runInteractive: (config) => runRootInteractiveAgent(rootTarget, config),
-    });
+    await runRootInteractiveAgent(rootTarget);
     return;
   }
 

@@ -9,7 +9,7 @@ Memmy TUI is Memmy's full-screen terminal interface. Whether you install the des
 
 ## Installing Memmy TUI
 
-### Option 1: Install the Memmy desktop app
+### Install the Memmy desktop app
 
 For macOS and Windows. The desktop app provides the `memmy` command and takes care of starting the local Memory and Agent Gateway services.
 
@@ -33,29 +33,6 @@ source ~/.zshrc
 - **Windows**: after installation, open a new PowerShell or Windows Terminal window.
 
 When using the TUI provided by the desktop app, keep the Memmy desktop app running. Closing it also stops the Gateway it manages.
-
-### Option 2: Install only the Memmy CLI
-
-For Linux x64 or arm64 environments that don't need the desktop app. Requires **Node.js 22** or later and a system with `systemd --user` support.
-
-```bash
-curl -fsSL https://raw.githubusercontent.com/MemTensor/memmy-agent/main/scripts/install.sh | bash
-```
-
-Once installation finishes, run:
-
-```bash
-memmy
-```
-
-On first run, if no model is available yet, Memmy opens the setup wizard. The CLI installer manages the Memory and Gateway services; they keep running after you exit the TUI or close the terminal.
-
-Check service status:
-
-```bash
-systemctl --user status memmy-memory.service
-systemctl --user status memmy-gateway.service
-```
 
 ## First Time Setup
 
@@ -253,8 +230,6 @@ Whether `/history-dag` is available depends on whether the corresponding feature
 
 - **Windows**: open a new PowerShell or Windows Terminal window.
 
-- **Linux**: confirm the installer completed successfully, and check that `~/.local/bin` is on your `PATH`.
-
 ### No model available
 
 ```bash
@@ -268,15 +243,9 @@ Confirm that the model, provider, and credentials have been saved, then run `mem
 
 - **Desktop app**: make sure the Memmy desktop app is running.
 
-- **Linux CLI**: check `memmy-gateway.service`.
-
 - **Running the CLI from source or manually**: run `memmy gateway` in another terminal.
 
-The default Gateway WebSocket port is `18980`. On Linux you can check the logs:
-
-```bash
-journalctl --user -u memmy-gateway.service
-```
+The default Gateway WebSocket port is `28980`.
 
 ### Why doesn't `memmy agent` open the full-screen interface?
 
