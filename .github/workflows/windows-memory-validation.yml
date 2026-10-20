@@ -10,7 +10,6 @@ on:
       - "App/shell/desktop/build/**"
       - "App/shell/desktop/src/main/runtime-services.ts"
       - "App/shell/desktop/tests/runtime-memory-upgrade.test.ts"
-      - "App/shell/desktop/tests/windows-standard-upgrade-check.test.ts"
       - "scripts/internal/shared/memory-runtime-build-identity.mjs"
       - "scripts/internal/win/create-memory-runtime-manifest.mjs"
       - "package.json"
@@ -74,7 +73,6 @@ jobs:
           Memory/tests/runtime-installer-windows.test.ts
           Memory/tests/runtime-installer.test.ts
           App/shell/desktop/tests/runtime-memory-upgrade.test.ts
-          App/shell/desktop/tests/windows-standard-upgrade-check.test.ts
           --reporter=default --reporter=json --outputFile=windows-memory-unit-results.json
       - name: Test the native temporary Memory task
         timeout-minutes: 5

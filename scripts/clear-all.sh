@@ -1,16 +1,16 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fully uninstall the local Memmy/Cuby apps and user-level data/config/cache/state/preferences/logs.
+# Fully uninstall the local Cuby app plus legacy Memmy installs and user-level data/config/cache/state/preferences/logs.
 # Also remove current CLI symlinks, legacy memmy-agent leftovers, and Spotlight-indexed build intermediates.
 # Delete only rebuildable or user-level content; never touch source files or finished DMGs. rm -rf is irreversible.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Installed apps; the Cuby-era install comes first, the Memmy-era bundle stays supported.
+# Installed apps; the Cuby install comes first, the legacy Memmy-era bundle stays supported.
 APP_PATHS=(
-  "/Applications/Memmy.app"
   "/Applications/Cuby.app"
+  "/Applications/Memmy.app"
 )
 
 # CLI symlinks created by the current installer, plus locations used by older installers.

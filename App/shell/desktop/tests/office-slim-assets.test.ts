@@ -78,11 +78,9 @@ describe("Office slim runtime boundary", () => {
     for (const [name, runtime] of [
       ["mac/build-dmg.sh", "$RUNTIME_DIR/memmy-agent"],
       ["win/build-nsis.sh", "$RUNTIME_DIR/memmy-agent"],
-      ["linux/build-cli-archive.sh", "$PAYLOAD_DIR/App/memmy-agent"],
     ]) {
       const source = readFileSync(new URL(`../../../../scripts/internal/${name}`, import.meta.url), "utf8");
-      const repoRoot = name.startsWith("linux/") ? "$REPO_ROOT" : "$ROOT_DIR";
-      expect(source).toContain(`node "${repoRoot}/scripts/internal/shared/check-office-slim-assets.mjs" "${runtime}"`);
+      expect(source).toContain(`node "$ROOT_DIR/scripts/internal/shared/check-office-slim-assets.mjs" "${runtime}"`);
       expect(source).not.toContain("verify_office_skill_payload");
       expect(source).not.toContain("ALLOW_MISSING_OFFICE_PAYLOAD");
     }

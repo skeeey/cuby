@@ -9,7 +9,7 @@ Memmy TUI 是 Memmy 的全屏终端界面。安装桌面端，或只安装 CLI�
 
 ## 一、安装 Memmy TUI
 
-### 方式一：安装 Memmy 桌面端
+### 安装 Memmy 桌面端
 
 适用于 macOS 和 Windows。桌面端会提供 `memmy` 命令，并负责启动本地 Memory 和 Agent Gateway。
 
@@ -33,29 +33,6 @@ source ~/.zshrc
 - Windows 用户安装完成后，请打开新的 PowerShell 或 Windows Terminal。
 
 使用桌面端提供的 TUI 时，请保持 Memmy 桌面端运行。关闭桌面端后，它管理的 Gateway 也会停止。
-
-### 方式二：只安装 Memmy CLI
-
-适用于不需要桌面端的 Linux x64 或 arm64 环境。需要 Node.js `22` 或更高版本，并且系统支持 `systemd --user`。
-
-```plaintext
-curl -fsSL https://raw.githubusercontent.com/MemTensor/memmy-agent/main/scripts/install.sh | bash
-```
-
-安装完成后执行：
-
-```plaintext
-memmy
-```
-
-首次运行如果还没有可用模型，Memmy 会打开配置向导。CLI 安装器会管理 Memory 和 Gateway 服务；退出 TUI 或关闭终端后，服务仍会运行。
-
-查看服务状态：
-
-```plaintext
-systemctl --user status memmy-memory.service
-systemctl --user status memmy-gateway.service
-```
 
 ## 二、首次配置
 
@@ -265,15 +242,9 @@ memmy status
 
 - 使用桌面端：确认 Memmy 桌面端正在运行。
 
-- 使用 Linux CLI：检查 `memmy-gateway.service`。
-
 - 使用源码或手动运行的 CLI：在另一个终端执行 `memmy gateway`。
 
-默认 Gateway WebSocket 端口是 `18980`。Linux 用户可以查看日志：
-
-```plaintext
-journalctl --user -u memmy-gateway.service
-```
+默认 Gateway WebSocket 端口是 `28980`。
 
 ### 为什么 `memmy agent` 没有打开全屏界面
 

@@ -102,12 +102,7 @@ import {
   type StartupSplashLanguage
 } from "./startup-splash.js";
 import {
-  advanceWindowsDataMigrationAfterBoot,
-  readWindowsDataMigrationConsistency,
-  recoverWindowsDataMigrationForStartup,
-  recordWindowsDataLayoutAfterBoot,
   resolveWindowsDataLayout,
-  type WindowsDataMigrationConsistency,
   type WindowsDataLayout
 } from "./windows-data-layout.js";
 import { createWindowsUpdateLauncherFile } from "./windows-update-launcher.js";
@@ -342,21 +337,8 @@ async function boot(): Promise<void> {
       await stopPackagedRendererServer();
       return;
     }
-    bootStage = "data-migration";
-    let windowsMigrationConsistency: WindowsDataMigrationConsistency | undefined;
-    if (windowsDataLayout) {
-      try {
-        windowsMigrationConsistency = await readWindowsDataMigrationConsistency(windowsDataLayout);
-      } catch (error) {
-        const recovery = await recoverWindowsDataMigrationForStartup(
-          windowsDataLayout,
-          `migration state could not be read: ${formatStartupError(error)}`
-        );
-        await writePackagedStartupLog(`boot:data-migration-state-failed-open:${JSON.stringify(recovery)}`);
-      }
-    }
-    if (isQuitting) return;
     bootStage = "runtime-services";
+    if (isQuitting) return;
     const appDatabaseFile = join(app.getPath("userData"), "app.sqlite");
     runtimeServices = await startManagedRuntimeServices({
       ...(process.platform === 'darwin' ? { captureScreen: createDesktopScreenCapture({
@@ -393,21 +375,7 @@ async function boot(): Promise<void> {
           memmyConfigPath: configPath,
           accountChannel: resolveCurrentDesktopAccountChannel()
         };
-        try {
-          await syncRuntimeConfigForStartup({
-            ...syncOptions,
-            ...(windowsMigrationConsistency ? { migrationConsistency: windowsMigrationConsistency } : {})
-          });
-        } catch (error) {
-          if (!windowsDataLayout || !isWindowsDataMigrationConsistencyError(error)) throw error;
-          const recovery = await recoverWindowsDataMigrationForStartup(
-            windowsDataLayout,
-            formatStartupError(error)
-          );
-          windowsMigrationConsistency = undefined;
-          await writePackagedStartupLog(`boot:data-migration-consistency-failed-open:${JSON.stringify(recovery)}`);
-          await syncRuntimeConfigForStartup(syncOptions);
-        }
+        await syncRuntimeConfigForStartup(syncOptions);
       },
       runtimeEntries: app.isPackaged
         ? undefined
@@ -440,25 +408,8 @@ async function boot(): Promise<void> {
       syncMenuBarTray(resolveMenuBarIconEnabled());
     }
     setDevelopmentDockIcon();
-    const rendererVerified = !windowsDataLayout || await waitForInitialRendererVerification(initialWindow);
     if (isQuitting || isStartupFailureReported) return;
-    await writePackagedStartupLog(rendererVerified ? "boot:ready" : "boot:ready-data-migration-verification-deferred");
-    if (windowsDataLayout && rendererVerified) {
-      await recordWindowsDataLayoutAfterBoot(
-        windowsDataLayout,
-        resolveDesktopAppVersion()
-      ).catch(async (error: unknown) => {
-        console.warn("Windows data layout record deferred:", error);
-        await writePackagedStartupLog(`boot:data-layout-record-deferred\n${formatStartupError(error)}`);
-      });
-      await advanceWindowsDataMigrationAfterBoot(
-        windowsDataLayout,
-        [join(homedir(), ".cuby")]
-      ).catch(async (error: unknown) => {
-        console.warn("Windows data migration cleanup deferred:", error);
-        await writePackagedStartupLog(`boot:data-migration-cleanup-deferred\n${formatStartupError(error)}`);
-      });
-    }
+    await writePackagedStartupLog("boot:ready");
     startRequiredUpdateBackgroundChecks();
     // Fallback cleanup of leftover packages in the updates directory: deferred and async, to avoid
     // the startup peak and not block the window from showing.
@@ -484,7 +435,6 @@ function configureAppIdentity(): void {
     isWindowsStore: Boolean((process as NodeJS.Process & { windowsStore?: boolean }).windowsStore),
     executablePath: process.execPath,
     appDataPath: app.getPath("appData"),
-    localAppDataPath: process.env.LOCALAPPDATA?.trim() ?? "",
     homeDirectory: homedir()
   });
   const userDataPath = windowsDataLayout?.userDataPath ?? resolveDesktopUserDataPath(edition);
@@ -1855,26 +1805,7 @@ function resolvePreparedRequiredUpdatePath(): string {
  * @returns The lock directory path next to the marker file.
  */
 function resolvePreparedRequiredUpdateLockPath(): string {
-  const relayLockPath = resolveWindowsUpgradeRelayLockPath();
-  if (relayLockPath && existsSync(relayLockPath)) {
-    return relayLockPath;
-  }
   return `${resolvePreparedRequiredUpdatePath()}.lock`;
-}
-
-/**
- * Resolves the install-independent lock held by the Windows legacy-upgrade relay.
- *
- * The relay moves the old install-local data directory out of the way, so the legacy marker lock
- * temporarily disappears. New Windows builds prefer this external lock while preserving the old
- * marker lock as a fallback for updates that do not need the relay.
- *
- * @returns The relay lock path on Windows, or null when it cannot be resolved.
- */
-function resolveWindowsUpgradeRelayLockPath(): string | null {
-  if (process.platform !== "win32") return null;
-  const localAppData = process.env.LOCALAPPDATA?.trim();
-  return localAppData ? join(localAppData, "Cuby", "upgrade-staging", "active.lock") : null;
 }
 
 /**
@@ -3112,23 +3043,11 @@ async function pruneUpdatesDirectory(): Promise<void> {
  */
 async function pruneWindowsLegacyUpdateCaches(): Promise<void> {
   if (process.platform !== "win32" || !app.isPackaged || !windowsDataLayout) return;
-  const relayLockPath = resolveWindowsUpgradeRelayLockPath();
-  if (!relayLockPath || existsSync(relayLockPath)) return;
+  if (existsSync(resolvePreparedRequiredUpdateLockPath())) return;
 
   const legacyUserDataUpdatesPath = join(app.getPath("userData"), "updates");
   if (resolve(legacyUserDataUpdatesPath).toLowerCase() !== resolve(windowsDataLayout.updatesPath).toLowerCase()) {
     await rm(legacyUserDataUpdatesPath, { recursive: true, force: true }).catch(() => undefined);
-  }
-
-  const stagingRoot = dirname(relayLockPath);
-  const stagingEntries = await readdir(stagingRoot).catch(() => []);
-  await Promise.all(stagingEntries
-    .filter((entry) => entry.toLowerCase() !== "active.lock")
-    .map((entry) => rm(join(stagingRoot, entry), { recursive: true, force: true }).catch(() => undefined)));
-
-  const localAppData = process.env.LOCALAPPDATA?.trim();
-  if (localAppData) {
-    await rm(join(localAppData, "@memmydesktop-updater"), { recursive: true, force: true }).catch(() => undefined);
   }
 }
 
@@ -3529,41 +3448,6 @@ function createInitialWindow(): BrowserWindow | null {
   return createMainWindow();
 }
 
-function waitForInitialRendererVerification(targetWindow: BrowserWindow | null): Promise<boolean> {
-  if (!targetWindow || targetWindow.isDestroyed()) return Promise.resolve(false);
-  const webContentsId = targetWindow.webContents.id;
-  if (rendererReadyWebContentsIds.has(webContentsId)) return Promise.resolve(true);
-  return new Promise((resolveVerification) => {
-    let settled = false;
-    const finish = (verified: boolean) => {
-      if (settled) return;
-      settled = true;
-      clearTimeout(timeout);
-      targetWindow.webContents.removeListener("did-fail-load", handleFailed);
-      targetWindow.removeListener("closed", handleClosed);
-      if (rendererReadyWaiters.get(webContentsId) === finish) {
-        rendererReadyWaiters.delete(webContentsId);
-      }
-      resolveVerification(verified);
-    };
-    const handleFailed = (_event: ElectronEvent, _errorCode: number, _errorDescription: string, _validatedUrl: string, isMainFrame: boolean) => {
-      if (isMainFrame) finish(false);
-    };
-    const handleClosed = () => finish(false);
-    const timeout = setTimeout(() => finish(false), 30_000);
-    timeout.unref?.();
-    rendererReadyWaiters.set(webContentsId, finish);
-    targetWindow.webContents.on("did-fail-load", handleFailed);
-    targetWindow.once("closed", handleClosed);
-    if (rendererReadyWebContentsIds.has(webContentsId)) finish(true);
-  });
-}
-
-function isWindowsDataMigrationConsistencyError(error: unknown): boolean {
-  return error instanceof Error
-    && "code" in error
-    && error.code === "windows_data_migration_inconsistent";
-}
 
 /**
  * Reads the persisted settings to resolve this process's launch window mode.
@@ -4989,12 +4873,6 @@ app.whenReady().then(async () => {
     // An instance is already running: this instance exits directly, to avoid a second instance
     // contending for the fixed ports (memory 28960 / agent gateway) and causing a startup failure.
     app.quit();
-    return;
-  }
-
-  const windowsUpgradeLockPath = resolveWindowsUpgradeRelayLockPath();
-  if (windowsUpgradeLockPath && existsSync(windowsUpgradeLockPath)) {
-    app.exit(0);
     return;
   }
 
