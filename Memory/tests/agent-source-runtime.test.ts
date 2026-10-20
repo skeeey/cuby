@@ -801,7 +801,9 @@ function fixtureMessage(
 }
 
 async function waitForFakeTimerScan(executor: ReturnType<typeof createAgentSourceExecutor>): Promise<void> {
-  for (let attempt = 0; attempt < 100; attempt += 1) {
+  // The scan performs real filesystem work between timer ticks, so give it
+  // enough event-loop turns even when the CI runner is under load.
+  for (let attempt = 0; attempt < 1000; attempt += 1) {
     if (!executor.scanStatus().running) return;
     await vi.advanceTimersByTimeAsync(1);
   }
