@@ -620,35 +620,6 @@ export const PromotionFlagsSchema = z.object({
 });
 export type PromotionFlags = z.infer<typeof PromotionFlagsSchema>;
 
-export const LotteryStatusSchema = z.object({
-    shouldShow: z.boolean(),
-    startAt: z.number().int().nonnegative(),
-    endAt: z.number().int().nonnegative(),
-    serverNow: z.number().int().nonnegative(),
-    landingUrl: z.string().url()
-}).refine((status) => status.endAt > status.startAt, {
-    message: "Lottery endAt must be later than startAt",
-    path: ["endAt"]
-});
-export type LotteryStatus = z.infer<typeof LotteryStatusSchema>;
-
-export const LotteryRewardSchema = z.discriminatedUnion("hasReward", [
-    z.object({
-        hasReward: z.literal(false)
-    }),
-    z.object({
-        hasReward: z.literal(true),
-        drawId: z.string().min(1).optional(),
-        tokenAmount: z.number().int().positive()
-    })
-]);
-export type LotteryReward = z.infer<typeof LotteryRewardSchema>;
-
-export const LotteryRewardAckInputSchema = z.object({
-    drawId: z.string().min(1).optional()
-});
-export type LotteryRewardAckInput = z.infer<typeof LotteryRewardAckInputSchema>;
-
 export const AppBootstrapResponseSchema = z.object({
     app: AppSettingsDtoSchema,
     onboarding: OnboardingStateDtoSchema,
@@ -668,8 +639,7 @@ export const AppBootstrapResponseSchema = z.object({
     legal: LegalAgreementUrlsSchema.optional(),
     // Src module.
     // Promotions.
-    promotions: PromotionFlagsSchema.optional(),
-    lotteryStatus: LotteryStatusSchema.optional()
+    promotions: PromotionFlagsSchema.optional()
 });
 export type AppBootstrapResponse = z.infer<typeof AppBootstrapResponseSchema>;
 
@@ -1115,7 +1085,7 @@ export const EffectiveModelCandidatesSchema = z.object({
 });
 export type EffectiveModelCandidates = z.infer<typeof EffectiveModelCandidatesSchema>;
 
-/** Runtime ownership switches stored under ~/.memmy/config.yaml#memmyMemory. */
+/** Runtime ownership switches stored under ~/.cuby/config.yaml#memmyMemory. */
 export const MemoryRuntimeModelSettingsSchema = z.object({
     roleRouting: z.object({
         summary: z.enum(["follow", "fixed"]),
@@ -1208,7 +1178,7 @@ export const VerifyCodeInputSchema = z
         email: z.string().email().optional(),
         phoneNumber: z.string().min(3).optional(),
         verificationCode: z.string().min(1),
-        loginSource: z.literal("Memmy"),
+        loginSource: z.literal("Cuby"),
         invitationCode: z.string().trim().max(12).optional()
     })
     .refine((input) => (
@@ -1377,7 +1347,7 @@ export type AccountLoginResultView = z.infer<typeof AccountLoginResultViewSchema
 export const StartSocialLoginInputSchema = z.object({
     provider: SocialLoginProviderSchema,
     locale: AccountLocaleSchema,
-    loginSource: z.literal("Memmy"),
+    loginSource: z.literal("Cuby"),
     invitationCode: z.string().trim().max(12).optional()
 });
 export type StartSocialLoginInput = z.infer<typeof StartSocialLoginInputSchema>;

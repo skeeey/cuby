@@ -3,7 +3,7 @@ import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import YAML from "yaml";
 
-export const DEFAULT_MEMORY_URL = "http://127.0.0.1:18960";
+export const DEFAULT_MEMORY_URL = "http://127.0.0.1:28960";
 
 export interface CliMemoryConfig {
   endpoint?: string;
@@ -27,16 +27,16 @@ export function loadCliMemoryConfig(configPath?: string): {
 
   return {
     config: {
-      endpoint: optionalString(process.env.MEMMY_MEMORY_URL) ??
+      endpoint: optionalString(process.env.CUBY_MEMORY_URL) ??
         optionalString(process.env.MEMORY_SERVICE_URL) ??
         optionalString(storage.endpoint) ??
         optionalString(memmyMemory.endpoint),
-      token: optionalString(process.env.MEMMY_MEMORY_TOKEN) ??
+      token: optionalString(process.env.CUBY_MEMORY_TOKEN) ??
         optionalString(process.env.MEMORY_SERVICE_TOKEN) ??
         optionalString(storage.token) ??
         optionalString(memmyMemory.token),
-      userId: optionalString(process.env.MEMMY_MEMORY_USER_ID) ??
-        optionalString(process.env.MEMMY_USER_ID) ??
+      userId: optionalString(process.env.CUBY_MEMORY_USER_ID) ??
+        optionalString(process.env.CUBY_USER_ID) ??
         optionalString(process.env.MEMORY_SERVICE_USER_ID) ??
         optionalString(memmyMemory.userId) ??
         optionalString(app.userId)
@@ -47,8 +47,8 @@ export function loadCliMemoryConfig(configPath?: string): {
 
 export function defaultConfigPaths(): string[] {
   return [
-    process.env.MEMMY_CONFIG ? resolve(expandHome(process.env.MEMMY_CONFIG)) : undefined,
-    join(homedir(), ".memmy", "config.yaml")
+    process.env.CUBY_CONFIG ? resolve(expandHome(process.env.CUBY_CONFIG)) : undefined,
+    join(homedir(), ".cuby", "config.yaml")
   ].filter((value): value is string => Boolean(value));
 }
 

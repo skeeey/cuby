@@ -8,38 +8,38 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "../../..");
 
 export function normalizePublicCloudService(value) {
   if (typeof value !== "string" || !value.trim()) {
-    throw new Error("MEMMY_CLOUD_SERVICE must be a non-empty HTTP(S) origin");
+    throw new Error("CUBY_CLOUD_SERVICE must be a non-empty HTTP(S) origin");
   }
   let url;
   try {
     url = new URL(value.trim());
   } catch {
-    throw new Error("MEMMY_CLOUD_SERVICE must be a valid HTTP(S) origin");
+    throw new Error("CUBY_CLOUD_SERVICE must be a valid HTTP(S) origin");
   }
   if (!new Set(["http:", "https:"]).has(url.protocol)) {
-    throw new Error("MEMMY_CLOUD_SERVICE must use HTTP or HTTPS");
+    throw new Error("CUBY_CLOUD_SERVICE must use HTTP or HTTPS");
   }
   if (url.username || url.password) {
-    throw new Error("MEMMY_CLOUD_SERVICE must not contain credentials");
+    throw new Error("CUBY_CLOUD_SERVICE must not contain credentials");
   }
   if (url.search || url.hash) {
-    throw new Error("MEMMY_CLOUD_SERVICE must not contain a query or fragment");
+    throw new Error("CUBY_CLOUD_SERVICE must not contain a query or fragment");
   }
   if (url.pathname !== "/") {
-    throw new Error("MEMMY_CLOUD_SERVICE must be an origin without a path");
+    throw new Error("CUBY_CLOUD_SERVICE must be an origin without a path");
   }
   return url.origin;
 }
 
 export function resolvePublicCloudService({ environment = process.env, envFile } = {}) {
-  if (Object.prototype.hasOwnProperty.call(environment, "MEMMY_CLOUD_SERVICE")) {
-    return normalizePublicCloudService(environment.MEMMY_CLOUD_SERVICE);
+  if (Object.prototype.hasOwnProperty.call(environment, "CUBY_CLOUD_SERVICE")) {
+    return normalizePublicCloudService(environment.CUBY_CLOUD_SERVICE);
   }
   if (!envFile || !existsSync(envFile)) {
-    throw new Error("MEMMY_CLOUD_SERVICE is missing from the packaging environment and root .env");
+    throw new Error("CUBY_CLOUD_SERVICE is missing from the packaging environment and root .env");
   }
   const parsed = parseDotenv(readFileSync(envFile));
-  return normalizePublicCloudService(parsed.MEMMY_CLOUD_SERVICE);
+  return normalizePublicCloudService(parsed.CUBY_CLOUD_SERVICE);
 }
 
 export async function writeDesktopEditionManifest({

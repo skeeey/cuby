@@ -388,26 +388,18 @@ describe("SettingsPageView", () => {
     expect(source).not.toContain('<LinkButton label={t("settings.about.terms")} href="#" />');
   });
 
-  it("关于区承接加入社区入口，微信群二维码为静态图片且外链顺序不变", () => {
+  it("关于区不再承接加入社区入口", () => {
     const source = readFileSync(settingsPageSourcePath, "utf8");
-    const communityLinksSource = readFileSync(resolve(settingsPageSourcePath, "..", "..", "community", "community-links.ts"), "utf8");
-    const githubIndex = source.indexOf('SettingsCommunityLink href={communityLinks.githubUrl}');
-    const discordIndex = source.indexOf('SettingsCommunityLink href={communityLinks.discordUrl}');
 
-    expect(source).toContain('t("settings.about.community")');
-    expect(source).toContain('className="community-popover-wechat"');
-    expect(source).toContain('<img src={communityLinks.wechatGroupUrl}');
-    expect(source).toContain('className="community-link flex flex-col rounded-lg');
-    expect(communityLinksSource).toContain('githubUrl: "https://github.com/MemTensor/memmy-agent"');
-    expect(source).toContain('detail="MemTensor/memmy-agent"');
-    expect(githubIndex).toBeGreaterThan(-1);
-    expect(githubIndex).toBeLessThan(discordIndex);
-    expect(source).not.toContain('<a href={communityLinks.wechatGroupUrl}');
+    expect(source).not.toContain('t("settings.about.community")');
+    expect(source).not.toContain("community-popover-wechat");
+    expect(source).not.toContain("communityLinks");
+    expect(source).not.toContain("SettingsCommunityLink");
 
     const html = normalizeSsrHtml(renderSettingsPageView(createReadyState()));
     expect(html).toContain('id="settings-panel-about"');
-    expect(html).toContain("community-popover-wechat");
-    expect(html).toContain("community-link");
+    expect(html).not.toContain("community-popover-wechat");
+    expect(html).not.toContain("community-link");
   });
 
   it("关于区只消费应用级更新状态，下载和弹窗不随页面卸载", () => {
@@ -419,7 +411,7 @@ describe("SettingsPageView", () => {
     expect(settingsSource).toContain("update={update}");
     expect(settingsSource).toContain("onClick={() => void update.requestPrimaryAction()}");
     expect(settingsSource).toContain("resolveUpdateButtonLabel(update.phase, t)");
-    expect(settingsSource).toContain("Memmy v{update.appVersion}");
+    expect(settingsSource).toContain("Cuby v{update.appVersion}");
     expect(settingsSource).not.toContain("desktopBridge.checkForUpdates()");
     expect(settingsSource).not.toContain("desktopBridge.downloadUpdate");
     expect(settingsSource).not.toContain("setPendingUpdate");
@@ -440,8 +432,8 @@ describe("SettingsPageView", () => {
     expect(browserSource).toContain("manifest.code !== 0");
     expect(browserSource).toContain('readUpdateManifestRecord(manifest, "data") ?? {}');
     expect(browserSource).toContain('url.searchParams.set("platformType", resolveBrowserUpdatePlatformType())');
-    expect(browserSource).toContain('import.meta.env.MEMMY_APP_EDITION === "intl" ? "intl" : "cn"');
-    expect(browserSource).toContain('import.meta.env.MEMMY_PACKAGE_SIGNING === "unsigned" ? "unsigned" : "signed"');
+    expect(browserSource).toContain('import.meta.env.CUBY_APP_EDITION === "intl" ? "intl" : "cn"');
+    expect(browserSource).toContain('import.meta.env.CUBY_PACKAGE_SIGNING === "unsigned" ? "unsigned" : "signed"');
     expect(browserSource).toContain('const UPDATE_MANIFEST_PATH = "/api/memmy/desktop/latest"');
     expect(browserSource).not.toContain("VITE_MEMMY_UPDATE_MANIFEST_URL");
   });
@@ -456,7 +448,7 @@ describe("SettingsPageView", () => {
       })
     ));
 
-    expect(html).toContain("Memmy v2.1.0");
+    expect(html).toContain("Cuby v2.1.0");
     expect(html).toContain("重启安装");
     expect(html).not.toContain("检查更新");
   });
@@ -499,11 +491,11 @@ describe("SettingsPageView", () => {
     const windowsEnglishHtml = normalizeSsrHtml(renderSettingsPageView(createReadyState(), "en-US", createUpdateViewModel(), "win32"));
     const macHtml = normalizeSsrHtml(renderSettingsPageView(createReadyState(), "zh-CN", createUpdateViewModel(), "darwin"));
 
-    expect(windowsHtml).toContain("在 Windows 状态栏常驻 Memmy 图标，便于随时呼出");
-    expect(windowsHtml).not.toContain("在 macOS 状态栏常驻 Memmy 图标，便于随时呼出");
-    expect(windowsEnglishHtml).toContain("Keep a Memmy icon in the Windows system tray for quick access");
-    expect(windowsEnglishHtml).not.toContain("Keep a Memmy icon in the macOS status bar for quick access");
-    expect(macHtml).toContain("在 macOS 状态栏常驻 Memmy 图标，便于随时呼出");
+    expect(windowsHtml).toContain("在 Windows 状态栏常驻 Cuby 图标，便于随时呼出");
+    expect(windowsHtml).not.toContain("在 macOS 状态栏常驻 Cuby 图标，便于随时呼出");
+    expect(windowsEnglishHtml).toContain("Keep a Cuby icon in the Windows system tray for quick access");
+    expect(windowsEnglishHtml).not.toContain("Keep a Cuby icon in the macOS status bar for quick access");
+    expect(macHtml).toContain("在 macOS 状态栏常驻 Cuby 图标，便于随时呼出");
   });
 
   it("日志级别下拉选择走 handleLogLevelChange 持久化到 localStorage 与主进程 IPC", () => {
@@ -589,12 +581,12 @@ describe("SettingsPageView", () => {
     expect(html).toContain("Token 用量");
     expect(modelConfigHtml).toContain("模型库");
     expect(modelConfigHtml).toContain("平台提供");
-    expect(modelConfigHtml).toContain("Memmy Platform");
+    expect(modelConfigHtml).toContain("Cuby Platform");
     expect(modelConfigHtml).toContain("通用文本");
     expect(modelConfigHtml).toContain("添加配置");
     expect(modelConfigHtml).toContain("Agent 任务模型");
-    expect(modelConfigHtml).toContain("Memmy Platform · ASR");
-    expect(modelConfigHtml).not.toContain("为语音识别 ASR选择模型 Memmy Platform · 通用文本");
+    expect(modelConfigHtml).toContain("Cuby Platform · ASR");
+    expect(modelConfigHtml).not.toContain("为语音识别 ASR选择模型 Cuby Platform · 通用文本");
     expect(html).toContain("平台赠送额度");
     expect(html).toContain("自定义 API Key 消耗");
     expect(html).not.toContain("查看用量详情");
@@ -644,7 +636,7 @@ describe("SettingsPageView", () => {
     expect(html).toContain("注册时间：2026-04-12");
     expect(html).toContain("Token 用量");
     expect(modelConfigHtml).toContain("模型库");
-    expect(modelConfigHtml).toContain("Memmy Platform");
+    expect(modelConfigHtml).toContain("Cuby Platform");
     expect(modelConfigHtml).toContain("平台提供");
     expect(modelConfigHtml).toContain("添加配置");
     expect(modelConfigHtml).toContain("main-model");
@@ -826,7 +818,7 @@ describe("SettingsPageView", () => {
     expect(html).toContain("打磨 Agent 技能与偏好");
     expect(html).toContain("Embedding 检索");
     expect(html).toContain("记忆向量化检索");
-    expect(html).toContain("Memmy Platform 本地 Embedding");
+    expect(html).toContain("Cuby Platform 本地 Embedding");
     expect(html).toContain("语音识别 ASR");
     expect(html).toContain("生图模型");
     expect(html).toContain("未配置");

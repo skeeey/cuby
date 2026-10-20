@@ -71,7 +71,7 @@ describe("MemmyMemoryClient", () => {
     expect(calls[0].url).toBe("http://memory.test/api/v1/sessions/open");
     expect((calls[0].init.headers as any).authorization).toBe("Bearer secret");
     expect((calls[0].init.headers as any)["x-request-id"]).toBe("req-1");
-    expect((calls[0].init.headers as any)["x-memmy-time-zone"]).toBe("+08:00");
+    expect((calls[0].init.headers as any)["x-cuby-time-zone"]).toBe("+08:00");
     expect(JSON.parse(String(calls[0].init.body))).toEqual({ requestId: "req-1", sessionId: "s1" });
   });
 
@@ -193,10 +193,10 @@ describe("MemmyMemoryClient", () => {
       }));
       expect(call.headers).toMatchObject({
         "x-request-id": envelope.requestId,
-        "x-memmy-user-id": "user-1",
-        "x-memmy-project-id": "project-1",
-        "x-memmy-profile-id": "default",
-        "x-memmy-session-key": "websocket:one",
+        "x-cuby-user-id": "user-1",
+        "x-cuby-project-id": "project-1",
+        "x-cuby-profile-id": "default",
+        "x-cuby-session-key": "websocket:one",
       });
     }
     expect(calls[2]).toMatchObject({
@@ -255,7 +255,7 @@ describe("memmy memory tools", () => {
     expect(registry.has("memmy_memory_search")).toBe(true);
     expect(registry.has("memmy_memory_get")).toBe(true);
     expect(searchResult).toContain('<memmy_memory_context source="tool_search">');
-    expect(searchResult).toContain("No relevant Memmy memories found.");
+    expect(searchResult).toContain("No relevant Cuby memories found.");
     expect(searchResult).toContain("<current_user_request>\nSummarize the current README\n</current_user_request>");
     expect(getResult).toContain('<memmy_memory_context source="tool_get">');
     expect(getResult).toContain("/api/v1/memory/trace_123");

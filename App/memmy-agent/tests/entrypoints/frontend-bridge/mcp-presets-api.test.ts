@@ -18,7 +18,7 @@ import {
 
 const roots: string[] = [];
 const oldPath = process.env.PATH;
-const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const oldPresetEnv = {
   FIRECRAWL_API_KEY: process.env.FIRECRAWL_API_KEY,
   BRAVE_API_KEY: process.env.BRAVE_API_KEY,
@@ -27,7 +27,7 @@ const oldPresetEnv = {
 function useConfig(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-mcp-presets-"));
   roots.push(root);
-  delete process.env.MEMMY_AGENT_DATA_DIR;
+  delete process.env.CUBY_AGENT_DATA_DIR;
   setConfigPath(path.join(root, "config.yaml"));
   return root;
 }
@@ -36,8 +36,8 @@ afterEach(() => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   process.env.PATH = oldPath;
-  if (oldDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+  if (oldDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
   for (const [key, value] of Object.entries(oldPresetEnv)) {
     if (value == null) delete process.env[key];
     else process.env[key] = value;
@@ -84,6 +84,31 @@ describe("mcp presets api", () => {
       remove: { verification: ["config_absent", "managed_paths_absent"] },
       trust: { registry: "mcp-presets", level: "builtin", review_status: "builtin_preset" },
     });
+  });
+
+  it("serves no remote logo URL for presets; the desktop bundles them", () => {
+    useConfig();
+
+    const payload = mcpPresetsPayload();
+    const presets = payload.presets.filter((preset: any) => preset.source === "preset");
+
+    expect(presets.length).toBeGreaterThan(0);
+    for (const preset of presets) {
+      expect(preset.logo_url, preset.name).toBeNull();
+      // appManifest drops a null rather than emitting it, so "absent" is the shape
+      // to assert here; both spellings mean the payload carries no logo URL.
+      expect(preset.manifest.logo_url ?? null, preset.name).toBeNull();
+    }
+    expect(JSON.stringify(payload)).not.toContain("google.com");
+    // Dropping the brandDomain constructor argument shifted every positional field
+    // after it, and brand colour and brand domain are both plain strings, so a
+    // mistake there is invisible to the type checker. Pin the colours.
+    expect(presets.map((preset: any) => [preset.name, preset.brand_color])).toEqual([
+      ["firecrawl", "#EB5E28"],
+      ["exa", "#101010"],
+      ["brave-search", "#FB542B"],
+      ["figma", "#F24E1E"],
+    ]);
   });
 
   it("serves only the four office-facing presets and marks the developer pair", () => {
@@ -241,7 +266,7 @@ describe("mcp presets api", () => {
   it("uses the runtime data directory for managed stdio preset cwd", () => {
     const root = useConfig();
     const dataDir = path.join(root, "data");
-    process.env.MEMMY_AGENT_DATA_DIR = dataDir;
+    process.env.CUBY_AGENT_DATA_DIR = dataDir;
 
     mcpPresetsAction("enable", { name: ["brave-search"], brave_api_key: ["BSA_test"] });
 

@@ -67,11 +67,11 @@ describe("L3 World Model shared context contract", () => {
       query: { adapterId: "codex-hook", source: "codex", sessionId: "memory-session-1" },
       headers: {
         "x-request-id": envelope.requestId,
-        "x-memmy-user-id": "user-1",
-        "x-memmy-project-id": "project-1",
-        "x-memmy-profile-id": "default",
-        "x-memmy-session-key": "codex-memory-session",
-        "x-memmy-time-zone": "Asia/Shanghai"
+        "x-cuby-user-id": "user-1",
+        "x-cuby-project-id": "project-1",
+        "x-cuby-profile-id": "default",
+        "x-cuby-session-key": "codex-memory-session",
+        "x-cuby-time-zone": "Asia/Shanghai"
       }
     });
   });

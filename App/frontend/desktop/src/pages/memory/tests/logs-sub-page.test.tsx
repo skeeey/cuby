@@ -121,7 +121,7 @@ describe("LogsSubPage", () => {
     expect(html).toContain("select-control__option-icon");
     expect(html).toContain("memory-source-filter__all-icon");
     expect(html.match(/memory-source-filter__all-avatar/g)).toHaveLength(3);
-    expect(html).toContain("memmy-rice.png");
+    expect(html).toContain("cuby-neutral.png");
     expect(html).not.toContain("lucide-bot");
     expect(html).toContain('role="combobox"');
     expect(html).toContain("按来源 Agent 筛选");
@@ -347,9 +347,9 @@ describe("LogsSubPage", () => {
     );
 
     expect(html).toContain('id="memory-log-agent-filter"');
-    expect(html).toContain(">Memmy</span>");
+    expect(html).toContain(">Cuby</span>");
     expect(html).toContain("memory-source-filter__logo--memmy");
-    expect(html).toContain("memmy-rice.png");
+    expect(html).toContain("cuby-neutral.png");
     expect(html).not.toContain("memory-log-card__identity");
     expect(html).not.toContain("memory-agent-source-tag");
   });

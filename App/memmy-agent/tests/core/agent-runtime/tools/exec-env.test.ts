@@ -4,16 +4,16 @@ import { ExecTool } from "../../../../src/core/agent-runtime/tools/shell.js";
 const unixOnly = process.platform === "win32" ? it.skip : it;
 
 afterEach(() => {
-  delete process.env.MEMMY_AGENT_SECRET_TOKEN;
+  delete process.env.CUBY_AGENT_SECRET_TOKEN;
   delete process.env.MY_CUSTOM_VAR;
   delete process.env.MY_SECRET_VAR;
 });
 
 describe("exec tool environment isolation", () => {
   unixOnly("does not leak parent env vars", async () => {
-    process.env.MEMMY_AGENT_SECRET_TOKEN = "super-secret-value";
+    process.env.CUBY_AGENT_SECRET_TOKEN = "super-secret-value";
 
-    const result = await new ExecTool().execute({ command: "printenv MEMMY_AGENT_SECRET_TOKEN" });
+    const result = await new ExecTool().execute({ command: "printenv CUBY_AGENT_SECRET_TOKEN" });
 
     expect(result).not.toContain("super-secret-value");
   });

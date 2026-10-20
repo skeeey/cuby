@@ -24,7 +24,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "GET",
       url: "/api/agent-sources",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(response.statusCode).toBe(200);
@@ -57,7 +57,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "GET",
       url: "/api/agent-sources/memory-plugin-conflicts",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(response.statusCode).toBe(200);
@@ -93,7 +93,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "POST",
       url: "/api/agent-sources/auto-inject/run",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(response.statusCode).toBe(200);
@@ -146,7 +146,7 @@ describe("agent sources local api routes", () => {
     const addResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/manual",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: {
         displayName: "Manual Agent"
       }
@@ -154,27 +154,27 @@ describe("agent sources local api routes", () => {
     const removeResponse = await server.inject({
       method: "DELETE",
       url: "/api/agent-sources/manual-1",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const installResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/cursor/skill",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const installPluginResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/openclaw/plugin",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const uninstallPluginResponse = await server.inject({
       method: "DELETE",
       url: "/api/agent-sources/openclaw/plugin",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const uninstallResponse = await server.inject({
       method: "DELETE",
       url: "/api/agent-sources/cursor/skill",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(addResponse.statusCode).toBe(200);
@@ -238,7 +238,7 @@ describe("agent sources local api routes", () => {
     const importResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/manual-1/managed/import",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: {
         mode: "initial_subset",
         messages: [
@@ -257,7 +257,7 @@ describe("agent sources local api routes", () => {
     const updateResponse = await server.inject({
       method: "PATCH",
       url: "/api/agent-sources/manual-1/managed",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: {
         dataPath: "/tmp/aider",
         skillInstalled: true
@@ -266,7 +266,7 @@ describe("agent sources local api routes", () => {
     const syncResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/manual-1/managed/sync",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(importResponse.statusCode).toBe(200);
@@ -310,7 +310,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "POST",
       url: "/api/agent-sources/opencode/skill",
-      headers: { "x-memmy-local-token": "test-token", "x-request-id": "req-opencode-skill" }
+      headers: { "x-cuby-local-token": "test-token", "x-request-id": "req-opencode-skill" }
     });
 
     expect(response.statusCode).toBe(409);
@@ -339,7 +339,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "POST",
       url: "/api/agent-sources/hermes/plugin",
-      headers: { "x-memmy-local-token": "test-token", "x-request-id": "req-hermes-plugin" }
+      headers: { "x-cuby-local-token": "test-token", "x-request-id": "req-hermes-plugin" }
     });
 
     expect(response.statusCode).toBe(409);
@@ -365,7 +365,7 @@ describe("agent sources local api routes", () => {
     });
     const scanResponse = await fetch(`${baseUrl}/api/agent-sources/scan`, {
       method: "POST",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const text = await readStreamUntil(eventsResponse, "agent_source.scan_completed");
     controller.abort();
@@ -400,7 +400,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(response.statusCode).toBe(200);
@@ -450,7 +450,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: { sourceId }
     });
 
@@ -498,23 +498,23 @@ describe("agent sources local api routes", () => {
     const scanResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const stopResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan/stop",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const stoppedStatusResponse = await server.inject({
       method: "GET",
       url: "/api/agent-sources/scan/status",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await stopped;
     const continueResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await new Promise((resolve) => setImmediate(resolve));
 
@@ -569,25 +569,25 @@ describe("agent sources local api routes", () => {
     const scanResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await waitFor(() => calls.includes("collectAll"));
     const cancelResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan/cancel",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await canceled;
     await new Promise((resolve) => setImmediate(resolve));
     const statusResponse = await server.inject({
       method: "GET",
       url: "/api/agent-sources/scan/status",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const openclawResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: { sourceId: "openclaw" }
     });
 
@@ -651,20 +651,20 @@ describe("agent sources local api routes", () => {
     const scanResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await waitFor(() => ingestCalls === 1);
     const stopResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan/stop",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await firstIngestStopped;
     await new Promise((resolve) => setImmediate(resolve));
     const continueResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await waitFor(() => ingestCalls === 2);
     await new Promise((resolve) => setImmediate(resolve));
@@ -708,13 +708,13 @@ describe("agent sources local api routes", () => {
     const scanResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await new Promise((resolve) => setImmediate(resolve));
     const statusResponse = await server.inject({
       method: "GET",
       url: "/api/agent-sources/scan/status",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     releaseScan();
     await new Promise((resolve) => setImmediate(resolve));
@@ -775,20 +775,20 @@ describe("agent sources local api routes", () => {
     const scanResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await new Promise((resolve) => setImmediate(resolve));
     const stopResponse = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan/stop",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     await stopped;
     await new Promise((resolve) => setImmediate(resolve));
     const statusResponse = await server.inject({
       method: "GET",
       url: "/api/agent-sources/scan/status",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(scanResponse.statusCode).toBe(200);
@@ -840,7 +840,7 @@ describe("agent sources local api routes", () => {
     });
     await fetch(`${baseUrl}/api/agent-sources/scan`, {
       method: "POST",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const text = await readStreamUntil(eventsResponse, "agent_source.scan_completed");
     controller.abort();
@@ -864,7 +864,7 @@ describe("agent sources local api routes", () => {
     const response = await server.inject({
       method: "POST",
       url: "/api/agent-sources/scan",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(response.statusCode).toBe(403);

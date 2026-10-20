@@ -24,7 +24,7 @@ const packagedWindowsEnvironment = {
 
 describe("Windows launch at login", () => {
   it("uses the installed launch proxy so login startup follows the normal Windows launch chain", () => {
-    const launcherPath = "C:\\Users\\Lee User\\AppData\\Local\\Memmy\\launcher\\MemmyLauncher.vbs";
+    const launcherPath = "C:\\Users\\Lee User\\AppData\\Local\\Cuby\\launcher\\CubyLauncher.vbs";
 
     expect(resolveWindowsLoginItemCommand(packagedWindowsEnvironment, (path) => path === launcherPath)).toEqual({
       path: "C:\\Windows\\System32\\wscript.exe",
@@ -61,8 +61,8 @@ describe("Windows launch at login", () => {
     });
   });
 
-  it("does not mistake another wscript startup entry for an enabled Memmy launch item", () => {
-    const launcherPath = "C:\\Users\\Lee User\\AppData\\Local\\Memmy\\launcher\\MemmyLauncher.vbs";
+  it("does not mistake another wscript startup entry for an enabled Cuby launch item", () => {
+    const launcherPath = "C:\\Users\\Lee User\\AppData\\Local\\Cuby\\launcher\\CubyLauncher.vbs";
     const getLoginItemSettings = vi.fn(() => ({
       openAtLogin: true,
       executableWillLaunchAtLogin: true,

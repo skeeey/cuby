@@ -134,7 +134,7 @@ export function setRestartCommandRuntimeForTests(runtime: RestartCommandRuntime 
 function warnRestartCommandFailure(runtime: RestartCommandRuntime, error: unknown): void {
   const message = error instanceof Error ? error.message : String(error);
   const warn = runtime.warn ?? ((warning: string) => console.warn(warning));
-  warn(`Failed to restart memmy: ${message}`);
+  warn(`Failed to restart Cuby: ${message}`);
 }
 
 export function scheduleRestartForCommand(delayMs = 1000): void {
@@ -197,7 +197,7 @@ export async function cmdRestart(ctx: CommandContext): Promise<OutboundMessage> 
       metadata: { ...(ctx.msg.metadata ?? {}) }
     }));
     if (!notice || !await sendManagedRestartNotice(runtime, notice)) {
-      return reply(ctx, "Failed to restart memmy: Desktop supervisor unavailable.");
+      return reply(ctx, "Failed to restart Cuby: Desktop supervisor unavailable.");
     }
     scheduleManagedRestartExit(runtime);
     return reply(ctx, "Restarting...");

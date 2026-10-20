@@ -10,6 +10,34 @@ import type {
 import type { MessageKey } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { McpCustomServerModal, McpServerModal } from "./mcp-server-modal.js";
+import braveSearchLogoUrl from "../assets/mcp-logos/brave-search.svg";
+import exaLogoUrl from "../assets/mcp-logos/exa.svg";
+import figmaLogoUrl from "../assets/mcp-logos/figma.svg";
+import firecrawlLogoUrl from "../assets/mcp-logos/firecrawl.svg";
+
+/**
+ * Brand marks for the shipped MCP presets, keyed by preset name.
+ *
+ * These are bundled rather than fetched: the previous implementation resolved
+ * every preset through Google's favicon service, which is unreachable from some
+ * networks and left all four cards blank, with no fallback because the card only
+ * checked for a null URL and never for a failed load.
+ */
+export const mcpPresetLogos: Record<string, string> = {
+  "brave-search": braveSearchLogoUrl,
+  exa: exaLogoUrl,
+  figma: figmaLogoUrl,
+  firecrawl: firecrawlLogoUrl
+};
+
+/**
+ * Resolves the logo a preset card should render: the bundled brand mark when the
+ * preset is one we ship, otherwise whatever URL the payload carried, otherwise
+ * nothing (the card then draws the generic server icon).
+ */
+export function resolveMcpLogoUrl(preset: Pick<McpPresetPayload, "name" | "logo_url">): string | null {
+  return mcpPresetLogos[preset.name] ?? preset.logo_url ?? null;
+}
 
 export type McpPresetsClient = Pick<
   MemmyAgentClient,
@@ -134,6 +162,8 @@ export function McpToolsSectionView(props: McpToolsSectionViewProps) {
 function McpServerCard(props: { preset: McpPresetPayload; onOpen: (preset: McpPresetPayload) => void }) {
   const { t } = useTranslation();
   const label = t(mcpStatusKey(props.preset.status));
+  const [logoBroken, setLogoBroken] = useState(false);
+  const logoUrl = resolveMcpLogoUrl(props.preset);
 
   return (
     <button
@@ -143,8 +173,8 @@ function McpServerCard(props: { preset: McpPresetPayload; onOpen: (preset: McpPr
       aria-label={`${props.preset.display_name}, ${label}.`}
       onClick={() => props.onOpen(props.preset)}
     >
-      {props.preset.logo_url ? (
-        <img src={props.preset.logo_url} alt="" className="integration-card-logo" />
+      {logoUrl && !logoBroken ? (
+        <img src={logoUrl} alt="" className="integration-card-logo" onError={() => setLogoBroken(true)} />
       ) : (
         <span className="integration-card-logo flex items-center justify-center text-text-ink/45">
           <Server size={20} />

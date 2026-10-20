@@ -5,9 +5,9 @@ export function resolveAnalyticsAppEnv(isProd = import.meta.env.PROD): Analytics
   return isProd ? "prod" : "dev";
 }
 
-/** Matches legal-links: MEMMY_APP_EDITION=intl → intl, otherwise cn. */
+/** Matches legal-links: CUBY_APP_EDITION=intl → intl, otherwise cn. */
 export function resolveAnalyticsAppEdition(
-  rawEdition = import.meta.env.MEMMY_APP_EDITION as string | undefined
+  rawEdition = import.meta.env.CUBY_APP_EDITION as string | undefined
 ): AnalyticsAppEdition {
   return rawEdition?.trim().toLowerCase() === "intl" ? "intl" : "cn";
 }

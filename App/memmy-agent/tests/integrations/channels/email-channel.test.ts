@@ -48,20 +48,20 @@ const emailRuntimeMocks = vi.hoisted(() => {
 vi.mock("nodemailer", () => ({ createTransport: emailRuntimeMocks.createTransport }));
 vi.mock("imapflow", () => ({ ImapFlow: emailRuntimeMocks.ImapFlow }));
 
-const oldConfig = process.env.MEMMY_CONFIG;
+const oldConfig = process.env.CUBY_CONFIG;
 const roots: string[] = [];
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-email-"));
   roots.push(root);
-  process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+  process.env.CUBY_CONFIG = path.join(root, "config.yaml");
   return root;
 }
 
 afterEach(() => {
   vi.restoreAllMocks();
   emailRuntimeMocks.reset();
-  process.env.MEMMY_CONFIG = oldConfig;
+  process.env.CUBY_CONFIG = oldConfig;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -194,7 +194,7 @@ describe("EmailChannel", () => {
       expect.objectContaining({ host: "smtp.example.com", port: 587, secure: false, requireTLS: true }),
     );
     expect(emailRuntimeMocks.transport.sendMail).toHaveBeenCalledWith(
-      expect.objectContaining({ from: "bot@example.com", to: "alice@example.com", subject: "Re: memmy reply", text: "Acknowledged." }),
+      expect.objectContaining({ from: "bot@example.com", to: "alice@example.com", subject: "Re: Cuby reply", text: "Acknowledged." }),
     );
   });
 

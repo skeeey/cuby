@@ -15,11 +15,11 @@ describe("development CLI launchers", () => {
   it("defaults development startup to the international edition", () => {
     const script = String.raw`set -euo pipefail
 source scripts/dev-start.sh
-unset MEMMY_APP_EDITION MEMMY_ACCOUNT_CHANNEL
+unset CUBY_APP_EDITION CUBY_ACCOUNT_CHANNEL
 
 configure_dev_edition /path/that/does/not/exist
-test "$MEMMY_APP_EDITION" = "intl"
-test "$MEMMY_ACCOUNT_CHANNEL" = "email"`;
+test "$CUBY_APP_EDITION" = "intl"
+test "$CUBY_ACCOUNT_CHANNEL" = "email"`;
     const result = spawnSync("bash", ["-s"], { cwd: repoRoot, encoding: "utf8", input: script });
 
     expect(result.status, result.stderr || result.stdout).toBe(0);
@@ -30,12 +30,12 @@ test "$MEMMY_ACCOUNT_CHANNEL" = "email"`;
 source scripts/dev-start.sh
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
-printf '%s\n' 'MEMMY_APP_EDITION=cn' > "$test_dir/.env"
-unset MEMMY_APP_EDITION MEMMY_ACCOUNT_CHANNEL
+printf '%s\n' 'CUBY_APP_EDITION=cn' > "$test_dir/.env"
+unset CUBY_APP_EDITION CUBY_ACCOUNT_CHANNEL
 
 configure_dev_edition "$test_dir/.env"
-test "$MEMMY_APP_EDITION" = "cn"
-test "$MEMMY_ACCOUNT_CHANNEL" = "phone"`;
+test "$CUBY_APP_EDITION" = "cn"
+test "$CUBY_ACCOUNT_CHANNEL" = "phone"`;
     const result = spawnSync("bash", ["-s"], { cwd: repoRoot, encoding: "utf8", input: script });
 
     expect(result.status, result.stderr || result.stdout).toBe(0);
@@ -46,24 +46,24 @@ test "$MEMMY_ACCOUNT_CHANNEL" = "phone"`;
 source scripts/dev-start.sh
 test_dir="$(mktemp -d)"
 trap 'rm -rf "$test_dir"' EXIT
-printf '%s\n' 'MEMMY_APP_EDITION=staging' > "$test_dir/.env"
-unset MEMMY_APP_EDITION MEMMY_ACCOUNT_CHANNEL
+printf '%s\n' 'CUBY_APP_EDITION=staging' > "$test_dir/.env"
+unset CUBY_APP_EDITION CUBY_ACCOUNT_CHANNEL
 
 configure_dev_edition "$test_dir/.env"`;
     const result = spawnSync("bash", ["-s"], { cwd: repoRoot, encoding: "utf8", input: script });
 
     expect(result.status).toBe(1);
-    expect(result.stderr).toContain("MEMMY_APP_EDITION must be either cn or intl");
+    expect(result.stderr).toContain("CUBY_APP_EDITION must be either cn or intl");
   });
 
   it("configures the explicit development edition before starting dependencies", () => {
     const script = String.raw`set -euo pipefail
 source scripts/dev-start.sh
-export MEMMY_APP_EDITION=cn
-unset MEMMY_ACCOUNT_CHANNEL
+export CUBY_APP_EDITION=cn
+unset CUBY_ACCOUNT_CHANNEL
 require_command() {
-  channel="$(printenv MEMMY_ACCOUNT_CHANNEL || printf '%s' unset)"
-  printf '%s/%s\n' "$MEMMY_APP_EDITION" "$channel"
+  channel="$(printenv CUBY_ACCOUNT_CHANNEL || printf '%s' unset)"
+  printf '%s/%s\n' "$CUBY_APP_EDITION" "$channel"
   exit 0
 }
 
@@ -96,7 +96,7 @@ modelPresets:
     endpoint: chat
     model: agent_chat
 YAML
-MEMMY_CONFIG_PATH="$test_dir/config.yaml"
+CUBY_CONFIG_PATH="$test_dir/config.yaml"
 
 config_has_agent_model`;
     const result = spawnSync("bash", ["-s"], { cwd: repoRoot, encoding: "utf8", input: script });
@@ -118,7 +118,7 @@ providers:
   memmy_account:
     apiKey: account-token
 YAML
-MEMMY_CONFIG_PATH="$test_dir/config.yaml"
+CUBY_CONFIG_PATH="$test_dir/config.yaml"
 
 if config_has_agent_model; then
   exit 1
@@ -159,12 +159,12 @@ fi`;
           "--import", "tsx",
           "--input-type=module",
           "--eval",
-          `import { loadConfig } from ${JSON.stringify(pathToFileURL(agentConfigLoaderPath).href)}; loadConfig(process.env.MEMMY_CONFIG);`
+          `import { loadConfig } from ${JSON.stringify(pathToFileURL(agentConfigLoaderPath).href)}; loadConfig(process.env.CUBY_CONFIG);`
         ],
         {
           cwd: repoRoot,
           encoding: "utf8",
-          env: { ...process.env, MEMMY_CONFIG: configPath, VITEST: "true" }
+          env: { ...process.env, CUBY_CONFIG: configPath, VITEST: "true" }
         }
       );
       expect(validate.status, validate.stderr || validate.stdout).toBe(0);
@@ -195,7 +195,7 @@ node_can_resolve_from_dir() {
 npm() {
   test "$1" = "ci"
   test "$2" = "--prefix"
-  test "$3" = "$MEMMY_AGENT_DIR"
+  test "$3" = "$CUBY_AGENT_DIR"
   test "$4" = "--include=dev"
   install_calls=$((install_calls + 1))
   dependencies_installed=1

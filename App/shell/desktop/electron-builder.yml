@@ -1,6 +1,6 @@
-appId: cn.memtensor.memmy
-productName: Memmy
-artifactName: Memmy-${version}-${arch}.${ext}
+appId: cn.memtensor.cuby
+productName: Cuby
+artifactName: Cuby-${version}-${arch}.${ext}
 
 directories:
   output: release
@@ -67,8 +67,8 @@ mac:
   icon: build/icon.icns
   category: public.app-category.productivity
   extendInfo:
-    NSMicrophoneUsageDescription: "Memmy uses the microphone only when you start voice input."
-    NSAppleEventsUsageDescription: "Memmy asks your browser whether a window is private, so that Computer History never records private windows."
+    NSMicrophoneUsageDescription: "Cuby uses the microphone only when you start voice input."
+    NSAppleEventsUsageDescription: "Cuby asks your browser whether a window is private, so that Computer History never records private windows."
   target:
     - target: dmg
   hardenedRuntime: true
@@ -81,7 +81,7 @@ mac:
   notarize: false
 
 dmg:
-  title: Memmy Installer
+  title: Cuby Installer
   icon: build/icon.icns
   background: build/dmg-background.png
   window:

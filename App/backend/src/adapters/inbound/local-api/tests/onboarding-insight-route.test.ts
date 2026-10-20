@@ -29,7 +29,7 @@ describe("onboarding insight local api routes", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/onboarding/insight-report",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: { locale: "zh-CN" }
     });
 
@@ -86,7 +86,7 @@ describe("onboarding insight local api routes", () => {
       url: "/api/onboarding/insight-report/stream",
       headers: {
         origin: "http://127.0.0.1:19000",
-        "x-memmy-local-token": "test-token"
+        "x-cuby-local-token": "test-token"
       },
       payload: { locale: "zh-CN", stream: true }
     });

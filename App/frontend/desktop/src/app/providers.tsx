@@ -88,5 +88,5 @@ export function resolveDisplayLanguage(configuredLanguage: string | undefined): 
     return "zh-CN";
   }
 
-  return import.meta.env.MEMMY_APP_EDITION === "intl" ? "en-US" : "zh-CN";
+  return import.meta.env.CUBY_APP_EDITION === "intl" ? "en-US" : "zh-CN";
 }

@@ -99,7 +99,7 @@ describe("desktop pet window mode", () => {
       mode: "pet"
     });
 
-    expect(url).toContain("http://127.0.0.1:19100/index.html");
+    expect(url).toContain("http://127.0.0.1:29100/index.html");
     expect(url).not.toContain("file://");
     expect(url).toContain("memmyMode=pet");
   });

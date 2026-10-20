@@ -19,12 +19,12 @@ import { WebSocketChannel } from "../../../src/integrations/channels/websocket.j
 const WINDOWS_COMMAND_ERROR = "'node' 不是内部或外部命令，也不是可运行的程序\r\n或批处理文件。";
 
 const roots: string[] = [];
-const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function useDataDir(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-transcript-"));
   roots.push(root);
-  process.env.MEMMY_AGENT_DATA_DIR = root;
+  process.env.CUBY_AGENT_DATA_DIR = root;
   return root;
 }
 
@@ -33,8 +33,8 @@ function appendAll(key: string, events: Record<string, any>[]): void {
 }
 
 afterEach(() => {
-  if (oldDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+  if (oldDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 

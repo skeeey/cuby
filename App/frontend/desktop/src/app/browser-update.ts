@@ -30,7 +30,7 @@ export async function checkForUpdatesInBrowser(currentVersion: string): Promise<
  * @returns The configured manifest URL, or null when updates are not configured.
  */
 export function readBrowserUpdateManifestUrl(currentVersion: string): string | null {
-  const cloudServiceBaseUrl = import.meta.env.MEMMY_CLOUD_SERVICE;
+  const cloudServiceBaseUrl = import.meta.env.CUBY_CLOUD_SERVICE;
   if (typeof cloudServiceBaseUrl !== "string" || !cloudServiceBaseUrl.trim()) {
     return null;
   }
@@ -102,13 +102,13 @@ export function compareUpdateVersions(left: string, right: string): number {
   return 0;
 }
 
-/** Matches legal-links: MEMMY_APP_EDITION=intl → intl, otherwise cn. */
+/** Matches legal-links: CUBY_APP_EDITION=intl → intl, otherwise cn. */
 function resolveBrowserUpdateEdition(): "cn" | "intl" {
-  return import.meta.env.MEMMY_APP_EDITION === "intl" ? "intl" : "cn";
+  return import.meta.env.CUBY_APP_EDITION === "intl" ? "intl" : "cn";
 }
 
 function resolveBrowserUpdateSigning(): "signed" | "unsigned" {
-  return import.meta.env.MEMMY_PACKAGE_SIGNING === "unsigned" ? "unsigned" : "signed";
+  return import.meta.env.CUBY_PACKAGE_SIGNING === "unsigned" ? "unsigned" : "signed";
 }
 
 function resolveBrowserUpdatePlatformType(): string {

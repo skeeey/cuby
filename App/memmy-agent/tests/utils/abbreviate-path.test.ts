@@ -73,7 +73,7 @@ describe("abbreviatePath Windows paths", () => {
     expect(result).toContain("memmy");
 
     const home = os.homedir();
-    const homeResult = abbreviatePath(path.join(home, ".memmy", "workspace", "log.txt"));
+    const homeResult = abbreviatePath(path.join(home, ".cuby", "workspace", "log.txt"));
     expect(homeResult).toMatch(/^~[/\\]/);
     expect(homeResult).toContain("log.txt");
   });

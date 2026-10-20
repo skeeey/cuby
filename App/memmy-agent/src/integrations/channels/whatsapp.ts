@@ -133,7 +133,7 @@ export function loadOrCreateBridgeToken(tokenPath: string): string {
 
 export function ensureBridgeSetup(): string {
   const userBridge = getBridgeInstallDir();
-  const stampFile = path.join(userBridge, ".memmy-bridge-source-hash");
+  const stampFile = path.join(userBridge, ".cuby-bridge-source-hash");
   const source = bridgeSourceCandidates().find((candidate) => fs.existsSync(path.join(candidate, "package.json")));
   if (!source) {
     throw new Error("WhatsApp bridge source not found. Try reinstalling memmy-agent.");

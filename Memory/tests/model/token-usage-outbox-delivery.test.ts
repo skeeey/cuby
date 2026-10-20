@@ -331,7 +331,7 @@ describe("durable BYOK token usage delivery", () => {
     const tokens: string[] = [];
     const fetchMock = vi.fn<typeof fetch>(async (input, init) => {
       urls.push(String(input));
-      tokens.push(String((init?.headers as Record<string, string>)["x-memmy-local-token"]));
+      tokens.push(String((init?.headers as Record<string, string>)["x-cuby-local-token"]));
       if (urls.length === 1) {
         return new Response("", { status: 503 });
       }

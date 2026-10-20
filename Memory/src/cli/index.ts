@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Must load first: resolve MEMMY_CLOUD_SERVICE from external env, packaged manifest, or development .env.
+// Must load first: resolve CUBY_CLOUD_SERVICE from external env, packaged manifest, or development .env.
 import "./load-env.js";
 import { realpathSync } from "node:fs";
 import { fileURLToPath } from "node:url";

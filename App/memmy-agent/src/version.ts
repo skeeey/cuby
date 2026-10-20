@@ -30,5 +30,5 @@ function readProjectVersion(): string {
   }
 
   if (packagedVersion) return packagedVersion;
-  throw new Error("Unable to resolve the Memmy project version");
+  throw new Error("Unable to resolve the Cuby project version");
 }

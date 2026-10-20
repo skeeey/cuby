@@ -9,7 +9,7 @@ import {
 } from "./observation-settings.js";
 
 export function defaultSettingsFile(): string {
-  return path.join(os.homedir(), ".memmy", "computer-history", "observation-settings.json");
+  return path.join(os.homedir(), ".cuby", "computer-history", "observation-settings.json");
 }
 
 /**

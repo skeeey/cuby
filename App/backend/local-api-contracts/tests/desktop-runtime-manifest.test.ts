@@ -27,7 +27,7 @@ describe("desktop runtime manifest", () => {
     "https://api.example.test?token=secret",
     "https://api.example.test/#secret",
   ])("rejects a non-public runtime value without echoing it: %s", (value) => {
-    expect(() => normalizePublicCloudService(value)).toThrow(/MEMMY_CLOUD_SERVICE/);
+    expect(() => normalizePublicCloudService(value)).toThrow(/CUBY_CLOUD_SERVICE/);
     try {
       normalizePublicCloudService(value);
     } catch (error) {
@@ -39,6 +39,6 @@ describe("desktop runtime manifest", () => {
     expect(() => cloudServiceFromDesktopRuntimeManifest("not-json")).toThrow(/valid JSON/);
     expect(() => cloudServiceFromDesktopRuntimeManifest("[]")).toThrow(/JSON object/);
     expect(() => cloudServiceFromDesktopRuntimeManifest("{}"))
-      .toThrow(/MEMMY_CLOUD_SERVICE/);
+      .toThrow(/CUBY_CLOUD_SERVICE/);
   });
 });

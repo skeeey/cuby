@@ -370,7 +370,7 @@ describe("GitHub Draft Release v2 workflow", () => {
     expect(download).toContain("Installer checksum verification failed");
     expect(download).toContain('[[ ! -s "release-assets/$artifact" ]]');
     expect(download).toContain("Installer download is empty");
-    expect(download.match(/Memmy-\$VERSION-/g)).toHaveLength(6);
+    expect(download.match(/Cuby-\$VERSION-/g)).toHaveLength(6);
     expect(download).toContain("MD5SUMS.txt");
     expect(download).toContain("SHA256SUMS.txt");
     expect(ossIntegritySource).toContain('metadata.objectType === "Normal"');
@@ -436,7 +436,7 @@ describe("GitHub Draft Release v2 workflow", () => {
     expect(releaseNotes).toContain("DOC_AGENT_RELEASE_NOTES_DRAFT_URL");
     expect(releaseNotes).toContain("DOC_AGENT_RELEASE_NOTES_DRAFT_TOKEN");
     expect(releaseNotes).toContain("DOC_AGENT_RELEASE_NOTES_REQUEST.json");
-    expect(releaseNotes).toContain("MEMMY_RELEASE_STYLE_EXAMPLES.json");
+    expect(releaseNotes).toContain("CUBY_RELEASE_STYLE_EXAMPLES.json");
     expect(releaseNotes).toContain("candidate_count: 3");
     expect(releaseNotes).toContain(".release_notes_md // .release_notes_markdown");
     expect(releaseNotes).toContain("Doc Agent draft configuration missing");
@@ -476,10 +476,10 @@ describe("GitHub Draft Release v2 workflow", () => {
       "doc-agent: source-id=memmy-official-changelog-v2",
     );
     expect(releaseNotes).toContain(
-      "macOS Intel (China): [Memmy-$VERSION-darwin-x64-cn-signed.dmg]",
+      "macOS Intel (China): [Cuby-$VERSION-darwin-x64-cn-signed.dmg]",
     );
     expect(releaseNotes).toContain(
-      "macOS Intel (International): [Memmy-$VERSION-darwin-x64-intl-signed.dmg]",
+      "macOS Intel (International): [Cuby-$VERSION-darwin-x64-intl-signed.dmg]",
     );
     expect(releaseNotes).toContain("On Apple Silicon or Intel Macs");
     const uploadAudit = draftSteps.find((step) => step.name === "Upload release audit artifact");

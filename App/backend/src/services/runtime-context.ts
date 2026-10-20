@@ -13,7 +13,7 @@ export interface RuntimeContext {
 
 /** Builds runtime context from renderer request headers. */
 export function runtimeContextFromRequest(request: FastifyRequest, configuredTimeZone?: string): RuntimeContext {
-  const header = request.headers["x-memmy-time-zone"];
+  const header = request.headers["x-cuby-time-zone"];
   const requestTimeZone = Array.isArray(header) ? header[0] : header;
   const timeZone = normalizeTimeZoneOffset(configuredTimeZone?.trim() || requestTimeZone);
   return {

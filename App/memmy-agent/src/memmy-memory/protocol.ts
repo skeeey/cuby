@@ -1,10 +1,10 @@
-export const MEMMY_MEMORY_CONTEXT_TAG = "memmy_memory_context";
-export const MEMMY_MEMORY_STATUS_TAG = "memmy_memory_status";
+export const CUBY_MEMORY_CONTEXT_TAG = "memmy_memory_context";
+export const CUBY_MEMORY_STATUS_TAG = "memmy_memory_status";
 export const CURRENT_USER_REQUEST_TAG = "current_user_request";
 
 const MEMORY_CONTEXT_TAGS = [
-  MEMMY_MEMORY_CONTEXT_TAG,
-  MEMMY_MEMORY_STATUS_TAG,
+  CUBY_MEMORY_CONTEXT_TAG,
+  CUBY_MEMORY_STATUS_TAG,
   "memos_context",
   "memory_context",
 ] as const;
@@ -15,9 +15,9 @@ export function renderMemmyMemoryContext(markdown: string, source: MemmyMemoryCo
   const body = markdown.trim();
   if (!body) return "";
   return [
-    `<${MEMMY_MEMORY_CONTEXT_TAG} source="${escapeAttribute(source)}">`,
+    `<${CUBY_MEMORY_CONTEXT_TAG} source="${escapeAttribute(source)}">`,
     body,
-    `</${MEMMY_MEMORY_CONTEXT_TAG}>`,
+    `</${CUBY_MEMORY_CONTEXT_TAG}>`,
   ].join("\n");
 }
 
@@ -38,12 +38,12 @@ export function renderMemmyContextPacket(markdown: string, source: MemmyMemoryCo
 
 export function renderMemmyMemoryUnavailableNotice(): string {
   return [
-    `<${MEMMY_MEMORY_STATUS_TAG} status="unavailable">`,
+    `<${CUBY_MEMORY_STATUS_TAG} status="unavailable">`,
     "IMPORTANT:",
-    "- The Memmy long-term memory service is currently unreachable.",
+    "- The Cuby long-term memory service is currently unreachable.",
     "- No memory recall or write was performed for this turn. This is NOT the same as \"memory was searched and nothing relevant was found\" — memory was simply not checked.",
     "- Never claim you searched memory and found nothing. If the user asks about previously saved information or long-term memory, tell them the memory service is temporarily unavailable, then continue helping with the current request using only what is visible in this conversation.",
-    `</${MEMMY_MEMORY_STATUS_TAG}>`,
+    `</${CUBY_MEMORY_STATUS_TAG}>`,
   ].join("\n");
 }
 

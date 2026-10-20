@@ -739,10 +739,10 @@ describe("workspace restrictions", () => {
 
   it("allows reads from the media directory", async () => {
     const root = workspace();
-    const oldDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+    const oldDataDir = process.env.CUBY_AGENT_DATA_DIR;
     const dataDir = path.join(path.dirname(root), `data-${Date.now()}`);
     roots.push(dataDir);
-    process.env.MEMMY_AGENT_DATA_DIR = dataDir;
+    process.env.CUBY_AGENT_DATA_DIR = dataDir;
     const mediaFile = path.join(dataDir, "media", "photo.txt");
     await fs.mkdir(path.dirname(mediaFile), { recursive: true });
     await fs.writeFile(mediaFile, "shared media", "utf8");
@@ -753,8 +753,8 @@ describe("workspace restrictions", () => {
       expect(result).toContain("shared media");
       expect(result).not.toContain("Error");
     } finally {
-      if (oldDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-      else process.env.MEMMY_AGENT_DATA_DIR = oldDataDir;
+      if (oldDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+      else process.env.CUBY_AGENT_DATA_DIR = oldDataDir;
     }
   });
 

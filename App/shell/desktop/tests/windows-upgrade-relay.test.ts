@@ -7,10 +7,10 @@ import { promisify } from "node:util";
 import { afterEach, describe, expect, it } from "vitest";
 
 const execFile = promisify(execFileCallback);
-const relayScriptPath = resolve(import.meta.dirname, "../build/MemmyWindowsUpgradeRelay.ps1");
-const cleanupScriptPath = resolve(import.meta.dirname, "../build/MemmyWindowsUpgradeCleanup.ps1");
-const recoveryScriptPath = resolve(import.meta.dirname, "../build/MemmyWindowsUpgradeRecovery.ps1");
-const migrationScriptPath = resolve(import.meta.dirname, "../build/MemmyWindowsDataMigration.ps1");
+const relayScriptPath = resolve(import.meta.dirname, "../build/CubyWindowsUpgradeRelay.ps1");
+const cleanupScriptPath = resolve(import.meta.dirname, "../build/CubyWindowsUpgradeCleanup.ps1");
+const recoveryScriptPath = resolve(import.meta.dirname, "../build/CubyWindowsUpgradeRecovery.ps1");
+const migrationScriptPath = resolve(import.meta.dirname, "../build/CubyWindowsDataMigration.ps1");
 const temporaryDirectories: string[] = [];
 const helperProcesses: ChildProcess[] = [];
 const descendantProcessIds: number[] = [];
@@ -90,12 +90,12 @@ const createRelayFixture = async (
   const targetInstallDir = options.relocate ? join(root, "relocated Memmy") : installDir;
   const dataDir = join(installDir, "data", "Memmy");
   const workDir = join(root, "relay-work");
-  const backupRoot = join(`${installDir}.memmy-upgrade-backup`, basename(workDir));
+  const backupRoot = join(`${installDir}.cuby-upgrade-backup`, basename(workDir));
   const backupPath = join(backupRoot, "data-backup");
   const logPath = join(root, "logs", "windows-upgrade.log");
   const targetUserDataPath = join(root, "roaming", "Memmy");
-  const targetRuntimeHomePath = join(root, "new-runtime", ".memmy");
-  const legacyRuntimeHomePath = join(root, "legacy-profile", ".memmy");
+  const targetRuntimeHomePath = join(root, "new-runtime", ".cuby");
+  const legacyRuntimeHomePath = join(root, "legacy-profile", ".cuby");
   const migrationStatePath = join(root, "local", "Memmy", "data-migration", "state.json");
   const migrationLogPath = join(root, "logs", "data-migration.log");
   const installationRecordPath = join(root, "local", "Memmy", "data-layout", "last-install.json");
@@ -104,15 +104,15 @@ const createRelayFixture = async (
   const descendantScriptPath = join(root, "installer-descendant.ps1");
   await mkdir(dataDir, { recursive: true });
   await mkdir(workDir, { recursive: true });
-  await copyFile(cleanupScriptPath, join(workDir, "MemmyWindowsUpgradeCleanup.ps1"));
-  await copyFile(migrationScriptPath, join(workDir, "MemmyWindowsDataMigration.ps1"));
+  await copyFile(cleanupScriptPath, join(workDir, "CubyWindowsUpgradeCleanup.ps1"));
+  await copyFile(migrationScriptPath, join(workDir, "CubyWindowsDataMigration.ps1"));
   if (options.failMigrationPrepare) {
-    await writeFile(join(workDir, "MemmyWindowsDataMigration.ps1"), "Write-Error 'injected migration failure'\r\nexit 5\r\n", "utf8");
+    await writeFile(join(workDir, "CubyWindowsDataMigration.ps1"), "Write-Error 'injected migration failure'\r\nexit 5\r\n", "utf8");
   } else if (options.failMigrationComplete
     || options.failMigrationRollback
     || options.failFirstMigrationRollback
     || options.replaceTargetWithJunctionAfterPrepare) {
-    const copiedMigrationPath = join(workDir, "MemmyWindowsDataMigration.ps1");
+    const copiedMigrationPath = join(workDir, "CubyWindowsDataMigration.ps1");
     let copiedMigration = await readFile(copiedMigrationPath, "utf8");
     if (options.failMigrationComplete) {
       copiedMigration = copiedMigration.replace(
@@ -151,7 +151,7 @@ const createRelayFixture = async (
   await writeFile(join(dataDir, "prepared-required-update.json.attempt"), "1.0.9", "utf8");
   const windowsDirectory = process.env.SystemRoot ?? "C:\\Windows";
   const appStubPath = join(windowsDirectory, "System32", "where.exe");
-  await writeFile(join(installDir, "Memmy.exe"), await readFile(appStubPath));
+  await writeFile(join(installDir, "Cuby.exe"), await readFile(appStubPath));
   const escapedTargetInstallDir = targetInstallDir.replaceAll("%", "%%");
   const escapedAppStubPath = appStubPath.replaceAll("%", "%%");
   const installerLines = [
@@ -172,9 +172,9 @@ const createRelayFixture = async (
   installerLines.push(
     `rmdir /s /q "${escapedTargetInstallDir}"`,
     `mkdir "${escapedTargetInstallDir}"`,
-    `copy /y "${escapedAppStubPath}" "${escapedTargetInstallDir}\\Memmy.exe" >nul`,
-    "if not defined MEMMY_UPGRADE_WORK_DIR goto installer_done",
-    ">\"%MEMMY_UPGRADE_WORK_DIR%\\child-reopen-intent.txt\" echo(%MEMMY_UPGRADE_REOPEN_AFTER_INSTALL%",
+    `copy /y "${escapedAppStubPath}" "${escapedTargetInstallDir}\\Cuby.exe" >nul`,
+    "if not defined CUBY_UPGRADE_WORK_DIR goto installer_done",
+    ">\"%CUBY_UPGRADE_WORK_DIR%\\child-reopen-intent.txt\" echo(%CUBY_UPGRADE_REOPEN_AFTER_INSTALL%",
     ":installer_done",
     `exit /b ${installerExitCode}`,
     ""
@@ -217,7 +217,7 @@ const runRecovery = async (fixture: Awaited<ReturnType<typeof createRelayFixture
     "-DirectMigrationStatePath",
     fixture.migrationStatePath,
     "-DirectMigrationScriptPath",
-    join(fixture.workDir, "MemmyWindowsDataMigration.ps1"),
+    join(fixture.workDir, "CubyWindowsDataMigration.ps1"),
     "-DirectMigrationLogPath",
     fixture.migrationLogPath,
     "-TargetUserDataPathOverride",
@@ -243,7 +243,7 @@ const runDataMigration = async (
     "-ExecutionPolicy",
     "Bypass",
     "-File",
-    join(fixture.workDir, "MemmyWindowsDataMigration.ps1"),
+    join(fixture.workDir, "CubyWindowsDataMigration.ps1"),
     "-Mode",
     mode,
     "-SourceDataPath",
@@ -371,15 +371,15 @@ const waitForPathPresent = async (path: string) => {
 describeOnWindows("Windows upgrade relay", () => {
   it("revalidates relocation safety immediately before starting the child installer", async () => {
     const source = await readFile(relayScriptPath, "utf8");
-    const safetyCalls = [...source.matchAll(/^\s+Assert-MemmyRelocationTargetIsSafe(?:\s|$)/gmu)];
-    const migrationPrepare = source.indexOf("Invoke-MemmyDataMigration -Mode Prepare");
+    const safetyCalls = [...source.matchAll(/^\s+Assert-CubyRelocationTargetIsSafe(?:\s|$)/gmu)];
+    const migrationPrepare = source.indexOf("Invoke-CubyDataMigration -Mode Prepare");
     const childStart = source.indexOf("$installerProcess = Start-Process -FilePath $InstallerPath");
 
     expect(safetyCalls).toHaveLength(2);
     expect(safetyCalls[1]?.index).toBeGreaterThan(migrationPrepare);
     expect(safetyCalls[1]?.index).toBeLessThan(childStart);
-    expect(source).toContain("Assert-MemmyNoReparsePath $normalizedTargetInstallDir 'target installDir'");
-    expect(source).toContain("Assert-MemmyNoReparsePath $targetRuntimeHomePath 'target runtimeHomePath'");
+    expect(source).toContain("Assert-CubyNoReparsePath $normalizedTargetInstallDir 'target installDir'");
+    expect(source).toContain("Assert-CubyNoReparsePath $targetRuntimeHomePath 'target runtimeHomePath'");
   });
 
   it("rejects a relocation target that crosses a directory junction", async () => {
@@ -389,7 +389,7 @@ describeOnWindows("Windows upgrade relay", () => {
     await symlink(redirectedTarget, fixture.targetInstallDir, "junction");
 
     await expect(runRelay(fixture)).rejects.toMatchObject({ code: 1 });
-    expect(existsSync(join(redirectedTarget, "Memmy.exe"))).toBe(false);
+    expect(existsSync(join(redirectedTarget, "Cuby.exe"))).toBe(false);
     expect(existsSync(fixture.dataDir)).toBe(true);
     const log = await readFile(fixture.logPath, "utf8");
     expect(log).toContain("target installDir crosses a reparse point");
@@ -403,7 +403,7 @@ describeOnWindows("Windows upgrade relay", () => {
     const redirectedTarget = join(fixture.root, "post-prepare-redirected-target");
 
     await expect(runRelay(fixture)).rejects.toMatchObject({ code: 1 });
-    expect(existsSync(join(redirectedTarget, "Memmy.exe"))).toBe(false);
+    expect(existsSync(join(redirectedTarget, "Cuby.exe"))).toBe(false);
     expect(existsSync(fixture.dataDir)).toBe(true);
     const log = await readFile(fixture.logPath, "utf8");
     expect(log).toContain("target installDir crosses a reparse point");
@@ -419,7 +419,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     expect(existsSync(join(realSource, "data", "Memmy", "sentinel.txt"))).toBe(true);
     expect(existsSync(fixture.backupRoot)).toBe(false);
-    expect(existsSync(join(fixture.targetInstallDir, "Memmy.exe"))).toBe(false);
+    expect(existsSync(join(fixture.targetInstallDir, "Cuby.exe"))).toBe(false);
     const log = await readFile(fixture.logPath, "utf8");
     expect(log).toContain("source installDir crosses a reparse point");
   }, 15_000);
@@ -427,8 +427,8 @@ describeOnWindows("Windows upgrade relay", () => {
   it("waits for the running source installation before relocating", async () => {
     const fixture = await createRelayFixture(0, { relocate: true });
     const pingPath = join(process.env.SystemRoot ?? "C:\\Windows", "System32", "PING.EXE");
-    await copyFile(pingPath, join(fixture.installDir, "Memmy.exe"));
-    const sourceProcess = spawn(join(fixture.installDir, "Memmy.exe"), ["127.0.0.1", "-n", "8"], {
+    await copyFile(pingPath, join(fixture.installDir, "Cuby.exe"));
+    const sourceProcess = spawn(join(fixture.installDir, "Cuby.exe"), ["127.0.0.1", "-n", "8"], {
       windowsHide: true,
       stdio: "ignore"
     });
@@ -457,7 +457,7 @@ describeOnWindows("Windows upgrade relay", () => {
   it("migrates install-local data outside the installation directory before a verified upgrade", async () => {
     expect(existsSync(relayScriptPath)).toBe(true);
     const fixture = await createRelayFixture(0);
-    const sourceRuntimeHomePath = join(fixture.installDir, "data", ".memmy");
+    const sourceRuntimeHomePath = join(fixture.installDir, "data", ".cuby");
     const sourceWorkspacePath = join(sourceRuntimeHomePath, "workspace");
     const sourceSessionPath = join(sourceWorkspacePath, "sessions", "websocket_default.jsonl");
     await mkdir(dirname(sourceSessionPath), { recursive: true });
@@ -480,7 +480,7 @@ describeOnWindows("Windows upgrade relay", () => {
     await runRelay(fixture);
 
     expect(await readFile(join(fixture.targetUserDataPath, "sentinel.txt"), "utf8")).toBe("keep-me");
-    expect(existsSync(join(fixture.installDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.installDir, "Cuby.exe"))).toBe(true);
     expect(existsSync(join(fixture.installDir, "data"))).toBe(false);
     expect(existsSync(join(fixture.targetUserDataPath, "prepared-required-update.json"))).toBe(false);
     expect(existsSync(join(fixture.targetUserDataPath, "prepared-required-update.json.lock"))).toBe(false);
@@ -543,7 +543,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     await runRelay(fixture, { installedVersion: "1.1.0" });
 
-    expect(existsSync(join(fixture.targetInstallDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.targetInstallDir, "Cuby.exe"))).toBe(true);
     await expect(readFile(join(fixture.targetUserDataPath, "app.sqlite"), "utf8"))
       .resolves.toBe("external-account");
     const migratedConfig = await readFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "utf8");
@@ -593,7 +593,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     await expect(runRelay(fixture, { installedVersion: "1.1.0" })).rejects.toMatchObject({ code: 2 });
 
-    expect(existsSync(join(fixture.installDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.installDir, "Cuby.exe"))).toBe(true);
     expect(existsSync(fixture.targetRuntimeHomePath)).toBe(false);
     await expect(readFile(join(sourceRuntimeHomePath, "config.yaml"), "utf8"))
       .resolves.toBe("source-runtime");
@@ -639,13 +639,13 @@ describeOnWindows("Windows upgrade relay", () => {
   it("recovers a persisted install-local backup when the executable and install data are gone", async () => {
     const fixture = await createRelayFixture(0);
     const failedBackup = join(
-      `${fixture.installDir}.memmy-migration-failed`,
+      `${fixture.installDir}.cuby-migration-failed`,
       "20260825120000-0123456789abcdef0123456789abcdef",
       "data-backup",
     );
     await mkdir(dirname(failedBackup), { recursive: true });
     await rename(join(fixture.installDir, "data"), failedBackup);
-    await rm(join(fixture.installDir, "Memmy.exe"), { force: true });
+    await rm(join(fixture.installDir, "Cuby.exe"), { force: true });
     await mkdir(dirname(fixture.installationRecordPath), { recursive: true });
     await writeFile(fixture.installationRecordPath, JSON.stringify({
       schemaVersion: 1,
@@ -678,12 +678,12 @@ describeOnWindows("Windows upgrade relay", () => {
     await Promise.all([
       mkdir(fixture.targetUserDataPath, { recursive: true }),
       mkdir(fixture.targetRuntimeHomePath, { recursive: true }),
-      mkdir(join(fixture.installDir, "data", ".memmy"), { recursive: true })
+      mkdir(join(fixture.installDir, "data", ".cuby"), { recursive: true })
     ]);
     await Promise.all([
       writeFile(join(fixture.targetUserDataPath, "app.sqlite"), "stale-appdata-login", "utf8"),
       writeFile(join(fixture.targetRuntimeHomePath, "config.yaml"), "stale-profile-runtime", "utf8"),
-      writeFile(join(fixture.installDir, "data", ".memmy", "config.yaml"), "current-install-runtime", "utf8")
+      writeFile(join(fixture.installDir, "data", ".cuby", "config.yaml"), "current-install-runtime", "utf8")
     ]);
 
     await runRelay(fixture, { installedVersion: "" });
@@ -781,7 +781,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     await runRelay(fixture);
 
-    expect(existsSync(join(fixture.installDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.installDir, "Cuby.exe"))).toBe(true);
     expect(existsSync(join(fixture.installDir, "data"))).toBe(false);
     expect(await readFile(join(fixture.targetUserDataPath, "historical.txt"), "utf8")).toBe("keep-existing-target");
     expect(await readFile(join(fixture.backupPath, "Memmy", "sentinel.txt"), "utf8")).toBe("keep-me");
@@ -800,7 +800,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     await runRelay(fixture);
 
-    expect(existsSync(join(fixture.installDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.installDir, "Cuby.exe"))).toBe(true);
     expect(existsSync(fixture.targetUserDataPath)).toBe(false);
     expect(await readFile(join(fixture.backupPath, "Memmy", "sentinel.txt"), "utf8")).toBe("keep-me");
     expect(existsSync(fixture.migrationStatePath)).toBe(false);
@@ -820,7 +820,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     await runRelay(fixture);
 
-    expect(existsSync(join(fixture.installDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.installDir, "Cuby.exe"))).toBe(true);
     expect(existsSync(fixture.targetUserDataPath)).toBe(false);
     expect(existsSync(fixture.migrationStatePath)).toBe(false);
     expect(existsSync(lockPath)).toBe(false);
@@ -839,7 +839,7 @@ describeOnWindows("Windows upgrade relay", () => {
 
     await runRelay(fixture);
 
-    expect(existsSync(join(fixture.installDir, "Memmy.exe"))).toBe(true);
+    expect(existsSync(join(fixture.installDir, "Cuby.exe"))).toBe(true);
     expect(await readFile(join(fixture.targetUserDataPath, "sentinel.txt"), "utf8")).toBe("keep-me");
     expect(JSON.parse(await readFile(fixture.migrationStatePath, "utf8"))).toMatchObject({
       phase: "recovery-required"

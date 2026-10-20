@@ -50,8 +50,8 @@ function isTestRuntime(env: Record<string, string | undefined>): boolean {
 function resolveRuntimeConfigPath(options: ByokTokenUsageInstallOptions): string {
   if (options.runtimeConfigPath) return options.runtimeConfigPath;
   const env = options.env ?? process.env;
-  const memmyHome = env.MEMMY_HOME?.trim()
-    || path.join(options.homeDir ?? os.homedir(), ".memmy");
+  const memmyHome = env.CUBY_HOME?.trim()
+    || path.join(options.homeDir ?? os.homedir(), ".cuby");
   return path.join(memmyHome, "runtime.json");
 }
 

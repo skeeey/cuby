@@ -17,7 +17,7 @@ const ANALYTICS_PATH = "/api/analytics/events";
 const DEFAULT_ENGAGEMENT_TIME_MSEC = 100;
 const DESKTOP_ANALYTICS_SOURCE = "memmy-desktop";
 
-/** Session-scoped gtag client_id. Never read ~/.memmy/analytics-client-id here. */
+/** Session-scoped gtag client_id. Never read ~/.cuby/analytics-client-id here. */
 let sessionClientId: string | null = null;
 let installationId: string | null = null;
 let appVersion: string | null = null;
@@ -29,7 +29,7 @@ let flushScheduled = false;
 let fetchImpl: typeof fetch = globalThis.fetch.bind(globalThis);
 
 export function resolveDesktopAnalyticsBaseUrl(
-  raw = import.meta.env.MEMMY_CLOUD_SERVICE as string | undefined
+  raw = import.meta.env.CUBY_CLOUD_SERVICE as string | undefined
 ): string | null {
   const trimmed = raw?.trim();
   if (!trimmed) return null;
@@ -121,7 +121,7 @@ function flushNow(): Promise<void> {
   if (!currentInstallationId || !currentClientId || !baseUrl) {
     // Keep waiting for both analytics identifiers; drop only when the base URL is missing.
     if (!baseUrl) {
-      console.log("[analytics] cloud flush dropped (MEMMY_CLOUD_SERVICE unset):", batch.length);
+      console.log("[analytics] cloud flush dropped (CUBY_CLOUD_SERVICE unset):", batch.length);
       return inflight;
     }
     pending = batch.concat(pending);

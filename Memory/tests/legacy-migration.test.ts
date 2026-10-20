@@ -25,8 +25,8 @@ describe("Local Plugin 2.0 migration", () => {
     await createLegacyFixture(root, "openclaw", "OpenClaw model", "openclaw trace");
     await createLegacyFixture(root, "hermes", "Hermes model", "hermes trace");
     await expect(migrateLegacyLocalPlugins({
-      configPath: join(root, ".memmy", "config.yaml"),
-      dbPath: join(root, ".memmy", "memory-service", "memory.sqlite"),
+      configPath: join(root, ".cuby", "config.yaml"),
+      dbPath: join(root, ".cuby", "memory-service", "memory.sqlite"),
       memmyConfigExisted: false,
       legacyRoot: root,
       nonInteractive: true,
@@ -37,10 +37,10 @@ describe("Local Plugin 2.0 migration", () => {
   it("automatically uses the only Local Plugin config when Memmy has no config", async () => {
     const root = tempRoot();
     await createLegacyFixture(root, "hermes", "Hermes model", "hermes trace");
-    const configPath = join(root, ".memmy", "config.yaml");
+    const configPath = join(root, ".cuby", "config.yaml");
     const report = await migrateLegacyLocalPlugins({
       configPath,
-      dbPath: join(root, ".memmy", "memory-service", "memory.sqlite"),
+      dbPath: join(root, ".cuby", "memory-service", "memory.sqlite"),
       memmyConfigExisted: false,
       legacyRoot: root,
       nonInteractive: true
@@ -55,8 +55,8 @@ describe("Local Plugin 2.0 migration", () => {
     const root = tempRoot();
     await createLegacyFixture(root, "openclaw", "OpenClaw model", "openclaw trace");
     await createLegacyFixture(root, "hermes", "Hermes model", "hermes trace");
-    const configPath = join(root, ".memmy", "config.yaml");
-    const dbPath = join(root, ".memmy", "memory-service", "memory.sqlite");
+    const configPath = join(root, ".cuby", "config.yaml");
+    const dbPath = join(root, ".cuby", "memory-service", "memory.sqlite");
     const first = await migrateLegacyLocalPlugins({
       configPath,
       dbPath,
@@ -112,9 +112,9 @@ describe("Local Plugin 2.0 migration", () => {
   it("keeps existing Memmy config and data while importing every Local Plugin database", async () => {
     const root = tempRoot();
     await createLegacyFixture(root, "openclaw", "OpenClaw model", "plugin trace");
-    const configPath = join(root, ".memmy", "config.yaml");
-    const dbPath = join(root, ".memmy", "custom", "existing.sqlite");
-    await mkdir(join(root, ".memmy", "custom"), { recursive: true });
+    const configPath = join(root, ".cuby", "config.yaml");
+    const dbPath = join(root, ".cuby", "custom", "existing.sqlite");
+    await mkdir(join(root, ".cuby", "custom"), { recursive: true });
     writeFileSync(configPath, `memmyMemory:\n  roleRouting:\n    summary: fixed\n    evolution: fixed\n  summary:\n    provider: openai_compatible\n    model: Memmy model\n  embedding:\n    mode: local\n  storage:\n    sqlitePath: ${dbPath}\n`);
     const memmyDb = new MemoryDb({ path: dbPath });
     const service = new MemoryService({
@@ -188,9 +188,9 @@ describe("Local Plugin 2.0 migration", () => {
     );
     legacy.close();
 
-    const dbPath = join(root, ".memmy", "memory-service", "memory.sqlite");
+    const dbPath = join(root, ".cuby", "memory-service", "memory.sqlite");
     const first = await migrateLegacyLocalPlugins({
-      configPath: join(root, ".memmy", "config.yaml"),
+      configPath: join(root, ".cuby", "config.yaml"),
       dbPath,
       memmyConfigExisted: true,
       legacyRoot: root,
@@ -218,7 +218,7 @@ describe("Local Plugin 2.0 migration", () => {
     db.close();
 
     const second = await migrateLegacyLocalPlugins({
-      configPath: join(root, ".memmy", "config.yaml"),
+      configPath: join(root, ".cuby", "config.yaml"),
       dbPath,
       memmyConfigExisted: true,
       legacyRoot: root,
@@ -247,9 +247,9 @@ describe("Local Plugin 2.0 migration", () => {
     old.prepare("INSERT INTO skills VALUES (?, ?, ?, ?, ?, ?)").run("skill-old", "Old skill", "Old skill guide", "active", now, now);
     old.close();
 
-    const dbPath = join(root, ".memmy", "memory-service", "memory.sqlite");
+    const dbPath = join(root, ".cuby", "memory-service", "memory.sqlite");
     const report = await migrateLegacyLocalPlugins({
-      configPath: join(root, ".memmy", "config.yaml"),
+      configPath: join(root, ".cuby", "config.yaml"),
       dbPath,
       memmyConfigExisted: true,
       legacyRoot: root,

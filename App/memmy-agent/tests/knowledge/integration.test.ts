@@ -18,7 +18,7 @@ afterEach(async () => {
 it("composes with the unchanged Memory hook and keeps its query and writeback intact", async () => {
   const folder = await mkdtemp(join(tmpdir(), "memmy-knowledge-agent-"));
   folders.push(folder);
-  vi.stubEnv("MEMMY_HOME", folder);
+  vi.stubEnv("CUBY_HOME", folder);
   const configPath = join(folder, "runtime.json");
   await writeFile(
     configPath,

@@ -58,12 +58,12 @@ async function runMemoryService(argv: string[], lifecycle: {
 }): Promise<boolean> {
     const options = parseServeArgs(argv);
     const { config, path: configPath } = loadMemmyConfig(options.configPath);
-    const host = options.host ?? process.env.MEMMY_MEMORY_HOST ?? process.env.MEMORY_SERVICE_HOST ?? "127.0.0.1";
+    const host = options.host ?? process.env.CUBY_MEMORY_HOST ?? process.env.MEMORY_SERVICE_HOST ?? "127.0.0.1";
     assertLoopbackBindHost(host);
     const port = options.port ??
-        numberEnv("MEMMY_MEMORY_PORT") ??
+        numberEnv("CUBY_MEMORY_PORT") ??
         numberEnv("MEMORY_SERVICE_PORT") ??
-        18960;
+        28960;
     const sqlitePath = options.dbPath ?? config.storage.sqlitePath;
     const serviceHome = resolve(dirname(configPath), "memory-service");
     logger.info("service.starting", {
@@ -168,11 +168,11 @@ const SERVER_USAGE = `Usage: memmy-memory [options]
 Start the local Memory HTTP service.
 
 Options:
-  --config <path>       Configuration file (default: ~/.memmy/config.yaml)
+  --config <path>       Configuration file (default: ~/.cuby/config.yaml)
   --db <path>           SQLite database path
   --sqlite-path <path>  Alias for --db
   --host <host>         Loopback listen address (default: 127.0.0.1)
-  --port <port>         Listen port (default: 18960)
+  --port <port>         Listen port (default: 28960)
   -h, --help            Show this help message
   --version             Show the service version
 `;

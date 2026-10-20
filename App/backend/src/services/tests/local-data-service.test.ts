@@ -11,7 +11,7 @@ describe("LocalDataService", () => {
       localDataStore: {
         getDataPath() {
           calls.push("path");
-          return "C:\\Users\\memmy-user\\.memmy\\memory-service";
+          return "C:\\Users\\memmy-user\\.cuby\\memory-service";
         },
         revealDataPath(dataPath) {
           calls.push(`reveal:${dataPath}`);
@@ -27,7 +27,7 @@ describe("LocalDataService", () => {
 
     await expect(service.getPath()).resolves.toEqual({
       ok: true,
-      dataPath: "C:\\Users\\memmy-user\\.memmy\\memory-service"
+      dataPath: "C:\\Users\\memmy-user\\.cuby\\memory-service"
     });
     expect(calls).toEqual(["path"]);
   });

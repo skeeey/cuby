@@ -110,8 +110,8 @@ function packagedNativeAssetPath(source: string): string {
 
 export function defaultDatabasePath(): string {
   const baseDir =
-    process.env.MEMMY_MEMORY_HOME ??
+    process.env.CUBY_MEMORY_HOME ??
     process.env.MEMORY_SERVICE_HOME ??
-    join(homedir(), ".memmy", "memory-service");
+    join(homedir(), ".cuby", "memory-service");
   return join(baseDir, "memory.sqlite");
 }

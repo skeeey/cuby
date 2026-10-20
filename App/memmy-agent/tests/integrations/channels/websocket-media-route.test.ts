@@ -13,19 +13,19 @@ const PNG_BYTES = Buffer.from([
 ]);
 const PDF_BYTES = Buffer.from("%PDF-1.7\n1 0 obj\n<<>>\nendobj\n", "utf8");
 
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const tmpDirs: string[] = [];
 
 afterEach(() => {
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const dir of tmpDirs.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
 function tmpDataDir(name: string): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), `memmy-${name}-`));
   tmpDirs.push(dir);
-  process.env.MEMMY_AGENT_DATA_DIR = dir;
+  process.env.CUBY_AGENT_DATA_DIR = dir;
   return dir;
 }
 

@@ -40,7 +40,7 @@ export class ThinkingSpinner {
   active = false;
   constructor({ console: consoleArg, botName }: { console?: any; botName?: string } = {}) {
     this.console = consoleArg ?? makeConsole();
-    const name = botName ?? "memmy";
+    const name = botName ?? "cuby";
     this.spinner = this.console.status(`${name} is thinking...`);
   }
 
@@ -95,7 +95,7 @@ export class StreamRenderer {
     console?: any;
   } = {}) {
     this.console = consoleArg ?? makeConsole();
-    this.botName = botName ?? "memmy";
+    this.botName = botName ?? "cuby";
     this.botIcon = botIcon ?? "🍚";
     this.renderMarkdown = renderMarkdown ?? true;
     if (showSpinner ?? true) {

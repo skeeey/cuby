@@ -20,8 +20,8 @@ const PNG_BYTES = Buffer.from(
 );
 const PNG_DATA_URL = `data:image/png;base64,${PNG_BYTES.toString("base64")}`;
 const roots: string[] = [];
-const originalConfig = process.env.MEMMY_CONFIG;
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalConfig = process.env.CUBY_CONFIG;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 class ScriptedLlmProvider extends LLMProvider {
   requests: any[] = [];
@@ -74,10 +74,10 @@ function imageCall(id: string, count: number): LLMResponse {
 
 afterEach(() => {
   setConfigPath(null);
-  if (originalConfig === undefined) delete process.env.MEMMY_CONFIG;
-  else process.env.MEMMY_CONFIG = originalConfig;
-  if (originalDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalConfig === undefined) delete process.env.CUBY_CONFIG;
+  else process.env.CUBY_CONFIG = originalConfig;
+  if (originalDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   LoopFakeImageClient.calls = [];
   registerImageGenProvider(OpenAIImageGenerationClient);
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
@@ -89,8 +89,8 @@ describe("AgentLoop image generation turn quota", () => {
     const root = tmpRoot();
     const configPath = path.join(root, "config.yaml");
     setConfigPath(configPath);
-    process.env.MEMMY_CONFIG = configPath;
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_CONFIG = configPath;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const provider = new ScriptedLlmProvider([
       imageCall("turn-1-first", 3),
       imageCall("turn-1-too-many", 2),

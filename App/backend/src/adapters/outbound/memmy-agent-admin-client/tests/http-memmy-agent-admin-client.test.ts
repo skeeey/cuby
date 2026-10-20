@@ -94,11 +94,11 @@ describe("http memmy-agent admin client", () => {
     ]);
   });
 
-  it("sends the bootstrap secret as x-memmy-agent-auth when configured", async () => {
+  it("sends the bootstrap secret as x-cuby-agent-auth when configured", async () => {
     const bootstrapAuthHeaders: Array<string | string[] | undefined> = [];
     server = createServer((request, response) => {
       if (request.url === "/webui/bootstrap") {
-        bootstrapAuthHeaders.push(request.headers["x-memmy-agent-auth"]);
+        bootstrapAuthHeaders.push(request.headers["x-cuby-agent-auth"]);
         sendJson(response, { token: "boot-token", ws_path: "/", expires_in: 60, model_name: null });
         return;
       }

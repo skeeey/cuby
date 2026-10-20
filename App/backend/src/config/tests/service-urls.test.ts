@@ -3,29 +3,29 @@ import { describe, expect, it } from "vitest";
 import { resolveCloudClientConfig, resolveCuberouterClientConfig } from "../service-urls.js";
 
 describe("service URL config", () => {
-  it("默认网关来自 MEMMY_CLOUD_SERVICE", () => {
-    expect(resolveCloudClientConfig({ MEMMY_CLOUD_SERVICE: "https://gw.example.cn" })).toEqual({
+  it("默认网关来自 CUBY_CLOUD_SERVICE", () => {
+    expect(resolveCloudClientConfig({ CUBY_CLOUD_SERVICE: "https://gw.example.cn" })).toEqual({
       baseUrl: "https://gw.example.cn",
       timeoutMs: 5000
     });
   });
 
-  it("对 MEMMY_CLOUD_SERVICE 做首尾去空白", () => {
+  it("对 CUBY_CLOUD_SERVICE 做首尾去空白", () => {
     expect(
-      resolveCloudClientConfig({ MEMMY_CLOUD_SERVICE: "  https://gw.example.cn  " }).baseUrl
+      resolveCloudClientConfig({ CUBY_CLOUD_SERVICE: "  https://gw.example.cn  " }).baseUrl
     ).toBe("https://gw.example.cn");
   });
 
-  it("MEMMY_CLOUD_SERVICE 缺失时抛错,不内置 URL 默认值", () => {
-    expect(() => resolveCloudClientConfig({})).toThrow(/MEMMY_CLOUD_SERVICE/);
+  it("CUBY_CLOUD_SERVICE 缺失时抛错,不内置 URL 默认值", () => {
+    expect(() => resolveCloudClientConfig({})).toThrow(/CUBY_CLOUD_SERVICE/);
   });
 
-  it("lets MEMMY_CLOUD_URL override the built-in Cloud URL for local debugging", () => {
+  it("lets CUBY_CLOUD_URL override the built-in Cloud URL for local debugging", () => {
     expect(
       resolveCloudClientConfig({
-        MEMMY_CLOUD_SERVICE: "https://gw.example.cn",
-        MEMMY_CLOUD_URL: " http://127.0.0.1:3000 ",
-        MEMMY_CLOUD_TIMEOUT_MS: "9000"
+        CUBY_CLOUD_SERVICE: "https://gw.example.cn",
+        CUBY_CLOUD_URL: " http://127.0.0.1:3000 ",
+        CUBY_CLOUD_TIMEOUT_MS: "9000"
       })
     ).toEqual({
       baseUrl: "http://127.0.0.1:3000",
@@ -33,11 +33,11 @@ describe("service URL config", () => {
     });
   });
 
-  it("MEMMY_CLOUD_URL 优先级高于 MEMMY_CLOUD_SERVICE", () => {
+  it("CUBY_CLOUD_URL 优先级高于 CUBY_CLOUD_SERVICE", () => {
     expect(
       resolveCloudClientConfig({
-        MEMMY_CLOUD_URL: "http://127.0.0.1:3000",
-        MEMMY_CLOUD_SERVICE: "https://gw.example.cn"
+        CUBY_CLOUD_URL: "http://127.0.0.1:3000",
+        CUBY_CLOUD_SERVICE: "https://gw.example.cn"
       }).baseUrl
     ).toBe("http://127.0.0.1:3000");
   });
@@ -54,15 +54,15 @@ describe("resolveCuberouterClientConfig", () => {
   it("honors model and timeout overrides", () => {
     expect(
       resolveCuberouterClientConfig({
-        MEMMY_CUBEROUTER_MODEL: "kimi-k3-a",
-        MEMMY_CUBEROUTER_TIMEOUT_MS: "1500"
+        CUBY_CUBEROUTER_MODEL: "kimi-k3-a",
+        CUBY_CUBEROUTER_TIMEOUT_MS: "1500"
       })
     ).toMatchObject({ model: "kimi-k3-a", timeoutMs: 1_500 });
   });
 
   it("prefers env over the config file for the model and timeout", () => {
     expect(resolveCuberouterClientConfig(
-      { MEMMY_CUBEROUTER_MODEL: "from-env" },
+      { CUBY_CUBEROUTER_MODEL: "from-env" },
       { model: "from-file", timeoutMs: 20_000 }
     )).toMatchObject({ model: "from-env", timeoutMs: 20_000 });
   });

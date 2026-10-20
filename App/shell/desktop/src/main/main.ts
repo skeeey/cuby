@@ -181,7 +181,7 @@ const PET_FULLSCREEN_EXIT_TIMEOUT_MS = 2500;
 loadCloudServiceEnv({
   manifestPath: app.isPackaged ? join(import.meta.dirname, "desktop-edition.json") : undefined,
 });
-const UPDATE_MANIFEST_BASE_URL = resolveCloudServiceBaseUrl(process.env.MEMMY_CLOUD_SERVICE);
+const UPDATE_MANIFEST_BASE_URL = resolveCloudServiceBaseUrl(process.env.CUBY_CLOUD_SERVICE);
 const UPDATE_MANIFEST_PATH = "/api/memmy/desktop/latest";
 const DEFAULT_UPDATE_MANIFEST_URL = `${UPDATE_MANIFEST_BASE_URL}${UPDATE_MANIFEST_PATH}`;
 const UPDATE_INSTALL_QUIT_DELAY_MS = 300;
@@ -200,12 +200,12 @@ const MAIN_WINDOW_ROUTE_TARGET_CHANNEL = "memmy:route-target-request";
 const UPDATE_DOWNLOAD_PROGRESS_CHANNEL = "memmy:update-download-progress";
 const PREPARED_REQUIRED_UPDATE_FILE = "prepared-required-update.json";
 const WINDOWS_UPDATE_PROMPT_LANGUAGE_FILE = "update-prompt-language.txt";
-const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.memmy";
+const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.cuby";
 const REQUIRED_UPDATE_BACKGROUND_FIRST_CHECK_DELAY_MS = 60 * 1000;
 // Background update check interval: defaults to 5 minutes; can be overridden via the
-// MEMMY_UPDATE_CHECK_INTERVAL_MIN env var (set a small value during testing without changing code).
+// CUBY_UPDATE_CHECK_INTERVAL_MIN env var (set a small value during testing without changing code).
 const REQUIRED_UPDATE_BACKGROUND_CHECK_INTERVAL_MS =
-  Math.max(1, Number(process.env.MEMMY_UPDATE_CHECK_INTERVAL_MIN) || 5) * 60 * 1000;
+  Math.max(1, Number(process.env.CUBY_UPDATE_CHECK_INTERVAL_MIN) || 5) * 60 * 1000;
 // Jitter ratio: the actual interval is randomized within [base, base×(1+ratio)] so that not every
 // client hits the server at the exact same moment when a release ships (thundering herd).
 const REQUIRED_UPDATE_BACKGROUND_CHECK_JITTER_RATIO = 0.2;
@@ -321,7 +321,7 @@ async function boot(): Promise<void> {
   try {
     bootStartedAt = Date.now();
     bootStage = "initializing";
-    process.env.MEMMY_APP_EDITION = resolveCurrentDesktopEdition();
+    process.env.CUBY_APP_EDITION = resolveCurrentDesktopEdition();
     initLogger();
     forceLightWindowChrome();
     await writePackagedStartupLog("boot:start");
@@ -375,7 +375,7 @@ async function boot(): Promise<void> {
           } catch { return null; }
         },
         showPanel: (state, act) => {
-          if (!mainWindow || mainWindow.isDestroyed()) throw new Error('Memmy window unavailable');
+          if (!mainWindow || mainWindow.isDestroyed()) throw new Error("Cuby window unavailable");
           return showComputerUsePermissionPanel(mainWindow, state, act);
         },
         openSettings: url => shell.openExternal(url),
@@ -453,7 +453,7 @@ async function boot(): Promise<void> {
       });
       await advanceWindowsDataMigrationAfterBoot(
         windowsDataLayout,
-        [join(homedir(), ".memmy")]
+        [join(homedir(), ".cuby")]
       ).catch(async (error: unknown) => {
         console.warn("Windows data migration cleanup deferred:", error);
         await writePackagedStartupLog(`boot:data-migration-cleanup-deferred\n${formatStartupError(error)}`);
@@ -489,22 +489,22 @@ function configureAppIdentity(): void {
   });
   const userDataPath = windowsDataLayout?.userDataPath ?? resolveDesktopUserDataPath(edition);
   const memmyHome = windowsDataLayout?.runtimeHomePath ?? resolveDesktopRuntimeHomePath(edition);
-  app.setName("Memmy");
+  app.setName("Cuby");
   if (process.platform === "win32") {
     app.setAppUserModelId(WINDOWS_APP_USER_MODEL_ID);
   }
   app.setPath("userData", userDataPath);
   if (app.isPackaged) {
-    process.env.MEMMY_HOME = memmyHome;
-    process.env.MEMMY_CONFIG = join(memmyHome, "config.yaml");
+    process.env.CUBY_HOME = memmyHome;
+    process.env.CUBY_CONFIG = join(memmyHome, "config.yaml");
     if (process.platform === "win32") {
       const memoryDatabasePath = join(memmyHome, "memory-service", "memory.sqlite");
-      process.env.MEMMY_MEMORY_DB = memoryDatabasePath;
+      process.env.CUBY_MEMORY_DB = memoryDatabasePath;
       process.env.MEMORY_SERVICE_DB = memoryDatabasePath;
     }
   } else {
-    process.env.MEMMY_HOME ??= memmyHome;
-    process.env.MEMMY_CONFIG ??= join(memmyHome, "config.yaml");
+    process.env.CUBY_HOME ??= memmyHome;
+    process.env.CUBY_CONFIG ??= join(memmyHome, "config.yaml");
   }
 }
 
@@ -521,7 +521,7 @@ function resolveDesktopRuntimeHomePath(edition: DesktopEdition): string {
  * @returns The desktop package edition identity.
  */
 function resolveCurrentDesktopEdition(): DesktopEdition {
-  return resolveDesktopEdition(readCurrentDesktopEditionManifest(), process.env.MEMMY_ACCOUNT_CHANNEL);
+  return resolveDesktopEdition(readCurrentDesktopEditionManifest(), process.env.CUBY_ACCOUNT_CHANNEL);
 }
 
 function resolveCurrentDesktopAccountChannel(): AccountChannel {
@@ -533,7 +533,7 @@ function resolveCurrentDesktopAccountChannel(): AccountChannel {
  * @returns The desktop package signing identity.
  */
 function resolveCurrentDesktopPackageSigning(): DesktopPackageSigning {
-  return resolveDesktopPackageSigning(readCurrentDesktopEditionManifest(), process.env.MEMMY_PACKAGE_SIGNING);
+  return resolveDesktopPackageSigning(readCurrentDesktopEditionManifest(), process.env.CUBY_PACKAGE_SIGNING);
 }
 
 function resolveCurrentDesktopPlatformType(): string {
@@ -561,17 +561,17 @@ async function installBundledCliIfNeeded(): Promise<void> {
 
   try {
     const cliDirectory = join(process.resourcesPath, "cli");
-    const memoryCli = join(cliDirectory, "memmy-memory");
-    const memmyCli = join(cliDirectory, "memmy");
-    await Promise.all([access(memoryCli), access(memmyCli)]);
+    const memoryCli = join(cliDirectory, "cuby-memory");
+    const cubyCli = join(cliDirectory, "cuby");
+    await Promise.all([access(memoryCli), access(cubyCli)]);
 
     const binDirectory = await resolveCliInstallDirectory();
     await mkdir(binDirectory, { recursive: true });
-    await installSymlink(memoryCli, join(binDirectory, "memmy-memory"));
-    await installSymlink(memmyCli, join(binDirectory, "memmy"));
+    await installSymlink(memoryCli, join(binDirectory, "cuby-memory"));
+    await installSymlink(cubyCli, join(binDirectory, "cuby"));
     await ensureUserPathIncludes(binDirectory);
   } catch (error) {
-    console.warn("Memmy CLI auto-install skipped:", error);
+    console.warn("Cuby CLI auto-install skipped:", error);
   }
 }
 
@@ -598,7 +598,7 @@ async function installCliTools(): Promise<CliInstallResult> {
     installed.push({ ...entry, target });
   }
 
-  const profilePaths = await ensureDirectoryOnUserPath(binDirectory, "# Memmy CLI PATH", 'export PATH="$HOME/.local/bin:$PATH"');
+  const profilePaths = await ensureDirectoryOnUserPath(binDirectory, "# Cuby CLI PATH", 'export PATH="$HOME/.local/bin:$PATH"');
   return {
     ok: true,
     binDirectory,
@@ -612,14 +612,14 @@ function resolveCliToolEntries(): Array<{ name: string; source: string }> {
   if (app.isPackaged) {
     const cliDirectory = join(process.resourcesPath, "cli");
     return [
-      { name: "memmy-memory", source: join(cliDirectory, "memmy-memory") }
+      { name: "cuby-memory", source: join(cliDirectory, "cuby-memory") }
     ];
   }
 
   const rootDirectory = resolveDevelopmentRoot();
   const memoryCli = join(rootDirectory, "Memory", "dist", "src", "cli", "index.js");
   return [
-    { name: "memmy-memory", source: memoryCli }
+    { name: "cuby-memory", source: memoryCli }
   ];
 }
 
@@ -715,7 +715,7 @@ async function ensureUserPathIncludes(binDirectory: string): Promise<void> {
     return;
   }
 
-  const marker = "# Memmy CLI PATH";
+  const marker = "# Cuby CLI PATH";
   const line = 'export PATH="$HOME/.local/bin:$PATH"';
   await Promise.all([
     ensureShellProfileIncludesPath(join(homedir(), ".zshrc"), marker, line),
@@ -740,10 +740,10 @@ async function ensureDirectoryOnUserPath(binDirectory: string, marker: string, l
 }
 
 /**
- * Ensures the shell profile includes the Memmy CLI PATH.
+ * Ensures the shell profile includes the Cuby CLI PATH.
  *
  * @param profilePath The shell profile path.
- * @param marker The Memmy CLI PATH marker.
+ * @param marker The Cuby CLI PATH marker.
  * @param line The PATH export statement.
  * @returns Resolves once done.
  */
@@ -809,7 +809,7 @@ function showPackagedStartupError(error: unknown): void {
   const message = formatStartupError(error);
   const truncatedMessage = message.length > 4000 ? `${message.slice(0, 4000)}\n...` : message;
   dialog.showErrorBox(
-    "Memmy 启动失败",
+    "Cuby 启动失败",
     `${truncatedMessage}\n\n启动日志：${startupLogPath()}`
   );
 }
@@ -822,10 +822,10 @@ async function startLocalApi(services: ManagedRuntimeServices | null): Promise<D
   const databasePath = join(app.getPath("userData"), "app.sqlite");
   let memoryControl: { baseUrl: string; token: string };
   if (services) {
-    process.env.MEMMY_CONFIG ??= services.memory.configPath;
-    process.env.MEMMY_MEMORY_LAYER_URL = services.memory.baseUrl;
-    process.env.MEMMY_MEMORY_LAYER_TOKEN = services.memory.token;
-    process.env.MEMMY_MEMORY_DB_PATH = services.memory.databasePath;
+    process.env.CUBY_CONFIG ??= services.memory.configPath;
+    process.env.CUBY_MEMORY_LAYER_URL = services.memory.baseUrl;
+    process.env.CUBY_MEMORY_LAYER_TOKEN = services.memory.token;
+    process.env.CUBY_MEMORY_DB_PATH = services.memory.databasePath;
     memoryControl = {
       baseUrl: services.memory.baseUrl,
       token: services.memory.token
@@ -837,10 +837,10 @@ async function startLocalApi(services: ManagedRuntimeServices | null): Promise<D
       secretFactory: () => "",
       writeConfig: false
     });
-    process.env.MEMMY_CONFIG ??= memoryRuntime.configPath;
-    process.env.MEMMY_MEMORY_LAYER_URL ??= memoryRuntime.memoryBaseUrl;
-    process.env.MEMMY_MEMORY_LAYER_TOKEN ??= memoryRuntime.memoryToken;
-    process.env.MEMMY_MEMORY_DB_PATH ??= memoryRuntime.memoryDatabasePath;
+    process.env.CUBY_CONFIG ??= memoryRuntime.configPath;
+    process.env.CUBY_MEMORY_LAYER_URL ??= memoryRuntime.memoryBaseUrl;
+    process.env.CUBY_MEMORY_LAYER_TOKEN ??= memoryRuntime.memoryToken;
+    process.env.CUBY_MEMORY_DB_PATH ??= memoryRuntime.memoryDatabasePath;
     memoryControl = {
       baseUrl: memoryRuntime.memoryBaseUrl,
       token: memoryRuntime.memoryToken
@@ -861,10 +861,10 @@ async function startLocalApi(services: ManagedRuntimeServices | null): Promise<D
           bootstrapSecret: services.agentGateway.bootstrapSecret
         })
       : undefined,
-    memmyConfigPath: process.env.MEMMY_CONFIG,
+    memmyConfigPath: process.env.CUBY_CONFIG,
     memoryBaseUrl: memoryControl.baseUrl,
     memoryReady: services?.memory.ready,
-    runtimeConfigPath: process.env.MEMMY_HOME ? join(process.env.MEMMY_HOME, "runtime.json") : undefined
+    runtimeConfigPath: process.env.CUBY_HOME ? join(process.env.CUBY_HOME, "runtime.json") : undefined
   });
   const agentGateway: NonNullable<DesktopRuntimeConfig["agentGateway"]> =
     services?.agentGateway ?? await resolveAgentGatewayRuntimeConfig();
@@ -937,7 +937,7 @@ function registerIpcHandlers(): void {
 
   ipcMain.handle("memmy:get-runtime-config", () => {
     if (!runtimeConfig) {
-      throw new Error("Memmy runtime config is not ready");
+      throw new Error("Cuby runtime config is not ready");
     }
 
     return runtimeConfig;
@@ -1095,12 +1095,12 @@ function getDesktopAppInfo(): DesktopAppInfo {
 }
 
 /**
- * Resolves the Memmy desktop app version.
+ * Resolves the Cuby desktop app version.
  *
  * In development mode, Electron may resolve app.getVersion() to Electron's own
  * version, so we fall back to reading the desktop workspace package.json.
  *
- * @returns The Memmy desktop app version.
+ * @returns The Cuby desktop app version.
  */
 function resolveDesktopAppVersion(): string {
   const electronAppVersion = app.getVersion();
@@ -1433,7 +1433,7 @@ function resolveInstalledWindowsUpdatePromptScriptPath(): string | null {
     return null;
   }
 
-  const scriptPath = join(localAppData, "Memmy", "launcher", "MemmyUpdatePrompt.ps1");
+  const scriptPath = join(localAppData, "Cuby", "launcher", "CubyUpdatePrompt.ps1");
   return existsSync(scriptPath) ? scriptPath : null;
 }
 
@@ -1874,7 +1874,7 @@ function resolvePreparedRequiredUpdateLockPath(): string {
 function resolveWindowsUpgradeRelayLockPath(): string | null {
   if (process.platform !== "win32") return null;
   const localAppData = process.env.LOCALAPPDATA?.trim();
-  return localAppData ? join(localAppData, "Memmy", "upgrade-staging", "active.lock") : null;
+  return localAppData ? join(localAppData, "Cuby", "upgrade-staging", "active.lock") : null;
 }
 
 /**
@@ -2355,7 +2355,7 @@ async function installMacDmgUpdateInBackground(
   await mkdir(updatesDirectory, { recursive: true });
   const destinationAppPath = resolveMacUpdateDestinationAppPath();
   if (!destinationAppPath) {
-    throw new Error("Cannot resolve installed Memmy.app path for background update");
+    throw new Error("Cannot resolve installed Cuby.app path for background update");
   }
   const helperPath = join(updatesDirectory, `install-mac-update-${Date.now()}.zsh`);
   const logPath = join(updatesDirectory, "mac-update-install.log");
@@ -2383,7 +2383,7 @@ async function installMacDmgUpdateInBackground(
  * Resolves the app bundle path that a macOS background update should replace.
  *
  * An unsigned test build may, due to App Translocation, have a current execution path that is not
- * under `/Applications`; but as long as the user has already drag-installed `/Applications/Memmy.app`,
+ * under `/Applications`; but as long as the user has already drag-installed `/Applications/Cuby.app`,
  * that official install location should still be the one replaced.
  *
  * @returns The app path that can be replaced in the background; null when the install location cannot be confirmed.
@@ -2398,9 +2398,9 @@ function resolveMacUpdateDestinationAppPath(): string | null {
     return currentAppPath;
   }
 
-  const installedMemmyAppPath = "/Applications/Memmy.app";
-  if (existsSync(installedMemmyAppPath)) {
-    return installedMemmyAppPath;
+  const installedCubyAppPath = "/Applications/Cuby.app";
+  if (existsSync(installedCubyAppPath)) {
+    return installedCubyAppPath;
   }
 
   const applicationsAppPath = join("/Applications", basename(currentAppPath));
@@ -2979,7 +2979,7 @@ function shouldQuitForManualUpdateInstall(filePath: string): boolean {
 
 /**
  * Delays quitting the current app so Finder has time to open the DMG window before we release
- * /Applications/Memmy.app.
+ * /Applications/Cuby.app.
  *
  * @returns Nothing.
  */
@@ -3018,7 +3018,7 @@ function resolveUpdatesDirectory(): string {
 /**
  * Parses the version number from an update package / pre-expanded app file name.
  *
- * File names look like `Memmy-0.0.2-darwin-arm64-cn-unsigned.dmg` / `...-unsigned.staged.app`.
+ * File names look like `Cuby-0.0.2-darwin-arm64-cn-unsigned.dmg` / `...-unsigned.staged.app`.
  *
  * @param fileName The file name.
  * @returns The version number (e.g. "0.0.2"); null when it cannot be parsed.
@@ -3214,7 +3214,7 @@ function resolveUpdatePackageFileName(downloadUrl: string, latestVersion: string
   }
 
   const version = (latestVersion ?? resolveDesktopAppVersion()).replace(/[^a-zA-Z0-9._+-]/gu, "");
-  return `Memmy-${version}-${process.platform}-${process.arch}${resolveUpdatePackageExtension()}`;
+  return `Cuby-${version}-${process.platform}-${process.arch}${resolveUpdatePackageExtension()}`;
 }
 
 /**
@@ -3642,13 +3642,13 @@ function syncMenuBarTray(enabled: boolean): void {
   }
 
   menuBarTray = new Tray(trayImage, MENU_BAR_TRAY_GUID);
-  menuBarTray.setToolTip("Memmy");
+  menuBarTray.setToolTip("Cuby");
   if (process.platform === "darwin") {
     menuBarTray.setIgnoreDoubleClickEvents(true);
   }
   menuBarTray.setContextMenu(Menu.buildFromTemplate([
     {
-      label: "显示 Memmy",
+      label: "显示 Cuby",
       click: () => activateMainWindow()
     },
     {
@@ -3657,7 +3657,7 @@ function syncMenuBarTray(enabled: boolean): void {
     },
     { type: "separator" },
     {
-      label: "退出 Memmy",
+      label: "退出 Cuby",
       click: () => app.quit()
     }
   ]));
@@ -3665,7 +3665,7 @@ function syncMenuBarTray(enabled: boolean): void {
 }
 
 /**
- * Determines whether the current OS has a native tray/status area Memmy should manage.
+ * Determines whether the current OS has a native tray/status area Cuby should manage.
  *
  * @returns True on macOS and Windows.
  */
@@ -4035,7 +4035,7 @@ function setPetWindowMode(enabled: boolean, target: RendererRouteTarget | null =
 /**
  * Closes the pet and hides it to the background: does not restore the full main window, and instead
  * forces the menu bar tray to stay resident, so the user can still re-summon it from the tray via
- * "Pet mode / Show Memmy"; the next cold start returns to full mode.
+ * "Pet mode / Show Cuby"; the next cold start returns to full mode.
  * @returns Nothing.
  */
 function hidePetWindowToBackground(): void {
@@ -4443,7 +4443,7 @@ function areBoundsEqual(left: Rectangle | null, right: Rectangle): boolean {
 
 /**
  * Resolves the screen anchor for the pet's first appearance.
- * @returns The top-left corner of the Memmy mascot, defaulting to the bottom-right of the primary screen.
+ * @returns The top-left corner of the Cuby mascot, defaulting to the bottom-right of the primary screen.
  */
 function resolveDefaultPetMascotAnchor(): { x: number; y: number } {
   const workArea = screen.getPrimaryDisplay().workArea;
@@ -4547,7 +4547,7 @@ function triggerAgentSourceAutoInject(reason: string): void {
   void fetch(url, {
     method: "POST",
     headers: {
-      "x-memmy-local-token": config.localToken
+      "x-cuby-local-token": config.localToken
     }
   }).catch((error) => {
     void writePackagedStartupLog(`agent-source-auto-inject-failed:${reason}:${String(error)}`);
@@ -4801,7 +4801,7 @@ function attachRendererShortcutGuards(targetWindow: BrowserWindow): void {
  */
 function resolveRendererUrl(mode: DesktopWindowMode, target: RendererRouteTarget | null = null): string {
   return resolveDesktopRendererUrl({
-    explicitUrl: process.env.MEMMY_RENDERER_URL,
+    explicitUrl: process.env.CUBY_RENDERER_URL,
     isPackaged: app.isPackaged,
     mainDir: import.meta.dirname,
     mode,
@@ -4838,7 +4838,7 @@ function parseRendererRouteTarget(value: unknown): RendererRouteTarget | null {
  * @returns The completed scenario or undefined.
  */
 function getBootstrapScenario(): BootstrapScenario | undefined {
-  return process.env.MEMMY_BOOTSTRAP_SCENARIO === "completed" ? "completed" : undefined;
+  return process.env.CUBY_BOOTSTRAP_SCENARIO === "completed" ? "completed" : undefined;
 }
 
 function handleAnalyticsClientId(_event: IpcMainEvent, payload: unknown): void {
@@ -4987,7 +4987,7 @@ function handleRendererLoadFailure(error: unknown): void {
 app.whenReady().then(async () => {
   if (!(await waitForSingleInstanceLock())) {
     // An instance is already running: this instance exits directly, to avoid a second instance
-    // contending for the fixed ports (memory 18960 / agent gateway) and causing a startup failure.
+    // contending for the fixed ports (memory 28960 / agent gateway) and causing a startup failure.
     app.quit();
     return;
   }
@@ -5292,9 +5292,9 @@ async function fetchDesktopImage(request: DesktopImageActionRequest, senderUrl: 
 }
 
 function resolveAgentMediaDir(): string {
-  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.memmy/config.yaml");
-  const dataDir = process.env.MEMMY_AGENT_DATA_DIR?.trim()
-    ? resolvePathValue(process.env.MEMMY_AGENT_DATA_DIR)
+  const configPath = resolvePathValue(process.env.CUBY_CONFIG ?? "~/.cuby/config.yaml");
+  const dataDir = process.env.CUBY_AGENT_DATA_DIR?.trim()
+    ? resolvePathValue(process.env.CUBY_AGENT_DATA_DIR)
     : dirname(configPath);
   return join(dataDir, "media");
 }
@@ -5395,7 +5395,7 @@ async function ensureAgentGatewayToken(options: { force?: boolean } = {}): Promi
       const bootstrapUrl = new URL("/webui/bootstrap", gateway.baseUrl).toString();
       const response = await fetch(bootstrapUrl, {
         cache: "no-store",
-        headers: gateway.bootstrapSecret ? { "X-Memmy-Agent-Auth": gateway.bootstrapSecret } : undefined
+        headers: gateway.bootstrapSecret ? { "X-Cuby-Agent-Auth": gateway.bootstrapSecret } : undefined
       });
       if (!response.ok) {
         return null;
@@ -5545,11 +5545,11 @@ async function exportMemoryDatabase(owner: BrowserWindow | null): Promise<Memory
   }
 
   const options = {
-    title: "Export Memmy Memory",
+    title: "Export Cuby Memory",
     buttonLabel: "Export",
-    defaultPath: join(app.getPath("documents"), `memmy-memory-${formatExportTimestamp(new Date())}.json`),
+    defaultPath: join(app.getPath("documents"), `cuby-memory-${formatExportTimestamp(new Date())}.json`),
     filters: [
-      { name: "Memmy Memory Export", extensions: ["json"] },
+      { name: "Cuby Memory Export", extensions: ["json"] },
       { name: "All Files", extensions: ["*"] }
     ]
   };
@@ -5563,7 +5563,7 @@ async function exportMemoryDatabase(owner: BrowserWindow | null): Promise<Memory
   const response = await fetch(`${service.baseUrl.replace(/\/$/u, "")}/api/v1/admin/export`, {
     cache: "no-store",
     headers: {
-      "x-memmy-time-zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
+      "x-cuby-time-zone": Intl.DateTimeFormat().resolvedOptions().timeZone,
       ...(service.token ? { authorization: `Bearer ${service.token}` } : {})
     }
   });
@@ -5613,7 +5613,7 @@ async function exportDiagnosticsReport(owner: BrowserWindow | null): Promise<Dia
   const options = {
     title: "Export diagnostics report",
     buttonLabel: "Export",
-    defaultPath: join(app.getPath("documents"), `memmy-diagnostics-${formatExportTimestamp(new Date())}.txt`),
+    defaultPath: join(app.getPath("documents"), `cuby-diagnostics-${formatExportTimestamp(new Date())}.txt`),
     filters: [
       { name: "Text Report", extensions: ["txt"] },
       { name: "All Files", extensions: ["*"] }
@@ -5642,16 +5642,16 @@ async function exportDiagnosticsReport(owner: BrowserWindow | null): Promise<Dia
  */
 function buildDiagnosticsReport(): string {
   const logsDirectory = resolveLogsDirectory();
-  const configPath = resolvePathValue(process.env.MEMMY_CONFIG ?? "~/.memmy/config.yaml");
-  const agentWorkspace = process.env.MEMMY_AGENT_WORKSPACE ??
-    join(resolvePathValue(process.env.MEMMY_HOME ?? "~/.memmy"), "workspace");
+  const configPath = resolvePathValue(process.env.CUBY_CONFIG ?? "~/.cuby/config.yaml");
+  const agentWorkspace = process.env.CUBY_AGENT_WORKSPACE ??
+    join(resolvePathValue(process.env.CUBY_HOME ?? "~/.cuby"), "workspace");
   const memoryDatabasePath = runtimeServices?.memory.databasePath ?? "<not-started>";
   const runtimeBaseUrl = runtimeConfig?.baseUrl ?? "<not-ready>";
   const agentGatewayBaseUrl = runtimeConfig?.agentGateway?.baseUrl ?? "<not-ready>";
 
   const lines = [
-    "Memmy Diagnostics Report",
-    "========================",
+    "Cuby Diagnostics Report",
+    "=======================",
     "",
     "Generated At",
     `- ISO Time: ${new Date().toISOString()}`,

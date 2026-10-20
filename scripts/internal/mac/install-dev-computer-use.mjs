@@ -49,7 +49,7 @@ function acquireLock(lock) {
   }
 }
 /** Copy the published app unchanged; never change its TCC identity or signature. */
-export function installDevComputerUse({ packageRoot, destinationRoot = path.join(os.homedir(), 'Applications', 'Memmy Development'), register = app => run(lsregister, ['-f', app]), running = isRunning, log = message => process.stderr.write(`${message}\n`) }) {
+export function installDevComputerUse({ packageRoot, destinationRoot = path.join(os.homedir(), 'Applications', 'Cuby Development'), register = app => run(lsregister, ['-f', app]), running = isRunning, log = message => process.stderr.write(`${message}\n`) }) {
   if (process.platform !== 'darwin') throw new Error('The development Computer Use helper requires macOS');
   const source = path.resolve(packageRoot, 'dist', appName), destination = path.resolve(destinationRoot, appName);
   if (source === destination) throw new Error('The source and destination must differ');

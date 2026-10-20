@@ -42,7 +42,7 @@ afterEach(() => {
   restorePlatform();
   vi.restoreAllMocks();
   delete process.env.OPENAI_API_KEY;
-  delete process.env.MEMMY_AGENT_TOKEN;
+  delete process.env.CUBY_AGENT_TOKEN;
 });
 
 describe("ExecTool buildEnv on Unix", () => {
@@ -66,13 +66,13 @@ describe("ExecTool buildEnv on Unix", () => {
 
   it("excludes secrets", () => {
     process.env.OPENAI_API_KEY = "sk-secret";
-    process.env.MEMMY_AGENT_TOKEN = "tok-secret";
+    process.env.CUBY_AGENT_TOKEN = "tok-secret";
     setIsWindowsForTest(false);
 
     const env = new ExecTool().buildEnv();
 
     expect(env.OPENAI_API_KEY).toBeUndefined();
-    expect(env.MEMMY_AGENT_TOKEN).toBeUndefined();
+    expect(env.CUBY_AGENT_TOKEN).toBeUndefined();
     expect(Object.values(env).join("\n").toLowerCase()).not.toContain("secret");
   });
 });
@@ -101,13 +101,13 @@ describe("ExecTool buildEnv on Windows", () => {
 
   it("excludes secrets", () => {
     process.env.OPENAI_API_KEY = "sk-secret";
-    process.env.MEMMY_AGENT_TOKEN = "tok-secret";
+    process.env.CUBY_AGENT_TOKEN = "tok-secret";
     setIsWindowsForTest(true);
 
     const env = new ExecTool().buildEnv();
 
     expect(env.OPENAI_API_KEY).toBeUndefined();
-    expect(env.MEMMY_AGENT_TOKEN).toBeUndefined();
+    expect(env.CUBY_AGENT_TOKEN).toBeUndefined();
     expect(Object.values(env).join("\n").toLowerCase()).not.toContain("secret");
   });
 
@@ -139,8 +139,8 @@ describe("ExecTool platform-specific command preparation", () => {
 
     const result = await prepared(new ExecTool({ pathAppend: "/opt/bin; echo INJECTED" }).prepareCommand("ls"));
 
-    expect(result.command).toBe('export PATH="$PATH:$MEMMY_AGENT_PATH_APPEND"; ls');
-    expect(result.env.MEMMY_AGENT_PATH_APPEND).toBe("/opt/bin; echo INJECTED");
+    expect(result.command).toBe('export PATH="$PATH:$CUBY_AGENT_PATH_APPEND"; ls');
+    expect(result.env.CUBY_AGENT_PATH_APPEND).toBe("/opt/bin; echo INJECTED");
     expect(result.command).not.toContain("INJECTED");
   });
 

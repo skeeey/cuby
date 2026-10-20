@@ -22,9 +22,9 @@ afterEach(() => {
 });
 
 describe.each(["win32", "linux"] as const)("Computer History unavailable on %s", (platform) => {
-  it.each([undefined, "1", "0"])("cannot register or invoke tools with MEMMY_COMPUTER_HISTORY=%s", async (enabled) => {
+  it.each([undefined, "1", "0"])("cannot register or invoke tools with CUBY_COMPUTER_HISTORY=%s", async (enabled) => {
     vi.spyOn(process, "platform", "get").mockReturnValue(platform);
-    vi.stubEnv("MEMMY_COMPUTER_HISTORY", enabled);
+    vi.stubEnv("CUBY_COMPUTER_HISTORY", enabled);
 
     expect(isComputerHistorySupported()).toBe(false);
     for (const cls of classes) expect(cls.enabled()).toBe(false);
@@ -39,9 +39,9 @@ describe.each(["win32", "linux"] as const)("Computer History unavailable on %s",
 });
 
 describe("Computer History macOS availability", () => {
-  it.each([undefined, "1"])("registers the existing tools with MEMMY_COMPUTER_HISTORY=%s", (enabled) => {
+  it.each([undefined, "1"])("registers the existing tools with CUBY_COMPUTER_HISTORY=%s", (enabled) => {
     vi.spyOn(process, "platform", "get").mockReturnValue("darwin");
-    vi.stubEnv("MEMMY_COMPUTER_HISTORY", enabled);
+    vi.stubEnv("CUBY_COMPUTER_HISTORY", enabled);
 
     expect(isComputerHistorySupported()).toBe(true);
     for (const cls of classes) expect(cls.enabled()).toBe(true);
@@ -51,7 +51,7 @@ describe("Computer History macOS availability", () => {
 
   it("still respects an explicit opt-out", () => {
     vi.spyOn(process, "platform", "get").mockReturnValue("darwin");
-    vi.stubEnv("MEMMY_COMPUTER_HISTORY", "0");
+    vi.stubEnv("CUBY_COMPUTER_HISTORY", "0");
 
     expect(isComputerHistorySupported()).toBe(true);
     const registry = new ToolLoader({ testClasses: classes }).loadRegistry();

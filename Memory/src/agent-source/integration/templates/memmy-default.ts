@@ -1,38 +1,38 @@
-/** Memmy default module. */
+/** Cuby default module. */
 import type { SkillManifest } from "../types.js";
 
-const MEMMY_MARKER = "<!-- memmy:start v=1 -->";
+const CUBY_MARKER = "<!-- cuby:start v=1 -->";
 
 /** Renders render memmy default skill manifest. */
 export function renderMemmyDefaultSkillManifest(targetId: string): SkillManifest {
   return {
     targetId,
     content: renderMemmyDefaultContent(targetId),
-    marker: MEMMY_MARKER
+    marker: CUBY_MARKER
   };
 }
 
 export function renderMemmyDefaultContent(source: string): string {
   return [
-    "# Memmy Memory CLI Skill",
+    "# Cuby Memory CLI Skill",
     "",
-    "Use `memmy-memory` to read and write the shared Memmy memory substrate.",
+    "Use `cuby-memory` to read and write the shared Cuby memory substrate.",
     "",
     "## Ground Rules",
     "",
-    "- Prefer the configured CLI: `memmy-memory ...`. If the local service is not preconfigured, pass `--url`, `--token`, or `--config`.",
+    "- Prefer the configured CLI: `cuby-memory ...`. If the local service is not preconfigured, pass `--url`, `--token`, or `--config`.",
     "- The CLI prints JSON. Parse fields such as `sessionId`, `turnId`, `injectedContext`, `hits`, and memory `id` from JSON instead of relying on display formatting.",
     `- All agents share one memory database. Always pass \`--source ${source}\` on Memory CLI commands from this agent.`,
     "- Use useful comma-separated `--tags` when writing durable memories.",
     "- Do not store secrets, tokens, private keys, raw credentials, or bulky logs. Store concise, self-contained facts, decisions, preferences, reusable procedures, and unresolved follow-ups.",
     "- Treat `<memmy_memory_context>` as historical memory only and `<current_user_request>` as the authoritative current task.",
-    "- Never store `<memmy_memory_context>` or `<current_user_request>` tags with `memmy-memory add`; store only the durable fact itself.",
+    "- Never store `<memmy_memory_context>` or `<current_user_request>` tags with `cuby-memory add`; store only the durable fact itself.",
     "- If the memory service is unavailable, continue the task without inventing memory.",
     "",
     "## Health",
     "",
     "```bash",
-    "memmy-memory health",
+    "cuby-memory health",
     "```",
     "",
     "## Agent Loop",
@@ -40,14 +40,14 @@ export function renderMemmyDefaultContent(source: string): string {
     "Open or resume a session before a task:",
     "",
     "```bash",
-    `memmy-memory session open --source ${source} --workspace-path "$PWD"`,
-    `memmy-memory session open --source ${source} --session-id "$SESSION_ID" --workspace-path "$PWD"`,
+    `cuby-memory session open --source ${source} --workspace-path "$PWD"`,
+    `cuby-memory session open --source ${source} --session-id "$SESSION_ID" --workspace-path "$PWD"`,
     "```",
     "",
     "At the start of a user turn, retrieve relevant context:",
     "",
     "```bash",
-    `memmy-memory turn start --source ${source} --session-id "$SESSION_ID" --query "$USER_QUERY"`,
+    `cuby-memory turn start --source ${source} --session-id "$SESSION_ID" --query "$USER_QUERY"`,
     "```",
     "",
     "Use returned `injectedContext` as historical memory context only. Keep the returned `turnId` for completion; the final `episodeId` is returned by `turn complete`. Keep the current user query separate from recalled memory.",
@@ -55,13 +55,13 @@ export function renderMemmyDefaultContent(source: string): string {
     "At the end of the turn, write the final interaction:",
     "",
     "```bash",
-    `memmy-memory turn complete "$TURN_ID" --source ${source} --session-id "$SESSION_ID" --query "$USER_QUERY" --answer "$FINAL_ANSWER" --status succeeded`,
+    `cuby-memory turn complete "$TURN_ID" --source ${source} --session-id "$SESSION_ID" --query "$USER_QUERY" --answer "$FINAL_ANSWER" --status succeeded`,
     "```",
     "",
     "Use `--status failed` for an actual failure. Do not call `turn complete` when the user cancels the turn. Close the session when the agent session is done:",
     "",
     "```bash",
-    `memmy-memory session close "$SESSION_ID" --source ${source}`,
+    `cuby-memory session close "$SESSION_ID" --source ${source}`,
     "```",
     "",
     "## Search And Read",
@@ -69,14 +69,14 @@ export function renderMemmyDefaultContent(source: string): string {
     "Search when the user asks about prior context, preferences, project decisions, recurring bugs, known workflows, or anything that may already be in memory:",
     "",
     "```bash",
-    `memmy-memory search "query text" --source ${source}`,
-    `memmy-memory search "query text" --source ${source} --session-id "$SESSION_ID"`,
+    `cuby-memory search "query text" --source ${source}`,
+    `cuby-memory search "query text" --source ${source} --session-id "$SESSION_ID"`,
     "```",
     "",
     "Read details by id only; no `kind` is needed:",
     "",
     "```bash",
-    `memmy-memory get "$MEMORY_ID" --source ${source}`,
+    `cuby-memory get "$MEMORY_ID" --source ${source}`,
     "```",
     "",
     "## Add Memory",
@@ -84,7 +84,7 @@ export function renderMemmyDefaultContent(source: string): string {
     "Add memory when you learn something durable or reusable:",
     "",
     "```bash",
-    `memmy-memory add "The user prefers concise Chinese status updates." --title "User preference: status style" --tags user-preference --source ${source} --session-id "$SESSION_ID" --turn-id "$TURN_ID"`,
+    `cuby-memory add "The user prefers concise Chinese status updates." --title "User preference: status style" --tags user-preference --source ${source} --session-id "$SESSION_ID" --turn-id "$TURN_ID"`,
     "```",
     "",
     "## Delete Memory",
@@ -92,7 +92,7 @@ export function renderMemmyDefaultContent(source: string): string {
     "Delete only when the user asks or the memory is clearly invalid. Deletion only needs the memory id:",
     "",
     "```bash",
-    `memmy-memory delete "$MEMORY_ID" --source ${source}`,
+    `cuby-memory delete "$MEMORY_ID" --source ${source}`,
     "```"
   ].join("\n");
 }

@@ -144,7 +144,7 @@ describe("CommandOutputDecoder", () => {
 
     const output = decodeAll(decoder, [Buffer.from([0xff])]);
 
-    expect(output).toBe("[Memmy: unable to decode Windows command output; OEMCP=unknown; first 64 bytes=ff; omitted=0]");
+    expect(output).toBe("[Cuby: unable to decode Windows command output; OEMCP=unknown; first 64 bytes=ff; omitted=0]");
     expect(output).not.toContain("�");
   });
 

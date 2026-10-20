@@ -38,8 +38,8 @@ vi.mock("../../../src/entrypoints/frontend-bridge/mcp-presets-api.js", async (im
 
 const running: WebSocketChannel[] = [];
 const tmpDirs: string[] = [];
-const originalMemmyAgentConfig = process.env.MEMMY_CONFIG;
-const originalMemmyAgentDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalMemmyAgentConfig = process.env.CUBY_CONFIG;
+const originalMemmyAgentDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 afterEach(async () => {
   await Promise.all(running.splice(0).map((channel) => channel.stop()));
@@ -49,10 +49,10 @@ afterEach(async () => {
   childProcessMocks.spawn.mockClear();
   childProcessMocks.spawnSync.mockClear();
   routeMocks.mcpPresetsSettingsAction.mockReset();
-  if (originalMemmyAgentConfig === undefined) delete process.env.MEMMY_CONFIG;
-  else process.env.MEMMY_CONFIG = originalMemmyAgentConfig;
-  if (originalMemmyAgentDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalMemmyAgentDataDir;
+  if (originalMemmyAgentConfig === undefined) delete process.env.CUBY_CONFIG;
+  else process.env.CUBY_CONFIG = originalMemmyAgentConfig;
+  if (originalMemmyAgentDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalMemmyAgentDataDir;
 });
 
 describe("WebSocket HTTP route helpers", () => {
@@ -183,7 +183,7 @@ describe("WebSocket HTTP route helpers", () => {
   function configModel(root: string, model: string): void {
     const configPath = path.join(root, "config.yaml");
     fs.writeFileSync(configPath, `model: ${model}\n`, "utf8");
-    process.env.MEMMY_CONFIG = configPath;
+    process.env.CUBY_CONFIG = configPath;
   }
 
   function mockDirtyGitWorkspace(root: string): void {
@@ -238,7 +238,7 @@ describe("WebSocket HTTP route helpers", () => {
       "    agent: { candidates: [], default: null }",
       "",
     ].join("\n"), "utf8");
-    process.env.MEMMY_CONFIG = configPath;
+    process.env.CUBY_CONFIG = configPath;
   }
 
   const localConnection = { remoteAddress: "127.0.0.1" };
@@ -531,12 +531,12 @@ describe("WebSocket HTTP route helpers", () => {
       headers: {
         Origin: origin,
         "Access-Control-Request-Method": "PATCH",
-        "Access-Control-Request-Headers": "x-memmy-agent-auth"
+        "Access-Control-Request-Headers": "x-cuby-agent-auth"
       }
     });
     expect(preflight.status).toBe(204);
     expect(preflight.headers.get("access-control-allow-origin")).toBe(origin);
-    expect(preflight.headers.get("access-control-allow-headers")).toContain("x-memmy-agent-auth");
+    expect(preflight.headers.get("access-control-allow-headers")).toContain("x-cuby-agent-auth");
     expect(preflight.headers.get("access-control-allow-methods")).toBe(
       "GET, POST, PATCH, DELETE, OPTIONS",
     );
@@ -544,7 +544,7 @@ describe("WebSocket HTTP route helpers", () => {
     const boot = await fetch(`http://127.0.0.1:${port}/webui/bootstrap`, {
       headers: {
         Origin: origin,
-        "X-Memmy-Agent-Auth": "secret"
+        "X-Cuby-Agent-Auth": "secret"
       }
     });
     expect(boot.status).toBe(200);
@@ -660,7 +660,7 @@ describe("WebSocket HTTP route helpers", () => {
 
     const values = JSON.stringify({ browserbase_api_key: "bb_live_secret" });
     const enabled = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/enable?name=browserbase`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": values },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": values },
     });
     expect(enabled.status).toBe(200);
     expect(seen.at(-1)?.[1].browserbase_api_key).toEqual(["bb_live_secret"]);
@@ -672,25 +672,25 @@ describe("WebSocket HTTP route helpers", () => {
     expect(body.restart_required_sections).toEqual([]);
 
     const badHeader = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/enable?name=browserbase`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": "[]" },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": "[]" },
     });
     expect(badHeader.status).toBe(400);
 
     const custom = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/custom`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": JSON.stringify({ name: "docs", command: "npx" }) },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": JSON.stringify({ name: "docs", command: "npx" }) },
     });
     expect(custom.status).toBe(200);
     expect(seen.at(-1)?.[1].command).toEqual(["npx"]);
     expect(((await custom.json()) as any).last_action.message).toBe("custom:docs MCP config reloaded.");
 
     const imported = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/import`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": JSON.stringify({ config: "{}" }) },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": JSON.stringify({ config: "{}" }) },
     });
     expect(imported.status).toBe(200);
     expect(((await imported.json()) as any).last_action.message).toBe("import:config MCP config reloaded.");
 
     const tools = await fetch(`http://127.0.0.1:${port}/api/settings/mcp-presets/tools`, {
-      headers: { ...headers, "X-Memmy-Agent-MCP-Values": JSON.stringify({ name: "docs", enabled_tools: [] }) },
+      headers: { ...headers, "X-Cuby-Agent-MCP-Values": JSON.stringify({ name: "docs", enabled_tools: [] }) },
     });
     expect(tools.status).toBe(200);
     expect(((await tools.json()) as any).last_action.message).toBe("tools:docs MCP config reloaded.");
@@ -722,7 +722,7 @@ describe("WebSocket HTTP route helpers", () => {
     expect(control.metadata[INBOUND_META_RUNTIME_CONTROL]).toBe(RUNTIME_CONTROL_MCP_RELOAD);
     control.metadata[RUNTIME_CONTROL_ACK].resolve({
       ok: true,
-      message: "MCP config reloaded without restarting memmy.",
+      message: "MCP config reloaded without restarting Cuby.",
       requires_restart: false,
     });
 
@@ -749,7 +749,7 @@ describe("WebSocket HTTP route helpers", () => {
     expect(updated.status, updatedText).toBe(200);
     const body = JSON.parse(updatedText) as Record<string, any>;
     expect(body.image_generation.max_images_per_turn).toBe(24);
-    expect(loadConfig(process.env.MEMMY_CONFIG).tools.imageGeneration).toMatchObject({
+    expect(loadConfig(process.env.CUBY_CONFIG).tools.imageGeneration).toMatchObject({
       enabled: true,
       maxImagesPerTurn: 24,
     });
@@ -766,7 +766,7 @@ describe("WebSocket HTTP route helpers", () => {
     );
     expect(unlimited.status).toBe(200);
     expect(((await unlimited.json()) as any).image_generation.max_images_per_turn).toBeNull();
-    expect(loadConfig(process.env.MEMMY_CONFIG).tools.imageGeneration.maxImagesPerTurn).toBeNull();
+    expect(loadConfig(process.env.CUBY_CONFIG).tools.imageGeneration.maxImagesPerTurn).toBeNull();
 
     const settings = await fetch(`http://127.0.0.1:${port}/api/settings`, { headers });
     expect(settings.status).toBe(200);
@@ -779,7 +779,7 @@ describe("WebSocket HTTP route helpers", () => {
       { headers },
     );
     expect(rejected.status).toBe(400);
-    expect(loadConfig(process.env.MEMMY_CONFIG).tools.imageGeneration.toObject()).not.toHaveProperty("apiKey");
+    expect(loadConfig(process.env.CUBY_CONFIG).tools.imageGeneration.toObject()).not.toHaveProperty("apiKey");
   });
 
   it("lists only websocket sessions on the WebUI sessions route", async () => {
@@ -794,7 +794,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("uses session message timestamps for WebUI thread messages when transcripts omit time", () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const manager = new SessionManager(root);
     const session = new Session({ key: "websocket:timed" });
     bindWebuiSession(session, root);
@@ -817,7 +817,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("replays context compaction transcript rows as one WebUI divider message", () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const manager = new SessionManager(root);
     const session = new Session({ key: "websocket:compact" });
     bindWebuiSession(session, root);
@@ -927,7 +927,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("scopes WebUI sidebar state routes to the configured data directory", async () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const channel = makeChannel({ sessionManager: seedSession(root, "websocket:sidebar") });
     const port = await startChannel(channel);
     const headers = await authHeaders(port);
@@ -959,7 +959,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("removes session and WebUI transcript files from the delete route", async () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     const manager = seedSession(root, "websocket:doomed");
     appendTranscriptObject("websocket:doomed", { event: "user", chat_id: "doomed", text: "x" });
     const cancelActiveTasks = vi.fn(async () => 1);
@@ -1240,7 +1240,7 @@ describe("WebSocket HTTP route helpers", () => {
   it("projects the runtime file memory snapshot into the command palette", () => {
     const root = tmpRoot();
     const configPath = path.join(root, "config.yaml");
-    process.env.MEMMY_CONFIG = configPath;
+    process.env.CUBY_CONFIG = configPath;
     fs.writeFileSync(
       configPath,
       "fileMemory:\n  enabled: true\nsessionDag:\n  enabled: true\n",
@@ -1304,7 +1304,7 @@ describe("WebSocket HTTP route helpers", () => {
 
   it("allows wildcard IPv6 bootstrap when a secret is provided", () => {
     const channel = makeChannel({ config: { host: "::", tokenIssueSecret: "s3cret" } });
-    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Memmy-Agent-Auth": "s3cret" } });
+    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Cuby-Agent-Auth": "s3cret" } });
     expect(response.status).toBe(200);
   });
 
@@ -1363,9 +1363,9 @@ describe("WebSocket HTTP route helpers", () => {
     expect(responseJson(response).token).toMatch(/^nbwt_/);
   });
 
-  it("accepts remote bootstrap with the X-Memmy-Agent-Auth header", () => {
+  it("accepts remote bootstrap with the X-Cuby-Agent-Auth header", () => {
     const channel = makeChannel({ config: { host: "0.0.0.0", tokenIssueSecret: "s3cret" } });
-    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Memmy-Agent-Auth": "s3cret" } });
+    const response = (channel as any).handleBootstrap(remoteConnection, { headers: { "X-Cuby-Agent-Auth": "s3cret" } });
     expect(response.status).toBe(200);
   });
 

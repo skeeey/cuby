@@ -161,7 +161,7 @@ function validateAppliedRecords(
 }
 
 export function getMigrationStatePaths(profileWorkspace: string): MigrationStatePaths {
-  const directory = path.join(profileWorkspace, ".memmy-migrations");
+  const directory = path.join(profileWorkspace, ".cuby-migrations");
   return {
     directory,
     file: path.join(directory, "agent-workspace.json"),

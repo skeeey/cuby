@@ -19,8 +19,8 @@ describe("cloud-analytics", () => {
   const fetchMock = vi.fn<typeof fetch>(async () => new Response(null, { status: 204 }));
 
   beforeEach(() => {
-    vi.stubEnv("MEMMY_CLOUD_SERVICE", "https://cloud.example.com/");
-    vi.stubEnv("MEMMY_APP_EDITION", "cn");
+    vi.stubEnv("CUBY_CLOUD_SERVICE", "https://cloud.example.com/");
+    vi.stubEnv("CUBY_APP_EDITION", "cn");
     resetAnalyticsContextForTests();
     resetDesktopCloudAnalyticsForTests({ fetchImpl: fetchMock });
     setDesktopAnalyticsContext({
@@ -37,7 +37,7 @@ describe("cloud-analytics", () => {
     resetDesktopCloudAnalyticsForTests();
   });
 
-  it("strips trailing slashes from MEMMY_CLOUD_SERVICE", () => {
+  it("strips trailing slashes from CUBY_CLOUD_SERVICE", () => {
     expect(resolveDesktopAnalyticsBaseUrl("https://cloud.example.com///")).toBe(
       "https://cloud.example.com"
     );
@@ -125,7 +125,7 @@ describe("cloud-analytics", () => {
   });
 
   it("drops queued events when cloud base URL is unset", async () => {
-    vi.stubEnv("MEMMY_CLOUD_SERVICE", "");
+    vi.stubEnv("CUBY_CLOUD_SERVICE", "");
     trackCloudAnalyticsEvent("page_view", { page_path: "/main" });
     setDesktopAnalyticsClientId("cid-1");
     await flushDesktopCloudAnalytics();

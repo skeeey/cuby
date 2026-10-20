@@ -35,7 +35,7 @@ function configured(): Config {
       websocket: {
         enabled: true,
         host: "127.0.0.1",
-        port: 18980,
+        port: 28980,
         tokenIssueSecret: "secret",
       },
     },
@@ -128,7 +128,7 @@ describe("Linux systemd Memory authentication probing", () => {
     const config = new Config({
       memmyMemory: {
         storage: {
-          endpoint: "http://127.0.0.1:18960",
+          endpoint: "http://127.0.0.1:28960",
           token: "current-memory-token",
         },
       },

@@ -18,7 +18,7 @@ afterEach(() => { vi.unstubAllEnvs(); });
 describe("ComputerHistoryTool", () => {
   it("is discoverable as a core Agent tool scoped to retrieval", () => {
     vi.spyOn(historyPlatform, "isComputerHistorySupported").mockReturnValue(true);
-    vi.stubEnv("MEMMY_COMPUTER_HISTORY", undefined);
+    vi.stubEnv("CUBY_COMPUTER_HISTORY", undefined);
     const registry = new ToolLoader({ testClasses: [ComputerHistoryTool] }).loadRegistry();
     const tool = registry.get("computer_history");
 

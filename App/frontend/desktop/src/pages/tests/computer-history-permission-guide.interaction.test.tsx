@@ -45,7 +45,7 @@ describe("Computer History permission dialog", () => {
     expect(container.querySelector('[role="dialog"]')).toBeNull(); // portal
     expect(dialog().querySelectorAll('.ch__permission-row')).toHaveLength(2);
     expect(dialog().textContent).toContain("辅助功能"); expect(dialog().textContent).toContain("输入监控");
-    expect(dialog().textContent).not.toMatch(/检查并开始|重新检测|重启 Memmy|屏幕录制/);
+    expect(dialog().textContent).not.toMatch(/检查并开始|重新检测|重启 Cuby|屏幕录制/);
     expect(client.openComputerHistoryPermission).not.toHaveBeenCalled();
     await click("去开启"); expect(client.openComputerHistoryPermission).toHaveBeenCalledExactlyOnceWith("accessibility", "settings");
     const half = { ...denied, accessibility: true };

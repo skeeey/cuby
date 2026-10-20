@@ -27,35 +27,35 @@ describe("vite workspace resolution", () => {
   });
 
   it("isolates test validation without mutating process env", () => {
-    vi.stubEnv("MEMMY_LEGAL_CN_BASE_URL", "http://invalid.test");
-    vi.stubEnv("MEMMY_LEGAL_INTL_BASE_URL", "https://invalid.test/path");
+    vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "http://invalid.test");
+    vi.stubEnv("CUBY_LEGAL_INTL_BASE_URL", "https://invalid.test/path");
 
     expect(() => resolveConfig("test")).not.toThrow();
-    expect(process.env.MEMMY_LEGAL_CN_BASE_URL).toBe("http://invalid.test");
-    expect(process.env.MEMMY_LEGAL_INTL_BASE_URL).toBe("https://invalid.test/path");
+    expect(process.env.CUBY_LEGAL_CN_BASE_URL).toBe("http://invalid.test");
+    expect(process.env.CUBY_LEGAL_INTL_BASE_URL).toBe("https://invalid.test/path");
   });
 
   it("keeps development validation strict", () => {
-    vi.stubEnv("MEMMY_LEGAL_CN_BASE_URL", "http://invalid.test");
-    vi.stubEnv("MEMMY_LEGAL_INTL_BASE_URL", "https://valid.test");
+    vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "http://invalid.test");
+    vi.stubEnv("CUBY_LEGAL_INTL_BASE_URL", "https://valid.test");
 
-    expect(() => resolveConfig("development")).toThrow(/MEMMY_LEGAL_CN_BASE_URL/);
+    expect(() => resolveConfig("development")).toThrow(/CUBY_LEGAL_CN_BASE_URL/);
   });
 
   it("exposes only the explicit public MEMMY allowlist to renderer code", () => {
-    vi.stubEnv("MEMMY_PRIVATE_TOKEN", "must-not-be-rendered");
+    vi.stubEnv("CUBY_PRIVATE_TOKEN", "must-not-be-rendered");
     const config = resolveConfig("test");
 
     expect(config.envPrefix).toEqual(["VITE_"]);
     expect(Object.keys(config.define ?? {}).sort()).toEqual(
       PUBLIC_MEMMY_RENDERER_ENV_KEYS.map((key) => `import.meta.env.${key}`).sort(),
     );
-    expect(JSON.stringify(config.define)).not.toContain("MEMMY_PRIVATE_TOKEN");
+    expect(JSON.stringify(config.define)).not.toContain("CUBY_PRIVATE_TOKEN");
     expect(JSON.stringify(config.define)).not.toContain("must-not-be-rendered");
   });
 
   it("ignores source watcher events during stable Electron demo runs", () => {
-    vi.stubEnv("MEMMY_STABLE_ELECTRON_DEMO", "1");
+    vi.stubEnv("CUBY_STABLE_ELECTRON_DEMO", "1");
 
     const config = resolveConfig("test");
 
@@ -67,7 +67,7 @@ describe("vite workspace resolution", () => {
   });
 
   it("keeps source watching enabled for normal frontend development", () => {
-    vi.stubEnv("MEMMY_STABLE_ELECTRON_DEMO", "0");
+    vi.stubEnv("CUBY_STABLE_ELECTRON_DEMO", "0");
 
     const config = resolveConfig("test");
 

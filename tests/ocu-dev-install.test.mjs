@@ -114,7 +114,7 @@ test('source updates preserve the published identity and signed contents', macOn
 
 test('refuses a patched source identity instead of silently resigning it', macOnly, (t) => {
   const { source, install } = fixture(t);
-  run('/usr/libexec/PlistBuddy', ['-c', 'Set :CFBundleIdentifier cn.memtensor.memmy.computeruse.dev', path.join(source, 'Contents/Info.plist')]);
+  run('/usr/libexec/PlistBuddy', ['-c', 'Set :CFBundleIdentifier cn.memtensor.cuby.computeruse.dev', path.join(source, 'Contents/Info.plist')]);
   sign(source);
   assert.throws(install, /official/);
 });

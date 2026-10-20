@@ -174,7 +174,7 @@ describe("ComputerHistorySubPage", () => {
     const info = container.querySelector<HTMLButtonElement>('button.ch__info')!;
     const tooltip = () => document.querySelector('[role="tooltip"]');
     act(() => { info.dispatchEvent(new MouseEvent("mouseover", { bubbles: true })); });
-    expect(tooltip()?.textContent).toBe("Memmy 会记录你电脑活动，并整理为文本摘要。你可以通过删除单条记录或清除历史记录来控制 Memmy 可以引用的内容。");
+    expect(tooltip()?.textContent).toBe("Cuby 会记录你电脑活动，并整理为文本摘要。你可以通过删除单条记录或清除历史记录来控制 Cuby 可以引用的内容。");
     expect(tooltip()?.getAttribute("aria-hidden")).toBe("false");
     act(() => { info.dispatchEvent(new MouseEvent("mouseout", { bubbles: true })); });
     expect(tooltip()?.getAttribute("aria-hidden")).toBe("true");

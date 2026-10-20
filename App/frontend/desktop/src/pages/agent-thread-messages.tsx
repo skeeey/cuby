@@ -39,7 +39,7 @@ import {
   type AttachmentDownloadStarter,
   type AttachmentCopyTarget,
 } from "./agent-message-content.js";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { Tooltip } from "../components/tooltip.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import type { MessageKey, MessageValues, ResolvedLanguage } from "../i18n/messages.js";
@@ -1260,11 +1260,11 @@ function ThinkingPlaceholder() {
   const { t } = useTranslation();
   // The waiting gap (before any activity arrives) is the one spot in the
   // thread quiet AND large enough for the mascot to stay legible — a gentle
-  // 26px bobbing rice grain, never squeezed into 12px icon slots.
+  // 26px bobbing Cuby, never squeezed into 12px icon slots.
   return (
     <div className="flex min-w-0 justify-start" aria-live="polite" aria-busy="true">
       <div className="agent-thinking-placeholder inline-flex max-w-full min-w-0 items-center gap-2 overflow-hidden text-[13px] font-normal text-text-ink/55">
-        <Memmy pose="think" size={26} className="agent-thinking-placeholder__mascot shrink-0" />
+        <Cuby pose="think" size={26} className="agent-thinking-placeholder__mascot shrink-0" />
         <span className="min-w-0 truncate">{t("agent.message.thinking")}</span>
       </div>
     </div>

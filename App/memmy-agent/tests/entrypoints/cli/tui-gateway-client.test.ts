@@ -145,7 +145,7 @@ async function connectClient({
     throw new Error(`unexpected URL: ${url}`);
   });
   const client = new TuiGatewayClient({
-    baseUrl: "http://127.0.0.1:18980",
+    baseUrl: "http://127.0.0.1:28980",
     sessionKey: "cli:test",
     fetchImpl,
     webSocketFactory: (url) => {
@@ -190,9 +190,9 @@ describe("TuiGatewayClient", () => {
     });
 
     expect(fetchImpl.mock.calls.map(([url]) => String(url))).toEqual(expect.arrayContaining([
-      "http://127.0.0.1:18980/webui/bootstrap",
+      "http://127.0.0.1:28980/webui/bootstrap",
       expect.stringContaining("/webui-thread?surface=tui"),
-      "http://127.0.0.1:18980/api/commands",
+      "http://127.0.0.1:28980/api/commands",
     ]));
     expect(client.snapshot()).toMatchObject({
       connection: "connected",
@@ -292,7 +292,7 @@ describe("TuiGatewayClient", () => {
       return history;
     });
     const client = new TuiGatewayClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       sessionKey: "cli:test",
       fetchImpl,
       webSocketFactory: () => {
@@ -735,7 +735,7 @@ describe("TuiGatewayClient", () => {
       throw new Error(`unexpected URL: ${url}`);
     });
     const client = new TuiGatewayClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       sessionKey: "cli:test",
       fetchImpl,
       webSocketFactory: () => {
@@ -880,7 +880,7 @@ describe("TuiGatewayClient", () => {
     expect(calls).toHaveLength(1);
     const sessionKey = `websocket:${client.chatId}`;
     expect(String(calls[0]![0])).toBe(
-      `http://127.0.0.1:18980/api/sessions/${encodeURIComponent(sessionKey)}/last-compaction`,
+      `http://127.0.0.1:28980/api/sessions/${encodeURIComponent(sessionKey)}/last-compaction`,
     );
     expect(calls[0]![1]).toMatchObject({
       headers: { authorization: "Bearer token-1" },

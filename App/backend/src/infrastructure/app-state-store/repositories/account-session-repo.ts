@@ -20,6 +20,15 @@ export interface AccountSessionRepository {
   getAuthChannelByCloudUuid(cloudUuid: string): AccountChannel | null;
   /** Reads get cloud uuid. */
   getCloudUuid(): string | null;
+  /**
+   * Reads the renewable cuberouter credential. Null for an account that logged in before this
+   * existed, or for a non-cuberouter session; both callers fall back to the cloud uuid.
+   */
+  getCuberouterCredential(): CuberouterCredentialState | null;
+  /** Stores the renewable credential for the active account. */
+  setCuberouterCredential(state: CuberouterCredentialState): void;
+  /** Drops the renewable credential, leaving the account itself in place. */
+  clearCuberouterCredential(): void;
   /** Reads get latest cloud uuid. */
   getLatestCloudUuid(): string | null;
   /** Handles activate by cloud uuid. */
@@ -34,6 +43,18 @@ export interface AccountSessionRepository {
 
 export interface AccountSessionProfileInput extends AccountProfileView {
   rawProfile: Record<string, unknown>;
+}
+
+/**
+ * The cuberouter credentials that rotate, kept apart from `cloudUuid`: that value doubles as the
+ * account's identity (it is what `getAuthChannelByCloudUuid` matches on), so renewing the access
+ * token must not move it.
+ */
+export interface CuberouterCredentialState {
+  accessToken: string;
+  /** Epoch seconds, as the instance reports it. */
+  accessExpiresAt: number;
+  refreshToken: string | null;
 }
 
 export interface UpsertAccountSessionInput {
@@ -112,6 +133,29 @@ export function createAccountSessionRepository(db: DatabaseSync, secretStore: Se
 
     getCloudUuid() {
       return getCloudUuidFromRow(secretStore, getActiveAccountRow(db));
+    },
+
+    getCuberouterCredential() {
+      const ref = activeCuberouterCredentialRef(db);
+      if (!ref) return null;
+      const raw = secretStore.get(ref);
+      return raw ? parseCuberouterCredential(raw) : null;
+    },
+
+    setCuberouterCredential(state) {
+      const accountUuid = getActiveAccountUuid(db);
+      if (!accountUuid) {
+        throw Object.assign(new Error("Cloud account uuid is required"), { code: "invalid_argument" as const });
+      }
+      secretStore.set(cuberouterCredentialRefFor(accountUuid), JSON.stringify(state), {
+        uuid: accountUuid,
+        purpose: "cuberouter_credential"
+      });
+    },
+
+    clearCuberouterCredential() {
+      const ref = activeCuberouterCredentialRef(db);
+      if (ref) secretStore.delete(ref);
     },
 
     getLatestCloudUuid() {
@@ -576,4 +620,32 @@ function toThrottleRecord(key: string): {
  */
 function toThrottleKey(key: string): string {
   return toThrottleRecord(key).throttleKey;
+}
+
+function cuberouterCredentialRefFor(accountUuid: string): string {
+  return `account:${accountUuid}:cuberouter-credential`;
+}
+
+function activeCuberouterCredentialRef(db: DatabaseSync): string | null {
+  const accountUuid = getActiveAccountUuid(db);
+  return accountUuid ? cuberouterCredentialRefFor(accountUuid) : null;
+}
+
+/** Reads the stored blob defensively: a shape this build cannot use reads as "none stored". */
+function parseCuberouterCredential(raw: string): CuberouterCredentialState | null {
+  let parsed: Partial<CuberouterCredentialState>;
+  try {
+    parsed = JSON.parse(raw) as Partial<CuberouterCredentialState>;
+  } catch {
+    return null;
+  }
+
+  if (typeof parsed?.accessToken !== "string" || !parsed.accessToken) return null;
+  if (typeof parsed.accessExpiresAt !== "number" || !Number.isFinite(parsed.accessExpiresAt)) return null;
+
+  return {
+    accessToken: parsed.accessToken,
+    accessExpiresAt: parsed.accessExpiresAt,
+    refreshToken: typeof parsed.refreshToken === "string" && parsed.refreshToken ? parsed.refreshToken : null
+  };
 }

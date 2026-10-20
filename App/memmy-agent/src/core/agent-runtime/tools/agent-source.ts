@@ -133,7 +133,7 @@ export class AgentSourceTool extends Tool {
   }
 
   get description(): string {
-    return "Provision a GUI-managed Agent source: verify the requested Agent against a real local installation, inspect its persisted status, render its Memmy Skill, import a normalized bootstrap manifest, save the reusable automatic-sync recipe, or update Skill installation state. Verification is mandatory before any provisioning mutation. Use only in an explicitly requested agent-memory-onboarding task.";
+    return "Provision a GUI-managed Agent source: verify the requested Agent against a real local installation, inspect its persisted status, render its Cuby Skill, import a normalized bootstrap manifest, save the reusable automatic-sync recipe, or update Skill installation state. Verification is mandatory before any provisioning mutation. Use only in an explicitly requested agent-memory-onboarding task.";
   }
 
   override get readOnly(): boolean {
@@ -438,13 +438,13 @@ export function renderFullMemorySkill(
 ): { skillPath: string; memorySource: string } {
   const template = fs.readFileSync(FULL_MEMORY_SKILL_TEMPLATE, "utf8");
   if (!template.includes("{{SOURCE_ARG}}")) {
-    throw new Error("Full Memmy Skill template is missing {{SOURCE_ARG}}");
+    throw new Error("Full Cuby Skill template is missing {{SOURCE_ARG}}");
   }
   const targetDir = path.join(
     path.resolve(workspace),
-    ".memmy-agent",
+    ".cuby-agent",
     createHash("sha256").update(sourceId).digest("hex").slice(0, 16),
-    "memmy-memory"
+    "cuby-memory"
   );
   const skillPath = path.join(targetDir, "SKILL.md");
   fs.mkdirSync(targetDir, { recursive: true });
@@ -641,7 +641,7 @@ async function localApiRequest<T>(
     method,
     headers: {
       accept: "application/json",
-      "x-memmy-local-token": runtime.localToken,
+      "x-cuby-local-token": runtime.localToken,
       ...(body === undefined ? {} : { "content-type": "application/json" })
     },
     body: body === undefined ? undefined : JSON.stringify(body),
@@ -659,9 +659,9 @@ async function localApiRequest<T>(
 }
 
 function readRuntimeConfig(): RuntimeConfig {
-  const memmyHome = process.env.MEMMY_HOME?.trim()
-    ? path.resolve(process.env.MEMMY_HOME)
-    : path.join(os.homedir(), ".memmy");
+  const memmyHome = process.env.CUBY_HOME?.trim()
+    ? path.resolve(process.env.CUBY_HOME)
+    : path.join(os.homedir(), ".cuby");
   const configPath = path.join(memmyHome, "runtime.json");
   const parsed = JSON.parse(fs.readFileSync(configPath, "utf8")) as Record<string, unknown>;
   return {

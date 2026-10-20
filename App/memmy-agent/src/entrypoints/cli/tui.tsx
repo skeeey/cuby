@@ -111,24 +111,23 @@ const AGENT_ROWS = [
 
 const TITLE_ROW_COLORS = ["#A8E7DC", "#86D8CA", "#67C7B7", "#67C7B7", "#49AA9B", "#2F7C73"] as const;
 
-type MascotTone = "dark" | "none" | "rice0" | "rice1" | "rice2" | "spoon0" | "spoon1" | "spoon2";
+type MascotTone = "none" | "antenna" | "body" | "face" | "eye" | "pupil" | "blush";
 type MascotPixelSegment = readonly [MascotTone, MascotTone, string];
 
-// Half-block raster sampled from App/frontend/desktop/src/assets/mascot/memmy-rice.png.
+// Half-block raster of the Cuby head, as delivered (20x12 cells).
 const MASCOT_PIXEL_ROWS: ReadonlyArray<ReadonlyArray<MascotPixelSegment>> = [
-  [["none", "none", "                       "], ["rice0", "none", "▄▄▄▄▄▄"]],
-  [["none", "none", "                    "], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀"]],
-  [["none", "none", "                "], ["none", "rice0", " "], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"], ["rice1", "rice0", "▀"], ["none", "rice1", " "]],
-  [["none", "none", "               "], ["none", "rice0", " "], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"], ["rice1", "rice1", "▀▀"], ["none", "rice1", " "], ["none", "none", "     "], ["spoon0", "none", "▄"], ["spoon1", "none", "▄▄"]],
-  [["none", "none", "              "], ["none", "rice1", " "], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"], ["rice1", "rice1", "▀▀"], ["rice2", "rice1", "▀"], ["none", "none", "  "], ["spoon1", "none", "▄"], ["spoon1", "spoon1", "▀▀▀▀"], ["spoon0", "spoon0", "▀"], ["spoon1", "none", "▄"]],
-  [["none", "none", "             "], ["none", "spoon1", " "], ["rice1", "rice1", "▀"], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀▀"], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀"], ["rice1", "rice1", "▀▀"], ["spoon1", "spoon1", "▀▀▀▀▀▀▀▀▀"], ["none", "none", " "]],
-  [["none", "none", "          "], ["none", "spoon2", " "], ["spoon1", "spoon1", "▀▀"], ["spoon1", "rice2", "▀"], ["rice0", "rice0", "▀▀▀▀▀▀▀"], ["dark", "rice0", "●"], ["rice0", "rice0", "▀▀▀▀▀▀▀"], ["dark", "rice0", "●"], ["rice0", "rice0", "▀▀▀▀▀▀"], ["rice1", "rice1", "▀▀▀▀"], ["rice2", "rice2", "▀"], ["spoon2", "spoon1", "▀"], ["spoon1", "spoon1", "▀▀▀▀"], ["spoon1", "none", "▀▀"]],
-  [["none", "none", "         "], ["none", "spoon1", " "], ["spoon1", "spoon1", "▀▀▀"], ["rice1", "rice2", "▀"], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀"], ["dark", "rice0", "⌣"], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀"], ["rice0", "rice1", "▀"], ["rice1", "rice1", "▀▀▀▀"], ["spoon1", "spoon1", "▀▀▀"], ["spoon1", "spoon2", "▀"], ["spoon1", "none", "▀"]],
-  [["none", "none", "         "], ["spoon1", "spoon1", "▀▀▀▀▀"], ["rice1", "rice2", "▀"], ["rice0", "rice1", "▀▀"], ["rice0", "rice0", "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"], ["rice0", "rice1", "▀▀"], ["rice1", "rice1", "▀▀▀▀"], ["rice1", "rice2", "▀"], ["spoon1", "spoon1", "▀▀▀▀"]],
-  [["none", "none", "         "], ["spoon1", "none", "▀"], ["spoon1", "spoon1", "▀▀▀▀▀▀"], ["rice1", "spoon1", "▀▀"], ["rice1", "rice1", "▀"], ["rice0", "rice1", "▀▀▀▀▀▀"], ["rice0", "rice0", "▀▀"], ["rice0", "rice1", "▀▀▀"], ["rice1", "rice1", "▀▀▀▀▀"], ["rice1", "spoon1", "▀▀"], ["spoon1", "spoon1", "▀▀▀▀"], ["spoon1", "none", "▀"]],
-  [["none", "none", "          "], ["spoon1", "none", "▀"], ["spoon1", "spoon1", "▀▀"], ["spoon0", "spoon1", "▀"], ["spoon1", "spoon1", "▀▀▀▀▀▀"], ["rice2", "spoon1", "▀"], ["rice1", "spoon1", "▀▀▀▀▀▀▀▀▀"], ["rice2", "spoon2", "▀"], ["rice2", "spoon1", "▀"], ["spoon1", "spoon1", "▀▀▀▀▀▀"], ["spoon1", "spoon2", "▀"], ["spoon1", "none", "▀"]],
-  [["none", "none", "            "], ["spoon1", "none", "▀▀"], ["spoon1", "spoon2", "▀"], ["spoon1", "spoon1", "▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀"], ["spoon1", "spoon2", "▀"], ["spoon1", "none", "▀"], ["spoon2", "none", "▀"]],
-  [["none", "none", "                "], ["spoon2", "none", "▀▀"], ["spoon1", "none", "▀"], ["spoon1", "spoon1", "▀"], ["spoon1", "spoon2", "▀"], ["spoon1", "spoon1", "▀"], ["spoon1", "spoon2", "▀▀▀"], ["spoon1", "spoon1", "▀"], ["spoon1", "spoon2", "▀▀▀▀▀"], ["spoon1", "spoon1", "▀"], ["spoon2", "none", "▀▀"]],
+  [["none", "none", "         "], ["antenna", "antenna", "▀▀"], ["none", "none", "         "]],
+  [["none", "none", "         "], ["body", "body", "▀▀"], ["none", "none", "         "]],
+  [["none", "none", "   "], ["none", "body", "▀"], ["body", "body", "▀▀▀▀▀▀▀▀▀▀▀▀"], ["none", "body", "▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀▀▀"], ["body", "face", "▀▀▀▀▀▀▀▀"], ["body", "body", "▀▀▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀▀▀"], ["face", "face", "▀▀▀▀▀▀▀▀"], ["body", "body", "▀▀▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀▀▀"], ["face", "face", "▀"], ["eye", "pupil", "▀"], ["eye", "eye", "▀"], ["face", "face", "▀▀▀"], ["eye", "eye", "▀"], ["eye", "pupil", "▀"], ["body", "body", "▀▀▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀▀▀"], ["face", "face", "▀"], ["eye", "face", "▀▀"], ["face", "face", "▀▀▀"], ["eye", "face", "▀▀"], ["body", "body", "▀▀▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀"], ["blush", "blush", "▀▀"], ["face", "face", "▀▀▀▀▀▀▀▀"], ["blush", "blush", "▀▀"], ["body", "body", "▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀▀▀"], ["face", "face", "▀▀"], ["face", "eye", "▀"], ["eye", "eye", "▀▀"], ["face", "eye", "▀"], ["face", "face", "▀▀"], ["body", "body", "▀▀▀"], ["none", "none", "   "]],
+  [["none", "none", "   "], ["body", "body", "▀▀▀"], ["face", "body", "▀▀▀▀▀▀▀▀"], ["body", "body", "▀▀▀"], ["none", "none", "   "]],
+  [["none", "none", "    "], ["body", "none", "▀"], ["body", "body", "▀▀▀▀▀▀▀▀▀▀"], ["body", "none", "▀"], ["none", "none", "    "]],
+  [["none", "none", "      "], ["body", "none", "▀"], ["body", "body", "▀▀▀▀▀▀"], ["body", "none", "▀"], ["none", "none", "      "]],
 ];
 
 const WORDMARK_WIDTH = Math.max(...WORDMARK_ROWS.map((row) => row.length), ...AGENT_ROWS.map((row) => row.length));
@@ -136,14 +135,13 @@ const MASCOT_RENDER_ROWS = MASCOT_PIXEL_ROWS;
 const MASCOT_WIDTH = Math.max(...MASCOT_RENDER_ROWS.map((row) => row.reduce((sum, [, , text]) => sum + text.length, 0)));
 const HERO_LOGO_TITLE_GAP = 5;
 
-const MASCOT_TONE_COLOR: Record<Exclude<MascotTone, "none">, string> = {
-  dark: "#17201E",
-  rice0: "#FFFDF7",
-  rice1: "#F5EDE0",
-  rice2: "#DACDBD",
-  spoon0: "#F0B86C",
-  spoon1: "#D18B3E",
-  spoon2: "#8E5E2C",
+export const MASCOT_TONE_COLOR: Record<Exclude<MascotTone, "none">, string> = {
+  antenna: "#FF9F43",
+  body: "#5A6CF0",
+  face: "#16142B",
+  eye: "#FFFFFF",
+  pupil: "#101018",
+  blush: "#FF8FA3",
 };
 
 function toneColor(tone: MascotTone): string | undefined {
@@ -343,7 +341,7 @@ function AssistantMessageBlock({ columns, message }: { columns: number; message:
 
   return (
     <Box flexDirection="column" marginBottom={1}>
-      <MessageFrameTop title="🍚 Memmy" width={width} />
+      <MessageFrameTop title="🍚 Cuby" width={width} />
       {lines.map((line, index) => (
         <MessageFrameRow key={index} line={line} width={width} />
       ))}
@@ -673,7 +671,6 @@ function MascotLogo() {
             <Text
               key={`${rowIndex}-${spanIndex}`}
               backgroundColor={toneColor(background)}
-              bold={foreground === "dark"}
               color={toneColor(foreground)}
             >
               {text}
@@ -739,7 +736,7 @@ function Banner({
   const toolColumnGap = 3;
   const toolColumnWidth = Math.max(16, wideContentWidth - workspaceColumnWidth - toolColumnGap);
   const toolDetailWidth = Math.max(1, toolColumnWidth - 14);
-  const title = `Memmy Agent v${version}`;
+  const title = `Cuby Agent v${version}`;
 
   return (
     <Box flexDirection="column" marginBottom={1}>
@@ -1319,7 +1316,7 @@ function MemmyTui({ config, gateway, registerCleanup, target, toolsets, version 
     ? gatewayState.ownedByTui
       ? "Enter: queue next turn · Tab: add to current turn"
       : "Session is running from another channel · Enter: queue next turn"
-    : "Ask memmy, /quit to exit";
+    : "Ask Cuby, /quit to exit";
   const currentModelLabel = gatewayState.modelSelection
     ? modelSelectionLabel(gatewayState.modelSelection)
     : gatewayState.modelName

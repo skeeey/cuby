@@ -7,7 +7,7 @@ import {
 
 const generatedAttachmentTurn = [
   "<attachments>",
-  "- hypre.txt  (application/octet-stream, 15.4MB)  /Users/test/.memmy/media/hypre.txt",
+  "- hypre.txt  (application/octet-stream, 15.4MB)  /Users/test/.cuby/media/hypre.txt",
   "",
   "请用 read_file 工具按需读取上述附件；PDF 可用 pages 参数分页读取。",
   "</attachments>",

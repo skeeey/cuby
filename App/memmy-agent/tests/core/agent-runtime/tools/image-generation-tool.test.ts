@@ -24,7 +24,7 @@ const PNG_BYTES = Buffer.from(
 );
 const PNG_DATA_URL = `data:image/png;base64,${PNG_BYTES.toString("base64")}`;
 const roots: string[] = [];
-const oldConfig = process.env.MEMMY_CONFIG;
+const oldConfig = process.env.CUBY_CONFIG;
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-image-tool-"));
@@ -120,7 +120,7 @@ function listFiles(root: string): string[] {
 }
 
 afterEach(() => {
-  process.env.MEMMY_CONFIG = oldConfig;
+  process.env.CUBY_CONFIG = oldConfig;
   FakeImageClient.instances = [];
   FakeImageClient.results = [];
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
@@ -198,7 +198,7 @@ describe("ImageGenerationTool", () => {
       apiBase: "https://cloud.example.com/api/agentExternal/v1",
     });
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const loop = new AgentLoop({
       config: new Config({ tools: { imageGeneration: { enabled: false } } }),
       provider: { generation: {}, getDefaultModel: () => "model" },
@@ -228,7 +228,7 @@ describe("ImageGenerationTool", () => {
   it("stores artifacts and source image metadata", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const ref = path.join(root, "ref.png");
     fs.writeFileSync(ref, PNG_BYTES);
     const tool = new ImageGenerationTool({
@@ -262,7 +262,7 @@ describe("ImageGenerationTool", () => {
   it("does not impose a turn quota when the limit is null", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({ enabled: true }),
@@ -280,7 +280,7 @@ describe("ImageGenerationTool", () => {
   it("enforces a cumulative finite turn quota before provider execution", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({
@@ -315,7 +315,7 @@ describe("ImageGenerationTool", () => {
       new Error("scripted provider failure"),
     ];
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({
@@ -339,7 +339,7 @@ describe("ImageGenerationTool", () => {
     registerImageGenProvider(FakeImageClient);
     FakeImageClient.results = [new Error("first call failed")];
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({
@@ -393,7 +393,7 @@ describe("ImageGenerationTool", () => {
       }),
     ];
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({
@@ -411,7 +411,7 @@ describe("ImageGenerationTool", () => {
   it("resets the turn quota for a new tool instance", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const config = new ImageGenerationToolConfig({
       enabled: true,
       maxImagesPerTurn: 1,
@@ -428,7 +428,7 @@ describe("ImageGenerationTool", () => {
   it("uses exact assigned endpoint credentials", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({ enabled: true }),
@@ -449,7 +449,7 @@ describe("ImageGenerationTool", () => {
   it("uses the assigned image preset and exact endpoint in the real tool execution path", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const resolver = vi.fn(() => ({
       preset: "image-primary",
       presetId: "image-primary",
@@ -509,7 +509,7 @@ describe("ImageGenerationTool", () => {
   it("selects the AIHubMix provider config", async () => {
     registerImageGenProvider(FakeAIHubMixClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({ enabled: true }),
@@ -543,7 +543,7 @@ describe("ImageGenerationTool", () => {
   it("allows Ollama without an API key", async () => {
     registerImageGenProvider(FakeOllamaClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const tool = new ImageGenerationTool({
       workspace: root,
       config: new ImageGenerationToolConfig({ enabled: true }),
@@ -582,7 +582,7 @@ describe("ImageGenerationTool", () => {
   it("rejects reference images outside the workspace", async () => {
     registerImageGenProvider(FakeImageClient);
     const root = tmpRoot();
-    process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+    process.env.CUBY_CONFIG = path.join(root, "config.yaml");
     const outsideRoot = tmpRoot();
     const outside = path.join(outsideRoot, "outside.png");
     fs.writeFileSync(outside, PNG_BYTES);

@@ -1,6 +1,6 @@
 /**
  * Loads external env, packaged public manifest, or development .env before
- * analytics reads MEMMY_CLOUD_SERVICE.
+ * analytics reads CUBY_CLOUD_SERVICE.
  */
 import {
   cloudServiceFromDesktopRuntimeManifest,
@@ -12,13 +12,13 @@ import { fileURLToPath } from "node:url";
 
 function hasCloudService(filePath: string): boolean {
   try {
-    return /^\s*MEMMY_CLOUD_SERVICE\s*=/m.test(readFileSync(filePath, "utf8"));
+    return /^\s*CUBY_CLOUD_SERVICE\s*=/m.test(readFileSync(filePath, "utf8"));
   } catch {
     return false;
   }
 }
 
-/** Walk upward to find a .env that defines MEMMY_CLOUD_SERVICE. */
+/** Walk upward to find a .env that defines CUBY_CLOUD_SERVICE. */
 export function findRepoEnvFile(startDir: string): string | null {
   let current = startDir;
   for (;;) {
@@ -50,22 +50,22 @@ export function loadCloudServiceEnv(options: {
     if (!existsSync(manifestPath)) {
       throw new Error("Packaged desktop runtime manifest is missing");
     }
-    env.MEMMY_CLOUD_SERVICE = cloudServiceFromDesktopRuntimeManifest(
+    env.CUBY_CLOUD_SERVICE = cloudServiceFromDesktopRuntimeManifest(
       readFileSync(manifestPath, "utf8"),
     );
-    // MEMMY_CLOUD_URL is a development-only override. Do not let a stale
+    // CUBY_CLOUD_URL is a development-only override. Do not let a stale
     // value inherited from an older installation redirect a packaged runtime.
-    delete env.MEMMY_CLOUD_URL;
+    delete env.CUBY_CLOUD_URL;
     return manifestPath;
   }
 
-  if (Object.prototype.hasOwnProperty.call(env, "MEMMY_CLOUD_SERVICE")) {
-    const externalValue = env.MEMMY_CLOUD_SERVICE?.trim();
+  if (Object.prototype.hasOwnProperty.call(env, "CUBY_CLOUD_SERVICE")) {
+    const externalValue = env.CUBY_CLOUD_SERVICE?.trim();
     if (externalValue) {
-      env.MEMMY_CLOUD_SERVICE = externalValue;
+      env.CUBY_CLOUD_SERVICE = externalValue;
       return "environment";
     }
-    delete env.MEMMY_CLOUD_SERVICE;
+    delete env.CUBY_CLOUD_SERVICE;
   }
 
   const envPath =

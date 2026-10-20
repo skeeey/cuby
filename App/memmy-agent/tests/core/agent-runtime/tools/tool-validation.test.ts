@@ -285,21 +285,21 @@ describe("tool schema validation", () => {
   });
 
   it("captures home paths", () => {
-    const paths = ExecTool.extractAbsolutePaths("cat ~/.memmy/config.yaml > ~/out.txt");
-    expect(paths).toContain("~/.memmy/config.yaml");
+    const paths = ExecTool.extractAbsolutePaths("cat ~/.cuby/config.yaml > ~/out.txt");
+    expect(paths).toContain("~/.cuby/config.yaml");
     expect(paths).toContain("~/out.txt");
   });
 
   it("captures quoted absolute and home paths", () => {
-    const paths = ExecTool.extractAbsolutePaths('cat "/tmp/data.txt" "~/.memmy/config.yaml"');
+    const paths = ExecTool.extractAbsolutePaths('cat "/tmp/data.txt" "~/.cuby/config.yaml"');
     expect(paths).toContain("/tmp/data.txt");
-    expect(paths).toContain("~/.memmy/config.yaml");
+    expect(paths).toContain("~/.cuby/config.yaml");
   });
 
   it("blocks home paths outside the guarded workspace", async () => {
     const dir = makeTempDir();
     try {
-      const error = await new ExecTool({ restrictToWorkspace: true }).guardCommand("cat ~/.memmy/config.yaml", dir);
+      const error = await new ExecTool({ restrictToWorkspace: true }).guardCommand("cat ~/.cuby/config.yaml", dir);
       expect(error).toMatch(/^Error: Command blocked by safety guard \(path outside working dir\)/);
       expect(error).toContain("hard policy boundary");
     } finally {
@@ -310,7 +310,7 @@ describe("tool schema validation", () => {
   it("blocks quoted home paths outside the guarded workspace", async () => {
     const dir = makeTempDir();
     try {
-      const error = await new ExecTool({ restrictToWorkspace: true }).guardCommand('cat "~/.memmy/config.yaml"', dir);
+      const error = await new ExecTool({ restrictToWorkspace: true }).guardCommand('cat "~/.cuby/config.yaml"', dir);
       expect(error).toMatch(/^Error: Command blocked by safety guard \(path outside working dir\)/);
       expect(error).toContain("hard policy boundary");
     } finally {
@@ -320,8 +320,8 @@ describe("tool schema validation", () => {
 
   it("allows media paths outside the guarded workspace", async () => {
     const root = makeTempDir();
-    const previous = process.env.MEMMY_AGENT_DATA_DIR;
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    const previous = process.env.CUBY_AGENT_DATA_DIR;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     try {
       const mediaDir = path.join(root, "media");
       fs.mkdirSync(mediaDir, { recursive: true });
@@ -334,8 +334,8 @@ describe("tool schema validation", () => {
       );
       expect(error).toBeNull();
     } finally {
-      if (previous === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-      else process.env.MEMMY_AGENT_DATA_DIR = previous;
+      if (previous === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+      else process.env.CUBY_AGENT_DATA_DIR = previous;
       fs.rmSync(root, { recursive: true, force: true });
     }
   });

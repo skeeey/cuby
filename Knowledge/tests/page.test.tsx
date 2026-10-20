@@ -320,7 +320,7 @@ it("shows a centered sign-in empty state without extra copy", async () => {
   expect(container.querySelector(".mk-notice")).toBeNull();
   expect(container.querySelector(".mk-group-empty")).toBeNull();
   const signIn = [...container.querySelectorAll("button")].find((button) =>
-    button.textContent?.includes("登录 Memmy"),
+    button.textContent?.includes("登录 Cuby"),
   );
   expect(signIn?.className).toContain("mk-primary");
   expect(

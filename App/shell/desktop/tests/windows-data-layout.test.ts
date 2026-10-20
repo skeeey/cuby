@@ -19,17 +19,17 @@ describe("Windows desktop data layout", () => {
       localAppDataPath: "C:\\Users\\lee\\AppData\\Local",
       homeDirectory: "C:\\Users\\lee"
     })).toEqual({
-      userDataPath: "C:\\Users\\lee\\AppData\\Roaming\\Memmy",
-      runtimeHomePath: "C:\\Users\\lee\\.memmy",
-      updatesPath: "C:\\Users\\lee\\.memmy\\updates",
-      pointerPath: "C:\\Users\\lee\\AppData\\Roaming\\Memmy\\data-root.txt",
-      migrationStatePath: "C:\\Users\\lee\\AppData\\Local\\Memmy\\data-migration\\state.json",
-      installationRecordPath: "C:\\Users\\lee\\AppData\\Local\\Memmy\\data-layout\\last-install.json",
+      userDataPath: "C:\\Users\\lee\\AppData\\Roaming\\Cuby",
+      runtimeHomePath: "C:\\Users\\lee\\.cuby",
+      updatesPath: "C:\\Users\\lee\\.cuby\\updates",
+      pointerPath: "C:\\Users\\lee\\AppData\\Roaming\\Cuby\\data-root.txt",
+      migrationStatePath: "C:\\Users\\lee\\AppData\\Local\\Cuby\\data-migration\\state.json",
+      installationRecordPath: "C:\\Users\\lee\\AppData\\Local\\Cuby\\data-layout\\last-install.json",
       legacyInstallDataPath: "C:\\Users\\lee\\AppData\\Local\\Programs\\Memmy\\data"
     });
   });
 
-  it("uses MemmyData on the packaged non-system installation drive", () => {
+  it("uses CubyData on the packaged non-system installation drive", () => {
     expect(resolveWindowsDataLayout({
       platform: "win32",
       isPackaged: true,
@@ -39,12 +39,12 @@ describe("Windows desktop data layout", () => {
       localAppDataPath: "C:\\Users\\lee\\AppData\\Local",
       homeDirectory: "C:\\Users\\lee"
     })).toEqual({
-      userDataPath: "C:\\Users\\lee\\AppData\\Roaming\\Memmy",
-      runtimeHomePath: "E:\\MemmyData\\.memmy",
-      updatesPath: "E:\\MemmyData\\updates",
-      pointerPath: "C:\\Users\\lee\\AppData\\Roaming\\Memmy\\data-root.txt",
-      migrationStatePath: "C:\\Users\\lee\\AppData\\Local\\Memmy\\data-migration\\state.json",
-      installationRecordPath: "C:\\Users\\lee\\AppData\\Local\\Memmy\\data-layout\\last-install.json",
+      userDataPath: "C:\\Users\\lee\\AppData\\Roaming\\Cuby",
+      runtimeHomePath: "E:\\CubyData\\.cuby",
+      updatesPath: "E:\\CubyData\\updates",
+      pointerPath: "C:\\Users\\lee\\AppData\\Roaming\\Cuby\\data-root.txt",
+      migrationStatePath: "C:\\Users\\lee\\AppData\\Local\\Cuby\\data-migration\\state.json",
+      installationRecordPath: "C:\\Users\\lee\\AppData\\Local\\Cuby\\data-layout\\last-install.json",
       legacyInstallDataPath: "E:\\Apps\\Memmy\\data"
     });
   });
@@ -58,7 +58,7 @@ describe("Windows desktop data layout", () => {
       appDataPath: "D:\\Users\\lee\\AppData\\Roaming",
       localAppDataPath: "D:\\Users\\lee\\AppData\\Local",
       homeDirectory: "D:\\Users\\lee"
-    })?.runtimeHomePath).toBe("D:\\Users\\lee\\.memmy");
+    })?.runtimeHomePath).toBe("D:\\Users\\lee\\.cuby");
   });
 
   it("does not apply the NSIS installation-drive rule to macOS or Windows Store", () => {
@@ -80,7 +80,7 @@ describe("Windows desktop data layout", () => {
       appDataPath: "C:\\Users\\lee\\AppData\\Roaming",
       localAppDataPath: "C:\\Users\\lee\\AppData\\Local",
       homeDirectory: "C:\\Users\\lee"
-    })?.runtimeHomePath).toBe("C:\\Users\\lee\\.memmy");
+    })?.runtimeHomePath).toBe("C:\\Users\\lee\\.cuby");
   });
 
   it.runIf(process.platform === "win32")(

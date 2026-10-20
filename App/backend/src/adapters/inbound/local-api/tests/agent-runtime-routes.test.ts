@@ -43,7 +43,7 @@ describe("agent runtime local api routes", () => {
       const response = await app.inject({
         method: request.method,
         url: request.url,
-        headers: { "x-memmy-local-token": "test-token" },
+        headers: { "x-cuby-local-token": "test-token" },
         payload: request.payload
       });
 
@@ -78,8 +78,8 @@ describe("agent runtime local api routes", () => {
       method: "POST",
       url: "/api/v1/memory/search",
       headers: {
-        "x-memmy-local-token": "test-token",
-        "x-memmy-time-zone": "Asia/Shanghai"
+        "x-cuby-local-token": "test-token",
+        "x-cuby-time-zone": "Asia/Shanghai"
       },
       payload: searchInput()
     });
@@ -100,8 +100,8 @@ describe("agent runtime local api routes", () => {
       method: "POST",
       url: "/api/v1/memory/search",
       headers: {
-        "x-memmy-local-token": "test-token",
-        "x-memmy-time-zone": "Asia/Shanghai"
+        "x-cuby-local-token": "test-token",
+        "x-cuby-time-zone": "Asia/Shanghai"
       },
       payload: searchInput()
     });
@@ -153,7 +153,7 @@ describe("agent runtime local api routes", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/memory/memory-1/processing/retry",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: {}
     });
 
@@ -183,12 +183,12 @@ describe("agent runtime local api routes", () => {
     const exactResponse = await app.inject({
       method: "GET",
       url: "/api/v1/memory/logs?tools=memory_search&sourceAgent=cursor&limit=20&offset=0",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const otherResponse = await app.inject({
       method: "GET",
       url: "/api/v1/memory/logs?tools=memory_add&excludedSourceAgents=memmy-agent&excludedSourceAgents=cursor&limit=20&offset=0",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(exactResponse.statusCode).toBe(200);
@@ -223,12 +223,12 @@ describe("agent runtime local api routes", () => {
     const exactResponse = await app.inject({
       method: "GET",
       url: "/api/v1/panel/items?layer=L1&sourceAgent=cursor&page=2",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
     const otherResponse = await app.inject({
       method: "GET",
       url: "/api/v1/panel/items?layer=L1&excludedSourceAgents=memmy-agent&excludedSourceAgents=cursor&page=1",
-      headers: { "x-memmy-local-token": "test-token" }
+      headers: { "x-cuby-local-token": "test-token" }
     });
 
     expect(exactResponse.statusCode).toBe(200);
@@ -245,7 +245,7 @@ describe("agent runtime local api routes", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/memory/search",
-      headers: { "x-memmy-local-token": "test-token", "x-request-id": "req-1" },
+      headers: { "x-cuby-local-token": "test-token", "x-request-id": "req-1" },
       payload: { query: 1 }
     });
 
@@ -274,7 +274,7 @@ describe("agent runtime local api routes", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/turns/turn-1/complete",
-      headers: { "x-memmy-local-token": "test-token" },
+      headers: { "x-cuby-local-token": "test-token" },
       payload: completeTurnInput()
     });
 
@@ -294,7 +294,7 @@ describe("agent runtime local api routes", () => {
     const response = await app.inject({
       method: "POST",
       url: "/api/v1/memory/search",
-      headers: { "x-memmy-local-token": "test-token", "x-request-id": "req-7" },
+      headers: { "x-cuby-local-token": "test-token", "x-request-id": "req-7" },
       payload: searchInput()
     });
 

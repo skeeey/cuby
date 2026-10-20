@@ -1,8 +1,8 @@
 /** Mascot tests. */
 import { describe, expect, it } from "vitest";
-import { preloadMemmyAsset } from "../mascot/memmy.js";
+import { preloadCubyAsset } from "../mascot/cuby.js";
 
-describe("preloadMemmyAsset", () => {
+describe("preloadCubyAsset", () => {
   it("等目标立绘加载完成后才返回可切换的 src", async () => {
     let assignedSrc = "";
     const fakeImage = {
@@ -15,7 +15,7 @@ describe("preloadMemmyAsset", () => {
         assignedSrc = value;
       }
     } as HTMLImageElement;
-    const pending = preloadMemmyAsset("/assets/memmy-work.png", {
+    const pending = preloadCubyAsset("/assets/cuby-neutral.png", {
       createImage: () => fakeImage
     });
     let resolved = false;
@@ -25,12 +25,12 @@ describe("preloadMemmyAsset", () => {
     });
     await Promise.resolve();
 
-    expect(assignedSrc).toBe("/assets/memmy-work.png");
+    expect(assignedSrc).toBe("/assets/cuby-neutral.png");
     expect(resolved).toBe(false);
 
     fakeImage.onload?.call(fakeImage, new Event("load"));
 
-    await expect(pending).resolves.toBe("/assets/memmy-work.png");
+    await expect(pending).resolves.toBe("/assets/cuby-neutral.png");
     expect(resolved).toBe(true);
   });
 });

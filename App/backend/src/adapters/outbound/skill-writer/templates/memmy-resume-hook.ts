@@ -1,4 +1,4 @@
-/** Memmy resume hook template. */
+/** Cuby resume hook template. */
 
 export type MemmyResumeHookMode = "claude-code" | "codex" | "cursor";
 
@@ -24,13 +24,13 @@ import {
   notifyRuntimeBoundary,
   openRuntimeSession,
   startRuntimeTurn
-} from "./memmy-workspace-bridge.mjs";
+} from "./cuby-workspace-bridge.mjs";
 
 const SOURCE = ${JSON.stringify(options.source)};
 const MODE = ${JSON.stringify(options.mode)};
-const CONFIG_URL = new URL("./memmy-memory-config.json", import.meta.url);
+const CONFIG_URL = new URL("./cuby-memory-config.json", import.meta.url);
 const STATE_URL = new URL("./memmy-resume-state.json", import.meta.url);
-const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".memmy", "config.yaml");
+const DEFAULT_MEMMY_CONFIG_PATH = join(homedir(), ".cuby", "config.yaml");
 const FETCH_TIMEOUT_MS = 45000;
 const SEARCH_LIMIT = 20;
 const DISPLAY_LIMIT = 5;
@@ -86,7 +86,7 @@ async function main() {
         return;
       }
     } catch (error) {
-      writeResultOutput("Memmy resume selection failed: " + formatError(error));
+      writeResultOutput("Cuby resume selection failed: " + formatError(error));
       return;
     }
   }
@@ -110,7 +110,7 @@ async function main() {
 
   if (query === "cancel") {
     await clearPendingState();
-    writeResultOutput("Memmy resume selection cancelled.");
+    writeResultOutput("Cuby resume selection cancelled.");
     return;
   }
 
@@ -137,7 +137,7 @@ async function main() {
     });
     writeResultOutput(formatResumeSearchResult(query, candidates));
   } catch (error) {
-    writeResultOutput("Memmy resume search failed: " + formatError(error));
+    writeResultOutput("Cuby resume search failed: " + formatError(error));
   }
 }
 
@@ -589,13 +589,13 @@ function parseResumeQuery(prompt) {
 
 function isResumeCommand(prompt) {
   const text = normalizeText(prompt);
-  return /MEMMY_RESUME_COMMAND_ARGUMENTS:/u.test(text) ||
+  return /CUBY_RESUME_COMMAND_ARGUMENTS:/u.test(text) ||
     text === "/memmy-resume" || text === "memmy-resume" ||
     text.startsWith("/memmy-resume ") || text.startsWith("memmy-resume ");
 }
 
 function parseResumeCommandArguments(text) {
-  const match = normalizeText(text).match(/MEMMY_RESUME_COMMAND_ARGUMENTS:\s*([\s\S]*?)\s*MEMMY_RESUME_COMMAND_END/u);
+  const match = normalizeText(text).match(/CUBY_RESUME_COMMAND_ARGUMENTS:\s*([\s\S]*?)\s*CUBY_RESUME_COMMAND_END/u);
   return match ? normalizeText(match[1]) : "";
 }
 
@@ -760,14 +760,14 @@ function writeResumeContextOutput(context) {
 
 async function createMemmyClient() {
   const localConfig = await readLocalConfig();
-  const memmyConfigPath = normalizeText(process.env.MEMMY_CONFIG) ||
+  const memmyConfigPath = normalizeText(process.env.CUBY_CONFIG) ||
     normalizeText(localConfig.memmy_config_path) ||
     DEFAULT_MEMMY_CONFIG_PATH;
   const resolved = await readMemmyConfig(memmyConfigPath).catch(() => ({}));
-  const baseUrl = normalizeText(resolved.endpoint || localConfig.endpoint || "http://127.0.0.1:18960").replace(/\/+$/u, "");
+  const baseUrl = normalizeText(resolved.endpoint || localConfig.endpoint || "http://127.0.0.1:28960").replace(/\/+$/u, "");
   const token = normalizeText(resolved.token || localConfig.token);
   if (!baseUrl) {
-    throw new Error("Invalid Memmy config at " + memmyConfigPath);
+    throw new Error("Invalid Cuby config at " + memmyConfigPath);
   }
 
   return {
@@ -891,9 +891,9 @@ async function fetchWithTimeout(url, init, timeoutMs) {
     return await fetch(url, { ...init, signal: controller.signal });
   } catch (error) {
     if (error && error.name === "AbortError") {
-      throw new Error("Memmy request to " + url + " timed out after " + timeoutMs + "ms");
+      throw new Error("Cuby request to " + url + " timed out after " + timeoutMs + "ms");
     }
-    throw new Error("Memmy request to " + url + " failed: " + formatErrorWithCause(error));
+    throw new Error("Cuby request to " + url + " failed: " + formatErrorWithCause(error));
   } finally {
     clearTimeout(timeout);
   }
@@ -921,7 +921,7 @@ async function parseResponse(response) {
   const data = text ? JSON.parse(text) : {};
   if (!response.ok) {
     const message = data && data.error && data.error.message ? data.error.message : response.statusText;
-    throw new Error(message || "Memmy HTTP " + response.status);
+    throw new Error(message || "Cuby HTTP " + response.status);
   }
   return data;
 }
@@ -1169,14 +1169,14 @@ function lastL1MemorySummary(episodeDetail) {
 
 function formatResumeSearchResult(query, candidates) {
   if (candidates.length === 0) {
-    return 'No L1 Memmy memories found for: "' + query + '"';
+    return 'No L1 Cuby memories found for: "' + query + '"';
   }
   return [
-    'Memmy resume candidates for "' + query + '" (top 5 episodes from L1 top20):',
+    'Cuby resume candidates for "' + query + '" (top 5 episodes from L1 top20):',
     "",
     candidates.map(formatResumeEpisode).join("\n\n"),
     "",
-    "Enter 1-5 to select an episode to resume. Memmy will automatically retrieve the full episode (equivalent to memmy-memory get <episode_id>) and inject continuation context.",
+    "Enter 1-5 to select an episode to resume. Cuby will automatically retrieve the full episode (equivalent to cuby-memory get <episode_id>) and inject continuation context.",
     "Enter /memmy-resume cancel to cancel."
   ].join("\n");
 }
@@ -1217,7 +1217,7 @@ function buildResumeContext(selection, detail) {
   const rawTurns = episodeRawTurns(detail);
   const related = episodeTimelineItems(detail);
   const lines = [
-    "Memmy resume selection",
+    "Cuby resume selection",
     "",
     "The user selected candidate " + selection.index + " from the previous /memmy-resume result.",
     "Treat the current user prompt as a selection, not as a standalone question or task.",
@@ -1325,7 +1325,7 @@ function normalizeText(value) {
 }
 
 main().catch((error) => {
-  writeResultOutput("Memmy resume search failed: " + formatError(error));
+  writeResultOutput("Cuby resume search failed: " + formatError(error));
 });
 `;
 }

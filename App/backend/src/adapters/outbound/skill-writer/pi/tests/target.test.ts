@@ -12,15 +12,15 @@ afterEach(() => {
 });
 
 describe("Pi skill target", () => {
-  it("installs and removes the Memmy skill in Pi's global skill directory", async () => {
+  it("installs and removes the Cuby skill in Pi's global skill directory", async () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-pi-skill-"));
     const rootDirectory = join(tempDir, ".pi", "agent");
     mkdirSync(rootDirectory, { recursive: true });
     const target = createPiSkillTarget({ rootDirectory });
 
     await target.install(renderMemmyDefaultSkillManifest("pi"));
-    const skillPath = join(rootDirectory, "skills", "memmy-memory", "SKILL.md");
-    const resumeSkillPath = join(rootDirectory, "skills", "memmy-resume", "SKILL.md");
+    const skillPath = join(rootDirectory, "skills", "cuby-memory", "SKILL.md");
+    const resumeSkillPath = join(rootDirectory, "skills", "cuby-resume", "SKILL.md");
     expect(readFileSync(skillPath, "utf8")).toContain("--source pi");
     expect(readFileSync(resumeSkillPath, "utf8")).toContain("--source pi");
     await expect(target.isInstalled("pi")).resolves.toBe(true);

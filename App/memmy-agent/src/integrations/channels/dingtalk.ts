@@ -485,7 +485,7 @@ export class DingtalkChannel extends BaseChannel {
   async sendMarkdownText(token: string, chatId: string, content: string): Promise<boolean> {
     return this.sendBatchMessage(token, chatId, "sampleMarkdown", {
       text: content,
-      title: "Memmy Reply",
+      title: "Cuby Reply",
     });
   }
 

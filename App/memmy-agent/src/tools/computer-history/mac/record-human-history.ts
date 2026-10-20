@@ -68,7 +68,7 @@ const SCRIPT_DIR = path.dirname(fileURLToPath(import.meta.url));
 const HELPER_SOURCE = path.join(SCRIPT_DIR, "human-recorder.swift");
 // Where the service keeps recordings. This was once resolved against the
 // repository root, which a packaged app does not have.
-const DEFAULT_RECORDINGS_DIR = path.join(os.homedir(), ".memmy", "computer-history", "recordings");
+const DEFAULT_RECORDINGS_DIR = path.join(os.homedir(), ".cuby", "computer-history", "recordings");
 const TEXT_IDLE_MS = 700;
 const NAVIGATION_SETTLE_MS = 900;
 

@@ -159,7 +159,7 @@ fi
 
 package_run_step "Verify package version metadata" \
   node "$ROOT_DIR/scripts/internal/shared/verify-package-version.mjs" --expected "$VERSION"
-export MEMMY_VERSION_SYNC_CHECK_ONLY=1
+export CUBY_VERSION_SYNC_CHECK_ONLY=1
 
 if [ -z "$ARCH" ]; then
   ARCH="$(infer_arch)"
@@ -176,12 +176,12 @@ esac
 
 case "$EDITION" in
   cn)
-    export MEMMY_ACCOUNT_CHANNEL=phone
-    export MEMMY_APP_EDITION=cn
+    export CUBY_ACCOUNT_CHANNEL=phone
+    export CUBY_APP_EDITION=cn
     ;;
   intl)
-    export MEMMY_ACCOUNT_CHANNEL=email
-    export MEMMY_APP_EDITION=intl
+    export CUBY_ACCOUNT_CHANNEL=email
+    export CUBY_APP_EDITION=intl
     ;;
   *)
     echo "Unsupported macOS package edition: $EDITION" >&2
@@ -191,10 +191,10 @@ esac
 
 case "$SIGN" in
   signed)
-    unset MEMMY_SKIP_CODESIGN
+    unset CUBY_SKIP_CODESIGN
     ;;
   unsigned)
-    export MEMMY_SKIP_CODESIGN=1
+    export CUBY_SKIP_CODESIGN=1
     ;;
   *)
     echo "Unsupported macOS signing mode: $SIGN" >&2
@@ -208,7 +208,7 @@ if [ ! -f "$BASE_SCRIPT" ]; then
   exit 1
 fi
 
-export MEMMY_DESKTOP_VERSION="$VERSION"
+export CUBY_DESKTOP_VERSION="$VERSION"
 package_step_start "Run macOS internal package script"
 if [ "${#PASSTHROUGH_ARGS[@]}" -gt 0 ]; then
   bash "$BASE_SCRIPT" "${PASSTHROUGH_ARGS[@]}"

@@ -16,7 +16,7 @@ import {
 } from "../../../../src/core/agent-runtime/tools/browser-setup.js";
 
 const roots: string[] = [];
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 const originalBrowsersPath = process.env.PLAYWRIGHT_BROWSERS_PATH;
 const downloadHostKeys = [
   "PLAYWRIGHT_DOWNLOAD_HOST",
@@ -65,7 +65,7 @@ function setupFakePackages(
   const playwrightCli = path.join(playwrightRoot, "cli.js");
   fs.writeFileSync(playwrightCli, "// fake cli\n", "utf8");
   const executablePath = path.join(dataDir, "mcp", "playwright", "browsers", "chromium");
-  process.env.MEMMY_AGENT_DATA_DIR = dataDir;
+  process.env.CUBY_AGENT_DATA_DIR = dataDir;
   setConfigPath(path.join(root, "config.yaml"));
   const spawnProcess = vi.fn(() => {
     fs.mkdirSync(path.dirname(executablePath), { recursive: true });
@@ -97,8 +97,8 @@ function setupFakePackages(
 afterEach(() => {
   setBrowserSetupRuntimeForTest(null);
   setConfigPath(null);
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   if (originalBrowsersPath == null) delete process.env.PLAYWRIGHT_BROWSERS_PATH;
   else process.env.PLAYWRIGHT_BROWSERS_PATH = originalBrowsersPath;
   for (const key of downloadHostEnvKeys) {

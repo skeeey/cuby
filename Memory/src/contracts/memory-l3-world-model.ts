@@ -128,20 +128,20 @@ export function l3WorldModelGetTransport(
     "x-request-id": parsed.requestId
   };
   const namespaceHeaders: Array<[keyof L3WorldModelRuntimeNamespace, string]> = [
-    ["userId", "x-memmy-user-id"],
-    ["tenantId", "x-memmy-tenant-id"],
-    ["projectId", "x-memmy-project-id"],
-    ["workspaceId", "x-memmy-workspace-id"],
-    ["workspacePath", "x-memmy-workspace-path"],
-    ["profileId", "x-memmy-profile-id"],
-    ["profileLabel", "x-memmy-profile-label"],
-    ["sessionKey", "x-memmy-session-key"]
+    ["userId", "x-cuby-user-id"],
+    ["tenantId", "x-cuby-tenant-id"],
+    ["projectId", "x-cuby-project-id"],
+    ["workspaceId", "x-cuby-workspace-id"],
+    ["workspacePath", "x-cuby-workspace-path"],
+    ["profileId", "x-cuby-profile-id"],
+    ["profileLabel", "x-cuby-profile-label"],
+    ["sessionKey", "x-cuby-session-key"]
   ];
   for (const [field, header] of namespaceHeaders) {
     const value = parsed.namespace[field];
     if (typeof value === "string" && value) headers[header] = value;
   }
-  if (parsed.timeZone) headers["x-memmy-time-zone"] = parsed.timeZone;
+  if (parsed.timeZone) headers["x-cuby-time-zone"] = parsed.timeZone;
   return { query, headers };
 }
 

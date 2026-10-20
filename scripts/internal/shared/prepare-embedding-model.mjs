@@ -5,7 +5,7 @@ import { join, resolve } from "node:path";
 import { env, pipeline } from "@huggingface/transformers";
 
 const outputRoot = resolve(process.argv[2] ?? "");
-const model = process.env.MEMMY_EMBEDDING_MODEL || "Xenova/all-MiniLM-L6-v2";
+const model = process.env.CUBY_EMBEDDING_MODEL || "Xenova/all-MiniLM-L6-v2";
 const modelRoot = join(outputRoot, model);
 const fallbackRemoteHost = "https://hf-mirror.com/";
 const requiredFiles = [
@@ -44,7 +44,7 @@ verifyModelFiles();
 console.log(`Bundled embedding model is ready: ${modelRoot}`);
 
 function resolveSourceModelRoot() {
-  const sourceDir = process.env.MEMMY_EMBEDDING_MODEL_SOURCE_DIR?.trim();
+  const sourceDir = process.env.CUBY_EMBEDDING_MODEL_SOURCE_DIR?.trim();
   if (!sourceDir) return null;
 
   const sourceModelRoot = resolve(sourceDir, model);
@@ -56,7 +56,7 @@ function resolveSourceModelRoot() {
     return sourceRoot;
   }
 
-  console.error(`MEMMY_EMBEDDING_MODEL_SOURCE_DIR does not contain ${model}`);
+  console.error(`CUBY_EMBEDDING_MODEL_SOURCE_DIR does not contain ${model}`);
   console.error(`Tried:`);
   console.error(`  ${sourceModelRoot}`);
   console.error(`  ${sourceRoot}`);
@@ -64,7 +64,7 @@ function resolveSourceModelRoot() {
 }
 
 function normalizedConfiguredRemoteHost() {
-  const raw = process.env.MEMMY_EMBEDDING_MODEL_REMOTE_HOST?.trim() || process.env.HF_ENDPOINT?.trim();
+  const raw = process.env.CUBY_EMBEDDING_MODEL_REMOTE_HOST?.trim() || process.env.HF_ENDPOINT?.trim();
   if (!raw) return null;
   return normalizeRemoteHost(raw);
 }
@@ -86,7 +86,7 @@ function unique(values) {
 }
 
 async function downloadModelWithRetries(remoteHosts) {
-  const configuredAttempts = Number.parseInt(process.env.MEMMY_EMBEDDING_MODEL_DOWNLOAD_ATTEMPTS ?? "3", 10);
+  const configuredAttempts = Number.parseInt(process.env.CUBY_EMBEDDING_MODEL_DOWNLOAD_ATTEMPTS ?? "3", 10);
   const maxAttempts = Number.isFinite(configuredAttempts) && configuredAttempts > 0 ? configuredAttempts : 3;
   let lastError;
   for (const remoteHost of remoteHosts) {
@@ -119,7 +119,7 @@ async function downloadModelWithRetries(remoteHosts) {
 
   console.error(`Failed to prepare bundled embedding model ${model}.`);
   console.error(`Tried remote hosts: ${remoteHosts.join(", ")}`);
-  console.error(`Set MEMMY_EMBEDDING_MODEL_SOURCE_DIR to a local model directory, or set HF_ENDPOINT/MEMMY_EMBEDDING_MODEL_REMOTE_HOST to a reachable Hugging Face host.`);
+  console.error(`Set CUBY_EMBEDDING_MODEL_SOURCE_DIR to a local model directory, or set HF_ENDPOINT/CUBY_EMBEDDING_MODEL_REMOTE_HOST to a reachable Hugging Face host.`);
   throw lastError;
 }
 

@@ -10,8 +10,8 @@ export const OPENCLAW_TERMINAL_SCRIPT = [
   "end run"
 ].join("\n");
 
-/** Label used when Memmy opens a fresh OpenClaw Control UI session for the relay prompt. */
-export const OPENCLAW_RELAY_SESSION_LABEL = "Memmy relay";
+/** Label used when Cuby opens a fresh OpenClaw Control UI session for the relay prompt. */
+export const OPENCLAW_RELAY_SESSION_LABEL = "Cuby relay";
 
 export const DIRECT_PROMPT_TERMINAL_SCRIPT = [
   "on run argv",

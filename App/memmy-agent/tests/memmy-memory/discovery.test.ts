@@ -19,12 +19,12 @@ afterEach(() => {
 });
 
 describe("memmy memory discovery", () => {
-  it("reads Memory config from MEMMY_CONFIG", () => {
+  it("reads Memory config from CUBY_CONFIG", () => {
     const root = tempRoot();
     const configPath = path.join(root, "config.yaml");
     fs.writeFileSync(configPath, "memmyMemory:\n  storage:\n    endpoint: http://127.0.0.1:18888/\n    token: cfg-token\n", "utf8");
 
-    const connection = discoverMemmyMemoryConnection({ env: { MEMMY_CONFIG: configPath }, homeDir: root });
+    const connection = discoverMemmyMemoryConnection({ env: { CUBY_CONFIG: configPath }, homeDir: root });
 
     expect(connection.baseUrl).toBe("http://127.0.0.1:18888");
     expect(connection.token).toBe("cfg-token");
@@ -38,9 +38,9 @@ describe("memmy memory discovery", () => {
 
     const connection = discoverMemmyMemoryConnection({
       env: {
-        MEMMY_CONFIG: configPath,
-        MEMMY_MEMORY_URL: "http://env.test/",
-        MEMMY_MEMORY_TOKEN: "env-token",
+        CUBY_CONFIG: configPath,
+        CUBY_MEMORY_URL: "http://env.test/",
+        CUBY_MEMORY_TOKEN: "env-token",
       },
       homeDir: root,
     });
@@ -52,7 +52,7 @@ describe("memmy memory discovery", () => {
 
   it("can read future runtime discovery token files", () => {
     const root = tempRoot();
-    const runtimeDir = path.join(root, ".memmy", "memory-service");
+    const runtimeDir = path.join(root, ".cuby", "memory-service");
     fs.mkdirSync(runtimeDir, { recursive: true });
     const tokenFile = path.join(runtimeDir, "service-token");
     fs.writeFileSync(tokenFile, "runtime-token\n", "utf8");
@@ -67,9 +67,9 @@ describe("memmy memory discovery", () => {
   it("uses Memory default config path names", () => {
     const root = tempRoot();
     const explicit = path.join(root, "custom-config.yaml");
-    expect(memmyMemoryConfigPaths({ env: { MEMMY_CONFIG: explicit }, homeDir: root })).toEqual([
+    expect(memmyMemoryConfigPaths({ env: { CUBY_CONFIG: explicit }, homeDir: root })).toEqual([
       explicit,
-      path.join(root, ".memmy", "config.yaml"),
+      path.join(root, ".cuby", "config.yaml"),
     ]);
   });
 
@@ -81,7 +81,7 @@ describe("memmy memory discovery", () => {
       memmyMemory: {
         enabled: true,
         version: 1,
-        storage: { endpoint: "http://127.0.0.1:18960", token: "service-token" },
+        storage: { endpoint: "http://127.0.0.1:28960", token: "service-token" },
         retrievalLayers: ["L1", "L3", "L1"],
       },
     });
@@ -100,7 +100,7 @@ describe("memmy memory discovery", () => {
       enabled: true,
       userId: "user_config_1",
       version: 1,
-      storage: { endpoint: "http://127.0.0.1:18960", token: "service-token" },
+      storage: { endpoint: "http://127.0.0.1:28960", token: "service-token" },
       retrievalLayers: ["L1", "L3"],
     });
     expect(enabled.toObject().app).toEqual({

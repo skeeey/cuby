@@ -6,14 +6,13 @@ import { isCuberouterAccountBackend } from "../app/account-backend.js";
 import { FOCUSED_AGENT_CHAT_STORAGE_KEY, readGuidanceCompleted, resolveInitialView, type AppRoutePath, type ByokAgentModelAvailability } from "../app/routes.js";
 import type { MemmyAgentClient, MemmyAgentSessionSummary, MemmyAgentUnsubscribe, MemmyAgentWebSocketConnection, MemmyAgentWsEvent } from "../api/memmy-agent-client.js";
 import type { AsrClient } from "../api/asr-client.js";
-import { Memmy, type MemmyPose } from "../components/mascot/memmy.js";
+import { Cuby, type CubyPose } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { useTaskBus, type Task, type TaskBusAgentMessage, type TaskBusValue } from "../lib/task-bus.js";
 import { agentActions, appActions } from "../state/app-actions.js";
 import { canUseCloudFeatures, type AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
-import memoIdleUrl from "../assets/mascot/memo-idle-alpha.webm";
 import { AlertCircle, AlertTriangle, CheckCircle2, Loader2, Maximize, Maximize2, Mic, Pause, Send, StopSquare, X } from "./memory/memory-prototype-icons.js";
 import { MicrophonePermissionError, microphonePermissionDeniedMessageKey, useAsrRecorder } from "./asr-recorder.js";
 import { createPetAgentBridge, PetReconnectRecoveryTracker } from "./pet-agent-bridge.js";
@@ -141,7 +140,7 @@ export type PetAgentEventAction =
   | { type: "error"; message: string };
 
 /** Definition for pet transparent root class. */
-export const PET_TRANSPARENT_ROOT_CLASS = "memmy-pet-transparent";
+export const PET_TRANSPARENT_ROOT_CLASS = "cuby-pet-transparent";
 
 /** Contract for display state input. */
 export interface DisplayStateInput {
@@ -660,7 +659,7 @@ export function resolvePetContextMenuPosition(input: PetContextMenuPositionInput
 /**
  * Computes the dynamic pet window layout from the currently visible content rects.
  *
- * @param input The current offset, the Memmy body rect, and the visible content rects.
+ * @param input The current offset, the Cuby body rect, and the visible content rects.
  * @returns The renderer's next offset and the main-process window layout; returns null when there is no visible content.
  */
 export function resolvePetMeasuredLayout(input: PetMeasuredLayoutInput): PetMeasuredLayout | null {
@@ -1089,7 +1088,7 @@ export function PetPageView({ bus, mainRoute = "/main", onNavigate, onPetWindowC
   const focusedAgentText = focusedTask?.lastAgentMessage ?? focusedTask?.streamingChunks?.join("") ?? "";
   const hasTaskHistorySwitcher = miniTaskListItems.length > 0;
   const showIdle = displayState === "idle" && runningSessionCount === 0 && !isDragging;
-  const memmyPose = resolveMemmyPose(displayState, focusedTask, isSleeping);
+  const cubyPose = resolveCubyPose(displayState, focusedTask, isSleeping);
 
   const markActivity = useCallback(() => {
     setLastActivityAt(Date.now());
@@ -1913,32 +1912,7 @@ export function PetPageView({ bus, mainRoute = "/main", onNavigate, onPetWindowC
           onClick={handleMemmyClick}
           onContextMenu={handleContextMenu}
         >
-          <div
-            className="absolute inset-0 transition-opacity duration-200"
-            style={{
-              opacity: showIdle ? 1 : 0,
-              pointerEvents: "none",
-              filter: "drop-shadow(0 8px 16px rgba(17, 29, 28, 0.18))"
-            }}
-          >
-            <video
-              src={memoIdleUrl}
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)]"
-              style={{
-                width: PET_TIMING.mascotSize,
-                height: PET_TIMING.mascotSize,
-                objectFit: "cover",
-                display: "block"
-              }}
-            />
-          </div>
-          <div className="absolute inset-0 transition-opacity duration-200" style={{ opacity: showIdle ? 0 : 1, pointerEvents: "none" }}>
-            <Memmy pose={memmyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${displayState === "processing" ? "memmy-bob" : ""}`} />
-          </div>
+          <Cuby pose={showIdle ? "neutral" : cubyPose} size={PET_TIMING.mascotSize} className={`drop-shadow-[0_8px_16px_rgba(17,29,28,0.18)] ${showIdle || displayState === "processing" ? "cuby-bob" : ""}`} />
         </div>
 
         {displayState !== "idle" && <ChatWavesProp />}
@@ -2559,14 +2533,14 @@ function PetContextMenu({ registerRef, x, y, screenX, screenLeft, screenWidth, l
 }
 
 /**
- * Resolves the Memmy pose from the displayState and the task.
+ * Resolves the Cuby pose from the displayState and the task.
  *
  * @param displayState The current display state.
  * @param focusedTask The focused task.
  * @param isSleeping Whether to enter the sleep pose.
- * @returns The Memmy pose.
+ * @returns The Cuby pose.
  */
-function resolveMemmyPose(displayState: DisplayState, focusedTask: Task | null, isSleeping: boolean): MemmyPose {
+function resolveCubyPose(displayState: DisplayState, focusedTask: Task | null, isSleeping: boolean): CubyPose {
   if (displayState === "idle" && isSleeping) {
     return "sleep";
   }

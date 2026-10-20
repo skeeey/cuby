@@ -246,8 +246,8 @@ describe("AgentSourceTool Skill rendering", () => {
     const executablePath = path.join(installationRoot, "kimi_code");
     fs.writeFileSync(executablePath, "#!/bin/sh\n");
     fs.chmodSync(executablePath, 0o755);
-    const previousMemmyHome = process.env.MEMMY_HOME;
-    process.env.MEMMY_HOME = memmyHome;
+    const previousMemmyHome = process.env.CUBY_HOME;
+    process.env.CUBY_HOME = memmyHome;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockImplementation(async () =>
       new Response(
         JSON.stringify([{
@@ -286,8 +286,8 @@ describe("AgentSourceTool Skill rendering", () => {
       expect(fs.existsSync(rendered.skillPath)).toBe(true);
     } finally {
       fetchMock.mockRestore();
-      if (previousMemmyHome === undefined) delete process.env.MEMMY_HOME;
-      else process.env.MEMMY_HOME = previousMemmyHome;
+      if (previousMemmyHome === undefined) delete process.env.CUBY_HOME;
+      else process.env.CUBY_HOME = previousMemmyHome;
     }
   });
 
@@ -297,7 +297,7 @@ describe("AgentSourceTool Skill rendering", () => {
     expect(skill).toContain("## Installation Identity Gate");
     expect(skill).toContain('action="verify_installation"');
     expect(skill).toContain("If no automatically discovered evidence passes `verify_installation`, stop and report that the requested Agent was not found.");
-    expect(skill).toContain("Never substitute Memmy's own workspace or the current Agent surface");
+    expect(skill).toContain("Never substitute Cuby's own workspace or the current Agent surface");
     expect(skill).toContain('installation_path_origin="user_provided"');
     expect(skill).toContain("Do not keep searching or guess paths after asking.");
   });
@@ -339,8 +339,8 @@ describe("AgentSourceTool Skill rendering", () => {
         localToken: "local-token"
       })
     );
-    const previousMemmyHome = process.env.MEMMY_HOME;
-    process.env.MEMMY_HOME = memmyHome;
+    const previousMemmyHome = process.env.CUBY_HOME;
+    process.env.CUBY_HOME = memmyHome;
     const fetchMock = vi.spyOn(globalThis, "fetch").mockResolvedValue(
       new Response(
         JSON.stringify([
@@ -382,8 +382,8 @@ describe("AgentSourceTool Skill rendering", () => {
       });
     } finally {
       fetchMock.mockRestore();
-      if (previousMemmyHome === undefined) delete process.env.MEMMY_HOME;
-      else process.env.MEMMY_HOME = previousMemmyHome;
+      if (previousMemmyHome === undefined) delete process.env.CUBY_HOME;
+      else process.env.CUBY_HOME = previousMemmyHome;
     }
   });
 });

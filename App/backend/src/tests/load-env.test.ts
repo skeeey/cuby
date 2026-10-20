@@ -16,13 +16,13 @@ describe("backend cloud-service env loading", () => {
     const root = fixtureRoot();
     const manifestPath = writeManifest(root, "https://manifest.example.test");
     const env = {
-      MEMMY_CLOUD_SERVICE: "https://external.example.test",
-      MEMMY_CLOUD_URL: "https://stale.example.test"
+      CUBY_CLOUD_SERVICE: "https://external.example.test",
+      CUBY_CLOUD_URL: "https://stale.example.test"
     };
 
     expect(loadCloudServiceEnv({ env, manifestPath })).toBe(manifestPath);
-    expect(env.MEMMY_CLOUD_SERVICE).toBe("https://manifest.example.test");
-    expect(env.MEMMY_CLOUD_URL).toBeUndefined();
+    expect(env.CUBY_CLOUD_SERVICE).toBe("https://manifest.example.test");
+    expect(env.CUBY_CLOUD_URL).toBeUndefined();
     expect(resolveCloudClientConfig(env).baseUrl).toBe("https://manifest.example.test");
   });
 
@@ -34,19 +34,19 @@ describe("backend cloud-service env loading", () => {
       cloudService: "https://manifest.example.test",
       secretToken: "must-not-be-injected",
     }));
-    const env: NodeJS.ProcessEnv = { MEMMY_CLOUD_SERVICE: "   " };
+    const env: NodeJS.ProcessEnv = { CUBY_CLOUD_SERVICE: "   " };
 
     expect(loadCloudServiceEnv({ env, manifestPath })).toBe(manifestPath);
-    expect(env).toEqual({ MEMMY_CLOUD_SERVICE: "https://manifest.example.test" });
+    expect(env).toEqual({ CUBY_CLOUD_SERVICE: "https://manifest.example.test" });
   });
 
   it("falls back to a development .env when no manifest is requested", () => {
     const root = fixtureRoot();
-    writeFileSync(join(root, ".env"), "MEMMY_CLOUD_SERVICE=https://dev.example.test\n");
+    writeFileSync(join(root, ".env"), "CUBY_CLOUD_SERVICE=https://dev.example.test\n");
     const env: NodeJS.ProcessEnv = {};
 
     expect(loadCloudServiceEnv({ cwd: root, moduleDir: root, env })).toBe(join(root, ".env"));
-    expect(env.MEMMY_CLOUD_SERVICE).toBe("https://dev.example.test");
+    expect(env.CUBY_CLOUD_SERVICE).toBe("https://dev.example.test");
   });
 
   it("fails closed when a requested packaged manifest is missing or uses a non-HTTPS origin", () => {

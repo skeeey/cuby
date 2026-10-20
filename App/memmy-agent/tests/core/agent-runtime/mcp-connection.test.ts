@@ -138,7 +138,7 @@ afterEach(() => {
 
 describe("MCP connection helpers", () => {
   it.runIf(process.platform === 'darwin')('uses the private Desktop guide instead of doctor through the real MCP registration', async () => {
-    vi.stubEnv('MEMMY_DESKTOP_MANAGED_GATEWAY', '1');
+    vi.stubEnv('CUBY_DESKTOP_MANAGED_GATEWAY', '1');
     const prepare = vi.spyOn(desktopOnboardingClient, 'prepare').mockResolvedValue({ app: 'com.example.Memmy', pid: 42 });
     const guide = vi.spyOn(desktopOnboardingClient, 'guide').mockResolvedValue(false);
     const doctor = vi.spyOn(permissionChecks, 'nativePermissionDoctor');
@@ -272,14 +272,14 @@ describe("MCP connection helpers", () => {
     let redirectedToken: string | undefined;
     const redirectedServer = createServer((request, response) => {
       redirectedRequests += 1;
-      redirectedToken = request.headers["x-memmy-mcp-token"] as string | undefined;
+      redirectedToken = request.headers["x-cuby-mcp-token"] as string | undefined;
       response.writeHead(401).end();
     });
     const redirectedPort = await listen(redirectedServer);
 
     let receivedToken: string | undefined;
     const redirectServer = createServer((request, response) => {
-      receivedToken = request.headers["x-memmy-mcp-token"] as string | undefined;
+      receivedToken = request.headers["x-cuby-mcp-token"] as string | undefined;
       response.writeHead(302, { location: `http://127.0.0.1:${redirectedPort}${endpointPath}` }).end();
     });
     const redirectPort = await listen(redirectServer);
@@ -290,7 +290,7 @@ describe("MCP connection helpers", () => {
         composio: {
           type,
           url: `http://127.0.0.1:${redirectPort}${endpointPath}`,
-          headers: { "x-memmy-mcp-token": "secret-token" },
+          headers: { "x-cuby-mcp-token": "secret-token" },
         },
       }, registry);
 

@@ -671,7 +671,7 @@ describe("standalone Agent source executor", () => {
     const cursorRoot = join(root, ".cursor");
     mkdirSync(cursorRoot, { recursive: true });
     const configPath = join(root, "config.yaml");
-    writeFileSync(configPath, "memmyMemory:\n  storage:\n    endpoint: http://127.0.0.1:18960\n");
+    writeFileSync(configPath, "memmyMemory:\n  storage:\n    endpoint: http://127.0.0.1:28960\n");
     const adapter: SourceAdapter = {
       descriptor: { sourceId: "cursor", displayName: "Cursor", builtin: true, dataPath: cursorRoot },
       detect: async () => true,
@@ -692,12 +692,12 @@ describe("standalone Agent source executor", () => {
     });
 
     await executor.mutateConnection("cursor", "plugin", "POST");
-    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).toContain("memmy-resume-hook.mjs");
-    expect(readFileSync(join(cursorRoot, "hooks", "memmy-resume-hook.mjs"), "utf8")).toContain("const SOURCE = \"cursor\"");
+    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).toContain("cuby-resume-hook.mjs");
+    expect(readFileSync(join(cursorRoot, "hooks", "cuby-resume-hook.mjs"), "utf8")).toContain("const SOURCE = \"cursor\"");
     expect((await executor.list()).sources[0]?.status).toBe("plugin_installed");
 
     await executor.mutateConnection("cursor", "plugin", "DELETE");
-    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).not.toContain("memmy-resume-hook.mjs");
+    expect(readFileSync(join(cursorRoot, "hooks.json"), "utf8")).not.toContain("cuby-resume-hook.mjs");
     expect((await executor.list()).sources[0]?.status).toBe("not_connected");
   });
 });

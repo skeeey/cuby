@@ -2,20 +2,21 @@
 
 <#
 .SYNOPSIS
-Removes the current user's Memmy installation and local state on Windows.
+Removes the current user's Memmy and Cuby installations and local state on Windows.
 
 .DESCRIPTION
 The script runs unattended and deletes immediately with no confirmation prompt. Use -WhatIf
 to preview the exact set of changes without applying any of them.
 
-The script discovers Memmy paths before changing environment variables. It supports the
-current per-user NSIS package, custom installation drives, the historical MSIX test package,
-legacy CLI launchers, and Memmy-specific data paths. Source repositories and finished EXE or
+The script discovers Memmy and Cuby paths before changing environment variables. It supports
+the current per-user NSIS package, custom installation drives, the historical MSIX test package,
+legacy CLI launchers, and Cuby-specific data paths. The Memmy entries stay in place so the
+script still cleans up an install made before the rename. Source repositories and finished EXE or
 MSIX packages are preserved unless -RepositoryRoot is supplied, in which case only known
 rebuildable directories are removed.
 
 Environment variables are removed but do not authorize arbitrary file deletion. Existing
-external database or config paths are retained and reported; pass a Memmy-owned home with
+external database or config paths are retained and reported; pass a Memmy- or Cuby-owned home with
 -AdditionalMemmyHome or manually clean the exact SQLite file together with its -wal and
 -shm sidecars after reviewing it.
 
@@ -28,12 +29,12 @@ Also cleans machine-level environment, PATH, registry, and legacy all-users loca
 requires an already elevated PowerShell session; the script never self-elevates.
 
 .PARAMETER AdditionalMemmyHome
-Adds one or more explicit Memmy data homes. Each final directory name must begin with
-"Memmy" or ".memmy", or be exactly "memory-service". UNC paths and protected roots are
-still rejected.
+Adds one or more explicit Memmy or Cuby data homes. Each final directory name must begin with
+"Memmy", ".memmy", "Cuby", or ".cuby", or be exactly "memory-service". UNC paths and protected
+roots are still rejected.
 
 .PARAMETER RepositoryRoot
-Optionally identifies a Memmy source repository. Only Windows unpacked output and packaged
+Optionally identifies a Memmy or Cuby source repository. Only Windows unpacked output and packaged
 runtime staging directories are removed; finished installers are retained.
 
 .EXAMPLE
@@ -66,6 +67,7 @@ $ProgressPreference = "SilentlyContinue"
 
 $script:ProductName = "Memmy"
 $script:AppId = "cn.memtensor.memmy"
+$script:CubyAppId = "cn.memtensor.cuby"
 $script:NsisGuid = "886615f7-a04c-57ec-a2dd-9161dbe1a7c4"
 $script:LegacyMsixName = "Memmy.Development"
 $script:LegacyMsixFamily = "Memmy.Development_fvzhnh4ztget6"
@@ -258,7 +260,7 @@ function Test-IsMemmyScopedDirectory {
   param([string]$NormalizedPath)
 
   $leaf = Split-Path -Leaf $NormalizedPath.TrimEnd('\')
-  return ($leaf -match "(?i)^\.?memmy(?:$|[-_. ])" -or $leaf -match "(?i)^memory-service$")
+  return ($leaf -match "(?i)^\.?(?:memmy|cuby)(?:$|[-_. ])" -or $leaf -match "(?i)^memory-service$")
 }
 
 function Test-IsSensitiveExactFilePath {
@@ -322,13 +324,13 @@ function Test-IsTrustedMemmyExactFile {
   }
 
   $leaf = Split-Path -Leaf $NormalizedPath
-  if ($leaf -match "(?i)^(?:memmy|memory|app)[A-Za-z0-9._ -]*\.(?:ya?ml|json|sqlite3?|db)(?:-(?:wal|shm))?$") {
+  if ($leaf -match "(?i)^(?:memmy|cuby|memory|app)[A-Za-z0-9._ -]*\.(?:ya?ml|json|sqlite3?|db)(?:-(?:wal|shm))?$") {
     return $true
   }
 
   $parent = Split-Path -Parent $NormalizedPath
   foreach ($segment in $parent.Split('\')) {
-    if ($segment -match "(?i)^(?:\.memmy(?:-intl)?|Memmy(?:Intl)?|memory-service|cn\.memtensor\.memmy|ai\.memmy\.desktop)$") {
+    if ($segment -match "(?i)^(?:\.(?:memmy|cuby)(?:-intl)?|(?:Memmy|Cuby)(?:Intl)?|memory-service|cn\.memtensor\.(?:memmy|cuby)|ai\.memmy\.desktop)$") {
       return $true
     }
   }
@@ -388,11 +390,11 @@ function Add-Target {
     return
   }
   if ($Kind -eq "File" -and $Trust -eq "ExactFile" -and -not (Test-IsTrustedMemmyExactFile $normalized)) {
-    Add-ListItem $script:Retained "skipped-unsafe: $normalized [$Reason; exact file is not demonstrably Memmy-owned]"
+    Add-ListItem $script:Retained "skipped-unsafe: $normalized [$Reason; exact file is not demonstrably Memmy/Cuby-owned]"
     return
   }
   if ($Kind -eq "Directory" -and $Trust -eq "Custom" -and -not (Test-IsMemmyScopedDirectory $normalized)) {
-    Add-ListItem $script:Retained "skipped-unsafe: $normalized [$Reason; directory is not Memmy-labeled]"
+    Add-ListItem $script:Retained "skipped-unsafe: $normalized [$Reason; directory is not Memmy/Cuby-labeled]"
     return
   }
   if ($Kind -eq "Directory" -and $Trust -eq "Explicit") {
@@ -401,8 +403,8 @@ function Add-Target {
       return
     }
     $leaf = Split-Path -Leaf $normalized
-    if ($leaf -notmatch "(?i)^\.?memmy" -and $leaf -ine "memory-service") {
-      Add-ListItem $script:Failures "skipped-unsafe: $normalized [$Reason; explicit home must be Memmy-labeled]"
+    if ($leaf -notmatch "(?i)^\.?(?:memmy|cuby)" -and $leaf -ine "memory-service") {
+      Add-ListItem $script:Failures "skipped-unsafe: $normalized [$Reason; explicit home must be Memmy- or Cuby-labeled]"
       return
     }
   }
@@ -429,10 +431,10 @@ function Test-IsVerifiedMemmyInstallRoot {
     return $false
   }
 
-  $executable = Join-Path $normalized "Memmy.exe"
+  $executables = @("Memmy.exe", "Cuby.exe") | ForEach-Object { Join-Path $normalized $_ }
+  $hasExecutable = @($executables | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }).Count -gt 0
   $appArchive = Join-Path $normalized "resources\app.asar"
-  return ((Test-Path -LiteralPath $executable -PathType Leaf) -and
-          (Test-Path -LiteralPath $appArchive -PathType Leaf))
+  return ($hasExecutable -and (Test-Path -LiteralPath $appArchive -PathType Leaf))
 }
 
 function Add-ProcessRoot {
@@ -528,7 +530,7 @@ function Get-MemmyEnvironmentEntries {
       $variables = [Environment]::GetEnvironmentVariables($target)
       foreach ($name in $variables.Keys) {
         $textName = [string]$name
-        if ($textName -match "(?i)^(MEMMY_|MEMORY_SERVICE_)[A-Z0-9_]*$") {
+        if ($textName -match "(?i)^(CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Z0-9_]*$") {
           $entries += [pscustomobject]@{
             Scope = $scope
             Name = $textName
@@ -545,6 +547,20 @@ function Get-MemmyEnvironmentEntries {
 
 function Record-ExternalEnvironmentPaths {
   $pathVariables = @(
+    "CUBY_HOME",
+    "CUBY_CONFIG",
+    "CUBY_CONFIG_PATH",
+    "CUBY_RUNTIME_CONFIG_PATH",
+    "CUBY_AGENT_DATA_DIR",
+    "CUBY_AGENT_SESSION_DAG_DIR",
+    "CUBY_AGENT_TMUX_SOCKET_DIR",
+    "CUBY_MEMORY_HOME",
+    "CUBY_APP_DB_PATH",
+    "CUBY_MEMORY_DB",
+    "CUBY_MEMORY_DB_PATH",
+    "CUBY_MEMOS_DB_PATH",
+    "CUBY_AGENT_WORKSPACE",
+    "CUBY_WORKSPACE",
     "MEMMY_HOME",
     "MEMMY_CONFIG",
     "MEMMY_CONFIG_PATH",
@@ -562,7 +578,7 @@ function Record-ExternalEnvironmentPaths {
     "MEMMY_AGENT_WORKSPACE",
     "MEMMY_WORKSPACE"
   )
-  $workspaceVariables = @("MEMMY_AGENT_WORKSPACE", "MEMMY_WORKSPACE")
+  $workspaceVariables = @("CUBY_AGENT_WORKSPACE", "CUBY_WORKSPACE", "MEMMY_AGENT_WORKSPACE", "MEMMY_WORKSPACE")
 
   foreach ($entry in $script:EnvironmentEntries) {
     if ($entry.Scope -eq "Machine" -and -not $IncludeMachineScope) {
@@ -610,7 +626,7 @@ function Record-ExternalEnvironmentPaths {
     }
 
     if ($workspaceVariables -notcontains $entry.Name) {
-      Add-ListItem $script:Failures "external-memmy-path-retained: $normalized [$($entry.Scope):$($entry.Name); pass its Memmy-owned home with -AdditionalMemmyHome or clean it manually]"
+      Add-ListItem $script:Failures "external-cuby-path-retained: $normalized [$($entry.Scope):$($entry.Name); pass its Memmy- or Cuby-owned home with -AdditionalMemmyHome or clean it manually]"
     }
   }
 }
@@ -646,7 +662,7 @@ function Record-ExternalConfigDatabasePaths {
     if ($entry.Scope -eq "Machine" -and -not $IncludeMachineScope) {
       continue
     }
-    if ($entry.Name -notmatch "(?i)^MEMMY_(?:CONFIG|CONFIG_PATH|RUNTIME_CONFIG_PATH)$") {
+    if ($entry.Name -notmatch "(?i)^(?:CUBY|MEMMY)_(?:CONFIG|CONFIG_PATH|RUNTIME_CONFIG_PATH)$") {
       continue
     }
     $candidate = Expand-NormalizedPath $entry.Value
@@ -767,16 +783,19 @@ function New-UninstallEntry {
     }
   }
   if (-not $uninstallExecutable -and $installLocation) {
-    $candidate = Join-Path $installLocation "Uninstall Memmy.exe"
-    if (Test-Path -LiteralPath $candidate -PathType Leaf) {
-      $uninstallExecutable = $candidate
+    foreach ($uninstallerName in @("Uninstall Memmy.exe", "Uninstall Cuby.exe")) {
+      $candidate = Join-Path $installLocation $uninstallerName
+      if (Test-Path -LiteralPath $candidate -PathType Leaf) {
+        $uninstallExecutable = $candidate
+        break
+      }
     }
   }
 
   if ($uninstallExecutable -and -not $installLocation) {
     $installLocation = Expand-NormalizedPath (Split-Path -Parent $uninstallExecutable)
   }
-  if ($uninstallExecutable -and (Split-Path -Leaf $uninstallExecutable) -notmatch "(?i)^(Uninstall Memmy|unins\d*)\.exe$") {
+  if ($uninstallExecutable -and (Split-Path -Leaf $uninstallExecutable) -notmatch "(?i)^(Uninstall (?:Memmy|Cuby)|unins\d*)\.exe$") {
     Add-ListItem $script:Retained "skipped-unsafe-uninstaller: $uninstallExecutable [unexpected file name]"
     $uninstallExecutable = $null
   }
@@ -785,7 +804,7 @@ function New-UninstallEntry {
     $uninstallExecutable = $null
   }
   if ($uninstallExecutable -and -not (Test-IsVerifiedMemmyInstallRoot $installLocation)) {
-    Add-ListItem $script:Retained "skipped-unsafe-uninstaller: $uninstallExecutable [Memmy.exe or resources\app.asar marker missing]"
+    Add-ListItem $script:Retained "skipped-unsafe-uninstaller: $uninstallExecutable [Memmy.exe / Cuby.exe or resources\app.asar marker missing]"
     $uninstallExecutable = $null
   }
   if ($uninstallExecutable -and (Test-HasReparsePointAncestor $uninstallExecutable -IncludeLeaf)) {
@@ -831,8 +850,8 @@ function Get-MemmyUninstallEntries {
           $keyName = Split-Path -Leaf $key.Name
           $knownGuid = $keyName -ieq $script:NsisGuid
           $isMemmy = $knownGuid -or (
-            $displayName -match "(?i)^Memmy(?: Desktop)?(?:\s+\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?)?$" -and
-            $publisher -match "(?i)^(?:MemTensor|Memmy)(?:\s|$)"
+            $displayName -match "(?i)^(?:Memmy|Cuby)(?: Desktop)?(?:\s+\d+(?:\.\d+){1,3}(?:[-+][A-Za-z0-9.-]+)?)?$" -and
+            $publisher -match "(?i)^(?:MemTensor|Memmy|Cuby)(?:\s|$)"
           )
           if ($isMemmy) {
             $entries += New-UninstallEntry $key.PSPath $properties $root.Scope $knownGuid
@@ -964,9 +983,12 @@ function Discover-CliDirectoriesFromPath {
       }
       $memmyCommand = Join-Path $normalized "memmy.cmd"
       $memoryCommand = Join-Path $normalized "memmy-memory.cmd"
+      $cubyCommand = Join-Path $normalized "cuby.cmd"
+      $cubyMemoryCommand = Join-Path $normalized "cuby-memory.cmd"
       if ((Split-Path -Leaf $normalized) -ieq "cli" -and
           (Split-Path -Leaf (Split-Path -Parent $normalized)) -ieq "resources" -and
-          ((Test-Path -LiteralPath $memmyCommand -PathType Leaf) -or (Test-Path -LiteralPath $memoryCommand -PathType Leaf))) {
+          ((Test-Path -LiteralPath $memmyCommand -PathType Leaf) -or (Test-Path -LiteralPath $memoryCommand -PathType Leaf) -or
+            (Test-Path -LiteralPath $cubyCommand -PathType Leaf) -or (Test-Path -LiteralPath $cubyMemoryCommand -PathType Leaf))) {
         $installRoot = Split-Path -Parent (Split-Path -Parent $normalized)
         Add-InstallRoot $installRoot "PATH discovery ($scope)"
       }
@@ -986,7 +1008,7 @@ function Test-IsVerifiedCliLauncherContent {
       return $false
     }
     $content = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop
-    return ($content -match "(?i)(Managed by Memmy dev-start|node_modules[\\/](?:memmy-agent|@memtensor[\\/]memmy-memory-cli)|App[\\/]memmy-agent[\\/]dist[\\/]main\.js|Memory[\\/]dist[\\/]src[\\/]cli[\\/]index\.js)")
+    return ($content -match "(?i)(Managed by (?:Memmy|Cuby) dev-start|node_modules[\\/](?:memmy-agent|@memtensor[\\/]memmy-memory-cli)|App[\\/]memmy-agent[\\/]dist[\\/]main\.js|Memory[\\/]dist[\\/]src[\\/]cli[\\/]index\.js)")
   } catch {
     return $false
   }
@@ -1008,7 +1030,7 @@ function Add-VerifiedCliLauncher {
   if (Test-IsVerifiedCliLauncherContent $Path) {
     Add-Target $Path "File" $Reason "Known"
   } else {
-    Add-ListItem $script:Retained "skipped-cli-launcher: $Path [$Reason; content is not a verified Memmy launcher]"
+    Add-ListItem $script:Retained "skipped-cli-launcher: $Path [$Reason; content is not a verified Memmy/Cuby launcher]"
   }
 }
 
@@ -1046,7 +1068,9 @@ function Discover-VerifiedGlobalCliTargets {
   $launcherNames = @(
     "memmy", "memmy.cmd", "memmy.ps1", "memmy.bat",
     "memmy-memory", "memmy-memory.cmd", "memmy-memory.ps1", "memmy-memory.bat",
-    "memmy-agent", "memmy-agent.cmd", "memmy-agent.ps1", "memmy-agent.bat"
+    "memmy-agent", "memmy-agent.cmd", "memmy-agent.ps1", "memmy-agent.bat",
+    "cuby", "cuby.cmd", "cuby.ps1", "cuby.bat",
+    "cuby-memory", "cuby-memory.cmd", "cuby-memory.ps1", "cuby-memory.bat"
   )
 
   foreach ($scope in $scopes) {
@@ -1070,29 +1094,40 @@ function Discover-VerifiedGlobalCliTargets {
 
 function Add-DefaultTargets {
   $localPrograms = Join-Path $env:LOCALAPPDATA "Programs\Memmy"
+  $localCubyPrograms = Join-Path $env:LOCALAPPDATA "Programs\Cuby"
   Add-InstallRoot $localPrograms "Current per-user NSIS default" -KnownDefault
+  Add-InstallRoot $localCubyPrograms "Cuby per-user NSIS default" -KnownDefault
 
   $launchProxy = (Join-Path $env:LOCALAPPDATA "Memmy\launcher").TrimEnd('\')
+  $cubyLaunchProxy = (Join-Path $env:LOCALAPPDATA "Cuby\launcher").TrimEnd('\')
   $script:CliDirectories[$launchProxy.ToLowerInvariant()] = $launchProxy
+  $script:CliDirectories[$cubyLaunchProxy.ToLowerInvariant()] = $cubyLaunchProxy
 
   Add-Target (Join-Path $env:USERPROFILE ".memmy") "Directory" "Default Memmy runtime home" "Known"
+  Add-Target (Join-Path $env:USERPROFILE ".cuby") "Directory" "Default Cuby runtime home" "Known"
   Add-Target (Join-Path $env:USERPROFILE ".memmy-intl") "Directory" "Legacy international runtime home" "Known"
   Add-Target (Join-Path $env:APPDATA "Memmy") "Directory" "Electron userData" "Known"
+  Add-Target (Join-Path $env:APPDATA "Cuby") "Directory" "Cuby Electron userData" "Known"
   Add-Target (Join-Path $env:APPDATA "MemmyIntl") "Directory" "Legacy international Electron userData" "Known"
   Add-Target (Join-Path $env:LOCALAPPDATA "Memmy") "Directory" "Windows launch proxy and local state" "Known"
+  Add-Target (Join-Path $env:LOCALAPPDATA "Cuby") "Directory" "Cuby launch proxy and local state" "Known"
   Add-Target (Join-Path $env:LOCALAPPDATA "@memmydesktop-updater") "Directory" "Legacy updater cache" "Known"
   Add-Target (Join-Path $env:LOCALAPPDATA "memmy-updater") "Directory" "Updater cache" "Known"
   Add-Target (Join-Path $env:LOCALAPPDATA "cn.memtensor.memmy") "Directory" "Legacy app-id cache" "Known"
+  Add-Target (Join-Path $env:LOCALAPPDATA $script:CubyAppId) "Directory" "Cuby app-id cache" "Known"
   Add-Target (Join-Path $env:LOCALAPPDATA "ai.memmy.desktop") "Directory" "Legacy desktop cache" "Known"
   Add-Target (Join-Path $env:APPDATA "cn.memtensor.memmy") "Directory" "Legacy roaming app-id state" "Known"
+  Add-Target (Join-Path $env:APPDATA $script:CubyAppId) "Directory" "Cuby roaming app-id state" "Known"
   Add-Target (Join-Path $env:APPDATA "ai.memmy.desktop") "Directory" "Legacy roaming desktop state" "Known"
 
   $legacyMsixState = Join-Path $env:LOCALAPPDATA "Packages\$($script:LegacyMsixFamily)\LocalState\Memmy"
+  $cubyLegacyMsixState = Join-Path $env:LOCALAPPDATA "Packages\$($script:LegacyMsixFamily)\LocalState\Cuby"
   Add-Target $legacyMsixState "Directory" "Historical MSIX LocalState" "Known"
+  Add-Target $cubyLegacyMsixState "Directory" "Cuby MSIX LocalState" "Known"
 
   $localBin = Join-Path $env:USERPROFILE ".local\bin"
   $npmBin = Join-Path $env:APPDATA "npm"
-  foreach ($name in @("memmy", "memmy.cmd", "memmy.ps1", "memmy.bat", "memmy.exe", "memmy-memory", "memmy-memory.cmd", "memmy-memory.ps1", "memmy-memory.bat", "memmy-memory.exe", "memmy-agent", "memmy-agent.cmd", "memmy-agent.ps1", "memmy-agent.bat", "memmy-agent.exe")) {
+  foreach ($name in @("memmy", "memmy.cmd", "memmy.ps1", "memmy.bat", "memmy.exe", "memmy-memory", "memmy-memory.cmd", "memmy-memory.ps1", "memmy-memory.bat", "memmy-memory.exe", "memmy-agent", "memmy-agent.cmd", "memmy-agent.ps1", "memmy-agent.bat", "memmy-agent.exe", "cuby", "cuby.cmd", "cuby.ps1", "cuby.bat", "cuby.exe", "cuby-memory", "cuby-memory.cmd", "cuby-memory.ps1", "cuby-memory.bat", "cuby-memory.exe")) {
     Add-VerifiedCliLauncher (Join-Path $localBin $name) "Legacy developer CLI"
     Add-VerifiedCliLauncher (Join-Path $npmBin $name) "Global npm CLI launcher"
   }
@@ -1101,7 +1136,7 @@ function Add-DefaultTargets {
 
   $crashDumpDirectory = Join-Path $env:LOCALAPPDATA "CrashDumps"
   if (Test-Path -LiteralPath $crashDumpDirectory -PathType Container) {
-    foreach ($dump in Get-ChildItem -LiteralPath $crashDumpDirectory -Filter "Memmy*.dmp" -File -ErrorAction SilentlyContinue) {
+    foreach ($dump in @(Get-ChildItem -LiteralPath $crashDumpDirectory -Filter "Memmy*.dmp" -File -ErrorAction SilentlyContinue) + @(Get-ChildItem -LiteralPath $crashDumpDirectory -Filter "Cuby*.dmp" -File -ErrorAction SilentlyContinue)) {
       Add-Target $dump.FullName "File" "Windows crash dump" "Known"
     }
   }
@@ -1118,6 +1153,7 @@ function Add-MachineTargets {
   )) {
     if ($base) {
       Add-InstallRoot (Join-Path $base "Memmy") "Legacy machine-wide location" -KnownDefault
+      Add-InstallRoot (Join-Path $base "Cuby") "Cuby machine-wide location" -KnownDefault
     }
   }
 }
@@ -1130,12 +1166,14 @@ function Add-ShortcutTargets {
   foreach ($base in @($desktop)) {
     if ($base) {
       $shortcutCandidates += Join-Path $base "Memmy.lnk"
+      $shortcutCandidates += Join-Path $base "Cuby.lnk"
     }
   }
   foreach ($base in @($startMenu)) {
     if ($base) {
       $programs = Join-Path $base "Programs"
       $shortcutCandidates += Join-Path $programs "Memmy.lnk"
+      $shortcutCandidates += Join-Path $programs "Cuby.lnk"
     }
   }
   if ($IncludeMachineScope) {
@@ -1148,10 +1186,12 @@ function Add-ShortcutTargets {
           $base = Join-Path $base "Programs"
         }
         $shortcutCandidates += Join-Path $base "Memmy.lnk"
+        $shortcutCandidates += Join-Path $base "Cuby.lnk"
       }
     }
   }
   $shortcutCandidates += Join-Path $env:APPDATA "Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Memmy.lnk"
+  $shortcutCandidates += Join-Path $env:APPDATA "Microsoft\Internet Explorer\Quick Launch\User Pinned\TaskBar\Cuby.lnk"
 
   $shell = $null
   foreach ($shortcutPath in $shortcutCandidates) {
@@ -1164,10 +1204,10 @@ function Add-ShortcutTargets {
       }
       $shortcut = $shell.CreateShortcut($shortcutPath)
       $identity = "$($shortcut.TargetPath) $($shortcut.Arguments)"
-      if ($identity -match "(?i)(Memmy\.exe|MemmyLauncher\.vbs|\\Memmy\\launcher)") {
-        Add-Target $shortcutPath "File" "Verified Memmy shortcut" "Known"
+      if ($identity -match "(?i)(Memmy\.exe|MemmyLauncher\.vbs|\\Memmy\\launcher|Cuby\.exe|CubyLauncher\.vbs|\\Cuby\\launcher)") {
+        Add-Target $shortcutPath "File" "Verified Memmy/Cuby shortcut" "Known"
       } else {
-        Add-ListItem $script:Retained "skipped-shortcut: $shortcutPath [target is not Memmy]"
+        Add-ListItem $script:Retained "skipped-shortcut: $shortcutPath [target is not Memmy or Cuby]"
       }
     } catch {
       Add-ListItem $script:Retained "skipped-shortcut: $shortcutPath [unable to inspect target]"
@@ -1234,7 +1274,7 @@ function Get-LegacyMsixPackages {
 
 function Discover-InstallRootsFromRunningProcesses {
   try {
-    $processes = @(Get-CimInstance Win32_Process -Filter "Name = 'Memmy.exe'" -ErrorAction Stop)
+    $processes = @(Get-CimInstance Win32_Process -Filter "Name = 'Memmy.exe' OR Name = 'Cuby.exe'" -ErrorAction Stop)
   } catch {
     Add-ListItem $script:Failures "process-install-discovery-failed: $($_.Exception.Message)"
     return
@@ -1248,8 +1288,10 @@ function Discover-InstallRootsFromRunningProcesses {
     $installRoot = Split-Path -Parent $executablePath
     $markers = @(
       (Join-Path $installRoot "Uninstall Memmy.exe"),
+      (Join-Path $installRoot "Uninstall Cuby.exe"),
       (Join-Path $installRoot "resources\app.asar"),
-      (Join-Path $installRoot "resources\cli\memmy.cmd")
+      (Join-Path $installRoot "resources\cli\memmy.cmd"),
+      (Join-Path $installRoot "resources\cli\cuby.cmd")
     )
     if (@($markers | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }).Count -gt 0) {
       $rootKey = $installRoot.ToLowerInvariant()
@@ -1265,7 +1307,7 @@ function Discover-InstallRootsFromRunningProcesses {
         Add-ListItem $script:Failures "verified-running-install-outside-scope: $installRoot [not registered in the selected user scope; close it or rerun with the correct scope]"
       }
     } else {
-      Add-ListItem $script:Retained "skipped-process-install-root: $installRoot [missing Memmy package markers]"
+      Add-ListItem $script:Retained "skipped-process-install-root: $installRoot [missing Memmy/Cuby package markers]"
     }
   }
 }
@@ -1303,7 +1345,7 @@ function Get-MemmyProcesses {
     $commandLine = [string]$process.CommandLine
     $isMemmy = $false
 
-    if ($name -ieq "Memmy.exe" -and $executablePath) {
+    if (($name -ieq "Memmy.exe" -or $name -ieq "Cuby.exe") -and $executablePath) {
       foreach ($root in $script:ProcessRoots.Values) {
         if (Test-PathWithinRoot $executablePath $root.Path) {
           $isMemmy = $true
@@ -1321,14 +1363,17 @@ function Get-MemmyProcesses {
     }
 
     if (-not $isMemmy -and
-        $name -match "(?i)^(node|electron|memmy-memory|memmy-agent)\.exe$" -and
-        $commandLine -match "(?i)(memmy|memory-service)") {
+        $name -match "(?i)^(node|electron|memmy-memory|memmy-agent|cuby-memory|cuby-agent)\.exe$" -and
+        $commandLine -match "(?i)(memmy|cuby|memory-service)") {
       $runtimeRoots = @(
         (Join-Path $env:USERPROFILE ".memmy"),
         (Join-Path $env:USERPROFILE ".memmy-intl"),
+        (Join-Path $env:USERPROFILE ".cuby"),
         (Join-Path $env:APPDATA "Memmy"),
         (Join-Path $env:APPDATA "MemmyIntl"),
-        (Join-Path $env:LOCALAPPDATA "Memmy")
+        (Join-Path $env:APPDATA "Cuby"),
+        (Join-Path $env:LOCALAPPDATA "Memmy"),
+        (Join-Path $env:LOCALAPPDATA "Cuby")
       )
       foreach ($root in $script:InstallRoots.Values) {
         $runtimeRoots += $root.Path
@@ -1348,11 +1393,13 @@ function Get-MemmyProcesses {
 
     if (-not $isMemmy -and
         $name -match "(?i)^(cmd|powershell|pwsh|wscript|cscript)\.exe$" -and
-        $commandLine -match "(?i)(MemmyLauncher\.vbs|MemmyUpdatePrompt\.ps1|(?:install|launch)-win-update-[A-Za-z0-9._-]+\.(?:cmd|ps1|vbs))") {
+        $commandLine -match "(?i)(MemmyLauncher\.vbs|MemmyUpdatePrompt\.ps1|CubyLauncher\.vbs|CubyUpdatePrompt\.ps1|(?:install|launch)-win-update-[A-Za-z0-9._-]+\.(?:cmd|ps1|vbs))") {
       foreach ($helperRoot in @(
         (Join-Path $env:LOCALAPPDATA "Memmy\launcher"),
+        (Join-Path $env:LOCALAPPDATA "Cuby\launcher"),
         (Join-Path $env:APPDATA "Memmy\updates"),
-        (Join-Path $env:APPDATA "MemmyIntl\updates")
+        (Join-Path $env:APPDATA "MemmyIntl\updates"),
+        (Join-Path $env:APPDATA "Cuby\updates")
       )) {
         if (Test-CommandLineContainsRoot $commandLine $helperRoot) {
           $isMemmy = $true
@@ -1361,7 +1408,7 @@ function Get-MemmyProcesses {
       }
     }
 
-    if (-not $isMemmy -and $name -match "(?i)^(memmy|memmy-memory|memmy-agent)\.exe$" -and $executablePath) {
+    if (-not $isMemmy -and $name -match "(?i)^(memmy|memmy-memory|memmy-agent|cuby|cuby-memory|cuby-agent)\.exe$" -and $executablePath) {
       foreach ($target in $script:Targets.Values) {
         if ($target.Kind -eq "File" -and $executablePath -ieq $target.Path) {
           $isMemmy = $true
@@ -1859,9 +1906,9 @@ function Write-ProfileTextRecord {
 function Get-CleanedProfileText {
   param([string]$Text)
 
-  $managedPathPattern = '(?m)^[ \t]*# Memmy CLI PATH[ \t]*\r?\n[ \t]*export[ \t]+PATH="\$HOME/\.local/bin:\$PATH"[ \t]*(?:\r?\n|$)'
-  $environmentPattern = '(?m)^(?![^\r\n]*\\[ \t]*\r?$)[ \t]*(?:export[ \t]+)?(?:MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*=(?:"(?:\\.|[^"\\])*"|''[^'']*''|[^\s;&|`]*?)[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)'
-  $powershellEnvironmentPattern = '(?m)^(?![^\r\n]*`[ \t]*\r?$)[ \t]*\$env:(?:MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*[ \t]*=[ \t]*(?:"(?:`.|[^"`])*"|''[^'']*''|[^\s;|&`]*?)[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)'
+  $managedPathPattern = '(?m)^[ \t]*# (?:Memmy|Cuby) CLI PATH[ \t]*\r?\n[ \t]*export[ \t]+PATH="\$HOME/\.local/bin:\$PATH"[ \t]*(?:\r?\n|$)'
+  $environmentPattern = '(?m)^(?![^\r\n]*\\[ \t]*\r?$)[ \t]*(?:export[ \t]+)?(?:CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*=(?:"(?:\\.|[^"\\])*"|''[^'']*''|[^\s;&|`]*?)[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)'
+  $powershellEnvironmentPattern = '(?m)^(?![^\r\n]*`[ \t]*\r?$)[ \t]*\$env:(?:CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*[ \t]*=[ \t]*(?:"(?:`.|[^"`])*"|''[^'']*''|[^\s;|&`]*?)[ \t]*(?:#[^\r\n]*)?(?:\r?\n|$)'
   $cleaned = [Regex]::Replace($Text, $managedPathPattern, "")
   $cleaned = [Regex]::Replace($cleaned, $environmentPattern, "")
   return [Regex]::Replace($cleaned, $powershellEnvironmentPattern, "")
@@ -1870,7 +1917,7 @@ function Get-CleanedProfileText {
 function Test-ProfileHasMemmyEntries {
   param([string]$Text)
 
-  return ($Text -match '(?mi)^[ \t]*(?:# Memmy CLI PATH[ \t]*$|(?:export[ \t]+)?(?:MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*=|\$env:(?:MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*[ \t]*=)')
+  return ($Text -match '(?mi)^[ \t]*(?:# (?:Memmy|Cuby) CLI PATH[ \t]*$|(?:export[ \t]+)?(?:CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*=|\$env:(?:CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*[ \t]*=)')
 }
 
 function Remove-MemmyProfileEntries {
@@ -2007,19 +2054,26 @@ function Remove-MemmyRegistryTraces {
     "Registry::HKEY_CURRENT_USER\Software\Memmy",
     "Registry::HKEY_CURRENT_USER\Software\$($script:AppId)",
     "Registry::HKEY_CURRENT_USER\Software\Classes\Applications\Memmy.exe",
-    "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe"
+    "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
+    "Registry::HKEY_CURRENT_USER\Software\Cuby",
+    "Registry::HKEY_CURRENT_USER\Software\$($script:CubyAppId)",
+    "Registry::HKEY_CURRENT_USER\Software\Classes\Applications\Cuby.exe",
+    "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Cuby.exe"
   )
   foreach ($path in $userKeys) {
-    Remove-RegistryPathIfPresent $path "Memmy current-user registration"
+    Remove-RegistryPathIfPresent $path "Memmy/Cuby current-user registration"
   }
 
   if ($IncludeMachineScope) {
     foreach ($path in @(
       "Registry::HKEY_LOCAL_MACHINE\Software\Memmy",
       "Registry::HKEY_LOCAL_MACHINE\Software\$($script:AppId)",
-      "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe"
+      "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
+      "Registry::HKEY_LOCAL_MACHINE\Software\Cuby",
+      "Registry::HKEY_LOCAL_MACHINE\Software\$($script:CubyAppId)",
+      "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Cuby.exe"
     )) {
-      Remove-RegistryPathIfPresent $path "Memmy machine registration"
+      Remove-RegistryPathIfPresent $path "Memmy/Cuby machine registration"
     }
   }
 
@@ -2039,9 +2093,9 @@ function Remove-MemmyRegistryTraces {
     }
     try {
       $properties = Get-ItemProperty -LiteralPath $runPath -ErrorAction Stop
-      foreach ($name in @("Memmy", $script:AppId)) {
+      foreach ($name in @("Memmy", $script:AppId, "Cuby", $script:CubyAppId)) {
         if ($null -ne $properties.PSObject.Properties[$name] -and
-            $script:ShouldProcessHost.ShouldProcess("$($runPath)::$name", "Remove Memmy startup value")) {
+            $script:ShouldProcessHost.ShouldProcess("$($runPath)::$name", "Remove Memmy/Cuby startup value")) {
           Remove-ItemProperty -LiteralPath $runPath -Name $name -Force -ErrorAction Stop
           Write-Host "registry-value-deleted: $($runPath)::$name"
         }
@@ -2074,7 +2128,10 @@ function Test-RemainingState {
       (Join-Path $path "Memmy.exe"),
       (Join-Path $path "Uninstall Memmy.exe"),
       (Join-Path $path "resources\app.asar"),
-      (Join-Path $path "resources\cli\memmy.cmd")
+      (Join-Path $path "resources\cli\memmy.cmd"),
+      (Join-Path $path "Cuby.exe"),
+      (Join-Path $path "Uninstall Cuby.exe"),
+      (Join-Path $path "resources\cli\cuby.cmd")
     )
     if (@($indicators | Where-Object { Test-Path -LiteralPath $_ -PathType Leaf }).Count -gt 0) {
       Add-ListItem $script:Failures "observed-running-installation-still-present: $path"
@@ -2145,7 +2202,11 @@ function Test-RemainingState {
     "Registry::HKEY_CURRENT_USER\Software\Memmy",
     "Registry::HKEY_CURRENT_USER\Software\$($script:AppId)",
     "Registry::HKEY_CURRENT_USER\Software\Classes\Applications\Memmy.exe",
-    "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe"
+    "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
+    "Registry::HKEY_CURRENT_USER\Software\Cuby",
+    "Registry::HKEY_CURRENT_USER\Software\$($script:CubyAppId)",
+    "Registry::HKEY_CURRENT_USER\Software\Classes\Applications\Cuby.exe",
+    "Registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\App Paths\Cuby.exe"
   )
   if ($IncludeMachineScope) {
     $registryPaths += @(
@@ -2155,7 +2216,10 @@ function Test-RemainingState {
       "Registry::HKEY_LOCAL_MACHINE\Software\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\$($script:NsisGuid)",
       "Registry::HKEY_LOCAL_MACHINE\Software\Memmy",
       "Registry::HKEY_LOCAL_MACHINE\Software\$($script:AppId)",
-      "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe"
+      "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Memmy.exe",
+      "Registry::HKEY_LOCAL_MACHINE\Software\Cuby",
+      "Registry::HKEY_LOCAL_MACHINE\Software\$($script:CubyAppId)",
+      "Registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\App Paths\Cuby.exe"
     )
   }
   foreach ($entry in $script:UninstallEntries) {
@@ -2182,7 +2246,7 @@ function Test-RemainingState {
       continue
     }
     $properties = Get-ItemProperty -LiteralPath $runPath -ErrorAction SilentlyContinue
-    foreach ($name in @("Memmy", $script:AppId)) {
+    foreach ($name in @("Memmy", $script:AppId, "Cuby", $script:CubyAppId)) {
       if ($null -ne $properties -and $null -ne $properties.PSObject.Properties[$name]) {
         Add-ListItem $script:Failures "startup-registry-value-still-present: $($runPath)::$name"
       }
@@ -2279,7 +2343,7 @@ Write-Host "discovered-environment-variables: $($script:EnvironmentEntries.Count
 Write-Host "discovered-uninstall-records: $($script:UninstallEntries.Count)"
 
 if (-not $WhatIfPreference) {
-  Write-Host "`nWARNING: This permanently deletes Memmy application state and local data." -ForegroundColor Red
+  Write-Host "`nWARNING: This permanently deletes Memmy and Cuby application state and local data." -ForegroundColor Red
 }
 
 Stop-MemmyProcesses

@@ -8,8 +8,8 @@ cd "$MEMORY_ROOT"
 
 VERSION_PACKAGE_JSON="$MEMORY_ROOT/package.json"
 export VERSION_PACKAGE_JSON
-VERSION="${MEMMY_MEMORY_VERSION:-$(node -p "require(process.env.VERSION_PACKAGE_JSON).version")}"
-TARGET="${MEMMY_MEMORY_TARGET:-}"
+VERSION="${CUBY_MEMORY_VERSION:-$(node -p "require(process.env.VERSION_PACKAGE_JSON).version")}"
+TARGET="${CUBY_MEMORY_TARGET:-}"
 
 if [[ -z "$TARGET" ]]; then
   case "$(uname -s)" in
@@ -58,7 +58,7 @@ cp -R "$CLI_DIR/dist/build/." "$STAGE_DIR/dist/"
 cp -R "$CLI_DIR/agent_inject.md" "$STAGE_DIR/dist/cli/agent_inject.md"
 cp -R "$CLI_DIR/skills" "$STAGE_DIR/dist/cli/skills"
 
-MEMMY_MEMORY_VERSION="$VERSION" MEMORY_PACKAGE_JSON="$MEMORY_ROOT/package.json" STAGE_PACKAGE_JSON="$STAGE_DIR/package.json" node --input-type=module <<'NODE'
+CUBY_MEMORY_VERSION="$VERSION" MEMORY_PACKAGE_JSON="$MEMORY_ROOT/package.json" STAGE_PACKAGE_JSON="$STAGE_DIR/package.json" node --input-type=module <<'NODE'
 import { readFileSync, writeFileSync } from "node:fs";
 const root = JSON.parse(readFileSync(process.env.MEMORY_PACKAGE_JSON, "utf8"));
 const dependencies = {};
@@ -69,7 +69,7 @@ for (const name of ["yaml", "jsonc-parser", "better-sqlite3"]) {
 }
 const runtime = {
   name: "memmy-memory-runtime",
-  version: process.env.MEMMY_MEMORY_VERSION,
+  version: process.env.CUBY_MEMORY_VERSION,
   private: true,
   type: "module",
   dependencies

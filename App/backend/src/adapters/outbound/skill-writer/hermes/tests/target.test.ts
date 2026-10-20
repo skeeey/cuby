@@ -7,7 +7,7 @@ import YAML from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import type { SkillManifest } from "../../types.js";
 import { createHermesSkillTarget } from "../index.js";
-import { MEMMY_VERSION } from "../../../../../project-version.js";
+import { CUBY_VERSION } from "../../../../../project-version.js";
 
 let tempDir: string | undefined;
 
@@ -19,20 +19,20 @@ afterEach(() => {
 });
 
 describe("hermes skill target", () => {
-  it("installs, replaces, and uninstalls the Memmy marker block in SOUL.md", async () => {
+  it("installs, replaces, and uninstalls the Cuby marker block in SOUL.md", async () => {
     const { rootDirectory, manifest } = createFixture();
     const target = createHermesSkillTarget({ rootDirectory });
 
     await target.install(manifest);
-    expect(readTargetFile(rootDirectory)).toContain("Call memmy-memory search when context is needed.");
-    expect(readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8")).toContain(
-      "Call memmy-memory search when context is needed."
+    expect(readTargetFile(rootDirectory)).toContain("Call cuby-memory search when context is needed.");
+    expect(readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8")).toContain(
+      "Call cuby-memory search when context is needed."
     );
     await expect(target.isInstalled("hermes")).resolves.toBe(true);
 
     writeFileSync(
       join(rootDirectory, "SOUL.md"),
-      ["manual prefix", "<!-- memmy:start v=1 -->", "old", "<!-- memmy:end v=1 -->", "manual suffix", ""].join("\n"),
+      ["manual prefix", "<!-- cuby:start v=1 -->", "old", "<!-- cuby:end v=1 -->", "manual suffix", ""].join("\n"),
       "utf8"
     );
     await target.install(manifest);
@@ -52,7 +52,7 @@ describe("hermes skill target", () => {
     expect(existsSync(rootDirectory)).toBe(false);
   });
 
-  it("installs the Memmy memory provider plugin and selects it in config.yaml", async () => {
+  it("installs the Cuby memory provider plugin and selects it in config.yaml", async () => {
     const { rootDirectory } = createFixture();
     const memmyConfigPath = join(rootDirectory, "memmy-config.yaml");
     writeFileSync(
@@ -70,8 +70,8 @@ describe("hermes skill target", () => {
       [
         "manual prefix",
         "<!-- memmy-memory cli : start -->",
-        "memmy-memory session open --source hermes",
-        "memmy-memory turn start --source hermes",
+        "cuby-memory session open --source hermes",
+        "cuby-memory turn start --source hermes",
         "<!-- memmy-memory cli : end -->",
         "manual suffix",
         ""
@@ -85,20 +85,20 @@ describe("hermes skill target", () => {
 
     await target.installPlugin?.("hermes");
 
-    const pluginYaml = readFileSync(join(rootDirectory, "plugins", "memmy-memory", "plugin.yaml"), "utf8");
-    const pluginInit = readFileSync(join(rootDirectory, "plugins", "memmy-memory", "__init__.py"), "utf8");
-    const commandPluginYaml = readFileSync(join(rootDirectory, "plugins", "memmy-resume", "plugin.yaml"), "utf8");
-    const commandPluginInit = readFileSync(join(rootDirectory, "plugins", "memmy-resume", "__init__.py"), "utf8");
-    const skillFile = readFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "utf8");
+    const pluginYaml = readFileSync(join(rootDirectory, "plugins", "cuby-memory", "plugin.yaml"), "utf8");
+    const pluginInit = readFileSync(join(rootDirectory, "plugins", "cuby-memory", "__init__.py"), "utf8");
+    const commandPluginYaml = readFileSync(join(rootDirectory, "plugins", "cuby-resume", "plugin.yaml"), "utf8");
+    const commandPluginInit = readFileSync(join(rootDirectory, "plugins", "cuby-resume", "__init__.py"), "utf8");
+    const skillFile = readFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "utf8");
     const agentsFile = readFileSync(join(rootDirectory, "AGENTS.md"), "utf8");
-    const pluginConfig = JSON.parse(readFileSync(join(rootDirectory, "plugins", "memmy-memory", "config.json"), "utf8")) as {
+    const pluginConfig = JSON.parse(readFileSync(join(rootDirectory, "plugins", "cuby-memory", "config.json"), "utf8")) as {
       endpoint?: string;
       memmy_config_path?: string;
       token?: string;
       userId?: string;
       workspaceHostId?: string;
     };
-    const commandPluginConfig = JSON.parse(readFileSync(join(rootDirectory, "plugins", "memmy-resume", "config.json"), "utf8")) as {
+    const commandPluginConfig = JSON.parse(readFileSync(join(rootDirectory, "plugins", "cuby-resume", "config.json"), "utf8")) as {
       endpoint?: string;
       memmy_config_path?: string;
       token?: string;
@@ -112,25 +112,25 @@ describe("hermes skill target", () => {
       toolsets?: string[];
     };
 
-    expect(pluginYaml).toContain("name: memmy-memory");
-    expect(pluginYaml).toContain(`version: ${MEMMY_VERSION}`);
+    expect(pluginYaml).toContain("name: cuby-memory");
+    expect(pluginYaml).toContain(`version: ${CUBY_VERSION}`);
     expect(pluginYaml).toContain("kind: exclusive");
-    expect(commandPluginYaml).toContain("name: memmy-resume");
-    expect(commandPluginYaml).toContain(`version: ${MEMMY_VERSION}`);
+    expect(commandPluginYaml).toContain("name: cuby-resume");
+    expect(commandPluginYaml).toContain(`version: ${CUBY_VERSION}`);
     expect(commandPluginYaml).toContain("kind: standalone");
     expect(pluginInit).toContain("class MemmyMemoryProvider");
-    expect(pluginInit).not.toContain("x-memmy-agent-kind");
+    expect(pluginInit).not.toContain("x-cuby-agent-kind");
     expect(pluginInit).not.toContain("agentKind");
-    expect(pluginInit).toContain('return "memmy-memory"');
+    expect(pluginInit).toContain('return "cuby-memory"');
     expect(pluginInit).not.toContain("ctx.register_command");
     expect(commandPluginInit).toContain("ctx.register_command");
-    expect(commandPluginInit).toContain('"memmy-resume",');
+    expect(commandPluginInit).toContain('"cuby-resume",');
     expect(commandPluginInit).toContain("handler=_handle_memmy_resume_command");
     expect(commandPluginInit).toContain('args_hint="<query>"');
     expect(commandPluginInit).toContain('"layers": ["L1"]');
     expect(commandPluginInit).toContain('"limit": SEARCH_LIMIT');
     expect(commandPluginInit).toContain('"verbose": True');
-    expect(commandPluginInit).toContain('"Memmy request to " + request.full_url + " failed: "');
+    expect(commandPluginInit).toContain('"Cuby request to " + request.full_url + " failed: "');
     expect(commandPluginInit).toContain('ctx.register_hook("pre_llm_call", _on_pre_llm_call)');
     expect(commandPluginInit).toContain('ctx.register_hook("pre_gateway_dispatch", _on_pre_gateway_dispatch)');
     expect(commandPluginInit).toContain("def _episode_score");
@@ -148,7 +148,7 @@ describe("hermes skill target", () => {
     expect(pluginInit).toContain('if tool_name == "memmy_memory_get"');
     expect(pluginInit).toContain('return _render_memmy_context_packet(_format_search_result(result), "tool_search"');
     expect(pluginInit).toContain('return _render_memmy_context_packet(_format_memory_detail(result), "tool_get"');
-    expect(pluginInit).toContain('return "Stored Memmy memory " + str(result.get("id"))');
+    expect(pluginInit).toContain('return "Stored Cuby memory " + str(result.get("id"))');
     expect(pluginInit).not.toContain('"raw": result');
     expect(pluginInit).not.toContain('"name": "memmy_search"');
     expect(pluginInit).not.toContain('"name": "memmy_remember"');
@@ -179,32 +179,32 @@ describe("hermes skill target", () => {
     expect(pluginConfig.workspaceHostId).toMatch(/^[a-f0-9]{64}$/u);
     expect(commandPluginConfig).toEqual(pluginConfig);
     expect(config.model?.default).toBe("test-model");
-    expect(config.memory?.provider).toBe("memmy-memory");
-    expect(config.plugins?.enabled).toContain("memmy-memory");
-    expect(config.plugins?.enabled).toContain("memmy-resume");
+    expect(config.memory?.provider).toBe("cuby-memory");
+    expect(config.plugins?.enabled).toContain("cuby-memory");
+    expect(config.plugins?.enabled).toContain("cuby-resume");
     expect(config.plugins?.enabled).not.toContain("memmy-memory-command");
     expect(config.toolsets).toEqual(["hermes-cli", "memory"]);
-    expect(skillFile).toContain("# Memmy Memory");
-    expect(skillFile).toContain("A Memmy Memory Hook or plugin is installed for this agent.");
+    expect(skillFile).toContain("# Cuby Memory");
+    expect(skillFile).toContain("A Cuby Memory Hook or plugin is installed for this agent.");
     expect(skillFile).toContain("The installed integration automatically recalls relevant context and captures completed turns.");
     expect(skillFile).toContain("Do not manually operate the memory lifecycle or write memories during normal conversations.");
     expect(skillFile).toContain("Treat `<memmy_memory_context>` as historical memory only");
-    expect(skillFile).toContain('memmy-memory search "query text" --source hermes');
-    expect(skillFile).toContain('memmy-memory get "$MEMORY_ID" --source hermes');
-    expect(skillFile).not.toContain("memmy-memory add");
+    expect(skillFile).toContain('cuby-memory search "query text" --source hermes');
+    expect(skillFile).toContain('cuby-memory get "$MEMORY_ID" --source hermes');
+    expect(skillFile).not.toContain("cuby-memory add");
     expect(skillFile).not.toContain("memmy_search");
     expect(skillFile).not.toContain("memmy_remember");
     expect(skillFile).not.toContain("memmy_memory_search");
     expect(skillFile).not.toContain("memmy_memory_add");
-    expect(skillFile).not.toContain("memmy-memory session open");
-    expect(skillFile).not.toContain("memmy-memory turn start");
-    expect(skillFile).not.toContain("memmy-memory turn complete");
+    expect(skillFile).not.toContain("cuby-memory session open");
+    expect(skillFile).not.toContain("cuby-memory turn start");
+    expect(skillFile).not.toContain("cuby-memory turn complete");
     expect(skillFile).not.toContain("--layer L2");
-    expect(readTargetFile(rootDirectory)).toContain("The `memmy-memory` skill is installed at `skills/memmy-memory/SKILL.md`.");
-    expect(readTargetFile(rootDirectory)).not.toContain('memmy-memory search "query text" --source hermes');
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory session open");
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn start");
-    expect(readTargetFile(rootDirectory)).not.toContain("memmy-memory turn complete");
+    expect(readTargetFile(rootDirectory)).toContain("The `cuby-memory` skill is installed at `skills/cuby-memory/SKILL.md`.");
+    expect(readTargetFile(rootDirectory)).not.toContain('cuby-memory search "query text" --source hermes');
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory session open");
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory turn start");
+    expect(readTargetFile(rootDirectory)).not.toContain("cuby-memory turn complete");
     expect(agentsFile).toBe(["manual prefix", "manual suffix", ""].join("\n"));
 
     await target.uninstallPlugin?.("hermes");
@@ -215,19 +215,19 @@ describe("hermes skill target", () => {
       plugins?: { enabled?: string[] };
       toolsets?: string[];
     };
-    expect(existsSync(join(rootDirectory, "plugins", "memmy-memory"))).toBe(false);
-    expect(existsSync(join(rootDirectory, "plugins", "memmy-resume"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "plugins", "cuby-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "plugins", "cuby-resume"))).toBe(false);
     expect(existsSync(join(rootDirectory, "plugins", "memmy-memory-command"))).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
     expect(configAfterUninstall.model?.default).toBe("test-model");
     expect(configAfterUninstall.memory?.provider).toBeUndefined();
-    expect(configAfterUninstall.plugins?.enabled).not.toContain("memmy-resume");
-    expect(configAfterUninstall.plugins?.enabled).not.toContain("memmy-memory");
+    expect(configAfterUninstall.plugins?.enabled).not.toContain("cuby-resume");
+    expect(configAfterUninstall.plugins?.enabled).not.toContain("cuby-memory");
     expect(configAfterUninstall.plugins?.enabled).not.toContain("memmy-memory-command");
     expect(configAfterUninstall.toolsets).toEqual(["hermes-cli"]);
   });
 
-  it("reads the Memmy endpoint from memmyMemory.storage", async () => {
+  it("reads the Cuby endpoint from memmyMemory.storage", async () => {
     const { rootDirectory } = createFixture();
     const memmyConfigPath = join(rootDirectory, "memmy-config.yaml");
     writeFileSync(
@@ -243,7 +243,7 @@ describe("hermes skill target", () => {
 
     await target.installPlugin?.("hermes");
 
-    const pluginConfig = JSON.parse(readFileSync(join(rootDirectory, "plugins", "memmy-memory", "config.json"), "utf8")) as {
+    const pluginConfig = JSON.parse(readFileSync(join(rootDirectory, "plugins", "cuby-memory", "config.json"), "utf8")) as {
       endpoint?: string;
       token?: string;
     };
@@ -264,7 +264,7 @@ describe("hermes skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -274,7 +274,7 @@ describe("hermes skill target", () => {
 
     await target.installPlugin?.("hermes");
 
-    const pluginInit = join(rootDirectory, "plugins", "memmy-resume", "__init__.py");
+    const pluginInit = join(rootDirectory, "plugins", "cuby-resume", "__init__.py");
     expect(readFileSync(pluginInit, "utf8")).not.toContain("from __future__ import annotations");
     const script = String.raw`
 import importlib.util
@@ -391,9 +391,9 @@ print(json.dumps({"calls": calls, "runtime": runtime, "text": text, "selection":
       selection?: { context?: string };
       text: string;
     };
-    expect(output.runtime.baseUrl).toBe("http://127.0.0.1:18960");
+    expect(output.runtime.baseUrl).toBe("http://127.0.0.1:28960");
     expect(output.text).toContain("测试query");
-    expect(output.text).toContain('Memmy resume candidates for "测试query" (top 5 episodes from L1 top20):');
+    expect(output.text).toContain('Cuby resume candidates for "测试query" (top 5 episodes from L1 top20):');
     expect(output.text).not.toContain(". score ");
     expect(output.text).toContain("1. episode_1");
     expect(output.text).toContain("first_query: First query 1");
@@ -416,7 +416,7 @@ print(json.dumps({"calls": calls, "runtime": runtime, "text": text, "selection":
     writeFileSync(join(rootDirectory, "config.yaml"), "model:\n  default: test-model\n", "utf8");
     const target = createHermesSkillTarget({ rootDirectory });
     await target.installPlugin?.("hermes");
-    const pluginInit = readFileSync(join(rootDirectory, "plugins", "memmy-memory", "__init__.py"), "utf8");
+    const pluginInit = readFileSync(join(rootDirectory, "plugins", "cuby-memory", "__init__.py"), "utf8");
     const script = `
 import importlib.util, json, sys, types
 agent_module = types.ModuleType("agent")
@@ -438,7 +438,7 @@ print(json.dumps({
   })
 }))
 `;
-    const result = spawnSync("python3", ["-", join(rootDirectory, "plugins", "memmy-memory", "__init__.py")], {
+    const result = spawnSync("python3", ["-", join(rootDirectory, "plugins", "cuby-memory", "__init__.py")], {
       input: script,
       encoding: "utf8",
       env: { ...process.env, PYTHONIOENCODING: "utf-8" }
@@ -488,7 +488,7 @@ null_output = module._hermes_turn_from_rows("hermes-null-output", query, [
 ], "")
 print(json.dumps({"missing": missing, "nullOutput": null_output}))
 `;
-    const result = spawnSync("python3", ["-", join(rootDirectory, "plugins", "memmy-memory", "__init__.py")], {
+    const result = spawnSync("python3", ["-", join(rootDirectory, "plugins", "cuby-memory", "__init__.py")], {
       input: script,
       encoding: "utf8",
       env: { ...process.env, PYTHONIOENCODING: "utf-8" }
@@ -541,8 +541,8 @@ function createFixture(): { rootDirectory: string; manifest: SkillManifest } {
 function createManifest(targetId: string): SkillManifest {
   return {
     targetId,
-    content: ["# Memmy", "Call memmy-memory search when context is needed."].join("\n"),
-    marker: "<!-- memmy:start v=1 -->"
+    content: ["# Cuby", "Call cuby-memory search when context is needed."].join("\n"),
+    marker: "<!-- cuby:start v=1 -->"
   };
 }
 

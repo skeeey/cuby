@@ -51,7 +51,7 @@ type FakeRuntimeState = {
 
 const roots: string[] = [];
 const managers: BrowserSessionManager[] = [];
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-browser-tool-"));
@@ -218,8 +218,8 @@ afterEach(async () => {
   await Promise.allSettled(managers.splice(0).map((manager) => manager.close()));
   vi.useRealTimers();
   setConfigPath(null);
-  if (originalDataDir == null) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir == null) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -776,7 +776,7 @@ describe("browser tool wrappers", () => {
 
   it("stores screenshot blocks and returns them as model-visible image_url content", async () => {
     const root = tmpRoot();
-    process.env.MEMMY_AGENT_DATA_DIR = root;
+    process.env.CUBY_AGENT_DATA_DIR = root;
     setConfigPath(path.join(root, "config.yaml"));
     const { manager } = await createManager(root);
     const tool = BrowserTakeScreenshotTool.create({

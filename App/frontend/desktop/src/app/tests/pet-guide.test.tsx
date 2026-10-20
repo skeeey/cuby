@@ -24,8 +24,8 @@ describe("PetGuideModal", () => {
       </I18nProvider>
     );
 
-    expect(html).toContain("把 Memmy 缩成桌宠陪你？");
-    expect(html).toContain("Memmy 会常驻屏幕角落，随时点击即可对话，轻量不打扰。");
+    expect(html).toContain("把 Cuby 缩成桌宠陪你？");
+    expect(html).toContain("Cuby 会常驻屏幕角落，随时点击即可对话，轻量不打扰。");
     expect(html).toContain("拒绝");
     expect(html).toContain("桌宠模式");
     expect(html).toContain("推荐");

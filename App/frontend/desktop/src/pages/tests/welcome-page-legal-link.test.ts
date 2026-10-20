@@ -38,8 +38,8 @@ describe("WelcomePage 协议入口外链", () => {
   });
 
   it("getLegalLinkUrl 随语言联动:中英文取到不同的协议页地址", () => {
-    vi.stubEnv("MEMMY_LEGAL_CN_BASE_URL", "https://test.memmy.cn");
-    vi.stubEnv("MEMMY_LEGAL_INTL_BASE_URL", "https://test.memmy.bot");
+    vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "https://test.memmy.cn");
+    vi.stubEnv("CUBY_LEGAL_INTL_BASE_URL", "https://test.memmy.bot");
 
     expect(getLegalLinkUrl("terms", "zh-CN")).not.toBe(getLegalLinkUrl("terms", "en-US"));
     expect(getLegalLinkUrl("data", "zh-CN")).not.toBe(getLegalLinkUrl("data", "en-US"));

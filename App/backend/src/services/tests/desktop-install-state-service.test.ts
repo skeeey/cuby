@@ -167,7 +167,7 @@ function createContext(): TestContext {
   tempDir = mkdtempSync(join(tmpdir(), "memmy-desktop-install-"));
   const databasePath = join(tempDir, "app.sqlite");
   store = createAppStateStore({ databasePath });
-  const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
+  const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
   const markerPath = join(tempDir, "desktop-install-state.json");
   return {
     appStateStore: store,

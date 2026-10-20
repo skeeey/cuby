@@ -26,8 +26,8 @@ describe("package logging", () => {
     const script = [
       "set -euo pipefail",
       "source scripts/internal/shared/package-logging.sh",
-      `MEMMY_PACKAGE_LOG_FILE='${bashLogPath.replaceAll("'", "'\\''")}'`,
-      "export MEMMY_PACKAGE_LOG_FILE",
+      `CUBY_PACKAGE_LOG_FILE='${bashLogPath.replaceAll("'", "'\\''")}'`,
+      "export CUBY_PACKAGE_LOG_FILE",
       "package_log_init test-package-logging .",
       "package_install_error_trap",
       "package_step_start nested-function",

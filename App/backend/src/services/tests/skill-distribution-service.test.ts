@@ -12,13 +12,13 @@ describe("skill distribution service", () => {
     const rootDirectory = mkdtempSync(join(tmpdir(), "memmy-agent-skills-"));
     try {
       mkdirSync(join(rootDirectory, "skills", "review-code"), { recursive: true });
-      mkdirSync(join(rootDirectory, "skills", "memmy-memory"), { recursive: true });
+      mkdirSync(join(rootDirectory, "skills", "cuby-memory"), { recursive: true });
       writeFileSync(
         join(rootDirectory, "skills", "review-code", "SKILL.md"),
         "---\nname: review-code\nversion: 2\n---\nReview changed code.\n",
         "utf8"
       );
-      writeFileSync(join(rootDirectory, "skills", "memmy-memory", "SKILL.md"), "internal", "utf8");
+      writeFileSync(join(rootDirectory, "skills", "cuby-memory", "SKILL.md"), "internal", "utf8");
       const service = createSkillDistributionService({
         targetRegistry: createSkillTargetRegistry([
           createFakeTarget({ resolveRootDirectory: () => rootDirectory })
@@ -68,7 +68,7 @@ describe("skill distribution service", () => {
     }
   });
 
-  it("renders and installs the fixed Memmy skill manifest", async () => {
+  it("renders and installs the fixed Cuby skill manifest", async () => {
     let installed: SkillManifest | undefined;
     const service = createSkillDistributionService({
       targetRegistry: createSkillTargetRegistry([createFakeTarget({ install: (manifest) => (installed = manifest) })])
@@ -78,17 +78,17 @@ describe("skill distribution service", () => {
 
     expect(installed).toMatchObject({
       targetId: "cursor",
-      marker: "<!-- memmy:start v=1 -->"
+      marker: "<!-- cuby:start v=1 -->"
     });
-    expect(installed?.content).toContain("# Memmy Memory CLI Skill");
-    expect(installed?.content).toContain("memmy-memory turn start");
-    expect(installed?.content).toContain("memmy-memory turn complete");
-    expect(installed?.content).toContain('memmy-memory search "query text"');
-    expect(installed?.content).toContain("memmy-memory session open --source cursor");
-    expect(installed?.content).toContain("memmy-memory turn start --source cursor");
-    expect(installed?.content).toContain('memmy-memory turn complete "$TURN_ID" --source cursor');
-    expect(installed?.content).toContain('memmy-memory search "query text" --source cursor');
-    expect(installed?.content).toContain('memmy-memory add "The user prefers concise Chinese status updates." --title "User preference: status style" --tags user-preference --source cursor');
+    expect(installed?.content).toContain("# Cuby Memory CLI Skill");
+    expect(installed?.content).toContain("cuby-memory turn start");
+    expect(installed?.content).toContain("cuby-memory turn complete");
+    expect(installed?.content).toContain('cuby-memory search "query text"');
+    expect(installed?.content).toContain("cuby-memory session open --source cursor");
+    expect(installed?.content).toContain("cuby-memory turn start --source cursor");
+    expect(installed?.content).toContain('cuby-memory turn complete "$TURN_ID" --source cursor');
+    expect(installed?.content).toContain('cuby-memory search "query text" --source cursor');
+    expect(installed?.content).toContain('cuby-memory add "The user prefers concise Chinese status updates." --title "User preference: status style" --tags user-preference --source cursor');
     expect(installed?.content).not.toContain("--layer");
     expect(installed?.content).not.toContain("/panel/");
     expect(installed?.content).not.toContain("Panel Debugging");

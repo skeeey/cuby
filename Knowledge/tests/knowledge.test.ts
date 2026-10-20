@@ -62,7 +62,7 @@ it("does not access cloud or expose stale bases when signed out", async () => {
   });
   expect(fetcher).not.toHaveBeenCalled();
 });
-it("checks the switch before transmitting the question and uses only Memmy JWT", async () => {
+it("checks the switch before transmitting the question and uses only Cuby JWT", async () => {
   const fetcher = vi.fn(async () => reply({ ...settings, enabled: false }));
   const client = new ManagedKnowledgeClient({
     baseUrl: "https://cloud.example",
@@ -206,7 +206,7 @@ it("Agent uses only the loopback local API and legacy keys are removed without e
   const client = createLocalKnowledgeClient(runtime, fetcher);
   expect(await client.recall("问题")).toEqual({ enabled: true, evidence });
   const [, init] = fetcher.mock.calls[0] as unknown as [unknown, RequestInit];
-  expect(init.headers).toMatchObject({ "x-memmy-local-token": "local-token" });
+  expect(init.headers).toMatchObject({ "x-cuby-local-token": "local-token" });
   expect(init.headers).not.toHaveProperty("Authorization");
   await removeLegacyKnowledgeCredentials(path.join(folder, "config.yaml"));
   expect(
@@ -230,12 +230,12 @@ it("local routes require auth, reject credential overrides and have no reveal en
     getSession: () => session,
     fetcher,
     authenticate: async (req, res) => {
-      if (req.headers["x-memmy-local-token"] !== "local")
+      if (req.headers["x-cuby-local-token"] !== "local")
         return res.code(401).send({ error: "unauthorized" });
     },
   });
   try {
-    const headers = { "x-memmy-local-token": "local" };
+    const headers = { "x-cuby-local-token": "local" };
     expect(
       (await app.inject({ method: "GET", url: "/api/knowledge/settings" }))
         .statusCode,

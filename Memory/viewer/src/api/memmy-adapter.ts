@@ -381,7 +381,7 @@ function config(value: JsonRecord): JsonRecord {
   const routing = record(raw.roleRouting);
   return {
     version: number(value.version),
-    viewer: { port: 18960, bindHost: "127.0.0.1" },
+    viewer: { port: 28960, bindHost: "127.0.0.1" },
     embedding: record(raw.embedding),
     llm: roleConfig(raw.summary ?? raw.llm, routing.summary),
     skillEvolver: roleConfig(raw.evolution ?? raw.skillEvolver, routing.evolution),

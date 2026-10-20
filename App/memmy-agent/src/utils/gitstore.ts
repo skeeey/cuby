@@ -64,7 +64,7 @@ type IsoGitResponse<T> = { ok: true; value: T } | { ok: false; error: string };
 
 const ISO_GIT_SPEC = import.meta.resolve("isomorphic-git");
 const ISO_GIT_TIMEOUT_MS = 60_000;
-const AUTHOR = { name: "memmy", email: "memmy@agent" };
+const AUTHOR = { name: "cuby", email: "cuby@agent" };
 
 const ISO_GIT_WORKER = String.raw`
 import { workerData } from "node:worker_threads";
@@ -73,7 +73,7 @@ import path from "node:path";
 
 const gitModule = await import(workerData.isomorphicGitSpec);
 const git = gitModule.default ?? gitModule;
-const AUTHOR = { name: "memmy", email: "memmy@agent" };
+const AUTHOR = { name: "cuby", email: "cuby@agent" };
 
 function shortSha(fullSha) {
   return String(fullSha || "").trim().slice(0, 8);
@@ -302,7 +302,7 @@ async function run() {
       ensureTrackedFiles(dir, files);
       await git.add({ fs, dir, filepath: ".gitignore" });
       await addOrRemoveTracked(dir, files);
-      await git.commit({ fs, dir, message: "init: memmy memory store", author: AUTHOR });
+      await git.commit({ fs, dir, message: "init: cuby memory store", author: AUTHOR });
       return true;
     case "autoCommit":
       return commitTracked(dir, files, request.message || "update");

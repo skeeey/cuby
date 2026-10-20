@@ -32,7 +32,7 @@ export const DEFAULT_CUBEROUTER_NODES: readonly CuberouterNode[] = Object.freeze
 /**
  * Resolves the table. The config file replaces the environment wholesale, the environment
  * replaces the shipped table, and a build that sets nothing still knows where cuberouter is.
- * Local development points one line at localhost: `MEMMY_CUBEROUTER_URLS=cn=http://127.0.0.1:3000`.
+ * Local development points one line at localhost: `CUBY_CUBEROUTER_URLS=cn=http://127.0.0.1:3000`.
  */
 export function resolveCuberouterNodes(input: {
   env: NodeJS.ProcessEnv;
@@ -41,6 +41,6 @@ export function resolveCuberouterNodes(input: {
   if (input.settings?.urls?.length) {
     return input.settings.urls;
   }
-  const parsed = parseCuberouterNodeTable(input.env.MEMMY_CUBEROUTER_URLS ?? "");
+  const parsed = parseCuberouterNodeTable(input.env.CUBY_CUBEROUTER_URLS ?? "");
   return parsed.length > 0 ? parsed : [...DEFAULT_CUBEROUTER_NODES];
 }

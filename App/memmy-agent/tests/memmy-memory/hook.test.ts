@@ -80,8 +80,8 @@ describe("MemmyMemoryHook", () => {
     const client = fakeV2Client();
     const workspace = mkdtempSync(join(tmpdir(), "memmy-v2-hook-"));
     const memmyHome = mkdtempSync(join(tmpdir(), "memmy-v2-home-"));
-    const previousMemmyHome = process.env.MEMMY_HOME;
-    process.env.MEMMY_HOME = memmyHome;
+    const previousMemmyHome = process.env.CUBY_HOME;
+    process.env.CUBY_HOME = memmyHome;
     try {
       const hook = new MemmyMemoryHook(client as any, {
         workspace,
@@ -134,8 +134,8 @@ describe("MemmyMemoryHook", () => {
       expect(client.startTurn.mock.calls[0]![1].namespace.projectId).toBe(`ws_${"a".repeat(64)}`);
       expect(client.startTurn.mock.calls[0]![1].namespace).not.toHaveProperty("workspacePath");
     } finally {
-      if (previousMemmyHome === undefined) delete process.env.MEMMY_HOME;
-      else process.env.MEMMY_HOME = previousMemmyHome;
+      if (previousMemmyHome === undefined) delete process.env.CUBY_HOME;
+      else process.env.CUBY_HOME = previousMemmyHome;
       rmSync(workspace, { recursive: true, force: true });
       rmSync(memmyHome, { recursive: true, force: true });
     }
@@ -266,8 +266,8 @@ describe("MemmyMemoryHook", () => {
     const client = fakeV2Client();
     const workspace = mkdtempSync(join(tmpdir(), "memmy-v2-bridge-"));
     const memmyHome = mkdtempSync(join(tmpdir(), "memmy-v2-bridge-home-"));
-    const previousMemmyHome = process.env.MEMMY_HOME;
-    process.env.MEMMY_HOME = memmyHome;
+    const previousMemmyHome = process.env.CUBY_HOME;
+    process.env.CUBY_HOME = memmyHome;
     try {
       const hook = new MemmyMemoryHook(client as any, {
         workspace,
@@ -306,8 +306,8 @@ describe("MemmyMemoryHook", () => {
       await hook.beforeBuildSystemPrompt(lifecycle);
       expect(client.l3WorldModelContext).toHaveBeenCalledTimes(2);
     } finally {
-      if (previousMemmyHome === undefined) delete process.env.MEMMY_HOME;
-      else process.env.MEMMY_HOME = previousMemmyHome;
+      if (previousMemmyHome === undefined) delete process.env.CUBY_HOME;
+      else process.env.CUBY_HOME = previousMemmyHome;
       rmSync(workspace, { recursive: true, force: true });
       rmSync(memmyHome, { recursive: true, force: true });
     }
@@ -369,8 +369,8 @@ describe("MemmyMemoryHook", () => {
     });
     const workspace = mkdtempSync(join(tmpdir(), "memmy-v2-no-bridge-"));
     const memmyHome = mkdtempSync(join(tmpdir(), "memmy-v2-no-bridge-home-"));
-    const previousMemmyHome = process.env.MEMMY_HOME;
-    process.env.MEMMY_HOME = memmyHome;
+    const previousMemmyHome = process.env.CUBY_HOME;
+    process.env.CUBY_HOME = memmyHome;
     try {
       const hook = new MemmyMemoryHook(client as any, {
         workspace,
@@ -387,8 +387,8 @@ describe("MemmyMemoryHook", () => {
       expect(client.openSession).toHaveBeenCalledTimes(1);
       expect(client.l3WorldModelContext).toHaveBeenCalledTimes(1);
     } finally {
-      if (previousMemmyHome === undefined) delete process.env.MEMMY_HOME;
-      else process.env.MEMMY_HOME = previousMemmyHome;
+      if (previousMemmyHome === undefined) delete process.env.CUBY_HOME;
+      else process.env.CUBY_HOME = previousMemmyHome;
       rmSync(workspace, { recursive: true, force: true });
       rmSync(memmyHome, { recursive: true, force: true });
     }
@@ -976,7 +976,7 @@ describe("MemmyMemoryHook", () => {
     function unreachableClient() {
       const client = fakeClient();
       client.openSession = vi.fn(async () => {
-        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:18960");
+        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:28960");
       });
       return client;
     }
@@ -1042,7 +1042,7 @@ describe("MemmyMemoryHook", () => {
       expect(hook.lastError).toBeNull();
 
       client.startTurn = vi.fn(async () => {
-        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:18960");
+        throw new Error("fetch failed: connect ECONNREFUSED 127.0.0.1:28960");
       });
       await hook.beforeRun(new AgentHookContext({ spec, messages: [{ role: "user", content: "five" }] }));
 

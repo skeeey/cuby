@@ -73,7 +73,7 @@ export function NotificationCenterProvider(props: { children: ReactNode }) {
   const stack = typeof document === "undefined" || visible.length === 0
     ? null
     : createPortal(
-        <div className="memmy-notification-stack" role="region" aria-label={t("notifications.regionLabel")}>
+        <div className="cuby-notification-stack" role="region" aria-label={t("notifications.regionLabel")}>
           {[...visible].reverse().map((item) => (
             <NotificationToast
               key={item.id}

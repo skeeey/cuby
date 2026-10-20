@@ -15,27 +15,27 @@ describe("default test Memory connection", () => {
   it.each(["process environment", "config file", "legacy environment aliases"])("isolates default test requests from developer Memory in the %s", async (source) => {
     const root = mkdtempSync(join(tmpdir(), "memmy-test-isolation-"));
     roots.push(root);
-    const home = join(root, ".memmy");
+    const home = join(root, ".cuby");
     mkdirSync(home);
     const configPath = join(home, "config.yaml");
     writeFileSync(configPath, [
       "memmyMemory:",
       "  storage:",
-      "    endpoint: http://127.0.0.1:18960",
+      "    endpoint: http://127.0.0.1:28960",
       "    token: fixture-user-config-token",
     ].join("\n"));
     const connection = discoverMemmyMemoryConnection({
       homeDir: root,
       env: {
         ...(source === "process environment" ? {
-          MEMMY_MEMORY_URL: "http://127.0.0.1:18960",
-          MEMMY_MEMORY_TOKEN: "fixture-user-environment-token",
+          CUBY_MEMORY_URL: "http://127.0.0.1:28960",
+          CUBY_MEMORY_TOKEN: "fixture-user-environment-token",
         } : source === "legacy environment aliases" ? {
-          MEMORY_SERVICE_URL: "http://127.0.0.1:18960",
+          MEMORY_SERVICE_URL: "http://127.0.0.1:28960",
           MEMORY_SERVICE_TOKEN: "fixture-user-environment-token",
         } : {}),
         ...vitestConfig.test?.env,
-        MEMMY_CONFIG: configPath,
+        CUBY_CONFIG: configPath,
       },
     });
     const request = vi.fn<typeof fetch>(async () => new Response("{}", { status: 200 }));

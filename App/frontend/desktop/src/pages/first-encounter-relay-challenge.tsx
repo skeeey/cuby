@@ -318,9 +318,9 @@ export async function launchFirstEncounterRelay(input: LaunchFirstEncounterRelay
   return { opened, copied };
 }
 
-const WORKBUDDY_MEMORY_COMMAND = "/memmy-memory";
+const WORKBUDDY_MEMORY_COMMAND = "/cuby-memory";
 
-/** WorkBuddy invokes memmy-memory as a slash command before the continuation text. */
+/** WorkBuddy invokes cuby-memory as a slash command before the continuation text. */
 export function formatRelayAgentPrompt(sourceId: string, prompt: string): string {
   const trimmed = prompt.trim();
   if (normalizeAgentSourceId(sourceId) !== "workbuddy") {

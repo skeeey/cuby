@@ -132,7 +132,7 @@ describe("memmy memory config", () => {
     const root = tempRoot();
     const configPath = join(root, "config.yaml");
     writeFileSync(configPath, YAML.stringify({ memmyMemory: {} }));
-    setEnv("MEMMY_SUMMARY_TIMEOUT_MS", "240000");
+    setEnv("CUBY_SUMMARY_TIMEOUT_MS", "240000");
 
     expect(loadMemmyConfig(configPath).config.summary.timeoutMs).toBe(240_000);
   });
@@ -153,7 +153,7 @@ describe("memmy memory config", () => {
     }));
 
     expect(loadMemmyConfig(configPath).config.embedding.maxInputTokens).toBe(1_200);
-    setEnv("MEMMY_EMBEDDING_MAX_INPUT_TOKENS", "640");
+    setEnv("CUBY_EMBEDDING_MAX_INPUT_TOKENS", "640");
     expect(loadMemmyConfig(configPath).config.embedding.maxInputTokens).toBe(640);
   });
 
@@ -164,8 +164,8 @@ describe("memmy memory config", () => {
       memmyMemory: {
         version: 1,
         storage: {
-          sqlitePath: "~/.memmy/memory-service/memory.sqlite",
-          endpoint: "http://127.0.0.1:18960"
+          sqlitePath: "~/.cuby/memory-service/memory.sqlite",
+          endpoint: "http://127.0.0.1:28960"
         },
         embedding: {
           provider: "local"
@@ -175,7 +175,7 @@ describe("memmy memory config", () => {
 
     const { config } = loadMemmyConfig(configPath);
 
-    expect(config.storage.sqlitePath).toBe(join(homedir(), ".memmy", "memory-service", "memory.sqlite"));
+    expect(config.storage.sqlitePath).toBe(join(homedir(), ".cuby", "memory-service", "memory.sqlite"));
   });
 
   it("reads user id from memmyMemory config and environment aliases", () => {
@@ -192,7 +192,7 @@ describe("memmy memory config", () => {
 
     expect(loadMemmyConfig(configPath).config.userId).toBe("user_from_memory");
 
-    setEnv("MEMMY_MEMORY_USER_ID", "user_from_env");
+    setEnv("CUBY_MEMORY_USER_ID", "user_from_env");
     expect(loadMemmyConfig(configPath).config.userId).toBe("user_from_env");
   });
 
@@ -221,9 +221,9 @@ describe("memmy memory config", () => {
     expect(loadMemmyConfig(configPath).config.algorithm.retrieval.llmFilterEnabled).toBe(false);
     expect(loadMemmyConfig(configPath).config.algorithm.retrieval.minRecallScore).toBe(0.35);
 
-    setEnv("MEMMY_ENABLE_MEMORY_ADD", "true");
-    setEnv("MEMMY_ENABLE_MEMORY_SEARCH", "1");
-    setEnv("MEMMY_ENABLE_QUERY_REWRITE", "false");
+    setEnv("CUBY_ENABLE_MEMORY_ADD", "true");
+    setEnv("CUBY_ENABLE_MEMORY_SEARCH", "1");
+    setEnv("CUBY_ENABLE_QUERY_REWRITE", "false");
     expect(loadMemmyConfig(configPath).config.algorithm.enableMemoryAdd).toBe(true);
     expect(loadMemmyConfig(configPath).config.algorithm.enableMemorySearch).toBe(true);
     expect(loadMemmyConfig(configPath).config.algorithm.enableQueryRewrite).toBe(false);
@@ -246,8 +246,8 @@ describe("memmy memory config", () => {
     expect(loadMemmyConfig(configPath).config.domain).toBe("research");
     expect(loadMemmyConfig(configPath).config.algorithm.retrieval.readOnlyInjectionProfile).toBe("skill_experience");
 
-    setEnv("MEMMY_MEMORY_DOMAIN", "research");
-    setEnv("MEMMY_RETRIEVAL_INJECTION_PROFILE", "experience");
+    setEnv("CUBY_MEMORY_DOMAIN", "research");
+    setEnv("CUBY_RETRIEVAL_INJECTION_PROFILE", "experience");
     const fromEnv = loadMemmyConfig(configPath).config;
     expect(fromEnv.domain).toBe("research");
     expect(fromEnv.algorithm.retrieval.readOnlyInjectionProfile).toBe("experience");
@@ -274,8 +274,8 @@ describe("memmy memory config", () => {
     expect(loadMemmyConfig(configPath).config.summary.enableThinking).toBe(false);
     expect(loadMemmyConfig(configPath).config.evolution.enableThinking).toBe(false);
 
-    setEnv("MEMMY_SUMMARY_ENABLE_THINKING", "true");
-    setEnv("MEMMY_EVOLUTION_ENABLE_THINKING", "1");
+    setEnv("CUBY_SUMMARY_ENABLE_THINKING", "true");
+    setEnv("CUBY_EVOLUTION_ENABLE_THINKING", "1");
     expect(loadMemmyConfig(configPath).config.summary.enableThinking).toBe(false);
     expect(loadMemmyConfig(configPath).config.evolution.enableThinking).toBe(true);
   });
@@ -370,7 +370,7 @@ describe("memmy memory config", () => {
           evolution: "follow"
         },
         storage: {
-          endpoint: "http://127.0.0.1:18960"
+          endpoint: "http://127.0.0.1:28960"
         }
       }
     }));
@@ -851,14 +851,14 @@ describe("memmy memory config", () => {
     });
   });
 
-  it("uses only MEMMY_CONFIG and the default config.yaml candidate", () => {
+  it("uses only CUBY_CONFIG and the default config.yaml candidate", () => {
     const root = tempRoot();
-    setEnv("MEMMY_CONFIG", join(root, "custom.yaml"));
-    setEnv("MEMMY_HOME", join(root, "ignored-home"));
+    setEnv("CUBY_CONFIG", join(root, "custom.yaml"));
+    setEnv("CUBY_HOME", join(root, "ignored-home"));
 
     expect(defaultConfigPaths()).toEqual([
       join(root, "custom.yaml"),
-      join(homedir(), ".memmy", "config.yaml")
+      join(homedir(), ".cuby", "config.yaml")
     ]);
   });
 });

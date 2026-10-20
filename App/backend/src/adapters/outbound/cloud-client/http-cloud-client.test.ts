@@ -7,7 +7,7 @@ describe("invitation cloud APIs", () => {
       expect(JSON.parse(String(init?.body))).toEqual({
         email: "invitee@example.com",
         verificationCode: "123456",
-        loginSource: "memmy",
+        loginSource: "cuby",
         invitationCode: "MEMMY-A1B2C3"
       });
       return new Response(
@@ -37,7 +37,7 @@ describe("invitation cloud APIs", () => {
       client.login({
         email: "invitee@example.com",
         verificationCode: "123456",
-        loginSource: "Memmy",
+        loginSource: "Cuby",
         invitationCode: "MEMMY-A1B2C3"
       })
     ).resolves.toMatchObject({

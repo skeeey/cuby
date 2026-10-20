@@ -329,7 +329,7 @@ export class EmailChannel extends BaseChannel {
     const forceSend = Boolean(msg.metadata?.force_send ?? msg.metadata?.forceSend);
     if (isReply && !this.config.autoReplyEnabled && !forceSend) return;
 
-    const baseSubject = this.lastSubjectByChat[toAddr] ?? "memmy reply";
+    const baseSubject = this.lastSubjectByChat[toAddr] ?? "Cuby reply";
     let subject = this.replySubject(baseSubject);
     const override = typeof msg.metadata?.subject === "string" ? msg.metadata.subject.trim() : "";
     if (override) subject = override;
@@ -873,7 +873,7 @@ export class EmailChannel extends BaseChannel {
   }
 
   replySubject(baseSubject: string): string {
-    const subject = (baseSubject || "").trim() || "memmy reply";
+    const subject = (baseSubject || "").trim() || "Cuby reply";
     if (subject.toLowerCase().startsWith("re:")) return subject;
     return `${this.config.subjectPrefix || "Re: "}${subject}`;
   }

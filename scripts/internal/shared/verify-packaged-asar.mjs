@@ -30,7 +30,7 @@ const requiredFiles = [
   "dist/runtime/memmy-agent/package.json",
   "dist/runtime/memmy-agent/node_modules/@memmy/local-api-contracts/dist/index.js",
   "dist/runtime/memmy-agent/node_modules/@memmy/knowledge/dist/index.js",
-  "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/memmy-workspace-bridge.mjs",
+  "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/cuby-workspace-bridge.mjs",
 ];
 if (platform === "win32") {
   requiredFiles.push(

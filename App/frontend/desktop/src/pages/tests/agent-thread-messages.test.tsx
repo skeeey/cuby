@@ -387,7 +387,7 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("会话压缩中");
     expect(html).toContain("思考中");
     // The waiting placeholder carries the mascot at a legible size.
-    expect(html).toContain('alt="Memmy"');
+    expect(html).toContain('alt="Cuby"');
     expect(html).not.toContain("agent-chat-bubble--assistant");
   });
 
@@ -917,7 +917,7 @@ describe("AgentThreadMessages", () => {
     expect(html).not.toContain("data-activity-key=");
     expect(html).not.toContain("agent-chat-bubble--assistant");
     expect(html).not.toContain("agent-message-copy-button--left");
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).not.toContain("模型请求重试中");
   });
 
@@ -1704,7 +1704,7 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("agent-message-content__table");
     expect(html).toContain("agent-message-content__inline-code");
     expect(html).toContain('aria-label="复制消息"');
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).not.toContain("bg-background-paper border border-border-stone/30 px-4 py-3 rounded-2xl rounded-bl-md shadow-sm");
   });
 
@@ -2049,7 +2049,7 @@ describe("AgentThreadMessages", () => {
             {
               id: "answer",
               role: "assistant",
-              content: "文件 /Users/yuan/deck.pptx\n目录 /Users/yuan/.memmy/workspace\n普通文本 foo/bar"
+              content: "文件 /Users/yuan/deck.pptx\n目录 /Users/yuan/.cuby/workspace\n普通文本 foo/bar"
             }
           ]}
         />
@@ -2057,10 +2057,10 @@ describe("AgentThreadMessages", () => {
     );
 
     expect(html).toContain("/Users/yuan/deck.pptx");
-    expect(html).toContain("/Users/yuan/.memmy/workspace");
+    expect(html).toContain("/Users/yuan/.cuby/workspace");
     expect(html).toContain("foo/bar");
     expect(html).not.toContain('href="file:///Users/yuan/deck.pptx"');
-    expect(html).not.toContain('href="file:///Users/yuan/.memmy/workspace"');
+    expect(html).not.toContain('href="file:///Users/yuan/.cuby/workspace"');
     expect(html).not.toContain('href="file://foo/bar"');
     expect(html).not.toContain('href="file:///bar"');
     expect(html).not.toContain("agent-message-content__file-chip");
@@ -2228,7 +2228,7 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("flex min-w-0 justify-start");
     expect(html).toContain("min-w-0 w-full space-y-2");
     expect(html).toContain("agent-chat-bubble agent-chat-bubble--assistant w-full max-w-full min-w-0 overflow-hidden");
-    expect(html).not.toContain('alt="Memmy"');
+    expect(html).not.toContain('alt="Cuby"');
     expect(html).not.toContain("bg-background-paper border border-border-stone/30 px-4 py-3 rounded-2xl rounded-bl-md shadow-sm");
     expect(html).not.toContain("max-w-full min-w-0 overflow-hidden bg-background-paper");
     expect(html).toContain("agent-message-content min-w-0 max-w-full overflow-hidden");
@@ -2488,7 +2488,7 @@ describe("AgentThreadMessages", () => {
     const downloadOutcomes = [true, false];
     const resolveArtifact = vi.fn(async (path: string) => {
       events.push(`resolve:${path}`);
-      return fileArtifact("/Users/yuan/fresh-deck.pptx", "fresh-deck.pptx", "http://127.0.0.1:18980/api/media/fresh");
+      return fileArtifact("/Users/yuan/fresh-deck.pptx", "fresh-deck.pptx", "http://127.0.0.1:28980/api/media/fresh");
     });
     const openArtifact = vi.fn(async (path: string) => {
       events.push(`open:${path}`);
@@ -2506,7 +2506,7 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       label: "deck.pptx",
       artifactClient,
       startDownload
@@ -2517,7 +2517,7 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       label: "deck.pptx",
       artifactClient,
       startDownload
@@ -2526,17 +2526,17 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       name: "old-deck.pptx",
       label: "deck.pptx",
       artifactClient,
       startDownload
     })).resolves.toBe("downloaded");
-    expect(startDownload).toHaveBeenLastCalledWith("http://127.0.0.1:18980/api/media/fresh", "fresh-deck.pptx");
+    expect(startDownload).toHaveBeenLastCalledWith("http://127.0.0.1:28980/api/media/fresh", "fresh-deck.pptx");
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       label: "deck.pptx",
       artifactClient,
       startDownload
@@ -2554,11 +2554,11 @@ describe("AgentThreadMessages", () => {
       "resolve:/Users/yuan/deck.pptx",
       "open:/Users/yuan/fresh-deck.pptx",
       "reveal:/Users/yuan/fresh-deck.pptx",
-      "download:http://127.0.0.1:18980/api/media/fresh:fresh-deck.pptx",
+      "download:http://127.0.0.1:28980/api/media/fresh:fresh-deck.pptx",
       "resolve:/Users/yuan/deck.pptx",
       "open:/Users/yuan/fresh-deck.pptx",
       "reveal:/Users/yuan/fresh-deck.pptx",
-      "download:http://127.0.0.1:18980/api/media/fresh:fresh-deck.pptx"
+      "download:http://127.0.0.1:28980/api/media/fresh:fresh-deck.pptx"
     ]);
   });
 
@@ -2583,7 +2583,7 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       name: "old-deck.pptx",
       label: "deck.pptx",
       artifactClient: { resolveArtifact, openArtifact, revealArtifact },
@@ -2594,7 +2594,7 @@ describe("AgentThreadMessages", () => {
       "resolve:/Users/yuan/deck.pptx",
       "open:/Users/yuan/deck.pptx",
       "reveal:/Users/yuan/deck.pptx",
-      "download:http://127.0.0.1:18980/api/media/old:old-deck.pptx"
+      "download:http://127.0.0.1:28980/api/media/old:old-deck.pptx"
     ]);
   });
 
@@ -2605,7 +2605,7 @@ describe("AgentThreadMessages", () => {
     const startDownload = vi.fn(() => true);
 
     await expect(runAttachmentAction({
-      url: "http://127.0.0.1:18980/api/media/only-url",
+      url: "http://127.0.0.1:28980/api/media/only-url",
       name: "deck.pptx",
       label: "deck.pptx",
       artifactClient: { resolveArtifact, openArtifact, revealArtifact },
@@ -2615,14 +2615,14 @@ describe("AgentThreadMessages", () => {
     expect(resolveArtifact).not.toHaveBeenCalled();
     expect(openArtifact).not.toHaveBeenCalled();
     expect(revealArtifact).not.toHaveBeenCalled();
-    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:18980/api/media/only-url", "deck.pptx");
+    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:28980/api/media/only-url", "deck.pptx");
   });
 
   it("uses fresh artifact name for download filename", async () => {
     const resolveArtifact = vi.fn(async () => fileArtifact(
       "/Users/yuan/fresh-deck.pptx",
       "fresh.pptx",
-      "http://127.0.0.1:18980/api/media/fresh"
+      "http://127.0.0.1:28980/api/media/fresh"
     ));
     const openArtifact = vi.fn(async () => {
       throw new Error("open failed");
@@ -2634,14 +2634,14 @@ describe("AgentThreadMessages", () => {
 
     await expect(runAttachmentAction({
       path: "/Users/yuan/deck.pptx",
-      url: "http://127.0.0.1:18980/api/media/old",
+      url: "http://127.0.0.1:28980/api/media/old",
       name: "old.pptx",
       label: "deck.pptx",
       artifactClient: { resolveArtifact, openArtifact, revealArtifact },
       startDownload
     })).resolves.toBe("downloaded");
 
-    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:18980/api/media/fresh", "fresh.pptx");
+    expect(startDownload).toHaveBeenCalledWith("http://127.0.0.1:28980/api/media/fresh", "fresh.pptx");
   });
 
   it("renders final attachment failure actions with copy affordances", () => {

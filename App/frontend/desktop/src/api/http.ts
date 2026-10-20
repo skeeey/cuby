@@ -29,8 +29,8 @@ export class ApiRequestError extends Error {
 
 export async function requestJson<T>(input: RequestJsonInput<T>): Promise<T> {
   const headers: Record<string, string> = {
-    "x-memmy-local-token": input.config.localToken,
-    "x-memmy-time-zone": userTimeZone(input.config.timeZone)
+    "x-cuby-local-token": input.config.localToken,
+    "x-cuby-time-zone": userTimeZone(input.config.timeZone)
   };
   if (input.body !== undefined) {
     headers["content-type"] = "application/json";

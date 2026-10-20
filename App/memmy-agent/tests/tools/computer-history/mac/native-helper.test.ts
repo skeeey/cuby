@@ -39,7 +39,7 @@ test.each(["human-recorder", "app-icon"])("%s resolves the unpacked binary witho
 
 test.each(["app.asar", "app.asar.unpacked"])("a missing %s helper is an installation error and never falls back to Swift", async (archive) => {
   const source = path.join(root, archive, "human-recorder.swift");
-  await expect(ensureNativeHistoryHelper(source, "recorder")).rejects.toThrow(/packaged helper.*Reinstall Memmy/);
+  await expect(ensureNativeHistoryHelper(source, "recorder")).rejects.toThrow(/packaged helper.*Reinstall Cuby/);
   expect(compiler.run).not.toHaveBeenCalled();
 });
 
@@ -70,6 +70,6 @@ test("a failed development compile leaves no cached binary and can be retried", 
   fs.writeFileSync(source, "source");
   compiler.run.mockRejectedValueOnce(new Error("syntax error"));
   await expect(ensureNativeHistoryHelper(source, "app-icon")).rejects.toThrow("syntax error");
-  expect(fs.readdirSync(path.join(root, "home", ".memmy", "tools", "app-icon"))).toEqual([]);
+  expect(fs.readdirSync(path.join(root, "home", ".cuby", "tools", "app-icon"))).toEqual([]);
   expect(fs.existsSync(await ensureNativeHistoryHelper(source, "app-icon"))).toBe(true);
 });

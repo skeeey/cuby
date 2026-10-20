@@ -180,7 +180,7 @@ function createFixture(fileName: "session.jsonl" | "session.jsonl.zstd"): {
       data: {
         id: "plugin-1",
         role: "user",
-        source: { kind: "plugin", plugin: "memmy-memory", form: "recall" },
+        source: { kind: "plugin", plugin: "cuby-memory", form: "recall" },
         content: [{ type: "text", text: "Injected memory must not be imported as user history" }]
       }
     },

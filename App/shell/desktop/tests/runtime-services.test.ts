@@ -62,9 +62,9 @@ describe("packaged desktop runtime config", () => {
   afterEach(async () => {
     vi.useRealTimers();
     vi.restoreAllMocks();
-    delete process.env.MEMMY_MIGRATIONS_READY_CONFIG;
-    delete process.env.MEMMY_MIGRATIONS_READY_WORKSPACE;
-    delete process.env.MEMMY_MIGRATIONS_READY_APP_DATABASE;
+    delete process.env.CUBY_MIGRATIONS_READY_CONFIG;
+    delete process.env.CUBY_MIGRATIONS_READY_WORKSPACE;
+    delete process.env.CUBY_MIGRATIONS_READY_APP_DATABASE;
     await Promise.all(testServers.splice(0).map((server) => new Promise<void>((resolveClose) => {
       server.close(() => resolveClose());
       server.closeAllConnections();
@@ -87,9 +87,9 @@ describe("packaged desktop runtime config", () => {
       queueMicrotask(() => child.emit("close", 0, null));
       return child;
     });
-    process.env.MEMMY_MIGRATIONS_READY_CONFIG = "/stale/config.yaml";
-    process.env.MEMMY_MIGRATIONS_READY_WORKSPACE = "/stale/workspace";
-    process.env.MEMMY_MIGRATIONS_READY_APP_DATABASE = "/stale/app.sqlite";
+    process.env.CUBY_MIGRATIONS_READY_CONFIG = "/stale/config.yaml";
+    process.env.CUBY_MIGRATIONS_READY_WORKSPACE = "/stale/workspace";
+    process.env.CUBY_MIGRATIONS_READY_APP_DATABASE = "/stale/app.sqlite";
 
     await runPackagedMigrationCommand({
       agentEntry: "/runtime/memmy-agent/dist/main.js",
@@ -115,16 +115,16 @@ describe("packaged desktop runtime config", () => {
       expect.objectContaining({
         env: expect.objectContaining({
           ELECTRON_RUN_AS_NODE: "1",
-          MEMMY_LOG_LEVEL: "info"
+          CUBY_LOG_LEVEL: "info"
         }),
         stdio: ["ignore", "pipe", "pipe"],
         shell: false
       })
     );
     const spawnedEnv = spawnProcess.mock.calls[0]?.[2]?.env;
-    expect(spawnedEnv).not.toHaveProperty("MEMMY_MIGRATIONS_READY_CONFIG");
-    expect(spawnedEnv).not.toHaveProperty("MEMMY_MIGRATIONS_READY_WORKSPACE");
-    expect(spawnedEnv).not.toHaveProperty("MEMMY_MIGRATIONS_READY_APP_DATABASE");
+    expect(spawnedEnv).not.toHaveProperty("CUBY_MIGRATIONS_READY_CONFIG");
+    expect(spawnedEnv).not.toHaveProperty("CUBY_MIGRATIONS_READY_WORKSPACE");
+    expect(spawnedEnv).not.toHaveProperty("CUBY_MIGRATIONS_READY_APP_DATABASE");
   });
 
   it("materializes bundled Memory without asking the OS to register a service", () => {
@@ -134,13 +134,13 @@ describe("packaged desktop runtime config", () => {
         configPath: "/memmy/config.yaml",
         agentWorkspace: "/memmy/workspace",
         memoryDatabasePath: "/memmy/memory.sqlite",
-        memoryBaseUrl: "http://127.0.0.1:18960",
+        memoryBaseUrl: "http://127.0.0.1:28960",
         memoryToken: "",
         memoryListenHost: "127.0.0.1",
-        memoryListenPort: 18960,
-        agentGatewayBaseUrl: "http://127.0.0.1:18980",
+        memoryListenPort: 28960,
+        agentGatewayBaseUrl: "http://127.0.0.1:28980",
         agentGatewayHealthHost: "127.0.0.1",
-        agentGatewayHealthPort: 18970,
+        agentGatewayHealthPort: 28970,
         agentGatewayBootstrapSecret: "secret"
       },
       true,
@@ -217,9 +217,9 @@ describe("packaged desktop runtime config", () => {
       memoryToken: "",
       memoryListenHost: "127.0.0.1",
       memoryListenPort: port,
-      agentGatewayBaseUrl: "http://127.0.0.1:18980",
+      agentGatewayBaseUrl: "http://127.0.0.1:28980",
       agentGatewayHealthHost: "127.0.0.1",
-      agentGatewayHealthPort: 18970,
+      agentGatewayHealthPort: 28970,
       agentGatewayBootstrapSecret: "secret"
     };
     const children: ManagedChild[] = [];
@@ -290,13 +290,13 @@ describe("packaged desktop runtime config", () => {
         configPath: "/memmy/config.yaml",
         agentWorkspace: "/memmy/workspace",
         memoryDatabasePath: "/memmy/memory.sqlite",
-        memoryBaseUrl: "http://127.0.0.1:18960",
+        memoryBaseUrl: "http://127.0.0.1:28960",
         memoryToken: "memory-token",
         memoryListenHost: "127.0.0.1",
-        memoryListenPort: 18960,
-        agentGatewayBaseUrl: "http://127.0.0.1:18980",
+        memoryListenPort: 28960,
+        agentGatewayBaseUrl: "http://127.0.0.1:28980",
         agentGatewayHealthHost: "127.0.0.1",
-        agentGatewayHealthPort: 18970,
+        agentGatewayHealthPort: 28970,
         agentGatewayBootstrapSecret: "gateway-secret"
       },
       true,
@@ -407,12 +407,12 @@ describe("packaged desktop runtime config", () => {
     expect(shutdownRequests).toBe(1);
   });
 
-  it("creates missing packaged runtime config under the shared ~/.memmy home", async () => {
+  it("creates missing packaged runtime config under the shared ~/.cuby home", async () => {
     const memmyHome = await makeTempRoot();
     const configPath = join(memmyHome, "config.yaml");
 
     const runtime = await preparePackagedRuntimeConfig({
-      env: { MEMMY_HOME: memmyHome },
+      env: { CUBY_HOME: memmyHome },
       secretFactory: () => "stable-secret"
     });
     const config = await readYaml(configPath);
@@ -421,10 +421,10 @@ describe("packaged desktop runtime config", () => {
       configPath,
       agentWorkspace: join(memmyHome, "workspace"),
       memoryDatabasePath: join(memmyHome, "memory-service", "memory.sqlite"),
-      memoryBaseUrl: "http://127.0.0.1:18960",
+      memoryBaseUrl: "http://127.0.0.1:28960",
       memoryListenHost: "127.0.0.1",
-      memoryListenPort: 18960,
-      agentGatewayBaseUrl: "http://127.0.0.1:18980",
+      memoryListenPort: 28960,
+      agentGatewayBaseUrl: "http://127.0.0.1:28980",
       agentGatewayBootstrapSecret: "stable-secret"
     });
     expect(config).toMatchObject({
@@ -444,7 +444,7 @@ describe("packaged desktop runtime config", () => {
         websocket: {
           enabled: true,
           host: "127.0.0.1",
-          port: 18980,
+          port: 28980,
           tokenIssueSecret: "stable-secret",
           websocketRequiresToken: true,
           allowFrom: ["*"]
@@ -452,7 +452,7 @@ describe("packaged desktop runtime config", () => {
       },
       gateway: {
         host: "127.0.0.1",
-        port: 18970,
+        port: 28970,
         heartbeat: { enabled: false }
       },
       fileMemory: {
@@ -463,7 +463,7 @@ describe("packaged desktop runtime config", () => {
           mode: "local",
           backend: "sqlite",
           sqlitePath: join(memmyHome, "memory-service", "memory.sqlite"),
-          endpoint: "http://127.0.0.1:18960"
+          endpoint: "http://127.0.0.1:28960"
         }
       }
     });
@@ -479,14 +479,14 @@ describe("packaged desktop runtime config", () => {
     await writeFile(`${databasePath}.server.lock`, JSON.stringify({
       pid: process.pid,
       host: "127.0.0.1",
-      port: 18960,
+      port: 28960,
       sqlitePath: databasePath
     }));
 
     expect(readLiveMemoryServerLock(databasePath)).toEqual({
       pid: process.pid,
       host: "127.0.0.1",
-      port: 18960,
+      port: 28960,
       sqlitePath: databasePath
     });
   });
@@ -536,9 +536,9 @@ describe("packaged desktop runtime config", () => {
         memoryToken: "",
         memoryListenHost: "127.0.0.1",
         memoryListenPort: port,
-        agentGatewayBaseUrl: "http://127.0.0.1:18980",
+        agentGatewayBaseUrl: "http://127.0.0.1:28980",
         agentGatewayHealthHost: "127.0.0.1",
-        agentGatewayHealthPort: 18970,
+        agentGatewayHealthPort: 28970,
         agentGatewayBootstrapSecret: "secret"
       },
       children,
@@ -563,15 +563,15 @@ describe("packaged desktop runtime config", () => {
     }), "utf8");
 
     expect(await resolvePackagedRuntimeMigrationTargets({
-      MEMMY_HOME: memmyHome,
-      MEMMY_CONFIG: configPath
+      CUBY_HOME: memmyHome,
+      CUBY_CONFIG: configPath
     })).toEqual({ configPath });
 
     await writeFile(configPath, YAML.stringify({
       agents: { defaults: { workspace: legacyWorkspace } }
     }), "utf8");
     const runtime = await preparePackagedRuntimeConfig({
-      env: { MEMMY_HOME: memmyHome, MEMMY_CONFIG: configPath },
+      env: { CUBY_HOME: memmyHome, CUBY_CONFIG: configPath },
       secretFactory: () => "stable-secret"
     });
 
@@ -587,7 +587,7 @@ describe("packaged desktop runtime config", () => {
     const configPath = join(memmyHome, "config.yaml");
     await writeFile(configPath, YAML.stringify({ tools: { mcpServers } }));
     await preparePackagedRuntimeConfig({
-      env: { MEMMY_HOME: memmyHome },
+      env: { CUBY_HOME: memmyHome },
       secretFactory: () => "stable-secret"
     });
     expect(recordValue(recordValue(await readYaml(configPath), "tools"), "mcpServers")).toEqual(mcpServers);
@@ -645,7 +645,7 @@ describe("packaged desktop runtime config", () => {
     }), "utf8");
 
     const runtime = await preparePackagedRuntimeConfig({
-      env: { MEMMY_CONFIG: configPath },
+      env: { CUBY_CONFIG: configPath },
       secretFactory: () => "new-secret"
     });
     const config = await readYaml(configPath);
@@ -693,7 +693,7 @@ describe("packaged desktop runtime config", () => {
     await writeFile(missingPath, "fileMemory: {}\n", "utf8");
 
     await preparePackagedRuntimeConfig({
-      env: { MEMMY_CONFIG: missingPath },
+      env: { CUBY_CONFIG: missingPath },
       secretFactory: () => "stable-secret"
     });
 
@@ -709,7 +709,7 @@ describe("packaged desktop runtime config", () => {
       "utf8"
     );
     await preparePackagedRuntimeConfig({
-      env: { MEMMY_CONFIG: explicitPath },
+      env: { CUBY_CONFIG: explicitPath },
       secretFactory: () => "stable-secret"
     });
     expect(recordValue(await readYaml(explicitPath), "fileMemory")).toEqual({
@@ -728,7 +728,7 @@ describe("packaged desktop runtime config", () => {
     await writeFile(configPath, YAML.stringify({ fileMemory: expected }), "utf8");
 
     await preparePackagedRuntimeConfig({
-      env: { MEMMY_CONFIG: configPath },
+      env: { CUBY_CONFIG: configPath },
       secretFactory: () => "stable-secret"
     });
 
@@ -760,7 +760,7 @@ describe("packaged desktop runtime config", () => {
     }), "utf8");
 
     await preparePackagedRuntimeConfig({
-      env: { MEMMY_CONFIG: configPath },
+      env: { CUBY_CONFIG: configPath },
       secretFactory: () => "stable-secret"
     });
     const config = await readYaml(configPath);
@@ -787,7 +787,7 @@ describe("packaged desktop runtime config", () => {
 
     const runtime = await preparePackagedRuntimeConfig({
       ensureDirectories: false,
-      env: { MEMMY_HOME: memmyHome },
+      env: { CUBY_HOME: memmyHome },
       fillMissingAgentSecret: false,
       secretFactory: () => "unused-secret",
       writeConfig: false
@@ -795,7 +795,7 @@ describe("packaged desktop runtime config", () => {
 
     expect(runtime).toMatchObject({
       configPath,
-      agentGatewayBaseUrl: "http://127.0.0.1:18980",
+      agentGatewayBaseUrl: "http://127.0.0.1:28980",
       agentGatewayBootstrapSecret: ""
     });
     await expect(stat(configPath)).rejects.toMatchObject({ code: "ENOENT" });
@@ -867,8 +867,8 @@ describe("packaged desktop runtime config", () => {
         windowsHide: true,
         stdio: ["ignore", "pipe", "pipe"],
         env: expect.objectContaining({
-          MEMMY_CONFIG: runtimeConfig.configPath,
-          MEMMY_AGENT_WORKSPACE: runtimeConfig.agentWorkspace,
+          CUBY_CONFIG: runtimeConfig.configPath,
+          CUBY_AGENT_WORKSPACE: runtimeConfig.agentWorkspace,
           ELECTRON_RUN_AS_NODE: "1",
         }),
       }),
@@ -917,7 +917,7 @@ describe("packaged desktop runtime config", () => {
     expect(completed).toBe(false);
     expect(spawnProcess).toHaveBeenCalledOnce();
     expect(spawnProcess.mock.calls[0]?.[2]?.env).toMatchObject({
-      MEMMY_BROWSER_PREPARATION_ATTEMPT_ID: "test-browser-attempt",
+      CUBY_BROWSER_PREPARATION_ATTEMPT_ID: "test-browser-attempt",
     });
     await expect(readFile(
       join(root, "mcp", "playwright", "browser-preparation-state.json"),
@@ -1234,17 +1234,17 @@ describe("AgentGatewaySupervisor", () => {
 
     expect(harness.spawn).toHaveBeenCalledTimes(2);
     expect(harness.spawn.mock.calls[1]?.[3]).toMatchObject({
-      MEMMY_DESKTOP_MANAGED_GATEWAY: "1",
-      MEMMY_MIGRATIONS_READY_CONFIG: "/memmy/config.yaml",
-      MEMMY_MIGRATIONS_READY_WORKSPACE: "/memmy/workspace",
-      MEMMY_MIGRATIONS_READY_SESSION_DAG: resolve("/memmy/session-dag"),
-      MEMMY_APP_DATABASE: "/memmy/app.sqlite",
-      MEMMY_MIGRATIONS_READY_APP_DATABASE: "/memmy/app.sqlite",
-      MEMMY_BROWSER_PREPARATION_ATTEMPT_ID: "test-browser-attempt",
-      MEMMY_AGENT_RESTART_NOTIFY_CHANNEL: "websocket",
-      MEMMY_AGENT_RESTART_NOTIFY_CHAT_ID: "chat-1",
-      MEMMY_AGENT_RESTART_STARTED_AT: "123.5",
-      MEMMY_AGENT_RESTART_NOTIFY_METADATA: JSON.stringify({ reason: "command" })
+      CUBY_DESKTOP_MANAGED_GATEWAY: "1",
+      CUBY_MIGRATIONS_READY_CONFIG: "/memmy/config.yaml",
+      CUBY_MIGRATIONS_READY_WORKSPACE: "/memmy/workspace",
+      CUBY_MIGRATIONS_READY_SESSION_DAG: resolve("/memmy/session-dag"),
+      CUBY_APP_DATABASE: "/memmy/app.sqlite",
+      CUBY_MIGRATIONS_READY_APP_DATABASE: "/memmy/app.sqlite",
+      CUBY_BROWSER_PREPARATION_ATTEMPT_ID: "test-browser-attempt",
+      CUBY_AGENT_RESTART_NOTIFY_CHANNEL: "websocket",
+      CUBY_AGENT_RESTART_NOTIFY_CHAT_ID: "chat-1",
+      CUBY_AGENT_RESTART_STARTED_AT: "123.5",
+      CUBY_AGENT_RESTART_NOTIFY_METADATA: JSON.stringify({ reason: "command" })
     });
   });
 
@@ -1274,10 +1274,10 @@ describe("AgentGatewaySupervisor", () => {
 
     expect(harness.spawn).toHaveBeenCalledTimes(3);
     expect(harness.spawn.mock.calls[2]?.[3]).toMatchObject({
-      MEMMY_AGENT_RESTART_NOTIFY_CHANNEL: "websocket",
-      MEMMY_AGENT_RESTART_NOTIFY_CHAT_ID: "chat-1",
-      MEMMY_AGENT_RESTART_STARTED_AT: "123.5",
-      MEMMY_AGENT_RESTART_NOTIFY_METADATA: JSON.stringify({ reason: "command" })
+      CUBY_AGENT_RESTART_NOTIFY_CHANNEL: "websocket",
+      CUBY_AGENT_RESTART_NOTIFY_CHAT_ID: "chat-1",
+      CUBY_AGENT_RESTART_STARTED_AT: "123.5",
+      CUBY_AGENT_RESTART_NOTIFY_METADATA: JSON.stringify({ reason: "command" })
     });
   });
 
@@ -1344,7 +1344,7 @@ describe("spawnNodeService 落盘与 env 注入", () => {
       "setInterval(() => {}, 1000);",
     ].join("\n"));
     const memory = spawnNodeService("memory", entry, [], {
-      MEMMY_DESKTOP_MANAGED_MEMORY: "1",
+      CUBY_DESKTOP_MANAGED_MEMORY: "1",
     }, {
       logFilePath: join(root, "memory-ipc.log"),
       logLevel: "info",
@@ -1396,10 +1396,10 @@ describe("spawnNodeService 落盘与 env 注入", () => {
     expect(logText).toContain("SQLITE_CANTOPEN");
   });
 
-  it("把 MEMMY_LOG_LEVEL 注入子进程环境", async () => {
+  it("把 CUBY_LOG_LEVEL 注入子进程环境", async () => {
     const root = await makeTempRoot();
     const entry = join(root, "entry.js");
-    await writeFile(entry, "process.stdout.write(process.env.MEMMY_LOG_LEVEL ?? 'unset');\n");
+    await writeFile(entry, "process.stdout.write(process.env.CUBY_LOG_LEVEL ?? 'unset');\n");
     const logFile = join(root, "agent-gateway.log");
 
     const managed = spawnNodeService("agent-gateway", entry, [], {}, {
@@ -1520,13 +1520,13 @@ function createSupervisorHarness(overrides: {
     appDatabaseFile: "/memmy/app.sqlite",
     agentWorkspace: "/memmy/workspace",
     memoryDatabasePath: "/memmy/memory.sqlite",
-    memoryBaseUrl: "http://127.0.0.1:18960",
+    memoryBaseUrl: "http://127.0.0.1:28960",
     memoryToken: "memory-token",
     memoryListenHost: "127.0.0.1",
-    memoryListenPort: 18960,
-    agentGatewayBaseUrl: "http://127.0.0.1:18980",
+    memoryListenPort: 28960,
+    agentGatewayBaseUrl: "http://127.0.0.1:28980",
     agentGatewayHealthHost: "127.0.0.1",
-    agentGatewayHealthPort: 18970,
+    agentGatewayHealthPort: 28970,
     agentGatewayBootstrapSecret: "gateway-secret"
   };
   const options: StartPackagedRuntimeServicesOptions = {

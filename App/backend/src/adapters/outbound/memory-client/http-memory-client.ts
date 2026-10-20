@@ -81,8 +81,8 @@ export function createHttpMemoryClient(
           method,
           headers: {
             ...(hasBody ? { "content-type": "application/json" } : {}),
-            "x-memmy-time-zone": normalizeTimeZoneOffset(requestOptions.context?.timeZone),
-            ...(requestOptions.context?.userId ? { "x-memmy-user-id": requestOptions.context.userId } : {}),
+            "x-cuby-time-zone": normalizeTimeZoneOffset(requestOptions.context?.timeZone),
+            ...(requestOptions.context?.userId ? { "x-cuby-user-id": requestOptions.context.userId } : {}),
             authorization: `Bearer ${config.token}`
           },
           body: hasBody ? JSON.stringify(requestOptions.body) : undefined,

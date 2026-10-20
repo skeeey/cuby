@@ -45,7 +45,7 @@ export function verifyPackageVersion({ repoRoot = defaultRepoRoot, expected, run
   if (!existsSync(generatedVersionPath)) {
     failures.push("App/backend/src/project-version.ts is missing");
   } else {
-    const match = /MEMMY_VERSION\s*=\s*"([^"]+)"/u.exec(readFileSync(generatedVersionPath, "utf8"));
+    const match = /CUBY_VERSION\s*=\s*"([^"]+)"/u.exec(readFileSync(generatedVersionPath, "utf8"));
     checkValue(match?.[1], expected, failures, "backend generated version");
   }
 

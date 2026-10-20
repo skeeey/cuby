@@ -2,7 +2,7 @@
 import { X } from "lucide-react";
 import { useId, useRef, type CSSProperties, type ReactNode } from "react";
 import { Button } from "./button.js";
-import { Memmy, type MemmyPose } from "./mascot/memmy.js";
+import { Cuby, type CubyPose } from "./mascot/cuby.js";
 import { Modal } from "./modal.js";
 
 export type ConfirmDialogSizeValue = number | string;
@@ -21,7 +21,7 @@ export interface ConfirmDialogProps {
   contentMaxHeight?: ConfirmDialogSizeValue;
   icon?: ReactNode | null;
   iconContainerSize?: number;
-  iconPose?: MemmyPose;
+  iconPose?: CubyPose;
   iconSize?: number;
   maxWidth?: ConfirmDialogSizeValue;
   minHeight?: ConfirmDialogSizeValue;
@@ -61,7 +61,7 @@ export function ConfirmDialog(props: ConfirmDialogProps) {
     return null;
   }
 
-  const icon = props.icon ?? (props.iconPose ? <Memmy pose={props.iconPose} size={iconSize} /> : null);
+  const icon = props.icon ?? (props.iconPose ? <Cuby pose={props.iconPose} size={iconSize} /> : null);
 
   return (
     <Modal

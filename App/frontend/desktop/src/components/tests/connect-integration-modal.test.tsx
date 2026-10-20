@@ -400,7 +400,7 @@ describe("ConnectIntegrationModal", () => {
 
     expect(html).toContain("连接由 Composio 提供");
     expect(html).toContain("跳转至 Composio 的安全授权页面");
-    expect(html).toContain("Composio 是 Memmy 的集成合作伙伴");
+    expect(html).toContain("Composio 是 Cuby 的集成合作伙伴");
   });
 
   it("idle 阶段渠道项不展示第三方说明", () => {

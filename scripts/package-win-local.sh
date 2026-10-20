@@ -7,11 +7,11 @@
 # fresh Windows clone failed four separate times, each failure only surfacing
 # after several minutes of work:
 #
-#   1. vite.config.ts and the edition-manifest writer both read three MEMMY_*
+#   1. vite.config.ts and the edition-manifest writer both read three CUBY_*
 #      values from the repo-root .env. That file is gitignored, so a clone
 #      never has it, and the build dies at whichever of the two reads it
-#      reaches first (`MEMMY_LEGAL_CN_BASE_URL ... must be an HTTPS origin`,
-#      then `MEMMY_CLOUD_SERVICE must be a non-empty HTTPS origin`).
+#      reaches first (`CUBY_LEGAL_CN_BASE_URL ... must be an HTTPS origin`,
+#      then `CUBY_CLOUD_SERVICE must be a non-empty HTTPS origin`).
 #   2. Electron, electron-builder's toolchain and better-sqlite3's prebuilt
 #      binding all download from GitHub. On a network that resets those
 #      connections the build dies during dependency installation
@@ -30,7 +30,7 @@
 #   bash scripts/package-win-local.sh --prepare-only  # do the local setup, stop before packaging
 #
 # Environment:
-#   MEMMY_PACKAGE_MIRROR=off   download from GitHub instead of the cn mirror
+#   CUBY_PACKAGE_MIRROR=off   download from GitHub instead of the cn mirror
 #
 set -euo pipefail
 
@@ -38,7 +38,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
 # The three values the packaging chain refuses to run without. They are read
 # from the root .env by vite and by the edition-manifest writer.
-REQUIRED_ENV_KEYS=(MEMMY_LEGAL_CN_BASE_URL MEMMY_LEGAL_INTL_BASE_URL MEMMY_CLOUD_SERVICE)
+REQUIRED_ENV_KEYS=(CUBY_LEGAL_CN_BASE_URL CUBY_LEGAL_INTL_BASE_URL CUBY_CLOUD_SERVICE)
 
 # The desktop builds in this repository have all been the international
 # edition; package-win.sh itself defaults to cn, which is easy to miss and
@@ -136,11 +136,11 @@ close_running_app() {
 
   local closed
   closed="$(powershell.exe -NoProfile -Command \
-    "(Get-Process Memmy -ErrorAction SilentlyContinue | Stop-Process -Force -PassThru | Measure-Object).Count" \
+    "(Get-Process Cuby -ErrorAction SilentlyContinue | Stop-Process -Force -PassThru | Measure-Object).Count" \
     2>/dev/null | tr -d '\r\n' || true)"
 
   if [ -n "${closed:-}" ] && [ "$closed" != "0" ]; then
-    echo "Closed $closed running Memmy process(es) holding the output directory." >&2
+    echo "Closed $closed running Cuby process(es) holding the output directory." >&2
   fi
 }
 
@@ -154,7 +154,7 @@ clean_stale_output() {
   echo "Removing the previous unpacked build at $unpacked" >&2
   if ! rm -rf "$unpacked"; then
     echo "Could not remove it: something still holds those files." >&2
-    echo "Close Memmy (including any tray process) and run this again." >&2
+    echo "Close Cuby (including any tray process) and run this again." >&2
     exit 1
   fi
 }
@@ -167,14 +167,14 @@ if ! has_package_arg --edition; then
 fi
 
 # Opt-in for package-mirrors.sh; anything but "cn" leaves the downloads alone.
-export MEMMY_PACKAGE_MIRROR="${MEMMY_PACKAGE_MIRROR:-cn}"
+export CUBY_PACKAGE_MIRROR="${CUBY_PACKAGE_MIRROR:-cn}"
 
 ensure_env_file
 close_running_app
 clean_stale_output
 
-if [ "${MEMMY_PACKAGE_MIRROR}" = "cn" ]; then
-  echo "Downloads will use the cn mirror (MEMMY_PACKAGE_MIRROR=off to disable)." >&2
+if [ "${CUBY_PACKAGE_MIRROR}" = "cn" ]; then
+  echo "Downloads will use the cn mirror (CUBY_PACKAGE_MIRROR=off to disable)." >&2
 fi
 
 if [ "$PREPARE_ONLY" = "1" ]; then

@@ -26,7 +26,7 @@ describe('passive desktop capture', () => {
     expect(result).toMatchObject({ ok: false, code: 'permission_required' });
     if (!result.ok) {
       expect(result.message).toContain('系统设置 → 隐私与安全性');
-      expect(result.message).toContain('Memmy'); expect(result.message).toContain('Electron');
+      expect(result.message).toContain('Cuby'); expect(result.message).toContain('Electron');
       expect(result.message).toContain('退出并重新打开'); expect(result.message).toContain('重新发送');
     }
     await capture(); expect(deps.openSettings).toHaveBeenCalledOnce(); expect(deps.getSources).not.toHaveBeenCalled();

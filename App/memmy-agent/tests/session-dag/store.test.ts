@@ -21,7 +21,7 @@ function makeStore(sessionKey = "websocket:chat/1"): SessionDagStore {
   const root = tmpRoot();
   return new SessionDagStore({
     sessionKey,
-    dbPath: sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: root }),
+    dbPath: sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: root }),
   });
 }
 
@@ -33,7 +33,7 @@ describe("SessionDagStore", () => {
   it("uses one safe SQLite path per session", () => {
     const root = tmpRoot();
     expect(safeSessionDagKey("websocket:chat/1")).toBe("websocket_chat_1");
-    expect(sessionDagDbPath("websocket:chat/1", { MEMMY_AGENT_SESSION_DAG_DIR: root })).toBe(
+    expect(sessionDagDbPath("websocket:chat/1", { CUBY_AGENT_SESSION_DAG_DIR: root })).toBe(
       path.join(root, "websocket_chat_1.sqlite"),
     );
   });
@@ -355,7 +355,7 @@ describe("SessionDagStore", () => {
   it("repairs a legacy open task chain once using done and continues metadata", () => {
     const root = tmpRoot();
     const sessionKey = "websocket:legacy-done-transition";
-    const dbPath = sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: root });
+    const dbPath = sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: root });
     let store = new SessionDagStore({ sessionKey, dbPath });
     const ids = store.applyPatch({
       turn: { turn_id: "turn-1", message_start: 0, message_end: 2 },
@@ -391,7 +391,7 @@ describe("SessionDagStore", () => {
   it("repairs an unfinished legacy task with frozen and supersedes", () => {
     const root = tmpRoot();
     const sessionKey = "websocket:legacy-frozen-transition";
-    const dbPath = sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: root });
+    const dbPath = sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: root });
     let store = new SessionDagStore({ sessionKey, dbPath });
     const ids = store.applyPatch({
       turn: { turn_id: "turn-1", message_start: 0, message_end: 2 },
@@ -423,7 +423,7 @@ describe("SessionDagStore", () => {
   it("leaves an existing valid task transition unchanged during legacy repair", () => {
     const root = tmpRoot();
     const sessionKey = "websocket:valid-legacy-transition";
-    const dbPath = sessionDagDbPath(sessionKey, { MEMMY_AGENT_SESSION_DAG_DIR: root });
+    const dbPath = sessionDagDbPath(sessionKey, { CUBY_AGENT_SESSION_DAG_DIR: root });
     let store = new SessionDagStore({ sessionKey, dbPath });
     const oldTaskId = store.applyPatch({
       turn: { turn_id: "turn-1", message_start: 0, message_end: 2 },

@@ -24,7 +24,7 @@ import { setAnalyticsModelSource } from "../analytics/analytics-context.js";
 import { buildOnboardingActivationEvent } from "../analytics/onboarding-analytics.js";
 import { useAnalytics } from "../analytics/use-analytics.js";
 import { AgentModelSelector } from "../components/agent-model-selector.js";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { Select } from "../components/Select.js";
 import { formatMessage, type MessageKey, type MessageValues, zhCNMessages } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
@@ -2691,7 +2691,7 @@ export function HomePage() {
         <section className="app-frame-page-content home-empty-screen flex flex-col items-center justify-center h-full">
           <div className="text-center mb-8">
             <div className="home-empty-brand-mascot flex justify-center">
-              <Memmy pose="think" size={165} className="memmy-bob" />
+              <Cuby pose="think" size={165} className="cuby-bob" />
             </div>
             <h1 className="text-2xl font-bold text-text-ink">{t("home.subtitle")}</h1>
           </div>

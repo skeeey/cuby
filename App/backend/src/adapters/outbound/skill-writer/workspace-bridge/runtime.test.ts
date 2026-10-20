@@ -25,7 +25,7 @@ afterEach(() => {
 describe("Memory lifecycle runtime", () => {
   it("reads Memory connection and owner settings without a workspace scanning flag", async () => {
     const fixture = createFixture();
-    const configUrl = pathToFileURL(join(fixture, "memmy-memory-config.json"));
+    const configUrl = pathToFileURL(join(fixture, "cuby-memory-config.json"));
     const configPath = join(fixture, "config.yaml");
     writeFileSync(configUrl, JSON.stringify({
       memmy_config_path: configPath,
@@ -248,7 +248,7 @@ function createFixture(): string {
 }
 
 function runtimeConfig(directory: string, endpoint: string): URL {
-  const configUrl = pathToFileURL(join(directory, "memmy-memory-config.json"));
+  const configUrl = pathToFileURL(join(directory, "cuby-memory-config.json"));
   writeFileSync(configUrl, JSON.stringify({
     endpoint,
     userId: "installed-owner",

@@ -30,7 +30,7 @@ export interface ViewerCliInstallResult extends ViewerCliStatus {
   profilePaths: string[];
 }
 
-const PROFILE_MARKER = "# Memmy CLI PATH";
+const PROFILE_MARKER = "# Cuby CLI PATH";
 const PROFILE_LINE = 'export PATH="$HOME/.local/bin:$PATH"';
 
 export async function viewerCliStatus(options: ViewerCliOptions = {}): Promise<ViewerCliStatus> {
@@ -73,7 +73,7 @@ interface ViewerCliPaths {
 function resolveViewerCliPaths(options: ViewerCliOptions): ViewerCliPaths {
   const home = options.home ?? homedir();
   const platform = options.platform ?? process.platform;
-  const name = platform === "win32" ? "memmy-memory.cmd" : "memmy-memory";
+  const name = platform === "win32" ? "cuby-memory.cmd" : "cuby-memory";
   return {
     home,
     platform,

@@ -36,7 +36,7 @@ export function resolveMemoryAgentRegion(
   if (manifestRegion) return manifestRegion;
 
   const env = options.env ?? process.env;
-  return regionFromIdentity(env.MEMMY_APP_EDITION, env.MEMMY_ACCOUNT_CHANNEL) ?? "cn";
+  return regionFromIdentity(env.CUBY_APP_EDITION, env.CUBY_ACCOUNT_CHANNEL) ?? "cn";
 }
 
 function readDesktopEditionManifest(path: string): DesktopEditionManifest | undefined {

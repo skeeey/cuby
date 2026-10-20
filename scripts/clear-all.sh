@@ -1,26 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fully uninstall the local Memmy app and user-level data/config/cache/state/preferences/logs.
+# Fully uninstall the local Memmy/Cuby apps and user-level data/config/cache/state/preferences/logs.
 # Also remove current CLI symlinks, legacy memmy-agent leftovers, and Spotlight-indexed build intermediates.
 # Delete only rebuildable or user-level content; never touch source files or finished DMGs. rm -rf is irreversible.
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# Installed app.
-APP_PATH="/Applications/Memmy.app"
+# Installed apps; the Cuby-era install comes first, the Memmy-era bundle stays supported.
+APP_PATHS=(
+  "/Applications/Memmy.app"
+  "/Applications/Cuby.app"
+)
 
 # CLI symlinks created by the current installer, plus locations used by older installers.
 CLI_SYMLINKS=(
+  "$HOME/.local/bin/cuby-memory"
+  "$HOME/.local/bin/cuby"
   "$HOME/.local/bin/memmy-memory"
   "$HOME/.local/bin/memmy-agent"
   "$HOME/.local/bin/memmy"
+  "/usr/local/bin/cuby-memory"
+  "/usr/local/bin/cuby"
   "/usr/local/bin/memmy-memory"
   "/usr/local/bin/memmy-agent"
   "/usr/local/bin/memmy"
 )
 
-# Shell startup files that may persist Memmy environment variables or the managed CLI PATH entry.
+# Shell startup files that may persist Memmy/Cuby environment variables or the managed CLI PATH entry.
 SHELL_PROFILES=(
   "$HOME/.zshenv"
   "$HOME/.zprofile"
@@ -32,8 +39,25 @@ SHELL_PROFILES=(
   "$HOME/.bashrc"
 )
 
-# Runtime variables are also cleared explicitly in case launchctl does not expose its environment dictionary.
+# Runtime variables (both product eras) are also cleared explicitly in case launchctl does not expose its environment dictionary.
 RUNTIME_ENV_NAMES=(
+  CUBY_HOME
+  CUBY_CONFIG
+  CUBY_WORKSPACE
+  CUBY_AGENT_WORKSPACE
+  CUBY_RUNTIME_CONFIG_PATH
+  CUBY_LOCAL_API_URL
+  CUBY_LOCAL_TOKEN
+  CUBY_MEMORY_URL
+  CUBY_MEMORY_TOKEN
+  CUBY_MEMORY_USER_ID
+  CUBY_MEMORY_DB
+  CUBY_MEMORY_DB_PATH
+  CUBY_MEMORY_HOME
+  CUBY_MEMORY_HOST
+  CUBY_MEMORY_PORT
+  CUBY_MEMORY_LAYER_URL
+  CUBY_MEMORY_LAYER_TOKEN
   MEMMY_HOME
   MEMMY_CONFIG
   MEMMY_WORKSPACE
@@ -75,6 +99,16 @@ USER_PATHS=(
   "$HOME/Library/HTTPStorages/cn.memtensor.memmy"
   "$HOME/Library/HTTPStorages/cn.memtensor.memmy.binarycookies"
   "$HOME/Library/WebKit/cn.memtensor.memmy"
+  "$HOME/Library/Application Support/Cuby"
+  "$HOME/.cuby"
+  "$HOME/Library/Logs/Cuby"
+  "$HOME/Library/Caches/Cuby"
+  "$HOME/Library/Caches/cn.memtensor.cuby"
+  "$HOME/Library/Preferences/cn.memtensor.cuby.plist"
+  "$HOME/Library/Saved Application State/cn.memtensor.cuby.savedState"
+  "$HOME/Library/HTTPStorages/cn.memtensor.cuby"
+  "$HOME/Library/HTTPStorages/cn.memtensor.cuby.binarycookies"
+  "$HOME/Library/WebKit/cn.memtensor.cuby"
 )
 
 # Repository build intermediates that can be regenerated; keep finished DMGs.
@@ -84,13 +118,13 @@ BUILD_PATHS=(
   "$ROOT_DIR/App/shell/desktop/release/mac-arm64"
 )
 
-is_memmy_environment_name() {
-  [[ "$1" =~ ^(MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*$ ]]
+is_managed_environment_name() {
+  [[ "$1" =~ ^(CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*$ ]]
 }
 
 clear_environment_name() {
   local name="$1"
-  if ! is_memmy_environment_name "$name"; then
+  if ! is_managed_environment_name "$name"; then
     return
   fi
 
@@ -102,7 +136,7 @@ clear_environment_name() {
 
 profile_environment_names() {
   local profile="$1"
-  sed -nE 's/^[[:space:]]*(export[[:space:]]+)?((MEMMY|MEMORY_SERVICE)_[A-Za-z0-9_]+)=.*/\2/p' "$profile"
+  sed -nE 's/^[[:space:]]*(export[[:space:]]+)?((CUBY|MEMMY|MEMORY_SERVICE)_[A-Za-z0-9_]+)=.*/\2/p' "$profile"
 }
 
 launchctl_environment_names() {
@@ -111,7 +145,7 @@ launchctl_environment_names() {
   fi
 
   launchctl print "gui/$(id -u)" 2>/dev/null \
-    | sed -nE 's/^[[:space:]]*((MEMMY|MEMORY_SERVICE)_[A-Za-z0-9_]+)[[:space:]]+=>.*/\1/p'
+    | sed -nE 's/^[[:space:]]*((CUBY|MEMMY|MEMORY_SERVICE)_[A-Za-z0-9_]+)[[:space:]]+=>.*/\1/p'
 }
 
 clean_shell_profile() {
@@ -121,9 +155,9 @@ clean_shell_profile() {
   fi
 
   local temp_file
-  temp_file="$(mktemp "${TMPDIR:-/tmp}/memmy-profile.XXXXXX")"
+  temp_file="$(mktemp "${TMPDIR:-/tmp}/cuby-profile.XXXXXX")"
   awk '
-    /^[[:space:]]*# Memmy CLI PATH[[:space:]]*$/ {
+    /^[[:space:]]*# (Memmy|Cuby) CLI PATH[[:space:]]*$/ {
       skip_managed_path = 1
       next
     }
@@ -134,7 +168,7 @@ clean_shell_profile() {
     {
       skip_managed_path = 0
     }
-    /^[[:space:]]*(export[[:space:]]+)?(MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*=/ {
+    /^[[:space:]]*(export[[:space:]]+)?(CUBY_|MEMMY_|MEMORY_SERVICE_)[A-Za-z0-9_]*=/ {
       next
     }
     {
@@ -178,26 +212,29 @@ clear_memmy_environment() {
   done
 }
 
-# 1. Quit all Memmy processes, helpers, and spawned memory/agent runtimes.
-echo "==> Quitting Memmy processes"
+# 1. Quit all Memmy and Cuby processes, helpers, and spawned memory/agent runtimes.
+echo "==> Quitting Memmy/Cuby processes"
 osascript -e 'quit app "Memmy"' 2>/dev/null || true
+osascript -e 'quit app "Cuby"' 2>/dev/null || true
 sleep 1
-pkill -f "$APP_PATH" 2>/dev/null || true
+for app_path in "${APP_PATHS[@]}"; do
+  pkill -f "$app_path" 2>/dev/null || true
+done
 pkill -f "memory-service/memory.sqlite" 2>/dev/null || true
 
-# 1b. Remove Memmy hooks/skills injected into other coding agents (Codex, Claude Code, Cursor,
-# Hermes, OpenClaw, OpenCode). Reuse each agent target's own uninstall logic through the repo's
-# bundled tsx so we strip only Memmy's marker blocks and hook entries while preserving every other
-# setting in those agents' config files; never hand-edit their JSON/Markdown here. Best-effort:
-# a missing agent, a broken import, or an absent tsx must not abort the uninstall.
-echo "==> Removing Memmy integrations injected into other agents"
+# 1b. Remove Cuby and Memmy hooks/skills injected into other coding agents (Codex, Claude Code,
+# Cursor, Hermes, OpenClaw, OpenCode). Reuse each agent target's own uninstall logic through the
+# repo's bundled tsx so we strip only Cuby's and Memmy's marker blocks and hook entries while
+# preserving every other setting in those agents' config files; never hand-edit their JSON/Markdown
+# here. Best-effort: a missing agent, a broken import, or an absent tsx must not abort the uninstall.
+echo "==> Removing Memmy/Cuby integrations injected into other agents"
 TSX_BIN="$ROOT_DIR/node_modules/.bin/tsx"
 if [ -x "$TSX_BIN" ]; then
-  uninstall_dir="$(mktemp -d "${TMPDIR:-/tmp}/memmy-agent-uninstall.XXXXXX")"
+  uninstall_dir="$(mktemp -d "${TMPDIR:-/tmp}/cuby-agent-uninstall.XXXXXX")"
   # .mts forces an ES module so the script below can use top-level await under tsx.
   uninstall_script="$uninstall_dir/uninstall.mts"
   cat > "$uninstall_script" <<'NODE'
-const root = process.env.MEMMY_ROOT;
+const root = process.env.CUBY_ROOT;
 const base = root + "/App/backend/src/adapters/outbound/skill-writer/";
 const specs = [
   ["codex/index.ts", "createCodexSkillTarget"],
@@ -225,25 +262,27 @@ for (const [rel, factory] of specs) {
   }
 }
 NODE
-  MEMMY_ROOT="$ROOT_DIR" "$TSX_BIN" "$uninstall_script" 2>&1 || echo "agent-integration cleanup skipped (non-fatal)"
+  CUBY_ROOT="$ROOT_DIR" "$TSX_BIN" "$uninstall_script" 2>&1 || echo "agent-integration cleanup skipped (non-fatal)"
   rm -rf "$uninstall_dir"
 else
-  echo "skipped: repo tsx not found ($TSX_BIN); other-agent Memmy hooks/skills left untouched"
+  echo "skipped: repo tsx not found ($TSX_BIN); other-agent Memmy/Cuby hooks/skills left untouched"
 fi
 
-# 2. Clear Memmy environment variables and shell startup entries.
-echo "==> Clearing Memmy environment variables"
+# 2. Clear Memmy/Cuby environment variables and shell startup entries.
+echo "==> Clearing Memmy/Cuby environment variables"
 clear_memmy_environment
 
-# 3. Detach leftover Memmy DMG volumes.
+# 3. Detach leftover Memmy/Cuby DMG volumes.
 echo "==> Detaching leftover DMG volumes"
-for vol in /Volumes/Memmy /Volumes/Memmy\ *; do
+for vol in /Volumes/Memmy /Volumes/Memmy\ * /Volumes/Cuby /Volumes/Cuby\ *; do
   [ -d "$vol" ] && hdiutil detach "$vol" -quiet 2>/dev/null || true
 done
 
-# 4. Delete the app bundle; the bundled CLI is removed with it.
-echo "==> Deleting App: $APP_PATH"
-rm -rf "$APP_PATH"
+# 4. Delete the app bundles; the bundled CLI is removed with them.
+echo "==> Deleting Apps: ${APP_PATHS[*]}"
+for app_path in "${APP_PATHS[@]}"; do
+  rm -rf "$app_path"
+done
 
 # 5. Delete CLI symlinks.
 echo "==> Deleting CLI symlinks"
@@ -269,7 +308,7 @@ done
 
 # Result check.
 echo "path-check:"
-for path in "$APP_PATH" "${CLI_SYMLINKS[@]}" "${USER_PATHS[@]}" "${BUILD_PATHS[@]}"; do
+for path in "${APP_PATHS[@]}" "${CLI_SYMLINKS[@]}" "${USER_PATHS[@]}" "${BUILD_PATHS[@]}"; do
   if [ -e "$path" ] || [ -L "$path" ]; then
     echo "still-exists: $path"
   else
@@ -277,5 +316,5 @@ for path in "$APP_PATH" "${CLI_SYMLINKS[@]}" "${USER_PATHS[@]}" "${BUILD_PATHS[@
   fi
 done
 
-echo "Done. The Spotlight index may lag; leftover Memmy build artifacts will stop appearing in search shortly."
-echo "Important: already-running parent apps keep their inherited environment. Fully quit and reopen Codex and all terminals before reinstalling or testing Memmy."
+echo "Done. The Spotlight index may lag; leftover Memmy/Cuby build artifacts will stop appearing in search shortly."
+echo "Important: already-running parent apps keep their inherited environment. Fully quit and reopen Codex and all terminals before reinstalling or testing Cuby."

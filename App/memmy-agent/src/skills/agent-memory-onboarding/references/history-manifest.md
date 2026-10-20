@@ -28,7 +28,7 @@ Rules:
 4. Preserve useful tool results only when they explain the assistant answer. Drop bulky tool output.
 5. Do not summarize during extraction. L1 memory stores the original user/assistant turn; later processing creates higher-level summaries.
 6. For an incremental scan, it is safe to include records after the supplied boundary even if some were imported during the initial 500-turn window. Stable `messageId` values make that overlap idempotent.
-7. Keep extraction code temporary in the Memmy workspace. Do not modify the source Agent's history database.
+7. Keep extraction code temporary in the Cuby workspace. Do not modify the source Agent's history database.
 8. For an initial scan, never emit an empty manifest or invent an epoch boundary. Leave the scan pending until at least one complete turn is verified.
 9. Provenance must identify the active product surface as well as the container. An empty database from a background daemon does not prove that a desktop app's remote web-chat surface has no history.
 10. Build the manifest and automatic-sync recipe from one canonical mapping. Compare representative outputs field-for-field before importing.

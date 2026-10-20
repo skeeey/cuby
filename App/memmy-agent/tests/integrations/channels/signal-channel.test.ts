@@ -35,20 +35,20 @@ const eventSourceMock = vi.hoisted(() => {
 
 vi.mock("eventsource", () => ({ EventSource: eventSourceMock.EventSource }));
 
-const oldConfig = process.env.MEMMY_CONFIG;
+const oldConfig = process.env.CUBY_CONFIG;
 const roots: string[] = [];
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-signal-"));
   roots.push(root);
-  process.env.MEMMY_CONFIG = path.join(root, "config.yaml");
+  process.env.CUBY_CONFIG = path.join(root, "config.yaml");
   return root;
 }
 
 afterEach(() => {
   vi.restoreAllMocks();
   eventSourceMock.reset();
-  process.env.MEMMY_CONFIG = oldConfig;
+  process.env.CUBY_CONFIG = oldConfig;
   setStorePathForTests(null);
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });

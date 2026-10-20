@@ -41,7 +41,7 @@ describe("MemoryPageView", () => {
     expect(html).toContain("sidebar-resize-handle");
     expect(html).toContain("min-w-0 flex-1 flex flex-col overflow-hidden");
     expect(html).toContain("app-frame-page-content min-h-0 flex-1 overflow-y-auto py-6");
-    expect(html).not.toContain("memmy-read.png");
+    expect(html).not.toContain("cuby-read.png");
     expect(html).not.toContain(">O</span>");
   });
 

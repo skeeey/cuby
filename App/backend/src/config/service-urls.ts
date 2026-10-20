@@ -12,8 +12,8 @@ export interface CloudClientConfig {
 /** Handles resolve cloud client config. */
 export function resolveCloudClientConfig(env: NodeJS.ProcessEnv): CloudClientConfig {
   return {
-    baseUrl: env.MEMMY_CLOUD_URL?.trim() || resolveCloudServiceBaseUrl(env.MEMMY_CLOUD_SERVICE),
-    timeoutMs: Number.parseInt(env.MEMMY_CLOUD_TIMEOUT_MS ?? "5000", 10)
+    baseUrl: env.CUBY_CLOUD_URL?.trim() || resolveCloudServiceBaseUrl(env.CUBY_CLOUD_SERVICE),
+    timeoutMs: Number.parseInt(env.CUBY_CLOUD_TIMEOUT_MS ?? "5000", 10)
   };
 }
 
@@ -30,7 +30,7 @@ export function resolveCuberouterClientConfig(
   settings: CuberouterSettings = {}
 ): CuberouterClientConfig {
   return {
-    model: env.MEMMY_CUBEROUTER_MODEL?.trim() || settings.model?.trim() || "deepseek-v4.1-flash",
-    timeoutMs: Number.parseInt(env.MEMMY_CUBEROUTER_TIMEOUT_MS ?? "", 10) || settings.timeoutMs || 10_000
+    model: env.CUBY_CUBEROUTER_MODEL?.trim() || settings.model?.trim() || "deepseek-v4.1-flash",
+    timeoutMs: Number.parseInt(env.CUBY_CUBEROUTER_TIMEOUT_MS ?? "", 10) || settings.timeoutMs || 10_000
   };
 }

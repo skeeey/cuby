@@ -1968,7 +1968,7 @@ function buildAssistantMessage(
 
 function normalizeTimeout(value: number | null | undefined): number | null {
   if (value == null) {
-    const raw = process.env.MEMMY_AGENT_LLM_TIMEOUT_S ?? "300";
+    const raw = process.env.CUBY_AGENT_LLM_TIMEOUT_S ?? "300";
     const parsed = Number(raw);
     return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
   }

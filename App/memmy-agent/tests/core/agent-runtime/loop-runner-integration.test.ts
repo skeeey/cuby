@@ -13,7 +13,7 @@ import { Session, SessionManager } from "../../../src/core/session/manager.js";
 import { GuiTranscriptMirror } from "../../../src/entrypoints/frontend-bridge/gui-transcript-sync.js";
 
 const roots: string[] = [];
-const originalDataDir = process.env.MEMMY_AGENT_DATA_DIR;
+const originalDataDir = process.env.CUBY_AGENT_DATA_DIR;
 
 function workspace(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-loop-"));
@@ -71,8 +71,8 @@ async function waitUntil(predicate: () => boolean | Promise<boolean>, timeoutMs 
 
 afterEach(() => {
   vi.restoreAllMocks();
-  if (originalDataDir === undefined) delete process.env.MEMMY_AGENT_DATA_DIR;
-  else process.env.MEMMY_AGENT_DATA_DIR = originalDataDir;
+  if (originalDataDir === undefined) delete process.env.CUBY_AGENT_DATA_DIR;
+  else process.env.CUBY_AGENT_DATA_DIR = originalDataDir;
   for (const dir of roots.splice(0)) fs.rmSync(dir, { recursive: true, force: true });
 });
 
@@ -137,7 +137,7 @@ describe("AgentLoop direct processing", () => {
 
   it("keeps a projected CLI Session on its canonical workspace across the whole turn", async () => {
     const root = workspace();
-    process.env.MEMMY_AGENT_DATA_DIR = path.join(root, "data");
+    process.env.CUBY_AGENT_DATA_DIR = path.join(root, "data");
     const canonicalWorkspace = path.join(root, "canonical");
     const workspaceAlias = path.join(root, "alias");
     fs.mkdirSync(canonicalWorkspace, { recursive: true });

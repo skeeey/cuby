@@ -424,15 +424,15 @@ export async function connectInMemoryMcpServer(server: any): Promise<InMemoryMcp
 
 function ocuPermissionMessage(status: PermissionPreflight): string {
   if (status.state === 'unknown' && status.reason === 'helperPauseFailed') return '未能安全暂停当前 Open Computer Use 辅助程序，本次操作未执行，未打开授权设置。请关闭正在使用它的其他任务后重新发送消息。';
-  if (status.state === 'unknown' && status.reason === 'desktopUnavailable') return '请返回 Memmy 的可见聊天窗口后重新发送消息，以便检查 Open Computer Use 的权限。本次应用操作未执行。';
-  if (process.env.MEMMY_DESKTOP_MANAGED_GATEWAY === '1' && (status.state === 'missing' || (status.state === 'unknown' && status.reason === 'screenCaptureUnavailable'))) return '电脑操作已暂停，尚未完成权限设置。你可以重新发送消息，在授权面板中完成设置后点击“继续任务”。';
-  if (status.state === 'unknown' && status.reason === 'screenCaptureUnavailable') return 'Open Computer Use 已能读取 Memmy 界面，但未取得截图，本次应用操作未执行。辅助程序已暂停，请在 Memmy 的引导框点击“打开系统设置”，检查 Open Computer Use 的屏幕录制权限。完成后重新发送消息，Memmy 会启动当前辅助程序并重新检查。';
+  if (status.state === 'unknown' && status.reason === 'desktopUnavailable') return '请返回 Cuby 的可见聊天窗口后重新发送消息，以便检查 Open Computer Use 的权限。本次应用操作未执行。';
+  if (process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1' && (status.state === 'missing' || (status.state === 'unknown' && status.reason === 'screenCaptureUnavailable'))) return '电脑操作已暂停，尚未完成权限设置。你可以重新发送消息，在授权面板中完成设置后点击“继续任务”。';
+  if (status.state === 'unknown' && status.reason === 'screenCaptureUnavailable') return 'Open Computer Use 已能读取 Cuby 界面，但未取得截图，本次应用操作未执行。辅助程序已暂停，请在 Cuby 的引导框点击“打开系统设置”，检查 Open Computer Use 的屏幕录制权限。完成后重新发送消息，Cuby 会启动当前辅助程序并重新检查。';
   if (status.state !== 'missing') return '无法确认 Open Computer Use 的系统权限或连接状态，本次应用操作未执行。请检查辅助程序后重新发送消息。';
   const permissions = status.missingPermissions ?? [status.permission];
   const labels = permissions.map(p => p === 'screenRecording' ? '屏幕录制' : p === 'inputMonitoring' ? '输入监控' : '辅助功能');
   const settings = labels.map(label => `系统设置 → 隐私与安全性 → ${label === '屏幕录制' ? '屏幕与系统音频录制（屏幕录制）' : label}`).join('\n');
-  const guide = process.env.MEMMY_DESKTOP_MANAGED_GATEWAY === '1' ? '请在 Memmy 的引导框点击“打开系统设置”。' : '请在 Open Computer Use 授权窗口完成授权。';
-  const restart = process.env.MEMMY_DESKTOP_MANAGED_GATEWAY === '1' ? '辅助程序已暂停。完成后重新发送消息，Memmy 会启动当前辅助程序并重新检查；本次操作不会自动继续。' : '若系统提示「退出并重新打开」，请重启 Open Computer Use 辅助程序；Memmy 无需退出。完成后重新发送消息，我会重新检查权限。';
+  const guide = process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1' ? '请在 Cuby 的引导框点击“打开系统设置”。' : '请在 Open Computer Use 授权窗口完成授权。';
+  const restart = process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1' ? '辅助程序已暂停。完成后重新发送消息，Cuby 会启动当前辅助程序并重新检查；本次操作不会自动继续。' : '若系统提示「退出并重新打开」，请重启 Open Computer Use 辅助程序；Cuby 无需退出。完成后重新发送消息，我会重新检查权限。';
   return `Open Computer Use 缺少 macOS「${labels.join('、')}」权限，本次应用操作未执行。\n\n${guide}若找不到窗口，请打开：\n${settings}\n开启其中的 Open Computer Use。\n\n${restart}`;
 }
 
@@ -466,7 +466,7 @@ export class MCPToolWrapper extends Tool {
 
   get description(): string {
     if (this.managed && this.originalName !== 'list_apps') {
-      return `${this.toolDescription}\nFor a new user request, call this tool even after an earlier permission or connection failure. Memmy rechecks permissions and reconnects before executing; never infer current permission from previous messages. If this attempt is blocked, end this turn and wait for a new user message.`;
+      return `${this.toolDescription}\nFor a new user request, call this tool even after an earlier permission or connection failure. Cuby rechecks permissions and reconnects before executing; never infer current permission from previous messages. If this attempt is blocked, end this turn and wait for a new user message.`;
     }
     return this.toolDescription;
   }
@@ -508,7 +508,7 @@ export class MCPToolWrapper extends Tool {
         // doctor owns native onboarding. Opening Settings here as well races
         // its Allow/drag flow and leaves multiple permission windows visible.
         return status.state === "missing"
-          ? `Computer Use is waiting for macOS ${status.permission} permission. The requested application operation was not executed. Ask the user to complete the Computer Use permission window. Only the helper may need restarting; Memmy stays open. End this turn. Wait for a NEW user message after authorization; do not retry in this turn or use browser/exec/AppleScript as a fallback.`
+          ? `Computer Use is waiting for macOS ${status.permission} permission. The requested application operation was not executed. Ask the user to complete the Computer Use permission window. Only the helper may need restarting; Cuby stays open. End this turn. Wait for a NEW user message after authorization; do not retry in this turn or use browser/exec/AppleScript as a fallback.`
           : "Computer Use could not verify its native macOS permissions. The requested application operation was not executed. Explain that the permission check failed and end this turn. Do not use another executor as a fallback; wait for a new user message before retrying.";
       }
     }
@@ -739,7 +739,7 @@ export async function connectMcpServers(
           cwd: cfgValue(cfg, "cwd") ?? null,
         });
         if (managedConfig) {
-          const desktop = process.env.MEMMY_DESKTOP_MANAGED_GATEWAY === '1';
+          const desktop = process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1';
           const helperApp = path.dirname(path.dirname(path.dirname(normalizedCommand)));
           managed = new ManagedOcuSession(async () => {
             const owned: Array<() => Promise<void>> = [];
@@ -906,7 +906,7 @@ export function runtimeLines(
       lines.push(
         `MCP Preset Attachment: @${rawName} (${display}; transport=${transport}) is configured in WebUI Settings, ` +
           "but this gateway has not loaded the latest MCP settings yet. " +
-          `Tools with prefix \`${prefix}\` may not be available yet; if they are missing, tell the user to restart memmy.`,
+          `Tools with prefix \`${prefix}\` may not be available yet; if they are missing, tell the user to restart Cuby.`,
       );
       continue;
     }
@@ -915,7 +915,7 @@ export function runtimeLines(
         `MCP Preset Attachment: @${rawName} (${display}; transport=${transport}) is configured, ` +
           "but its MCP connection is not currently live. " +
           `Tools with prefix \`${prefix}\` may be unavailable; tell the user to open Settings, ` +
-          "run the preset test, and restart memmy only if hot reload is unavailable.",
+          "run the preset test, and restart Cuby only if hot reload is unavailable.",
       );
       continue;
     }
@@ -1035,7 +1035,7 @@ export async function reloadServers(state: McpState, registry: ToolRegistry): Pr
     } catch (error) {
       return {
         ok: false,
-        message: "Could not reload MCP config. Restart memmy to pick up changes.",
+        message: "Could not reload MCP config. Restart Cuby to pick up changes.",
         requires_restart: true,
         error: String((error as Error).message ?? error),
       };
@@ -1074,8 +1074,8 @@ export async function reloadServers(state: McpState, registry: ToolRegistry): Pr
     let message: string;
     if (failed.length) message = `MCP config reloaded, but some servers did not connect: ${failed.join(", ")}`;
     else if (unchanged) message = "MCP config is already live.";
-    else if (retryMissing.length && !added.length && !changed.length && !removed.length) message = "MCP connections refreshed without restarting memmy.";
-    else message = "MCP config reloaded without restarting memmy.";
+    else if (retryMissing.length && !added.length && !changed.length && !removed.length) message = "MCP connections refreshed without restarting Cuby.";
+    else message = "MCP config reloaded without restarting Cuby.";
 
     return {
       ok: failed.length === 0,
@@ -1115,7 +1115,7 @@ export async function requestMcpReload(bus: any, { timeout = 15 }: { timeout?: n
   if (typeof publish !== "function") {
     return {
       ok: false,
-      message: "MCP hot reload is unavailable. Restart memmy to pick up changes.",
+      message: "MCP hot reload is unavailable. Restart Cuby to pick up changes.",
       requires_restart: true,
     };
   }
@@ -1140,7 +1140,7 @@ export async function requestMcpReload(bus: any, { timeout = 15 }: { timeout?: n
         }),
     new Promise<Record<string, any>>((resolve) => setTimeout(() => resolve({
       ok: false,
-      message: "MCP hot reload timed out. Restart memmy to pick up changes.",
+      message: "MCP hot reload timed out. Restart Cuby to pick up changes.",
       requires_restart: true,
     }), timeoutMs)),
   ]);
@@ -1166,7 +1166,7 @@ export async function handleRuntimeControl(
   if (!canReload) {
     result = {
       ok: false,
-      message: "MCP hot reload was skipped while agent turns were active. Restart memmy to pick up changes.",
+      message: "MCP hot reload was skipped while agent turns were active. Restart Cuby to pick up changes.",
       requires_restart: true,
     };
   } else {
@@ -1175,7 +1175,7 @@ export async function handleRuntimeControl(
     } catch (error) {
       result = {
         ok: false,
-        message: "MCP hot reload failed. Restart memmy to pick up changes.",
+        message: "MCP hot reload failed. Restart Cuby to pick up changes.",
         requires_restart: true,
         error: String((error as Error).message ?? error),
       };

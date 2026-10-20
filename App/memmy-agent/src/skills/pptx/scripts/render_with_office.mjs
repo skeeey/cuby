@@ -58,7 +58,7 @@ async function validRoot(directory, key) {
 
 async function resolveRenderer() {
   const roots = [];
-  for (const name of ["MEMMY_OFFICE_RENDERING_ROOT", "MEMMY_DOCX_RENDERING_ROOT"]) {
+  for (const name of ["CUBY_OFFICE_RENDERING_ROOT", "CUBY_DOCX_RENDERING_ROOT"]) {
     const value = process.env[name]?.trim();
     if (value) roots.push(path.resolve(value));
   }

@@ -354,7 +354,7 @@ function agentApiType(protocol: string): "auto" | "chatCompletions" | "responses
 
 function createUnavailableMemmyConfigWriter(): MemmyConfigWriter {
   const unavailable = () => {
-    throw new Error("Memmy config writer is not configured");
+    throw new Error("Cuby config writer is not configured");
   };
 
   return {

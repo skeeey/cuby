@@ -10,7 +10,7 @@ describe("Viewer Agent source labels", () => {
   it("uses the same display names as Memmy", () => {
     expect(sourceAgentLabel("hermes")).toBe("Hermes");
     expect(sourceAgentLabel("OPENCLAW")).toBe("OpenClaw");
-    expect(sourceAgentLabel("memmy-agent")).toBe("Memmy");
+    expect(sourceAgentLabel("memmy-agent")).toBe("Cuby");
   });
 
   it("normalizes source ids and creates initials for custom Agents", () => {
@@ -31,7 +31,7 @@ describe("Viewer Agent source labels", () => {
     expect(options).toEqual(expect.arrayContaining([
       { source: "hermes", count: 3, label: "Hermes" },
       { source: "manual_kimi", count: 0, label: "Kimi Code" },
-      { source: "memmy_agent", count: 0, label: "Memmy" },
+      { source: "memmy_agent", count: 0, label: "Cuby" },
       { source: "cursor", count: 0, label: "Cursor" },
       { source: "opencode", count: 0, label: "OpenCode" },
     ]));

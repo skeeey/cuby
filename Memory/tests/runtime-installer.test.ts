@@ -35,11 +35,11 @@ describe("standalone Memory runtime installer", () => {
   it("maps service restarts to each user service manager", () => {
     expect(userServiceRestartCommand("darwin", 501)).toEqual({
       command: "launchctl",
-      args: ["kickstart", "-k", "gui/501/com.memtensor.memmy-memory"]
+      args: ["kickstart", "-k", "gui/501/com.memtensor.cuby-memory"]
     });
     expect(userServiceRestartCommand("linux")).toEqual({
       command: "systemctl",
-      args: ["--user", "restart", "memmy-memory.service"]
+      args: ["--user", "restart", "cuby-memory.service"]
     });
     expect(userServiceRestartCommand("win32")).toMatchObject({
       command: "powershell.exe"
@@ -77,9 +77,9 @@ describe("standalone Memory runtime installer", () => {
     expect(pointer?.version).toBe("2.1.0");
     expect(readFileSync(pointer!.entrypoint, "utf8")).toContain("runtime fixture");
     const launcher = readFileSync(join(home, "bin", "memmy-memory-service.cjs"), "utf8");
-    expect(launcher).toContain(`MEMMY_HOME: ${JSON.stringify(home)}`);
-    expect(launcher).toContain(`MEMMY_CONFIG: ${JSON.stringify(join(home, "config.yaml"))}`);
-    expect(launcher).toContain("MEMMY_EMBEDDING_MODEL_ROOT");
+    expect(launcher).toContain(`CUBY_HOME: ${JSON.stringify(home)}`);
+    expect(launcher).toContain(`CUBY_CONFIG: ${JSON.stringify(join(home, "config.yaml"))}`);
+    expect(launcher).toContain("CUBY_EMBEDDING_MODEL_ROOT");
     expect(JSON.parse(readFileSync(join(home, "memory-service", "installation.json"), "utf8"))).toMatchObject({
       agents: ["openclaw", "hermes"]
     });
@@ -307,7 +307,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
       });
       await started;
@@ -340,7 +340,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
         healthCheckTimeoutMs: 1
       });
@@ -382,7 +382,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory: nextDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
         healthCheckTimeoutMs: 1_000
       });
@@ -414,7 +414,7 @@ describe("standalone Memory runtime installer", () => {
       serviceVersion: "stale"
     }));
     writeFileSync(join(home, "memory-service", "runtime.json"), JSON.stringify({
-      endpoint: "http://127.0.0.1:18960"
+      endpoint: "http://127.0.0.1:28960"
     }));
     vi.useFakeTimers();
     let resolveStarted!: () => void;
@@ -433,7 +433,7 @@ describe("standalone Memory runtime installer", () => {
       const install = installMemoryRuntime({
         home,
         runtimeDirectory,
-        endpoint: "http://127.0.0.1:18960",
+        endpoint: "http://127.0.0.1:28960",
         skipServiceRegistration: true,
         healthCheckTimeoutMs: 1_000
       });

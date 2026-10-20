@@ -14,10 +14,10 @@ import { syncRuntimeConfigWithAppState } from "../runtime-config-sync-service.js
 
 let tempDir: string | undefined;
 let store: AppStateStore | undefined;
-const originalCloudService = process.env.MEMMY_CLOUD_SERVICE;
+const originalCloudService = process.env.CUBY_CLOUD_SERVICE;
 
 beforeEach(() => {
-  process.env.MEMMY_CLOUD_SERVICE = "https://cloud.example.test";
+  process.env.CUBY_CLOUD_SERVICE = "https://cloud.example.test";
 });
 
 afterEach(() => {
@@ -25,8 +25,8 @@ afterEach(() => {
   store = undefined;
   if (tempDir) rmSync(tempDir, { recursive: true, force: true });
   tempDir = undefined;
-  if (originalCloudService === undefined) delete process.env.MEMMY_CLOUD_SERVICE;
-  else process.env.MEMMY_CLOUD_SERVICE = originalCloudService;
+  if (originalCloudService === undefined) delete process.env.CUBY_CLOUD_SERVICE;
+  else process.env.CUBY_CLOUD_SERVICE = originalCloudService;
 });
 
 describe("syncRuntimeConfigWithAppState", () => {
@@ -750,7 +750,7 @@ function createContext(): {
 } {
   tempDir = mkdtempSync(join(tmpdir(), "memmy-runtime-sync-"));
   store = createAppStateStore({ databasePath: join(tempDir, "app.sqlite") });
-  const memmyConfigPath = join(tempDir, ".memmy", "config.yaml");
+  const memmyConfigPath = join(tempDir, ".cuby", "config.yaml");
   const writeRaw = (content: string): void => {
     mkdirSync(dirname(memmyConfigPath), { recursive: true });
     writeFileSync(memmyConfigPath, content, "utf8");

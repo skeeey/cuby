@@ -37,8 +37,8 @@ describe("DeepSeek Harness skill target", () => {
     const pluginPath = join(pluginDirectory, "index.mjs");
     const clientPath = join(pluginDirectory, "client.js");
     const packagePath = join(pluginDirectory, "package.json");
-    const skillPath = join(rootDirectory, "skills", "memmy-memory", "SKILL.md");
-    const resumeSkillPath = join(rootDirectory, "skills", "memmy-resume", "SKILL.md");
+    const skillPath = join(rootDirectory, "skills", "cuby-memory", "SKILL.md");
+    const resumeSkillPath = join(rootDirectory, "skills", "cuby-resume", "SKILL.md");
     const patch = readFileSync(patchPath, "utf8");
     expect(existsSync(pluginPath)).toBe(true);
     const packageManifest = JSON.parse(readFileSync(packagePath, "utf8")) as Record<string, unknown>;
@@ -52,7 +52,7 @@ describe("DeepSeek Harness skill target", () => {
       },
       dsh: { client: { platform: "web", inject: ["@deepseek-ai/dsh-client-ui-conversation"] } }
     });
-    expect(readFileSync(skillPath, "utf8")).toContain('memmy-memory search "query text" --source deepseek_harness');
+    expect(readFileSync(skillPath, "utf8")).toContain('cuby-memory search "query text" --source deepseek_harness');
     expect(readFileSync(resumeSkillPath, "utf8")).toContain("--source deepseek_harness");
     expect(patch).toContain("id: user-plugin");
     expect(patch).toContain("# memmy-memory plugin:start");
@@ -61,7 +61,7 @@ describe("DeepSeek Harness skill target", () => {
     expect(patch).toContain(memmyConfigPath);
     expect(YAML.parse(patch)).toHaveLength(2);
     expect(readFileSync(pluginPath, "utf8")).toContain(
-      '"Memmy request to " + url + " failed: " + formatErrorWithCause(error)'
+      '"Cuby request to " + url + " failed: " + formatErrorWithCause(error)'
     );
     expect(spawnSync(process.execPath, ["--check", pluginPath], { encoding: "utf8" })).toMatchObject({ status: 0 });
     expect(spawnSync(process.execPath, ["--check", clientPath], { encoding: "utf8" })).toMatchObject({ status: 0 });
@@ -70,8 +70,8 @@ describe("DeepSeek Harness skill target", () => {
     await target.uninstallPlugin?.("deepseek_harness");
 
     expect(existsSync(pluginDirectory)).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-memory"))).toBe(false);
-    expect(existsSync(join(rootDirectory, "skills", "memmy-resume"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-memory"))).toBe(false);
+    expect(existsSync(join(rootDirectory, "skills", "cuby-resume"))).toBe(false);
     expect(readFileSync(patchPath, "utf8")).toBe(
       ["# user patch", "- insert:", "    - id: user-plugin", "      name: '@example/user-plugin'", ""].join("\n")
     );
@@ -262,7 +262,7 @@ describe("DeepSeek Harness skill target", () => {
 
     const client = handoff?.factory();
     expect(() => client?.apply({ get: () => undefined })).toThrow(
-      "memmy-memory requires uiConversation.events or conversationEvents"
+      "cuby-memory requires uiConversation.events or conversationEvents"
     );
   });
 
@@ -304,7 +304,7 @@ describe("DeepSeek Harness skill target", () => {
         "    endpoint: http://127.0.0.1:18799",
         "memmyMemory:",
         "  storage:",
-        "    endpoint: http://127.0.0.1:18960",
+        "    endpoint: http://127.0.0.1:28960",
         ""
       ].join("\n"),
       "utf8"
@@ -451,7 +451,7 @@ describe("DeepSeek Harness skill target", () => {
       source: "deepseek_harness"
     });
     expect(requests.find((request) => request.path === "/api/v1/turns/start")?.origin).toBe(
-      "http://127.0.0.1:18960"
+      "http://127.0.0.1:28960"
     );
     expect(requests.find((request) => request.path === "/api/v1/source-turns/complete")?.body).toMatchObject({
       sessionId: "memmy-session-1",

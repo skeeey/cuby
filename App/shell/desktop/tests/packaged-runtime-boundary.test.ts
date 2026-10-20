@@ -36,10 +36,10 @@ const createMemoryRuntimeManifestPath = fileURLToPath(
 );
 const winUnsignedBuilderPath = fileURLToPath(new URL("../electron-builder.win.unsigned.yml", import.meta.url));
 const winUnsignedInstallerIncludePath = fileURLToPath(new URL("../build/installer-win-unsigned.nsh", import.meta.url));
-const winStandardUpgradeCheckPath = fileURLToPath(new URL("../build/MemmyWindowsStandardUpgradeCheck.ps1", import.meta.url));
-const winUpgradeRelayScriptPath = fileURLToPath(new URL("../build/MemmyWindowsUpgradeRelay.ps1", import.meta.url));
-const winUpgradeRecoveryScriptPath = fileURLToPath(new URL("../build/MemmyWindowsUpgradeRecovery.ps1", import.meta.url));
-const winDataMigrationScriptPath = fileURLToPath(new URL("../build/MemmyWindowsDataMigration.ps1", import.meta.url));
+const winStandardUpgradeCheckPath = fileURLToPath(new URL("../build/CubyWindowsStandardUpgradeCheck.ps1", import.meta.url));
+const winUpgradeRelayScriptPath = fileURLToPath(new URL("../build/CubyWindowsUpgradeRelay.ps1", import.meta.url));
+const winUpgradeRecoveryScriptPath = fileURLToPath(new URL("../build/CubyWindowsUpgradeRecovery.ps1", import.meta.url));
+const winDataMigrationScriptPath = fileURLToPath(new URL("../build/CubyWindowsDataMigration.ps1", import.meta.url));
 const electronBuilderInstallSectionPath = fileURLToPath(
   new URL("../../../../node_modules/app-builder-lib/templates/nsis/installSection.nsh", import.meta.url)
 );
@@ -59,7 +59,7 @@ const unsignedElectronBuilderPath = fileURLToPath(new URL("../electron-builder.u
 const macEntitlementsPath = fileURLToPath(new URL("../build/entitlements.mac.plist", import.meta.url));
 const macEntitlementsInheritPath = fileURLToPath(new URL("../build/entitlements.mac.inherit.plist", import.meta.url));
 const winElectronBuilderPath = fileURLToPath(new URL("../electron-builder.win.yml", import.meta.url));
-const winUpdatePromptScriptPath = fileURLToPath(new URL("../build/MemmyUpdatePrompt.ps1", import.meta.url));
+const winUpdatePromptScriptPath = fileURLToPath(new URL("../build/CubyUpdatePrompt.ps1", import.meta.url));
 const legacyApplicationSupportDir = ["Application Support/Memmy", "+"].join("");
 const legacyProductPattern = new RegExp([
   "Memmy\\+",
@@ -96,8 +96,8 @@ describe("desktop packaged runtime boundaries", () => {
       'import { runMigrations } from "@memmy/migrations";'
     );
     expect(runtimeServices).toContain('"migrate"');
-    expect(runtimeServices).toContain("MEMMY_MIGRATIONS_READY_CONFIG");
-    expect(runtimeServices).toContain("MEMMY_MIGRATIONS_READY_WORKSPACE");
+    expect(runtimeServices).toContain("CUBY_MIGRATIONS_READY_CONFIG");
+    expect(runtimeServices).toContain("CUBY_MIGRATIONS_READY_WORKSPACE");
   });
 
   it("keeps Memory runtime dependencies owned by the Memory workspace", () => {
@@ -266,7 +266,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(winSource).toContain(
       '"$unpacked_runtime/memmy-agent/node_modules/@memmy/migrations/dist/state-store.js"',
     );
-    expect(winSource).toContain("MEMMY_MIGRATION_STATE_MODULE_PATH");
+    expect(winSource).toContain("CUBY_MIGRATION_STATE_MODULE_PATH");
     expect(winSource).toContain('import { pathToFileURL } from "node:url";');
     expect(winSource).toContain("stateStore.validateMigrationState");
     expect(winSource).toContain("Migrations runtime state behavior mismatch");
@@ -487,7 +487,7 @@ describe("desktop packaged runtime boundaries", () => {
   it("keeps the desktop main process on the shared Memmy identity and config path", () => {
     const source = readFileSync(mainSourcePath, "utf8");
 
-    expect(source).toContain('app.setName("Memmy");');
+    expect(source).toContain('app.setName("Cuby");');
     expect(source).toContain("windowsDataLayout = resolveWindowsDataLayout({");
     expect(source).toContain("const userDataPath = windowsDataLayout?.userDataPath ?? resolveDesktopUserDataPath(edition);");
     expect(source).toContain("const memmyHome = windowsDataLayout?.runtimeHomePath ?? resolveDesktopRuntimeHomePath(edition);");
@@ -495,8 +495,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).not.toContain('return join(dirname(process.execPath), "data");');
     expect(source).toContain('windowsDataLayout?.updatesPath ?? join(app.getPath("userData"), "updates")');
     expect(source).toContain("advanceWindowsDataMigrationAfterBoot(");
-    expect(source).toContain('[join(homedir(), ".memmy")]');
-    expect(source).toContain("process.env.MEMMY_MEMORY_DB = memoryDatabasePath;");
+    expect(source).toContain('[join(homedir(), ".cuby")]');
+    expect(source).toContain("process.env.CUBY_MEMORY_DB = memoryDatabasePath;");
     expect(source).toContain('const appDatabaseFile = join(app.getPath("userData"), "app.sqlite");');
     expect(source).toContain("accountChannel: resolveCurrentDesktopAccountChannel()");
     expect(source).toContain("runtimeServices = await startManagedRuntimeServices({");
@@ -508,7 +508,7 @@ describe("desktop packaged runtime boundaries", () => {
       runtimeServicesSource.indexOf("browserPreparation = startPackagedBrowserPreparation(")
     );
     expect(source).toContain("resolveDevelopmentRuntimeEntryPaths(import.meta.dirname)");
-    expect(source).toContain("memmyConfigPath: process.env.MEMMY_CONFIG");
+    expect(source).toContain("memmyConfigPath: process.env.CUBY_CONFIG");
     expect(source).not.toContain("startDesktopRuntimeServices");
   });
 
@@ -548,7 +548,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(migrationSource).toContain("rollback requires recovery from '$StatePath'");
   });
 
-  it("persists gtag client_id into the shared ~/.memmy analytics-client-id file", () => {
+  it("persists gtag client_id into the shared ~/.cuby analytics-client-id file", () => {
     const mainSource = readFileSync(mainSourcePath, "utf8");
     expect(mainSource).toContain('import { persistSharedAnalyticsClientId } from "./analytics-client-id-store.js"');
     expect(mainSource).toContain("persistSharedAnalyticsClientId(clientId)");
@@ -577,7 +577,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("boot:error");
     expect(source).toContain("showPackagedStartupError(error)");
     expect(source).toContain("dialog.showErrorBox");
-    expect(source).toContain("Memmy 启动失败");
+    expect(source).toContain("Cuby 启动失败");
   });
 
   it("hides the default in-window menu bar outside macOS", () => {
@@ -659,9 +659,9 @@ describe("desktop packaged runtime boundaries", () => {
     expect(unsignedBuilderConfig).toContain("include: build/installer-win-unsigned.nsh");
     expect(includeSource).toContain("!macro customInit");
     expect(includeSource).toContain("--memmy-upgrade-relayed");
-    expect(includeSource).toContain("MemmyWindowsUpgradeRelay.ps1");
-    expect(includeSource).toContain("MemmyWindowsUpgradeRecovery.ps1");
-    expect(includeSource).toContain('$LOCALAPPDATA\\Memmy\\upgrade-staging');
+    expect(includeSource).toContain("CubyWindowsUpgradeRelay.ps1");
+    expect(includeSource).toContain("CubyWindowsUpgradeRecovery.ps1");
+    expect(includeSource).toContain('$LOCALAPPDATA\\Cuby\\upgrade-staging');
     expect(includeSource).toContain("GetCurrentProcessId");
     expect(includeSource).toContain('ReadRegStr $MemmyPreviousInstalledVersion HKCU "${UNINSTALL_REGISTRY_KEY}" "DisplayVersion"');
     expect(includeSource).not.toContain('ReadRegStr $MemmyPreviousInstalledVersion HKCU "${INSTALL_REGISTRY_KEY}" "DisplayVersion"');
@@ -669,31 +669,31 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain("OriginalInstallerPid $2");
     expect(includeSource).toContain("LegacyHelperPid $3");
     expect(includeSource).toContain("ReopenAfterInstall");
-    expect(includeSource).toContain('$APPDATA\\Memmy\\prepared-required-update.json');
-    expect(includeSource).toContain("MemmyWindowsDataMigration.ps1");
+    expect(includeSource).toContain('$APPDATA\\Cuby\\prepared-required-update.json');
+    expect(includeSource).toContain("CubyWindowsDataMigration.ps1");
     expect(includeSource).not.toContain("Call MemmyRestoreRelayedUpgradeData");
     expect(includeSource).toContain("Call MemmyClearRelayedUpgradeMarkers");
     expect(includeSource).not.toContain("Call MemmyLaunchRelayedUpgrade");
     expect(includeSource).not.toContain("Call MemmyScheduleRelayedUpgradeCleanup");
-    expect(includeSource).toContain("MEMMY_UPGRADE_WORK_DIR");
-    expect(includeSource).toContain("MEMMY_UPGRADE_REOPEN_AFTER_INSTALL");
+    expect(includeSource).toContain("CUBY_UPGRADE_WORK_DIR");
+    expect(includeSource).toContain("CUBY_UPGRADE_REOPEN_AFTER_INSTALL");
     expect(includeSource).toContain("relay-ready");
     expect(includeSource).toContain("ReadyPath");
-    expect(includeSource).toContain("MemmyWindowsUpgradeCleanup.ps1");
+    expect(includeSource).toContain("CubyWindowsUpgradeCleanup.ps1");
     expect(includeSource).toContain('FileOpen $0 "$R4" w');
     expect(includeSource.indexOf('FileOpen $0 "$R4" w')).toBeLessThan(includeSource.indexOf('CopyFiles /SILENT "$EXEPATH" "$R4"'));
     expect(includeSource).toContain('ExecShell "open" "$R5"');
     expect(includeSource.match(/ExecShell "open" .* SW_HIDE/g)).toHaveLength(1);
     expect(includeSource).not.toContain('Exec \'$\\\"$R5$\\\"');
     expect(includeSource).not.toContain('Exec \'$\\\"$INSTDIR\\${PRODUCT_FILENAME}.exe$\\\" --updated\'');
-    expect(includeSource).toContain('$LOCALAPPDATA\\Memmy\\upgrade-staging\\active.lock');
+    expect(includeSource).toContain('$LOCALAPPDATA\\Cuby\\upgrade-staging\\active.lock');
     expect(includeSource).toContain('GetFullPathName $4 "$MemmyUpgradeWorkDir"');
     expect(includeSource).not.toContain('GetFullPathName $5 "$MemmyUpgradeBackupRoot"');
     expect(includeSource).toContain('${GetFileName} "$MemmyUpgradeWorkDir" $5');
-    expect(includeSource).toContain('StrCpy $0 "$MemmyUpgradeSourceInstallDir.memmy-upgrade-backup\\$4"');
+    expect(includeSource).toContain('StrCpy $0 "$MemmyUpgradeSourceInstallDir.cuby-upgrade-backup\\$4"');
     expect(includeSource).toContain('StrCmp $MemmyUpgradeBackupRoot $0 0 memmy_relay_context_failed');
-    expect(includeSource).toContain("MEMMY_UPGRADE_SOURCE_INSTALL_DIR");
-    expect(includeSource).toContain("MEMMY_UPGRADE_TARGET_INSTALL_DIR");
+    expect(includeSource).toContain("CUBY_UPGRADE_SOURCE_INSTALL_DIR");
+    expect(includeSource).toContain("CUBY_UPGRADE_TARGET_INSTALL_DIR");
     const finishPageMacroStart = includeSource.indexOf("!macro customFinishPage");
     const finishPageMacroEnd = includeSource.indexOf("!macroend", finishPageMacroStart);
     const finishPageMacroSource = includeSource.slice(finishPageMacroStart, finishPageMacroEnd);
@@ -712,38 +712,103 @@ describe("desktop packaged runtime boundaries", () => {
     expect(earlyLaunchProxyIndex).toBeGreaterThan(relayInitIndex);
     expect(earlyLaunchProxyIndex).toBeLessThan(relayStartIndex);
     expect(includeSource).toContain("SetErrorLevel");
-    expect(relaySource).toContain("Move-MemmyDirectory");
-    expect(relaySource).toContain("Assert-MemmySameVolume");
-    expect(relaySource).toContain(".memmy-upgrade-backup");
+    expect(relaySource).toContain("Move-CubyDirectory");
+    expect(relaySource).toContain("Assert-CubySameVolume");
+    expect(relaySource).toContain(".cuby-upgrade-backup");
     expect(relaySource).toContain("active.lock\\state.json");
-    expect(relaySource).toContain("Restore-MemmyData");
-    expect(relaySource).toContain("Invoke-MemmyDataMigration -Mode Prepare");
-    expect(relaySource).toContain("Invoke-MemmyDataMigration -Mode Complete");
-    expect(relaySource).toContain("Invoke-MemmyDataMigration -Mode Rollback");
+    expect(relaySource).toContain("Restore-CubyData");
+    expect(relaySource).toContain("Invoke-CubyDataMigration -Mode Prepare");
+    expect(relaySource).toContain("Invoke-CubyDataMigration -Mode Complete");
+    expect(relaySource).toContain("Invoke-CubyDataMigration -Mode Rollback");
     expect(relaySource).toContain("migration-completed");
-    expect(relaySource).toContain("Resolve-MemmyLegacyHelperReopenIntent");
-    expect(relaySource).toContain("Wait-MemmyInstallProcessesExit -TimeoutSeconds 20");
+    expect(relaySource).toContain("Resolve-CubyLegacyHelperReopenIntent");
+    expect(relaySource).toContain("Wait-CubyInstallProcessesExit -TimeoutSeconds 20");
     expect(relaySource).toContain("forcing remaining installed app processes to exit after timeout");
     expect(relaySource).toContain("if ($InstalledVersion)");
     expect(relaySource).toContain("data migration $Mode output:");
     expect(relaySource).toContain("$roamingMarkerPath");
-    expect(relaySource).toContain("MEMMY_UPGRADE_WORK_DIR");
-    expect(relaySource).toContain("MEMMY_UPGRADE_REOPEN_AFTER_INSTALL");
+    expect(relaySource).toContain("CUBY_UPGRADE_WORK_DIR");
+    expect(relaySource).toContain("CUBY_UPGRADE_REOPEN_AFTER_INSTALL");
     expect(relaySource).toContain("$installerProcess.WaitForExit()");
     expect(relaySource).not.toContain("-Wait -PassThru");
-    expect(relaySource.indexOf("Write-MemmyRelayState", relaySource.indexOf("$installerProcess = Start-Process"))).toBeGreaterThan(-1);
-    expect(relaySource).toContain("MemmyWindowsUpgradeCleanup.ps1");
+    expect(relaySource.indexOf("Write-CubyRelayState", relaySource.indexOf("$installerProcess = Start-Process"))).toBeGreaterThan(-1);
+    expect(relaySource).toContain("CubyWindowsUpgradeCleanup.ps1");
     expect(relaySource).not.toContain("cmd.exe");
     expect(relaySource).not.toContain("$env:ComSpec");
     expect(relaySource).not.toContain("ping.exe");
     expect(relaySource).toContain("--memmy-upgrade-relayed");
     expect(relaySource).toContain("upgrade verified");
-    expect(recoverySource).toContain("Test-MemmyUpgradeProcessRunning");
+    expect(recoverySource).toContain("Test-CubyUpgradeProcessRunning");
     expect(recoverySource).toContain("data-backup");
     expect(recoverySource).toContain("installer-created-data");
     expect(recoverySource).toContain("completed migration lock cleared without restoring install-local data");
     expect(recoverySource).toContain("Remove-Item -LiteralPath $LockPath");
     expect(mainSource).toContain('spawn("/bin/zsh", [helperPath, filePath, destinationAppPath, logPath, String(process.pid), options.openAfterInstall ? "1" : "0"');
+  });
+
+  it("keeps the relay's legacy home on Memmy while its C-drive target stays on Cuby", () => {
+    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
+    const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
+
+    // The legacy variable names the pre-rename home: it is handed to the migration as
+    // -LegacyRuntimeHomePath and persisted as state.legacyRuntimeHomePath.
+    expect(relaySource).toContain(
+      "$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }"
+    );
+    expect(relaySource).toContain("'-LegacyRuntimeHomePath', $legacyRuntimeHomePath,");
+    expect(relaySource).toContain("legacyRuntimeHomePath = $legacyRuntimeHomePath");
+
+    // The C:\ install-drive branch is the target runtime home, so it must resolve to .cuby
+    // on its own instead of reusing the legacy variable.
+    const cDriveBranchStart = relaySource.indexOf("[string]::Equals($installDriveRoot, 'C:\\'");
+    expect(cDriveBranchStart).toBeGreaterThan(-1);
+    const cDriveBranch = relaySource.slice(
+      relaySource.indexOf("{", cDriveBranchStart),
+      relaySource.indexOf("} else {", cDriveBranchStart)
+    );
+    expect(cDriveBranch).toContain("Join-Path $env:USERPROFILE '.cuby'");
+    expect(cDriveBranch).not.toContain("$legacyRuntimeHomePath");
+
+    // The NSIS direct path keeps passing the old home on purpose.
+    expect(includeSource).toContain('-LegacyRuntimeHomePath $\\"$PROFILE\\.memmy$\\"');
+  });
+
+  it("keeps the recovery's legacy home on Memmy and agrees with the relay about it", () => {
+    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
+    const recoverySource = readFileSync(winUpgradeRecoveryScriptPath, "utf8");
+
+    // The recovery's legacy home is the old install's home: it is handed to the migration as
+    // -LegacyRuntimeHomePath and compared against the field the relay persists.
+    const recoveryLegacyDefaultStart = recoverySource.indexOf(
+      "$expectedLegacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) {"
+    );
+    expect(recoveryLegacyDefaultStart).toBeGreaterThan(-1);
+    const recoveryLegacyDefault = recoverySource.slice(
+      recoveryLegacyDefaultStart,
+      recoverySource.indexOf("\n$", recoveryLegacyDefaultStart)
+    );
+    expect(recoveryLegacyDefault).toContain("Join-Path $env:USERPROFILE '.memmy'");
+    expect(recoveryLegacyDefault).not.toContain(".cuby");
+    expect(recoverySource).toContain("'-LegacyRuntimeHomePath', $expectedLegacyRuntimeHomePath,");
+
+    // The cross-file contract behind the comparison below: both defaults must name the same path,
+    // because the recovery asserts the relay's persisted legacyRuntimeHomePath against its own.
+    expect(relaySource).toContain(
+      "$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }"
+    );
+    expect(recoverySource).toContain(
+      "Assert-CubySamePath -Actual ([string]$state.legacyRuntimeHomePath) -Expected $expectedLegacyRuntimeHomePath"
+    );
+
+    // Every C:\-drive target branch resolves .cuby itself, never through the legacy variable.
+    const cDriveBranches = [
+      ...recoverySource.matchAll(/'C:\\', \[System\.StringComparison\]::OrdinalIgnoreCase\)\) \{\r?\n([\s\S]*?)\n\s*\}/g)
+    ].map((match) => match[1]);
+    expect(cDriveBranches).toHaveLength(3);
+    for (const branch of cDriveBranches) {
+      expect(branch).toContain(".cuby");
+      expect(branch).not.toContain("$expectedLegacyRuntimeHomePath");
+    }
   });
 
   it("bridges electron-builder shortcut retention across relayed install-directory changes", () => {
@@ -822,8 +887,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain('StrCpy $R0 "$MemmyTargetRuntimeHomePath"');
     expect(includeSource).toContain('ReadRegStr $MemmyPreviousInstallDir HKCU "${INSTALL_REGISTRY_KEY}" "InstallLocation"');
     expect(includeSource).toContain('StrCpy $MemmyDirectSourceDataPath "$MemmyPreviousInstallDir\\data"');
-    expect(includeSource).toContain('StrCpy $MemmyTargetRuntimeHomePath "$0\\MemmyData\\.memmy"');
-    expect(includeSource).toContain('StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\\.memmy"');
+    expect(includeSource).toContain('StrCpy $MemmyTargetRuntimeHomePath "$0\\CubyData\\.cuby"');
+    expect(includeSource).toContain('StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\\.cuby"');
     expect(includeSource).toContain("Call MemmyPrepareDirectDataMigration");
     expect(includeSource).toContain("Call MemmyCompleteDirectDataMigration");
     expect(customCheckSource).toContain("!insertmacro IS_POWERSHELL_AVAILABLE");
@@ -858,7 +923,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain("startup will conservatively recover the remaining prepared state");
     expect(includeSource).toContain("Function .onInstFailed");
     expect(includeSource).toContain("Function MemmyOnUserAbort");
-    expect(includeSource).toContain('$LOCALAPPDATA\\Memmy\\upgrade-staging\\active.lock');
+    expect(includeSource).toContain('$LOCALAPPDATA\\Cuby\\upgrade-staging\\active.lock');
     expect(customInitIndex).toBeGreaterThan(-1);
     expect(customInstallIndex).toBeGreaterThan(customInitIndex);
   });
@@ -875,8 +940,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(noticeCall).toBeGreaterThan(-1);
     expect(noticeFunction).toBeGreaterThan(noticeCall);
     expect(includeSource).toContain("$MemmyPreviousInstallDir");
-    expect(includeSource).toContain("If you want to move Memmy, manually migrate your files");
-    expect(includeSource).toContain("如果要更换目录，请先手动迁移 Memmy 文件");
+    expect(includeSource).toContain("If you want to move Cuby, manually migrate your files");
+    expect(includeSource).toContain("如果要更换目录，请先手动迁移 Cuby 文件");
     expect(previousDirectoryGuard).toBeGreaterThan(validationFunction);
     expect(previousDirectoryGuard).toBeLessThan(validationProbe);
     expect(standardUpgradeCheckSource).toContain("manually migrate files before choosing a new directory");
@@ -907,25 +972,25 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain("Call un.MemmyRemoveLaunchProxy");
     expect(includeSource).not.toContain("Call un.MemmyPointShortcutsToInstalledApp");
     expect(includeSource).toContain('StrCpy $0 "$INSTDIR\\resources\\cli"');
-    expect(includeSource).toContain('IfFileExists "$0\\memmy.cmd"');
-    expect(includeSource).toContain('IfFileExists "$0\\memmy-memory.cmd"');
+    expect(includeSource).toContain('IfFileExists "$0\\cuby.cmd"');
+    expect(includeSource).toContain('IfFileExists "$0\\cuby-memory.cmd"');
     expect(includeSource).toContain('ReadRegStr $1 HKCU "Environment" "Path"');
     expect(includeSource).toContain('WriteRegExpandStr HKCU "Environment" "Path"');
-    expect(includeSource).toContain("MEMMY_WM_SETTINGCHANGE");
+    expect(includeSource).toContain("CUBY_WM_SETTINGCHANGE");
     expect(includeSource).toContain("!macro customInstallMode");
     expect(includeSource).toContain('StrCpy $isForceCurrentInstall "1"');
-    expect(includeSource).toContain('StrCpy $0 "$LOCALAPPDATA\\Memmy\\launcher"');
-    expect(includeSource).toContain('File /oname=Memmy.ico "${BUILD_RESOURCES_DIR}\\icon.ico"');
-    expect(includeSource).toContain('File /oname=MemmyUpdatePrompt.ps1 "${BUILD_RESOURCES_DIR}\\MemmyUpdatePrompt.ps1"');
-    expect(includeSource).toContain('File /oname=MemmyWindowsUpgradeRecovery.ps1 "${BUILD_RESOURCES_DIR}\\MemmyWindowsUpgradeRecovery.ps1"');
-    expect(includeSource).toContain('FileOpen $1 "$0\\MemmyLauncher.vbs" w');
-    expect(includeSource).toContain('promptPath = $\\"$0\\MemmyUpdatePrompt.ps1$\\"');
-    expect(includeSource).toContain('userDataRoot = shell.ExpandEnvironmentStrings($\\"%APPDATA%$\\") & $\\"\\Memmy$\\"');
+    expect(includeSource).toContain('StrCpy $0 "$LOCALAPPDATA\\Cuby\\launcher"');
+    expect(includeSource).toContain('File /oname=Cuby.ico "${BUILD_RESOURCES_DIR}\\icon.ico"');
+    expect(includeSource).toContain('File /oname=CubyUpdatePrompt.ps1 "${BUILD_RESOURCES_DIR}\\CubyUpdatePrompt.ps1"');
+    expect(includeSource).toContain('File /oname=CubyWindowsUpgradeRecovery.ps1 "${BUILD_RESOURCES_DIR}\\CubyWindowsUpgradeRecovery.ps1"');
+    expect(includeSource).toContain('FileOpen $1 "$0\\CubyLauncher.vbs" w');
+    expect(includeSource).toContain('promptPath = $\\"$0\\CubyUpdatePrompt.ps1$\\"');
+    expect(includeSource).toContain('userDataRoot = shell.ExpandEnvironmentStrings($\\"%APPDATA%$\\") & $\\"\\Cuby$\\"');
     expect(includeSource).toContain('legacyUserDataRoot = $\\"$INSTDIR\\data\\Memmy$\\"');
     expect(includeSource).toContain('languagePath = userDataRoot & $\\"\\update-prompt-language.txt$\\"');
     expect(includeSource).toContain('markerPath = userDataRoot & $\\"\\prepared-required-update.json$\\"');
-    expect(includeSource).toContain('relayLockPath = shell.ExpandEnvironmentStrings($\\"%LOCALAPPDATA%$\\") & $\\"\\Memmy\\upgrade-staging\\active.lock$\\"');
-    expect(includeSource).toContain('recoveryPath = $\\"$0\\MemmyWindowsUpgradeRecovery.ps1$\\"');
+    expect(includeSource).toContain('relayLockPath = shell.ExpandEnvironmentStrings($\\"%LOCALAPPDATA%$\\") & $\\"\\Cuby\\upgrade-staging\\active.lock$\\"');
+    expect(includeSource).toContain('recoveryPath = $\\"$0\\CubyWindowsUpgradeRecovery.ps1$\\"');
     expect(includeSource).toContain("If fso.FolderExists(relayLockPath) And fso.FileExists(recoveryPath) Then");
     expect(includeSource).toContain("If fso.FolderExists(relayLockPath) Then");
     expect(includeSource).toContain("lockPath = relayLockPath");
@@ -971,18 +1036,18 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain('ReadRegStr $0 SHELL_CONTEXT "Software\\${APP_GUID}" "ShortcutName"');
     expect(includeSource).toContain('Delete "$DESKTOP\\$0.lnk"');
     expect(includeSource).toContain('Delete "$DESKTOP\\${SHORTCUT_NAME}.lnk"');
-    expect(includeSource).toContain('RMDir /r "$LOCALAPPDATA\\Memmy\\launcher"');
+    expect(includeSource).toContain('RMDir /r "$LOCALAPPDATA\\Cuby\\launcher"');
     expect(includeSource.indexOf('StrCpy $R1 "keep-shortcuts"')).toBeLessThan(
-      includeSource.indexOf('RMDir /r "$LOCALAPPDATA\\Memmy\\launcher"')
+      includeSource.indexOf('RMDir /r "$LOCALAPPDATA\\Cuby\\launcher"')
     );
     expect(includeSource).not.toContain("MsgBox");
     expect(includeSource).not.toContain("Memmy 将安装到当前用户目录");
-    expect(updatePromptSource).toContain("function Resolve-MemmyPromptLanguage");
-    expect(updatePromptSource).toContain("function Test-MemmyUpdatePromptDone");
-    expect(updatePromptSource).toContain("function Get-MemmyAppProcessIds");
-    expect(updatePromptSource).toContain("function Test-MemmyAppOpenedAfterPrompt");
-    expect(updatePromptSource).toContain("function Enter-MemmyUpdatePromptSingleton");
-    expect(updatePromptSource).toContain("function Exit-MemmyUpdatePromptSingleton");
+    expect(updatePromptSource).toContain("function Resolve-CubyPromptLanguage");
+    expect(updatePromptSource).toContain("function Test-CubyUpdatePromptDone");
+    expect(updatePromptSource).toContain("function Get-CubyAppProcessIds");
+    expect(updatePromptSource).toContain("function Test-CubyAppOpenedAfterPrompt");
+    expect(updatePromptSource).toContain("function Enter-CubyUpdatePromptSingleton");
+    expect(updatePromptSource).toContain("function Exit-CubyUpdatePromptSingleton");
     expect(updatePromptSource).toContain("System.Threading.Mutex");
     expect(updatePromptSource).toContain(".WaitOne(0)");
     expect(updatePromptSource).toContain("ReleaseMutex");
@@ -1022,7 +1087,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(exportSource).toContain("authorization: `Bearer ${service.token}`");
     expect(exportSource).toContain("await response.arrayBuffer()");
     expect(exportSource).toContain("await writeFile(selected.filePath, payload)");
-    expect(exportSource).toContain("memmy-memory-${formatExportTimestamp(new Date())}.json");
+    expect(exportSource).toContain("cuby-memory-${formatExportTimestamp(new Date())}.json");
     expect(exportSource).toContain("filters:");
     expect(exportSource).not.toContain("backupSqliteDatabase");
   });
@@ -1058,7 +1123,7 @@ describe("desktop packaged runtime boundaries", () => {
     // Handles expect.
     expect(mainSource).toContain("async function ensureAgentGatewayToken");
     expect(mainSource).toContain('new URL("/webui/bootstrap", gateway.baseUrl)');
-    expect(mainSource).toContain('"X-Memmy-Agent-Auth": gateway.bootstrapSecret');
+    expect(mainSource).toContain('"X-Cuby-Agent-Auth": gateway.bootstrapSecret');
     expect(mainSource).toContain("Authorization: `Bearer ${bearer}`");
     expect(mainSource).toContain("if (response.status === 401)");
   });
@@ -1078,7 +1143,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).toContain('Boolean((process as NodeJS.Process & { windowsStore?: boolean }).windowsStore)');
     expect(mainSource).toContain(') === "packaged-windows"');
     expect(mainSource).toContain('join(homedir(), ".local", "bin")');
-    expect(mainSource).toContain('{ name: "memmy-memory", source: join(cliDirectory, "memmy-memory") }');
+    expect(mainSource).toContain('{ name: "cuby-memory", source: join(cliDirectory, "cuby-memory") }');
     expect(mainSource).toContain('export PATH="$HOME/.local/bin:$PATH"');
     expect(packageSource).toContain("Default prefix:\n  ~/.local/bin");
     expect(packageSource).toContain('PREFIX="$HOME/.local/bin"');
@@ -1108,20 +1173,20 @@ describe("desktop packaged runtime boundaries", () => {
 
     expect(agentPackage.bin).toEqual({ memmy: "./dist/main.js" });
     expect(agentPackageLock.packages?.[""]?.bin).toEqual({ memmy: "dist/main.js" });
-    expect(mainSource).toContain('const memmyCli = join(cliDirectory, "memmy")');
-    expect(mainSource).toContain('await Promise.all([access(memoryCli), access(memmyCli)])');
-    expect(mainSource).toContain('installSymlink(memmyCli, join(binDirectory, "memmy"))');
+    expect(mainSource).toContain('const cubyCli = join(cliDirectory, "cuby")');
+    expect(mainSource).toContain('await Promise.all([access(memoryCli), access(cubyCli)])');
+    expect(mainSource).toContain('installSymlink(cubyCli, join(binDirectory, "cuby"))');
     expect(mainSource).not.toContain(['join(cliDirectory, "', 'memmy-agent', '")'].join(""));
     expect(mainSource).not.toContain(['join(binDirectory, "', 'memmy-agent', '")'].join(""));
-    expect(packageSource).toContain('create_cli_launcher "$CLI_BIN_DIR/memmy"');
+    expect(packageSource).toContain('create_cli_launcher "$CLI_BIN_DIR/cuby"');
     expect(packageSource).not.toContain(['create_cli_launcher "$CLI_BIN_DIR/', 'memmy-agent', '"'].join(""));
     expect(packageSource).not.toContain(['ln -sf "$SCRIPT_DIR/', 'memmy-agent', '"'].join(""));
-    expect(windowsPackageSource).toContain('create_windows_cli_launcher "$CLI_BIN_DIR/memmy.cmd"');
-    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/memmy-memory.cmd"');
-    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/memmy.cmd"');
+    expect(windowsPackageSource).toContain('create_windows_cli_launcher "$CLI_BIN_DIR/cuby.cmd"');
+    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/cuby-memory.cmd"');
+    expect(windowsPackageSource).toContain('require_packaged_runtime_file "$DESKTOP_DIR/release/win-unpacked/resources/cli/cuby.cmd"');
     expect(windowsPackageSource).toContain('for %%I in ("%RESOURCES_DIR%\\..") do set "APP_DIR=%%~fI"');
-    expect(windowsPackageSource).toContain('set "APP_EXEC=%APP_DIR%\\Memmy.exe"');
-    expect(windowsPackageSource).not.toContain('set "APP_EXEC=%RESOURCES_DIR%\\Memmy.exe"');
+    expect(windowsPackageSource).toContain('set "APP_EXEC=%APP_DIR%\\Cuby.exe"');
+    expect(windowsPackageSource).not.toContain('set "APP_EXEC=%RESOURCES_DIR%\\Cuby.exe"');
     expect(windowsPackageSource).not.toContain(['create_windows_cli_launcher "$CLI_BIN_DIR/', 'memmy-agent', '.cmd"'].join(""));
   });
 
@@ -1174,10 +1239,10 @@ describe("desktop packaged runtime boundaries", () => {
     expect(interfaceSource).toContain("isWindowsStore: boolean;");
     expect(interfaceSource).toContain("export interface DesktopUpdateCheckResult");
     expect(interfaceSource).toContain("export interface DesktopUpdateInstallResult");
-    expect(mainSource).toContain("resolveCloudServiceBaseUrl(process.env.MEMMY_CLOUD_SERVICE)");
+    expect(mainSource).toContain("resolveCloudServiceBaseUrl(process.env.CUBY_CLOUD_SERVICE)");
     expect(mainSource).toContain('const UPDATE_MANIFEST_PATH = "/api/memmy/desktop/latest"');
     expect(mainSource).toContain("const DEFAULT_UPDATE_MANIFEST_URL = `${UPDATE_MANIFEST_BASE_URL}${UPDATE_MANIFEST_PATH}`");
-    expect(mainSource).not.toContain("MEMMY_UPDATE_MANIFEST_URL");
+    expect(mainSource).not.toContain("CUBY_UPDATE_MANIFEST_URL");
     expect(mainSource).toContain("await installPreparedRequiredUpdateBeforeBoot()");
     expect(mainSource).toContain("startRequiredUpdateBackgroundChecks()");
     expect(mainSource).toContain("function startRequiredUpdateBackgroundChecks()");
@@ -1218,7 +1283,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).not.toContain('openAfterInstall: process.platform === "win32"');
     expect(mainSource).toContain("function resolvePreparedRequiredUpdateLockPath");
     expect(mainSource).toContain("function resolveWindowsUpgradeRelayLockPath");
-    expect(mainSource).toContain('join(localAppData, "Memmy", "upgrade-staging", "active.lock")');
+    expect(mainSource).toContain('join(localAppData, "Cuby", "upgrade-staging", "active.lock")');
     expect(mainSource).toContain("async function waitForPreparedRequiredUpdateLock");
     expect(mainSource).toContain("async function waitForWindowsPreparedRequiredUpdateBeforeBoot");
     expect(mainSource).toContain('boot:prepared-required-update waiting-for-lock win32');
@@ -1296,7 +1361,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).toContain("function resolveDownloadedUpdatePath");
     expect(mainSource).toContain("shouldInstallMacDmgUpdateInBackground(safeFilePath)");
     expect(mainSource).toContain("function resolveMacUpdateDestinationAppPath()");
-    expect(mainSource).toContain('const installedMemmyAppPath = "/Applications/Memmy.app"');
+    expect(mainSource).toContain('const installedCubyAppPath = "/Applications/Cuby.app"');
     expect(mainSource).toContain('join("/Applications", basename(currentAppPath))');
     expect(mainSource).toContain("async function installMacDmgUpdateInBackground");
     expect(mainSource).toContain("async function stageMacDmgUpdatePackage");
@@ -1398,8 +1463,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(preloadSource).toContain("getMicrophoneAccessStatus(): Promise<MicrophoneAccessStatus>;");
     expect(preloadSource).toContain("requestMicrophoneAccess(): Promise<MicrophoneAccessStatus>;");
     expect(packageMacDmgSource).toContain("resolve_microphone_usage_description()");
-    expect(packageMacDmgSource).toContain('printf \'%s\' "Memmy 仅在你开始语音输入时使用麦克风"');
-    expect(packageMacDmgSource).toContain('printf \'%s\' "Memmy uses the microphone only when you start voice input."');
+    expect(packageMacDmgSource).toContain('printf \'%s\' "Cuby 仅在你开始语音输入时使用麦克风"');
+    expect(packageMacDmgSource).toContain('printf \'%s\' "Cuby uses the microphone only when you start voice input."');
     expect(packageMacDmgSource).toContain("--config.mac.extendInfo.NSMicrophoneUsageDescription=");
   });
 
@@ -1418,7 +1483,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(winBuilderSource).toContain("to: icon.ico");
     expect(unsignedWinBuilderSource).toContain("from: build/icon.ico");
     expect(unsignedWinBuilderSource).toContain("to: icon.ico");
-    expect(mainSource).toContain('const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.memmy";');
+    expect(mainSource).toContain('const WINDOWS_APP_USER_MODEL_ID = "cn.memtensor.cuby";');
     expect(mainSource).toContain("app.setAppUserModelId(WINDOWS_APP_USER_MODEL_ID);");
     expect(mainSource).toContain('join(process.resourcesPath, "icon.ico")');
     expect(mainSource).toContain("resolveWindowsTaskbarIconPath()");
@@ -1432,8 +1497,8 @@ describe("desktop packaged runtime boundaries", () => {
 
     expect(source).toContain("startManagedRuntimeServices");
     expect(source).toContain("startPackagedRuntimeServices");
-    expect(source).toContain('env.MEMMY_CONFIG ?? join(memmyHome, "config.yaml")');
-    expect(source).toContain("const explicitWorkspace = stringValue(env.MEMMY_AGENT_WORKSPACE);");
+    expect(source).toContain('env.CUBY_CONFIG ?? join(memmyHome, "config.yaml")');
+    expect(source).toContain("const explicitWorkspace = stringValue(env.CUBY_AGENT_WORKSPACE);");
     expect(source).toContain("if (!explicitWorkspace) return { configPath };");
     expect(source).not.toContain("configuredWorkspace");
     expect(source).toContain("syncBundledAgentSkills");
@@ -1500,23 +1565,23 @@ describe("desktop packaged runtime boundaries", () => {
     const desktopLaunchIndex = source.indexOf("npm run dev -w @memmy/desktop", electronRuntimeCheckIndex);
 
     expect(source).toContain('MEMORY_CLI_ENTRY="$ROOT_DIR/Memory/dist/src/cli/index.js"');
-    expect(source).toContain('MEMMY_CONFIG_PATH="${MEMMY_CONFIG:-$HOME/.memmy/config.yaml}"');
-    expect(source).toContain('MEMMY_WORKSPACE_IS_EXPLICIT=0');
-    expect(source).toContain('MEMMY_WORKSPACE_DIR="${MEMMY_WORKSPACE:-$HOME/.memmy/workspace}"');
-    expect(source).toContain('MEMMY_APP_DATABASE_FILE="${MEMMY_APP_DATABASE:-}"');
-    expect(source).toContain('MEMMY_BIN_DIR="$HOME/.local/bin"');
-    expect(source).toContain('export MEMMY_CONFIG="$MEMMY_CONFIG_PATH"');
-    expect(source.lastIndexOf('export MEMMY_AGENT_WORKSPACE="$MEMMY_WORKSPACE_DIR"')).toBeGreaterThan(migrationIndex);
-    expect(source).toContain("unset MEMMY_MIGRATIONS_READY_CONFIG MEMMY_MIGRATIONS_READY_WORKSPACE");
-    expect(source).toContain('export MEMMY_MIGRATIONS_READY_CONFIG="$MEMMY_CONFIG_PATH"');
-    expect(source).toContain('export MEMMY_MIGRATIONS_READY_WORKSPACE="$MEMMY_WORKSPACE_DIR"');
-    expect(source).toContain('export MEMMY_APP_DATABASE="$MEMMY_APP_DATABASE_FILE"');
-    expect(source).toContain('export MEMMY_MIGRATIONS_READY_APP_DATABASE="$MEMMY_APP_DATABASE_FILE"');
-    expect(source).toContain('--app-database "$MEMMY_APP_DATABASE_FILE"');
-    expect(source).toContain('if [[ "$MEMMY_WORKSPACE_IS_EXPLICIT" == "1" ]]');
-    expect(source).toContain('runtime_node_dir="$(cd "$(dirname "$MEMMY_RUNTIME_NODE_PATH")" && pwd)"');
+    expect(source).toContain('CUBY_CONFIG_PATH="${CUBY_CONFIG:-$HOME/.cuby/config.yaml}"');
+    expect(source).toContain('CUBY_WORKSPACE_IS_EXPLICIT=0');
+    expect(source).toContain('CUBY_WORKSPACE_DIR="${CUBY_WORKSPACE:-$HOME/.cuby/workspace}"');
+    expect(source).toContain('CUBY_APP_DATABASE_FILE="${CUBY_APP_DATABASE:-}"');
+    expect(source).toContain('CUBY_BIN_DIR="$HOME/.local/bin"');
+    expect(source).toContain('export CUBY_CONFIG="$CUBY_CONFIG_PATH"');
+    expect(source.lastIndexOf('export CUBY_AGENT_WORKSPACE="$CUBY_WORKSPACE_DIR"')).toBeGreaterThan(migrationIndex);
+    expect(source).toContain("unset CUBY_MIGRATIONS_READY_CONFIG CUBY_MIGRATIONS_READY_WORKSPACE");
+    expect(source).toContain('export CUBY_MIGRATIONS_READY_CONFIG="$CUBY_CONFIG_PATH"');
+    expect(source).toContain('export CUBY_MIGRATIONS_READY_WORKSPACE="$CUBY_WORKSPACE_DIR"');
+    expect(source).toContain('export CUBY_APP_DATABASE="$CUBY_APP_DATABASE_FILE"');
+    expect(source).toContain('export CUBY_MIGRATIONS_READY_APP_DATABASE="$CUBY_APP_DATABASE_FILE"');
+    expect(source).toContain('--app-database "$CUBY_APP_DATABASE_FILE"');
+    expect(source).toContain('if [[ "$CUBY_WORKSPACE_IS_EXPLICIT" == "1" ]]');
+    expect(source).toContain('runtime_node_dir="$(cd "$(dirname "$CUBY_RUNTIME_NODE_PATH")" && pwd)"');
     expect(source).toContain('export PATH="$runtime_node_dir:$PATH"');
-    expect(source).not.toContain('MEMMY_BIN_DIR="$HOME/.memmy/bin"');
+    expect(source).not.toContain('CUBY_BIN_DIR="$HOME/.cuby/bin"');
     expect(source).not.toContain('"bash -lc ');
     expect(source.match(/"bash -c /g)).toHaveLength(3);
     expect(source).toContain('const Database = require("better-sqlite3")');
@@ -1527,6 +1592,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).not.toContain("node dist/main.js gateway");
     expect(source).not.toContain("--gateway)");
     expect(source).toContain('pgrep -f "/Memmy.app/Contents/MacOS/Memmy"');
+    expect(source).toContain('pgrep -f "/Cuby.app/Contents/MacOS/Cuby"');
     expect(source.match(/lsof -tiTCP:18997/g)).toHaveLength(2);
     expect(source.match(/lsof -tiTCP:18999/g)).toHaveLength(2);
     expect(migrationIndex).toBeGreaterThan(runMainIndex);
@@ -1543,11 +1609,11 @@ describe("desktop packaged runtime boundaries", () => {
     const source = readFileSync(clearAllPath, "utf8");
 
     expect(source).toContain("launchctl unsetenv");
-    expect(source).toContain("^(MEMMY_|MEMORY_SERVICE_)");
+    expect(source).toContain("^(CUBY_|MEMMY_|MEMORY_SERVICE_)");
     expect(source).toContain('"$HOME/.zshenv"');
     expect(source).toContain('"$HOME/.bash_profile"');
     expect(source).toContain('"/usr/local/bin/memmy-memory"');
-    expect(source).toContain("# Memmy CLI PATH");
+    expect(source).toContain("(Memmy|Cuby) CLI PATH");
     expect(source).toContain("Fully quit and reopen Codex");
   });
 
@@ -1571,16 +1637,16 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("InstallLocation is shared-looking or contains a protected path");
     expect(source).toContain("-IncludeMachineScope requires an already elevated PowerShell session");
     expect(source).toContain("This script can only run on Windows.");
-    expect(source).toContain("This permanently deletes Memmy application state and local data.");
+    expect(source).toContain("This permanently deletes Memmy and Cuby application state and local data.");
     expect(source).not.toContain("Read-Host");
   });
 
-  it("keeps packaged CLI launchers on Memmy.app and ~/.memmy/config.yaml", () => {
+  it("keeps packaged CLI launchers on Cuby.app and ~/.cuby/config.yaml", () => {
     const source = readFileSync(packageMacDmgPath, "utf8");
 
-    expect(source).toContain('APP_EXEC="\\$MACOS_DIR/Memmy"');
-    expect(source).toContain('DEFAULT_CONFIG="\\$HOME/.memmy/config.yaml"');
-    expect(source).toContain('APP_PATH="/Applications/Memmy.app"');
+    expect(source).toContain('APP_EXEC="\\$MACOS_DIR/Cuby"');
+    expect(source).toContain('DEFAULT_CONFIG="\\$HOME/.cuby/config.yaml"');
+    expect(source).toContain('APP_PATH="/Applications/Cuby.app"');
     expect(source).not.toMatch(legacyProductPattern);
     expect(source).not.toContain("agent/config.yaml");
     expect(source).not.toContain("memory-service/config.yaml");
@@ -1632,11 +1698,11 @@ describe("desktop packaged runtime boundaries", () => {
 
     expect(packageWinSource).toContain("Usage: package-win.sh --version <version> --arch <x64> --edition <cn|intl> --sign <signed|unsigned>");
     expect(packageWinSource).toContain("--version is required. Example: --version 0.0.1");
-    expect(packageWinSource).toContain('export MEMMY_DESKTOP_VERSION="$VERSION"');
-    expect(packageWinSource).toContain("export MEMMY_ACCOUNT_CHANNEL=phone");
-    expect(packageWinSource).toContain("export MEMMY_ACCOUNT_CHANNEL=email");
-    expect(packageWinSource).toContain("export MEMMY_SKIP_CODESIGN=1");
-    expect(packageWinSource).toContain("unset MEMMY_SKIP_CODESIGN");
+    expect(packageWinSource).toContain('export CUBY_DESKTOP_VERSION="$VERSION"');
+    expect(packageWinSource).toContain("export CUBY_ACCOUNT_CHANNEL=phone");
+    expect(packageWinSource).toContain("export CUBY_ACCOUNT_CHANNEL=email");
+    expect(packageWinSource).toContain("export CUBY_SKIP_CODESIGN=1");
+    expect(packageWinSource).toContain("unset CUBY_SKIP_CODESIGN");
     expect(packageWinSource).toContain('BASE_SCRIPT="$ROOT_DIR/scripts/internal/win/$SIGN-$ARCH.sh"');
     expect(packageWinSource).toContain('bash "$BASE_SCRIPT" "${PASSTHROUGH_ARGS[@]}"');
 
@@ -1690,7 +1756,7 @@ describe("desktop packaged runtime boundaries", () => {
 
     for (const source of [macSource, winSource]) {
       expect(source).toContain('EMBEDDING_MODELS_DIR="$DESKTOP_DIR/dist/embedding-models"');
-      expect(source).toContain('EMBEDDING_MODEL_ID="${MEMMY_EMBEDDING_MODEL:-Xenova/all-MiniLM-L6-v2}"');
+      expect(source).toContain('EMBEDDING_MODEL_ID="${CUBY_EMBEDDING_MODEL:-Xenova/all-MiniLM-L6-v2}"');
       expect(source).toContain('rm -rf "$EMBEDDING_MODELS_DIR"');
       expect(source).toContain('node "$ROOT_DIR/scripts/internal/shared/prepare-embedding-model.mjs" "$EMBEDDING_MODELS_DIR"');
       expect(source).toContain('$packaged_embedding_model/config.json');
@@ -1737,11 +1803,11 @@ describe("desktop packaged runtime boundaries", () => {
 
     expect(packageMacSource).toContain("Usage: package-mac.sh --version <version> --arch <arm64|x64> --edition <cn|intl> --sign <signed|unsigned>");
     expect(packageMacSource).toContain("--version is required. Example: --version 0.0.1");
-    expect(packageMacSource).toContain('export MEMMY_DESKTOP_VERSION="$VERSION"');
-    expect(packageMacSource).toContain("export MEMMY_ACCOUNT_CHANNEL=phone");
-    expect(packageMacSource).toContain("export MEMMY_ACCOUNT_CHANNEL=email");
-    expect(packageMacSource).toContain("export MEMMY_SKIP_CODESIGN=1");
-    expect(packageMacSource).toContain("unset MEMMY_SKIP_CODESIGN");
+    expect(packageMacSource).toContain('export CUBY_DESKTOP_VERSION="$VERSION"');
+    expect(packageMacSource).toContain("export CUBY_ACCOUNT_CHANNEL=phone");
+    expect(packageMacSource).toContain("export CUBY_ACCOUNT_CHANNEL=email");
+    expect(packageMacSource).toContain("export CUBY_SKIP_CODESIGN=1");
+    expect(packageMacSource).toContain("unset CUBY_SKIP_CODESIGN");
     expect(packageMacSource).toContain('BASE_SCRIPT="$ROOT_DIR/scripts/internal/mac/$SIGN-$ARCH.sh"');
     expect(packageMacSource).toContain('bash "$BASE_SCRIPT" "${PASSTHROUGH_ARGS[@]}"');
 
@@ -1780,7 +1846,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("cygpath -w");
     expect(source).toContain('DESKTOP_VERSION="$(read_package_version "$DESKTOP_DIR/package.json")"');
     expect(source).toContain(
-      'electron_version="${MEMMY_ELECTRON_VERSION:-$(read_package_version "$DESKTOP_DIR/node_modules/electron/package.json")}"'
+      'electron_version="${CUBY_ELECTRON_VERSION:-$(read_package_version "$DESKTOP_DIR/node_modules/electron/package.json")}"'
     );
     expect(source).not.toContain("require('$DESKTOP_DIR/package.json')");
     expect(source).not.toContain("require('$DESKTOP_DIR/node_modules/electron/package.json')");
@@ -1794,7 +1860,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain('npm --script-shell "$npm_config_script_shell" "$@"');
     expect(source).toContain("npm_config_script_shell");
     expect(source).toContain("NPM_CONFIG_SCRIPT_SHELL");
-    expect(source).toContain("MEMMY_NPM_SCRIPT_SHELL");
+    expect(source).toContain("CUBY_NPM_SCRIPT_SHELL");
     expect(source).toContain("command -v bash");
   });
 
@@ -1847,8 +1913,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("desktop-edition.json");
     expect(source).toContain("write-desktop-edition-manifest.mjs");
     expect(source).toContain('--signing "$PACKAGE_SIGNING"');
-    expect(source).toContain('FINAL_EXE="$DESKTOP_DIR/release/Memmy-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.exe"');
-    expect(source).toContain('ARTIFACT_NAME="Memmy-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.\\${ext}"');
+    expect(source).toContain('FINAL_EXE="$DESKTOP_DIR/release/Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.exe"');
+    expect(source).toContain('ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.\\${ext}"');
     expect(source).toContain('BUILDER_ARGS+=(--config.extraMetadata.version="$DESKTOP_VERSION")');
     expect(source).toContain('npx electron-builder "${BUILDER_ARGS[@]}" --win nsis --x64 "$@" --config.artifactName="$ARTIFACT_NAME"');
     expect(source).not.toContain("use_final_artifact_name");
@@ -1879,22 +1945,22 @@ describe("desktop packaged runtime boundaries", () => {
     }
     expect(macSource).toContain('--runtime-root "$RUNTIME_DIR"');
     expect(winSource).toContain('--runtime-root "$RUNTIME_NODE_DIR"');
-    expect(syncSource).toContain('process.env.MEMMY_VERSION_SYNC_CHECK_ONLY === "1"');
-    expect(macSource).toContain("export MEMMY_VERSION_SYNC_CHECK_ONLY=1");
-    expect(winSource).toContain("export MEMMY_VERSION_SYNC_CHECK_ONLY=1");
+    expect(syncSource).toContain('process.env.CUBY_VERSION_SYNC_CHECK_ONLY === "1"');
+    expect(macSource).toContain("export CUBY_VERSION_SYNC_CHECK_ONLY=1");
+    expect(winSource).toContain("export CUBY_VERSION_SYNC_CHECK_ONLY=1");
   });
 
   it("does not rewrite or print the root cloud-service env during mac release packaging", () => {
     const source = readFileSync(autoReleaseMacPath, "utf8");
-    expect(source).toContain('BRANCH="${MEMMY_RELEASE_BRANCH:-}"');
+    expect(source).toContain('BRANCH="${CUBY_RELEASE_BRANCH:-}"');
     expect(source).toContain("release/v*.*.*");
     expect(source).not.toContain('BRANCH="dev"');
     expect(source).toContain("Source package version must be newer than the latest online version");
     expect(source).not.toContain("parts[2]");
-    expect(source).toContain('export MEMMY_CLOUD_SERVICE="$1"');
+    expect(source).toContain('export CUBY_CLOUD_SERVICE="$1"');
     expect(source).toContain("Cloud service configured for packaging.");
     expect(source).not.toContain("sed -i");
-    expect(source).not.toContain("grep MEMMY_CLOUD_SERVICE");
+    expect(source).not.toContain("grep CUBY_CLOUD_SERVICE");
   });
 
   it("packages an allowlisted runtime manifest without repository or dependency env files", () => {
@@ -1942,14 +2008,14 @@ describe("desktop packaged runtime boundaries", () => {
     expect(asarGuardSource).toContain("dist/runtime/memmy-agent/package.json");
     expect(asarGuardSource).toContain("dist/runtime/memory/package-lock.json");
     expect(asarGuardSource).toContain(
-      "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/memmy-workspace-bridge.mjs",
+      "node_modules/@memmy/backend/dist/src/adapters/outbound/skill-writer/workspace-bridge/cuby-workspace-bridge.mjs",
     );
   });
 
   it("points packaged Memory at the bundled local embedding model resources", () => {
     const source = readFileSync(runtimeServicesPath, "utf8");
 
-    expect(source).toContain('MEMMY_EMBEDDING_MODEL_ROOT: join(runtimeDir ?? options.resourcesPath, "embedding-models")');
+    expect(source).toContain('CUBY_EMBEDDING_MODEL_ROOT: join(runtimeDir ?? options.resourcesPath, "embedding-models")');
   });
 
   it("prunes and verifies only proven Windows x64 packaged runtime waste", () => {

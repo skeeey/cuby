@@ -12,7 +12,7 @@ describe("gtag config", () => {
     expect(resolveAnalyticsAppEnv(false)).toBe("dev");
   });
 
-  it("maps MEMMY_APP_EDITION to app_edition and defaults to cn", () => {
+  it("maps CUBY_APP_EDITION to app_edition and defaults to cn", () => {
     expect(resolveAnalyticsAppEdition("intl")).toBe("intl");
     expect(resolveAnalyticsAppEdition("INTL")).toBe("intl");
     expect(resolveAnalyticsAppEdition("cn")).toBe("cn");

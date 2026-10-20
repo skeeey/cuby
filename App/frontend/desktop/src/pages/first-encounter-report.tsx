@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState, type UIEvent } from "react";
 import { ArrowRight, Sparkles } from "lucide-react";
-import { Memmy } from "../components/mascot/memmy.js";
+import { Cuby } from "../components/mascot/cuby.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { AgentMessageContent } from "./agent-message-content.js";
 import type { FirstEncounterReportPayload } from "./first-encounter-protocol.js";
@@ -142,7 +142,7 @@ export function FirstEncounterReport(props: FirstEncounterReportProps) {
 
           <div className="flex items-start gap-3">
             <div className="mt-1 shrink-0">
-              <Memmy pose="celebrate" size={56} />
+              <Cuby pose="celebrate" size={56} />
             </div>
             <div className="flex min-w-0 flex-1 flex-col">
               <div className="flex flex-col rounded-card bg-background-paper p-6 shadow-[0_2px_12px_rgba(0,0,0,0.06)]">

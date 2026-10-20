@@ -18,7 +18,7 @@ describe("Memory server sqlite lock", () => {
     roots.push(root);
     const listeners = process.listenerCount("exit");
     for (let attempt = 0; attempt < 12; attempt += 1) {
-      const lock = acquireSqliteServerLock({ sqlitePath: join(root, "memory.sqlite"), host: "127.0.0.1", port: 18960 });
+      const lock = acquireSqliteServerLock({ sqlitePath: join(root, "memory.sqlite"), host: "127.0.0.1", port: 28960 });
       lock?.release();
     }
     expect(process.listenerCount("exit")).toBe(listeners);
@@ -38,7 +38,7 @@ describe("Memory server sqlite lock", () => {
     const first = acquireSqliteServerLock({
       sqlitePath,
       host: "127.0.0.1",
-      port: 18960
+      port: 28960
     });
 
     expect(() => acquireSqliteServerLock({
@@ -64,7 +64,7 @@ describe("Memory server sqlite lock", () => {
     writeFileSync(lockPath, JSON.stringify({
       pid: 0,
       host: "127.0.0.1",
-      port: 18960
+      port: 28960
     }), "utf8");
 
     const lock = acquireSqliteServerLock({

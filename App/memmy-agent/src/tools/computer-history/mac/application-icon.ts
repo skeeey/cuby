@@ -37,7 +37,7 @@ export class ApplicationIconReader {
     // Copied beside the compiled module by the build, as the recorder's is.
     this.helperSource = fileURLToPath(new URL("./app-icon.swift", import.meta.url));
     this.cacheDirectory = input.cacheDirectory
-      ?? path.join(os.homedir(), ".memmy", "computer-history", "app-icons");
+      ?? path.join(os.homedir(), ".cuby", "computer-history", "app-icons");
   }
 
   /** The icon as a `data:` URL, or null when macOS has none to give. */

@@ -5,8 +5,8 @@ import type { OnboardingTaskContextSummary } from "./onboarding-task-context.js"
 
 const FIRST_REPORT_SOURCE = "memmy-onboarding";
 const FIRST_REPORT_PROCESSING_TIMEOUT_MS = 180_000;
-const FIRST_REPORT_HANDOFF_QUERY_ZH = "请接着我刚才在 Memmy 里的初见报告继续聊天。先告诉我我们已经确定了什么，再给出一个最合适的下一步。";
-const FIRST_REPORT_HANDOFF_QUERY_EN = "Please continue from the first report I just had in Memmy. First tell me what we already decided, then give me the single best next step.";
+const FIRST_REPORT_HANDOFF_QUERY_ZH = "请接着我刚才在 Cuby 里的初见报告继续聊天。先告诉我我们已经确定了什么，再给出一个最合适的下一步。";
+const FIRST_REPORT_HANDOFF_QUERY_EN = "Please continue from the first report I just had in Cuby. First tell me what we already decided, then give me the single best next step.";
 const FIRST_REPORT_TAGS = [
   "agent-source",
   "memmy",
@@ -82,13 +82,13 @@ function renderMemoryContent(input: OnboardingFirstReportMemoryInput): string {
   if (isChinese) {
     return [
       "## user",
-      "Memmy 初见报告：跨 Agent 任务接续记忆",
+      "Cuby 初见报告：跨 Agent 任务接续记忆",
       "语言：中文",
       `来源 Agent：${input.latestConversation.agentSource}`,
       `项目路径：${input.latestConversation.workspacePath ?? unknown}`,
       `项目：${projects}`,
       `关键词：${keywords}`,
-      "检索关键词：Memmy、初见报告、首次登录报告、最近项目、最近任务、接续任务",
+      "检索关键词：Cuby、初见报告、首次登录报告、最近项目、最近任务、接续任务",
       `接续触发词：${FIRST_REPORT_HANDOFF_QUERY_ZH}`,
       "任务上下文（由最近会话轨迹归纳，不含原始对话流水）",
       `主题：${context.topic || none}`,
@@ -102,20 +102,20 @@ function renderMemoryContent(input: OnboardingFirstReportMemoryInput): string {
       `接续位置：${context.continuationPoint || none}`,
       `轨迹总结：\n${context.trajectorySummary || none}`,
       "## assistant",
-      "Memmy 初见报告",
+      "Cuby 初见报告",
       input.reportMarkdown
     ].join("\n\n");
   }
 
   return [
     "## user",
-    "Memmy First Encounter Report: cross-Agent task handoff memory",
+    "Cuby First Encounter Report: cross-Agent task handoff memory",
     "Language: English",
     `Source Agent: ${input.latestConversation.agentSource}`,
     `Workspace: ${input.latestConversation.workspacePath ?? unknown}`,
     `Projects: ${projects}`,
     `Keywords: ${keywords}`,
-    "Retrieval aliases: Memmy, first encounter report, onboarding report, recent project, latest task, continue task",
+    "Retrieval aliases: Cuby, first encounter report, onboarding report, recent project, latest task, continue task",
     `Continuation trigger: ${FIRST_REPORT_HANDOFF_QUERY_EN}`,
     "Task context summarized from the latest conversation trajectory; raw transcript omitted",
     `Topic: ${context.topic || none}`,
@@ -129,7 +129,7 @@ function renderMemoryContent(input: OnboardingFirstReportMemoryInput): string {
     `Continuation point: ${context.continuationPoint || none}`,
     `Trajectory summary:\n${context.trajectorySummary || none}`,
     "## assistant",
-    "Memmy First Encounter Report",
+    "Cuby First Encounter Report",
     input.reportMarkdown
   ].join("\n\n");
 }
@@ -182,7 +182,7 @@ async function processFirstReportMemory(
 
 function firstReportTitle(input: OnboardingFirstReportMemoryInput): string {
   const topic = input.taskContext.topic || input.projects[0] || input.keywords[0];
-  const base = input.locale === "zh-CN" ? "Memmy 初见报告" : "Memmy First Encounter Report";
+  const base = input.locale === "zh-CN" ? "Cuby 初见报告" : "Cuby First Encounter Report";
   return topic ? `${base} — ${topic}` : base;
 }
 
@@ -192,8 +192,8 @@ function firstReportHandoffQuery(locale: "zh-CN" | "en-US", workspacePath: strin
     return locale === "zh-CN" ? FIRST_REPORT_HANDOFF_QUERY_ZH : FIRST_REPORT_HANDOFF_QUERY_EN;
   }
   return locale === "zh-CN"
-    ? `请接着我刚才在 Memmy 里的初见报告继续聊天。最近任务的项目路径是：${path}。请先在这个路径下查看项目，再告诉我我们已经确定了什么，并给出一个最合适的下一步。`
-    : `Please continue from the first report I just had in Memmy. The project path for the latest task is: ${path}. First inspect the project at that path, then tell me what we already decided and give me the single best next step.`;
+    ? `请接着我刚才在 Cuby 里的初见报告继续聊天。最近任务的项目路径是：${path}。请先在这个路径下查看项目，再告诉我我们已经确定了什么，并给出一个最合适的下一步。`
+    : `Please continue from the first report I just had in Cuby. The project path for the latest task is: ${path}. First inspect the project at that path, then tell me what we already decided and give me the single best next step.`;
 }
 
 function shortHash(value: string): string {

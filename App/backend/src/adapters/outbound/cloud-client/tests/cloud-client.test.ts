@@ -38,7 +38,7 @@ describe("cloud client", () => {
         path: request.url ?? "",
         body,
         lang: request.headers.lang as string | undefined,
-        deviceId: request.headers["x-memmy-device-id"] as string | undefined,
+        deviceId: request.headers["x-cuby-device-id"] as string | undefined,
         region: request.headers["x-agent-region"] as string | undefined
       });
 
@@ -81,7 +81,7 @@ describe("cloud client", () => {
     const login = await client.login({
       email: "hello@example.com",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
 
     expect(requests).toEqual([
@@ -101,7 +101,7 @@ describe("cloud client", () => {
       },
       {
         path: "/api/agentUser/login",
-        body: { email: "hello@example.com", verificationCode: "654321", loginSource: "memmy" },
+        body: { email: "hello@example.com", verificationCode: "654321", loginSource: "cuby" },
         lang: "zh",
         deviceId,
         region: "cn"
@@ -127,7 +127,7 @@ describe("cloud client", () => {
   it("keeps authentication requests compatible when no device ID is available", async () => {
     let receivedDeviceId: string | undefined;
     server = createServer((request, response) => {
-      receivedDeviceId = request.headers["x-memmy-device-id"] as string | undefined;
+      receivedDeviceId = request.headers["x-cuby-device-id"] as string | undefined;
       sendJson(response, { code: 0, message: "ok", data: true });
     });
     await listen(server);
@@ -191,7 +191,7 @@ describe("cloud client", () => {
     const start = await client.startSocialLogin({
       provider: "google",
       locale: "en",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
     const status = await client.getSocialLoginStatus({
       flowId: start.flowId,
@@ -210,7 +210,7 @@ describe("cloud client", () => {
     expect(requests).toEqual([
       {
         path: "/api/agentUser/oauth/start",
-        body: { provider: "google", locale: "en", loginSource: "memmy" }
+        body: { provider: "google", locale: "en", loginSource: "cuby" }
       },
       {
         path: "/api/agentUser/oauth/status",
@@ -247,13 +247,13 @@ describe("cloud client", () => {
     await expect(client.startSocialLogin({
       provider: "google",
       locale: "en",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     })).rejects.toThrow(/not allowed/);
   });
 
   it("sends the international edition through X-Agent-Region", async () => {
     let receivedRegion: string | undefined;
-    vi.stubEnv("MEMMY_APP_EDITION", "intl");
+    vi.stubEnv("CUBY_APP_EDITION", "intl");
     server = createServer((request, response) => {
       receivedRegion = request.headers["x-agent-region"] as string | undefined;
       sendJson(response, { code: 0, message: "ok", data: true });
@@ -318,7 +318,7 @@ describe("cloud client", () => {
     await expect(client.login({
       email: "hello@example.com",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     })).rejects.toMatchObject({
       code: "invalid_argument",
       message: "验证码错误"
@@ -360,7 +360,7 @@ describe("cloud client", () => {
     const login = await client.login({
       phoneNumber: "13800138000",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
 
     expect(login.profile.phoneNumber).toBe("13800138000");
@@ -402,10 +402,10 @@ describe("cloud client", () => {
     const login = await client.login({
       phoneNumber: "13800138000",
       verificationCode: "654321",
-      loginSource: "Memmy"
+      loginSource: "Cuby"
     });
 
-    expect(login.profile.nickname).toBe("Memmy User");
+    expect(login.profile.nickname).toBe("Cuby User");
     expect(login.profile.nickname).not.toBe("user-8000");
   });
 
@@ -853,7 +853,7 @@ describe("cloud client", () => {
         method: request.method,
         body: await readJson(request),
         authorization: request.headers.authorization,
-        machineComposioToken: request.headers["x-memmy-composio-token"] as string | undefined
+        machineComposioToken: request.headers["x-cuby-composio-token"] as string | undefined
       });
 
       if (request.method === "GET" && request.url === "/api/composio/auth-configs?limit=100&show_disabled=false") {
@@ -1040,7 +1040,7 @@ describe("cloud client", () => {
       requests.push({
         path: request.url ?? "",
         method: request.method,
-        deviceId: request.headers["x-memmy-device-id"] as string | undefined
+        deviceId: request.headers["x-cuby-device-id"] as string | undefined
       });
       sendJson(response, { code: 0, message: "ok", data: promotions });
     });
@@ -1101,111 +1101,6 @@ describe("cloud client", () => {
     await expect(client.getPromotions()).resolves.toBeUndefined();
   });
 
-  it("http client fetches the remote lottery status", async () => {
-    const requests: Array<{ path: string; method: string | undefined }> = [];
-    const lotteryStatus = {
-      shouldShow: true,
-      startAt: 1790121600000,
-      endAt: 1790812800000,
-      serverNow: 1790456789000,
-      landingUrl: "https://memmy.cn/activity/mid-autumn"
-    };
-    server = createServer((request, response) => {
-      requests.push({
-        path: request.url ?? "",
-        method: request.method
-      });
-      sendJson(response, { code: 0, message: "ok", data: lotteryStatus });
-    });
-    await listen(server);
-    const address = server.address();
-    if (!address || typeof address === "string") {
-      throw new Error("Mock cloud server did not bind to a port");
-    }
-    const client = createHttpCloudClient({ baseUrl: `http://127.0.0.1:${address.port}`, timeoutMs: 1000 });
-
-    await expect(client.getLotteryStatus()).resolves.toEqual(lotteryStatus);
-    expect(requests).toEqual([{
-      path: "/api/memmy/lottery/status",
-      method: "GET"
-    }]);
-  });
-
-  it("http client fails closed when the lottery status is invalid", async () => {
-    server = createServer((_request, response) => {
-      sendJson(response, {
-        code: 0,
-        message: "ok",
-        data: {
-          shouldShow: true,
-          startAt: 1790121600000,
-          endAt: 1790812800000
-        }
-      });
-    });
-    await listen(server);
-    const address = server.address();
-    if (!address || typeof address === "string") {
-      throw new Error("Mock cloud server did not bind to a port");
-    }
-    const client = createHttpCloudClient({ baseUrl: `http://127.0.0.1:${address.port}`, timeoutMs: 1000 });
-
-    await expect(client.getLotteryStatus()).resolves.toBeUndefined();
-  });
-
-  it("http client reads and acknowledges a lottery reward with account authorization", async () => {
-    const requests: Array<{
-      path: string;
-      method: string | undefined;
-      body: unknown;
-      authorization: string | undefined;
-    }> = [];
-    server = createServer(async (request, response) => {
-      requests.push({
-        path: request.url ?? "",
-        method: request.method,
-        body: await readJson(request),
-        authorization: request.headers.authorization
-      });
-      sendJson(response, request.url === "/api/memmy/lottery/reward"
-        ? {
-            code: 0,
-            message: "ok",
-            data: { hasReward: true, drawId: "1", tokenAmount: 500_000 }
-          }
-        : { code: 0, message: "ok", data: true });
-    });
-    await listen(server);
-    const address = server.address();
-    if (!address || typeof address === "string") {
-      throw new Error("Mock cloud server did not bind to a port");
-    }
-    const client = createHttpCloudClient({ baseUrl: `http://127.0.0.1:${address.port}`, timeoutMs: 1000 });
-
-    await expect(client.getLotteryReward({ uuid: "cloud.login.uuid" })).resolves.toEqual({
-      hasReward: true,
-      drawId: "1",
-      tokenAmount: 500_000
-    });
-    await expect(client.ackLotteryReward({
-      uuid: "cloud.login.uuid",
-      drawId: "1"
-    })).resolves.toBeUndefined();
-    expect(requests).toEqual([
-      {
-        path: "/api/memmy/lottery/reward",
-        method: "GET",
-        body: {},
-        authorization: "Bearer cloud.login.uuid"
-      },
-      {
-        path: "/api/memmy/lottery/reward/ack",
-        method: "POST",
-        body: { drawId: "1" },
-        authorization: "Bearer cloud.login.uuid"
-      }
-    ]);
-  });
 
 });
 

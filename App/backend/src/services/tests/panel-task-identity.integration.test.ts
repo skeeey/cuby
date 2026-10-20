@@ -52,7 +52,7 @@ async function fixture() {
       });
     },
     async viewer(page: number) {
-      const response = await fetch(`${endpoint}/api/v1/episodes?page=${page}`, { headers: { "x-memmy-viewer": "1" } });
+      const response = await fetch(`${endpoint}/api/v1/episodes?page=${page}`, { headers: { "x-cuby-viewer": "1" } });
       expect(response.status).toBe(200);
       return response.json() as Promise<{ tasks: Array<{ id: string }>; total: number }>;
     }

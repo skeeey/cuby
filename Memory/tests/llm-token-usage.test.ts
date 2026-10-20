@@ -65,7 +65,7 @@ describe("memory LLM token usage recording", () => {
   });
 
   it("uploads BYOK memory summary model token usage to the local backend", async () => {
-    setEnv("MEMMY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
+    setEnv("CUBY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
     const fetchMock = vi.fn<typeof fetch>(async (input) => {
       if (isByokUpload(input)) return jsonResponse({ ok: true });
       return jsonResponse({
@@ -93,7 +93,7 @@ describe("memory LLM token usage recording", () => {
     expect(init.method).toBe("POST");
     expect(init.headers).toMatchObject({
       "content-type": "application/json",
-      "x-memmy-local-token": "runtime-token"
+      "x-cuby-local-token": "runtime-token"
     });
     expect(JSON.parse(String(init.body))).toMatchObject({
       kind: "memory_summary",
@@ -121,7 +121,7 @@ describe("memory LLM token usage recording", () => {
   });
 
   it("uploads BYOK memory evolution model token usage separately", async () => {
-    setEnv("MEMMY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
+    setEnv("CUBY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
     const fetchMock = vi.fn<typeof fetch>(async (input) => {
       if (isByokUpload(input)) return jsonResponse({ ok: true });
       return jsonResponse({
@@ -168,7 +168,7 @@ describe("memory LLM token usage recording", () => {
   });
 
   it("uploads BYOK remote embedding token usage", async () => {
-    setEnv("MEMMY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
+    setEnv("CUBY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
     const fetchMock = vi.fn<typeof fetch>(async (input) => {
       if (isByokUpload(input)) return jsonResponse({ ok: true });
       return jsonResponse({
@@ -219,7 +219,7 @@ describe("memory LLM token usage recording", () => {
   });
 
   it("does not upload cloud account memory usage", async () => {
-    setEnv("MEMMY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
+    setEnv("CUBY_RUNTIME_CONFIG_PATH", createRuntimeConfig());
     const fetchMock = vi.fn<typeof fetch>(async () => jsonResponse({
       choices: [{ message: { content: "summary" } }],
       usage: {

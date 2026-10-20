@@ -75,11 +75,11 @@ const DEFAULT_RETRY_DELAYS_MS = [1_000, 2_000, 4_000, 8_000, 16_000, 30_000];
 const PERSIST_PROBE_EVENT_ID = "token_usage_persist_probe";
 const EVENT_PATH = "/api/app/byok-token-usage/events";
 const MEMORY_PIPELINE_USAGE_PATH = "/api/app/byok-token-usage/memory-pipeline-usage";
-const RUNTIME_TOKEN_HEADER = "x-memmy-local-token";
+const RUNTIME_TOKEN_HEADER = "x-cuby-local-token";
 const logger = createMemoryLogger("token-usage");
 
 export function resolveDefaultRuntimeConfigPath(): string {
-  return join(homedir(), ".memmy", "runtime.json");
+  return join(homedir(), ".cuby", "runtime.json");
 }
 
 export function extractModelTokenUsage(response: unknown): ModelTokenUsage {
@@ -185,7 +185,7 @@ export class HttpByokTokenUsageRecorder implements MemoryTokenUsageSink {
   constructor(options: HttpByokTokenUsageRecorderOptions = {}) {
     const env = options.env ?? process.env;
     this.runtimeConfig = options.runtimeConfig;
-    this.runtimeConfigPath = options.runtimeConfigPath ?? env.MEMMY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath();
+    this.runtimeConfigPath = options.runtimeConfigPath ?? env.CUBY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath();
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.onBudgetedUsage = options.onBudgetedUsage;
@@ -558,7 +558,7 @@ export async function fetchAppMemoryBudget(
 ): Promise<{ dailyUsed: number; lifetimeUsed: number } | null> {
   const env = options.env ?? process.env;
   const runtime = options.runtimeConfig
-    ?? readRuntimeConfig(options.runtimeConfigPath ?? env.MEMMY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath());
+    ?? readRuntimeConfig(options.runtimeConfigPath ?? env.CUBY_RUNTIME_CONFIG_PATH ?? resolveDefaultRuntimeConfigPath());
   if (!runtime) {
     return null;
   }

@@ -162,7 +162,7 @@ describe("2026-06-09 prototype modals", () => {
     const routerSource = readSource(resolve(appDir, "app/router.tsx"));
     const mainSource = readSource(resolve(appDir, "../../../shell/desktop/src/main/main.ts"));
 
-    expect(messagesSource).toContain('"petGuide.title": "把 Memmy 缩成桌宠陪你？"');
+    expect(messagesSource).toContain('"petGuide.title": "把 Cuby 缩成桌宠陪你？"');
     expect(petGuideSource).toContain('t("petGuide.title")');
     expect(petGuideSource).toContain("PET_GUIDE_COMPLETED_STORAGE_KEY");
     expect(routerSource).toContain("onMainWindowActionRequest");

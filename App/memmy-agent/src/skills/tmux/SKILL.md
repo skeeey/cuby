@@ -11,7 +11,7 @@ Use tmux only when you need an interactive TTY. Prefer exec background mode for 
 ## Quickstart (isolated socket, exec tool)
 
 ```bash
-SOCKET_DIR="${MEMMY_AGENT_TMUX_SOCKET_DIR:-${TMPDIR:-/tmp}/memmy-tmux-sockets}"
+SOCKET_DIR="${CUBY_AGENT_TMUX_SOCKET_DIR:-${TMPDIR:-/tmp}/memmy-tmux-sockets}"
 mkdir -p "$SOCKET_DIR"
 SOCKET="$SOCKET_DIR/memmy.sock"
 SESSION=memmy-node
@@ -31,8 +31,8 @@ To monitor:
 
 ## Socket convention
 
-- Use `MEMMY_AGENT_TMUX_SOCKET_DIR` environment variable.
-- Default socket path: `"$MEMMY_AGENT_TMUX_SOCKET_DIR/memmy.sock"`.
+- Use `CUBY_AGENT_TMUX_SOCKET_DIR` environment variable.
+- Default socket path: `"$CUBY_AGENT_TMUX_SOCKET_DIR/memmy.sock"`.
 
 ## Targeting panes and naming
 
@@ -43,7 +43,7 @@ To monitor:
 ## Finding sessions
 
 - List sessions on your socket: `{baseDir}/scripts/find-sessions.sh -S "$SOCKET"`.
-- Scan all sockets: `{baseDir}/scripts/find-sessions.sh --all` (uses `MEMMY_AGENT_TMUX_SOCKET_DIR`).
+- Scan all sockets: `{baseDir}/scripts/find-sessions.sh --all` (uses `CUBY_AGENT_TMUX_SOCKET_DIR`).
 
 ## Sending input safely
 

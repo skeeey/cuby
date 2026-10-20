@@ -64,7 +64,7 @@ export function floatEnv(name: string, defaultValue: number): number {
 }
 
 export function openaiCompatTimeoutS(): number {
-  return floatEnv("MEMMY_AGENT_OPENAI_COMPAT_TIMEOUT_S", OPENAI_COMPAT_REQUEST_TIMEOUT_S);
+  return floatEnv("CUBY_AGENT_OPENAI_COMPAT_TIMEOUT_S", OPENAI_COMPAT_REQUEST_TIMEOUT_S);
 }
 
 type ChatArgs = Parameters<LLMProvider["chat"]>[0] & {
@@ -1125,7 +1125,7 @@ export class OpenAICompatProvider extends LLMProvider {
     await this.ensureClient();
     const model = args.model ?? this.getDefaultModel();
     const reasoningEffort = args.reasoningEffort ?? null;
-    const idleTimeoutS = Number(process.env.MEMMY_AGENT_STREAM_IDLE_TIMEOUT_S ?? "90");
+    const idleTimeoutS = Number(process.env.CUBY_AGENT_STREAM_IDLE_TIMEOUT_S ?? "90");
     const onContentDelta = args.onContentDelta;
     const onThinkingDelta = args.onThinkingDelta;
     const onToolCallDelta = args.onToolCallDelta;
@@ -1238,7 +1238,7 @@ function specName(spec: any): string {
 }
 
 // memmy_account's real API base is resolved lazily (see providers/registry.ts): only a genuine attempt
-// to build a request for it (no explicit apiBase override) resolves MEMMY_CLOUD_SERVICE and throws the
+// to build a request for it (no explicit apiBase override) resolves CUBY_CLOUD_SERVICE and throws the
 // clear "not configured" error. Every other provider keeps reading its precomputed defaultApiBase.
 function resolveDefaultApiBase(spec: any): string | null {
   if (specName(spec) === "memmy_account") return memmyAccountApiBase();

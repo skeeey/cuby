@@ -6,7 +6,7 @@ import { SkillsLoader } from "../../../src/core/agent-runtime/skills.js";
 
 const roots: string[] = [];
 const oldPath = process.env.PATH;
-const oldEnv = process.env.MEMMY_AGENT_SKILLS_TEST_ENV_VAR;
+const oldEnv = process.env.CUBY_AGENT_SKILLS_TEST_ENV_VAR;
 
 function tmpDir(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-skills-"));
@@ -55,8 +55,8 @@ function addFakeBin(name: string): void {
 
 afterEach(() => {
   process.env.PATH = oldPath;
-  if (oldEnv == null) delete process.env.MEMMY_AGENT_SKILLS_TEST_ENV_VAR;
-  else process.env.MEMMY_AGENT_SKILLS_TEST_ENV_VAR = oldEnv;
+  if (oldEnv == null) delete process.env.CUBY_AGENT_SKILLS_TEST_ENV_VAR;
+  else process.env.CUBY_AGENT_SKILLS_TEST_ENV_VAR = oldEnv;
   for (const root of roots.splice(0)) fs.rmSync(root, { recursive: true, force: true });
 });
 
@@ -230,9 +230,9 @@ describe("SkillsLoader listSkills", () => {
 
   it("excludes skills with unmet env requirements", () => {
     const { workspace, builtin } = makeWorkspace();
-    delete process.env.MEMMY_AGENT_SKILLS_TEST_ENV_VAR;
+    delete process.env.CUBY_AGENT_SKILLS_TEST_ENV_VAR;
     writeSkill(path.join(workspace, "skills"), "needs_env", {
-      metadataJson: { requires: { env: ["MEMMY_AGENT_SKILLS_TEST_ENV_VAR"] } },
+      metadataJson: { requires: { env: ["CUBY_AGENT_SKILLS_TEST_ENV_VAR"] } },
     });
 
     expect(new SkillsLoader(workspace, builtin).listSkills(true)).toEqual([]);

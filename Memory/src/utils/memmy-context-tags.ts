@@ -1,8 +1,8 @@
-export const MEMMY_MEMORY_CONTEXT_TAG = "memmy_memory_context";
+export const CUBY_MEMORY_CONTEXT_TAG = "memmy_memory_context";
 export const CURRENT_USER_REQUEST_TAG = "current_user_request";
 
 const MEMORY_CONTEXT_TAGS = [
-  MEMMY_MEMORY_CONTEXT_TAG,
+  CUBY_MEMORY_CONTEXT_TAG,
   "memos_context",
   "memory_context",
 ] as const;

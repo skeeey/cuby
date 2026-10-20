@@ -95,7 +95,7 @@ describe("memmy-agent client", () => {
       expect(JSON.parse(String(init?.body))).toEqual({ model_preset: "my-api-model" });
       return json(snapshot);
     });
-    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
     await expect(client.setComputerHistoryModel("my-api-model")).resolves.toEqual(snapshot);
   });
 
@@ -114,7 +114,7 @@ describe("memmy-agent client", () => {
       expect(JSON.parse(String(init?.body))).toEqual({ scope });
       return json(snapshot);
     });
-    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
     await expect(client.clearComputerHistories(scope)).resolves.toEqual(snapshot);
   });
 
@@ -179,7 +179,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       fetchFn: fetchMock as typeof fetch
     });
 
@@ -233,7 +233,7 @@ describe("memmy-agent client", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = new URL(String(input));
       if (url.pathname === "/webui/bootstrap") {
-        expect(init?.headers).toEqual({ "X-Memmy-Agent-Auth": "bootstrap-secret" });
+        expect(init?.headers).toEqual({ "X-Cuby-Agent-Auth": "bootstrap-secret" });
         return json(bootstrap);
       }
       if (url.pathname === "/api/sessions") {
@@ -249,7 +249,7 @@ describe("memmy-agent client", () => {
               updatedAt: "2026-06-06T08:00:00.000Z",
               run_started_at: 1780732800,
               projectId: null,
-              cwd: "/Users/yuan/.memmy/workspace",
+              cwd: "/Users/yuan/.cuby/workspace",
               model_selection: modelSelectionWire
             }
           ]
@@ -259,7 +259,7 @@ describe("memmy-agent client", () => {
     });
 
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       bootstrapSecret: "bootstrap-secret",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch,
@@ -294,7 +294,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -338,7 +338,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -366,7 +366,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -388,7 +388,7 @@ describe("memmy-agent client", () => {
         : json({ projectRegistryState: "ready", projects: [], sessions: [] });
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -424,7 +424,7 @@ describe("memmy-agent client", () => {
       }
       return json({ error: "not found" }, 404);
     });
-    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", clientId: "frontend-test", fetchFn: fetchMock as typeof fetch });
+    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", clientId: "frontend-test", fetchFn: fetchMock as typeof fetch });
 
     await expect(client.listSlashCommands()).resolves.toEqual([
       { command: "/goal", title: "Goal", description: "Start goal", icon: "activity", argHint: "<goal>" },
@@ -484,7 +484,7 @@ describe("memmy-agent client", () => {
             preview: "继续拆解需求",
             updatedAt: "2026-06-06T08:30:00.000Z",
             projectId: null,
-            cwd: "/Users/yuan/.memmy/workspace"
+            cwd: "/Users/yuan/.cuby/workspace"
           }
         });
       }
@@ -493,14 +493,14 @@ describe("memmy-agent client", () => {
       }
       return json({ error: "not found" }, 404);
     });
-    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", clientId: "frontend-test", fetchFn: fetchMock as typeof fetch });
+    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", clientId: "frontend-test", fetchFn: fetchMock as typeof fetch });
 
     await expect(client.writeSidebarState(sidebarState.updated_at, sidebarState)).resolves.toEqual(sidebarState);
     await expect(client.readWebuiThread("websocket:chat-1")).resolves.toMatchObject({
       sessionKey: "websocket:chat-1",
       messages: [
         {
-          media: [{ kind: "file", name: "deck.pptx", path: "/Users/yuan/deck.pptx", url: "http://127.0.0.1:18980/api/media/signed" }]
+          media: [{ kind: "file", name: "deck.pptx", path: "/Users/yuan/deck.pptx", url: "http://127.0.0.1:28980/api/media/signed" }]
         }
       ]
     });
@@ -556,7 +556,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -566,19 +566,19 @@ describe("memmy-agent client", () => {
       messages: [
         {
           images: [
-            { url: "https://agent.local:18980/api/media/sig-1/payload-1", name: "snap.png" },
+            { url: "https://agent.local:28980/api/media/sig-1/payload-1", name: "snap.png" },
             { url: "https://cdn.example.com/diag.jpg", name: "diag.jpg" }
           ],
           media: [
-            { kind: "image", url: "https://agent.local:18980/api/media/sig-1/payload-1", name: "snap.png" },
-            { kind: "file", path: "/Users/yuan/report.xlsx", url: "https://agent.local:18980/api/media/sig-2/payload-2", name: "report.xlsx" }
+            { kind: "image", url: "https://agent.local:28980/api/media/sig-1/payload-1", name: "snap.png" },
+            { kind: "file", path: "/Users/yuan/report.xlsx", url: "https://agent.local:28980/api/media/sig-2/payload-2", name: "report.xlsx" }
           ],
           path: "/Users/yuan/report.xlsx",
           ws_path: "/ws",
           data_url: "data:image/png;base64,AAAA"
         },
         {
-          content: "![Diagram](https://agent.local:18980/api/media/sig-3/payload-3) [Deck](<https://agent.local:18980/api/media/sig-4/payload-4>) [Local](/Users/yuan/local.png) [Api](/api/sessions)"
+          content: "![Diagram](https://agent.local:28980/api/media/sig-3/payload-3) [Deck](<https://agent.local:28980/api/media/sig-4/payload-4>) [Local](/Users/yuan/local.png) [Api](/api/sessions)"
         }
       ]
     });
@@ -601,7 +601,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -629,8 +629,8 @@ describe("memmy-agent client", () => {
         expect(init?.method).toBe("POST");
         expect(init?.headers).toEqual({ "Content-Type": "application/json", Authorization: "Bearer agent-token" });
         const body = JSON.parse(String(init?.body));
-        if (body.path === "/Users/yuan/.memmy/workspace") {
-          return json({ ok: true, path: "/Users/yuan/.memmy/workspace", name: "workspace", kind: "directory" });
+        if (body.path === "/Users/yuan/.cuby/workspace") {
+          return json({ ok: true, path: "/Users/yuan/.cuby/workspace", name: "workspace", kind: "directory" });
         }
         expect(body).toEqual({ path: "/Users/yuan/result.png", sessionKey: "websocket:chat-1" });
         return json({ ok: true, path: "/Users/yuan/result.png", name: "result.png", kind: "image", media_url: "/api/media/signed" });
@@ -649,18 +649,18 @@ describe("memmy-agent client", () => {
       }
       return json({ error: "not found" }, 404);
     });
-    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", clientId: "frontend-test", fetchFn: fetchMock as typeof fetch });
+    const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", clientId: "frontend-test", fetchFn: fetchMock as typeof fetch });
 
     await expect(client.resolveArtifact("/Users/yuan/result.png", "websocket:chat-1")).resolves.toEqual({
       ok: true,
       path: "/Users/yuan/result.png",
       name: "result.png",
       kind: "image",
-      media_url: "http://127.0.0.1:18980/api/media/signed"
+      media_url: "http://127.0.0.1:28980/api/media/signed"
     });
-    await expect(client.resolveArtifact("/Users/yuan/.memmy/workspace", "websocket:chat-1")).resolves.toEqual({
+    await expect(client.resolveArtifact("/Users/yuan/.cuby/workspace", "websocket:chat-1")).resolves.toEqual({
       ok: true,
-      path: "/Users/yuan/.memmy/workspace",
+      path: "/Users/yuan/.cuby/workspace",
       name: "workspace",
       kind: "directory"
     });
@@ -718,7 +718,7 @@ describe("memmy-agent client", () => {
       return json({ error: "not found" }, 404);
     });
     const client = createMemmyAgentClient({
-      baseUrl: "http://127.0.0.1:18980",
+      baseUrl: "http://127.0.0.1:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch
     });
@@ -729,7 +729,7 @@ describe("memmy-agent client", () => {
     ])).resolves.toEqual([
       {
         path: "/tmp/memmy/media/websocket/webui/shot.png",
-        url: "http://127.0.0.1:18980/api/media/sig/shot",
+        url: "http://127.0.0.1:28980/api/media/sig/shot",
         name: "shot.png",
         kind: "image",
         mime: "image/png",
@@ -737,7 +737,7 @@ describe("memmy-agent client", () => {
       },
       {
         path: "/tmp/memmy/media/websocket/webui/小短文.pdf",
-        url: "http://127.0.0.1:18980/api/media/sig/report",
+        url: "http://127.0.0.1:28980/api/media/sig/report",
         name: "小短文.pdf",
         kind: "file",
         mime: "application/pdf",
@@ -751,7 +751,7 @@ describe("memmy-agent client", () => {
     const sockets: FakeSocket[] = [];
     const fetchMock = vi.fn(async () => json(bootstrap));
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: fetchMock as typeof fetch,
       webSocketFactory: (url) => {
@@ -763,7 +763,7 @@ describe("memmy-agent client", () => {
     const events: unknown[] = [];
 
     const connection = await connectReady(client, sockets, (event) => events.push(event), { event: "ready", chat_id: "chat-1", client_id: "frontend-test" });
-    expect(sockets[0]?.url).toBe("wss://agent.local:18980/ws?token=agent-token&client_id=frontend-test&client_surface=gui");
+    expect(sockets[0]?.url).toBe("wss://agent.local:28980/ws?token=agent-token&client_id=frontend-test&client_surface=gui");
 
     const newChat = connection.newChat(1);
     connection.attach("chat-2");
@@ -773,7 +773,7 @@ describe("memmy-agent client", () => {
       language: "zh-CN",
       media: [{
         path: "/tmp/memmy/media/websocket/webui/shot.png",
-        url: "https://agent.local:18980/api/media/sig/shot",
+        url: "https://agent.local:28980/api/media/sig/shot",
         name: "shot.png",
         kind: "image",
         mime: "image/png",
@@ -835,7 +835,7 @@ describe("memmy-agent client", () => {
   it("does not resolve websocket connection until the current socket receives ready", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -868,7 +868,7 @@ describe("memmy-agent client", () => {
     const sockets: FakeSocket[] = [];
     const events: MemmyAgentWsEvent[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -895,7 +895,7 @@ describe("memmy-agent client", () => {
   it("newChat resolves server assigned chat id", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -934,7 +934,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -983,7 +983,7 @@ describe("memmy-agent client", () => {
   it("newChat rejects when another new chat is in flight", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1016,7 +1016,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1052,7 +1052,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1090,7 +1090,7 @@ describe("memmy-agent client", () => {
   it("resolves a run status snapshot only for the requested chat and ready generation", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1132,7 +1132,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1174,7 +1174,7 @@ describe("memmy-agent client", () => {
   it("routes websocket events per chat and flushes queued events on subscribe", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1203,8 +1203,8 @@ describe("memmy-agent client", () => {
       chat_id: "chat-2",
       connection_generation: 1,
       kind: "progress",
-      text: "queued trace ![Diagram](https://agent.local:18980/api/media/sig-live/payload-live)",
-      media_urls: [{ kind: "image", url: "https://agent.local:18980/api/media/sig-live/payload-live", name: "live.png" }]
+      text: "queued trace ![Diagram](https://agent.local:28980/api/media/sig-live/payload-live)",
+      media_urls: [{ kind: "image", url: "https://agent.local:28980/api/media/sig-live/payload-live", name: "live.png" }]
     };
     expect(chatEvents).toEqual([expectedEvent]);
     expect(globalEvents).toEqual([expectedEvent]);
@@ -1216,7 +1216,7 @@ describe("memmy-agent client", () => {
   it("routes status_result events only through the status result handler", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1241,7 +1241,7 @@ describe("memmy-agent client", () => {
   it("routes history DAG results to the panel handler instead of the chat stream", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1324,7 +1324,7 @@ describe("memmy-agent client", () => {
   it("keeps legacy agent_ui history DAG messages routed to the panel handler", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1380,7 +1380,7 @@ describe("memmy-agent client", () => {
   it("fails closed when a new history DAG payload has malformed active edge ids", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1415,7 +1415,7 @@ describe("memmy-agent client", () => {
   it("surfaces session, model, and run status updates through connection handlers", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1469,7 +1469,7 @@ describe("memmy-agent client", () => {
   it("resolves Goal controls from matching results and rejects protocol errors", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1522,7 +1522,7 @@ describe("memmy-agent client", () => {
   it("reuses equal in-flight Goal controls and rejects a conflicting request_id", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1559,7 +1559,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1584,7 +1584,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1614,7 +1614,7 @@ describe("memmy-agent client", () => {
     const lifecycleEvents: unknown[] = [];
     const chatEvents: unknown[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1678,7 +1678,7 @@ describe("memmy-agent client", () => {
     const lifecycleEvents: unknown[] = [];
     const chatEvents: unknown[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1715,7 +1715,7 @@ describe("memmy-agent client", () => {
   it("ignores turn_end run status updates without chat_id", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1738,7 +1738,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1768,7 +1768,7 @@ describe("memmy-agent client", () => {
     const sockets: FakeSocket[] = [];
     const events: MemmyAgentWsEvent[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1815,7 +1815,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1870,7 +1870,7 @@ describe("memmy-agent client", () => {
   it("returns accepted when a composer message starts immediately", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1898,7 +1898,7 @@ describe("memmy-agent client", () => {
   it("finishes a queued transport attempt when the item is removed", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1941,7 +1941,7 @@ describe("memmy-agent client", () => {
   it("correlates a single queued-message removal result", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -1975,7 +1975,7 @@ describe("memmy-agent client", () => {
   it("sends one queue-steer control and terminates the original queued attempt", async () => {
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -2049,7 +2049,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -2093,7 +2093,7 @@ describe("memmy-agent client", () => {
     vi.useFakeTimers();
     const sockets: FakeSocket[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -2127,7 +2127,7 @@ describe("memmy-agent client", () => {
     const sockets: FakeSocket[] = [];
     const events: MemmyAgentWsEvent[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -2161,7 +2161,7 @@ describe("memmy-agent client", () => {
     const sockets: FakeSocket[] = [];
     const events: MemmyAgentWsEvent[] = [];
     const client = createMemmyAgentClient({
-      baseUrl: "https://agent.local:18980",
+      baseUrl: "https://agent.local:28980",
       clientId: "frontend-test",
       fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
       webSocketFactory: (url) => {
@@ -2197,7 +2197,7 @@ describe("memmy-agent client", () => {
         expect(url.pathname).toBe("/api/settings/mcp-presets");
         return json(emptyPayload);
       });
-      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
 
       await expect(client.listMcpPresets()).resolves.toEqual(emptyPayload);
     });
@@ -2209,12 +2209,12 @@ describe("memmy-agent client", () => {
         expect(url.pathname).toBe("/api/settings/mcp-presets/enable");
         expect(init?.method).toBe("POST");
         const headers = new Headers(init?.headers);
-        expect(headers.get("x-memmy-agent-mcp-values")).toBe(
+        expect(headers.get("x-cuby-agent-mcp-values")).toBe(
           JSON.stringify({ name: "brave-search", brave_api_key: " BSA_test " })
         );
         return json({ presets: [], installed_count: 1 });
       });
-      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
 
       await expect(client.enableMcpPreset("brave-search", { brave_api_key: " BSA_test " })).resolves.toEqual({
         presets: [],
@@ -2228,7 +2228,7 @@ describe("memmy-agent client", () => {
         if (url.pathname === "/webui/bootstrap") return json(bootstrap);
         expect(url.pathname).toBe("/api/settings/mcp-presets/custom");
         const headers = new Headers(init?.headers);
-        expect(JSON.parse(String(headers.get("x-memmy-agent-mcp-values")))).toEqual({
+        expect(JSON.parse(String(headers.get("x-cuby-agent-mcp-values")))).toEqual({
           name: "my-server",
           transport: "stdio",
           command: "npx",
@@ -2236,7 +2236,7 @@ describe("memmy-agent client", () => {
         });
         return json(emptyPayload);
       });
-      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
 
       await expect(
         client.addCustomMcpServer({ name: "my-server", transport: "stdio", command: "npx", args: ["-y", "my-server"] })
@@ -2247,12 +2247,12 @@ describe("memmy-agent client", () => {
       const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
         const url = new URL(String(input));
         if (url.pathname === "/webui/bootstrap") return json(bootstrap);
-        const raw = String(new Headers(init?.headers).get("x-memmy-agent-mcp-values"));
+        const raw = String(new Headers(init?.headers).get("x-cuby-agent-mcp-values"));
         expect(raw).toMatch(/^[\x20-\x7e]*$/);
         expect(JSON.parse(raw)).toEqual({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" });
         return json(emptyPayload);
       });
-      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
 
       await expect(
         client.addCustomMcpServer({ name: "my-server", transport: "stdio", command: "npx", cwd: "D:/项目" })
@@ -2269,10 +2269,10 @@ describe("memmy-agent client", () => {
         expect(url.pathname).toBe(path);
         expect(init?.method).toBe("POST");
         const headers = new Headers(init?.headers);
-        expect(JSON.parse(String(headers.get("x-memmy-agent-mcp-values")))).toEqual({ name: "exa" });
+        expect(JSON.parse(String(headers.get("x-cuby-agent-mcp-values")))).toEqual({ name: "exa" });
         return json(emptyPayload);
       });
-      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
 
       await expect(client[method]("exa")).resolves.toEqual(emptyPayload);
     });
@@ -2283,7 +2283,7 @@ describe("memmy-agent client", () => {
         if (url.pathname === "/webui/bootstrap") return json(bootstrap);
         return new Response("MCP settings payload is too large", { status: 400 });
       });
-      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:18980", fetchFn: fetchMock as typeof fetch });
+      const client = createMemmyAgentClient({ baseUrl: "http://127.0.0.1:28980", fetchFn: fetchMock as typeof fetch });
 
       await expect(client.enableMcpPreset("exa")).rejects.toMatchObject({
         message: "MCP settings payload is too large",

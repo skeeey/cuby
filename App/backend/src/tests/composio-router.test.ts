@@ -106,12 +106,12 @@ describe("memmy-config patchMcpServerConfig", () => {
 
     await patchMcpServerConfigInMemmyConfig(
       "composio",
-      { type: "streamableHttp", url: "http://127.0.0.1:1/mcp/composio", headers: { "x-memmy-mcp-token": "a" } },
+      { type: "streamableHttp", url: "http://127.0.0.1:1/mcp/composio", headers: { "x-cuby-mcp-token": "a" } },
       configPath
     );
     await patchMcpServerConfigInMemmyConfig(
       "composio",
-      { type: "streamableHttp", url: "http://127.0.0.1:2/mcp/composio", headers: { "x-memmy-mcp-token": "b" } },
+      { type: "streamableHttp", url: "http://127.0.0.1:2/mcp/composio", headers: { "x-cuby-mcp-token": "b" } },
       configPath
     );
 
@@ -119,7 +119,7 @@ describe("memmy-config patchMcpServerConfig", () => {
       tools: { mcpServers: { composio: { url: string; headers: Record<string, string> } } };
     };
     expect(config.tools.mcpServers.composio.url).toBe("http://127.0.0.1:2/mcp/composio");
-    expect(config.tools.mcpServers.composio.headers["x-memmy-mcp-token"]).toBe("b");
+    expect(config.tools.mcpServers.composio.headers["x-cuby-mcp-token"]).toBe("b");
   });
 });
 
@@ -141,7 +141,7 @@ describe("Composio MCP HTTP 路由", () => {
 
     const client = new Client({ name: "http-test", version: "1.0.0" });
     await client.connect(
-      new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-memmy-mcp-token": "secret-token" } } })
+      new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-cuby-mcp-token": "secret-token" } } })
     );
 
     const tools = await client.listTools();
@@ -162,7 +162,7 @@ describe("Composio MCP HTTP 路由", () => {
 
     const client = new Client({ name: "http-test-bad", version: "1.0.0" });
     await expect(
-      client.connect(new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-memmy-mcp-token": "wrong" } } }))
+      client.connect(new StreamableHTTPClientTransport(url, { requestInit: { headers: { "x-cuby-mcp-token": "wrong" } } }))
     ).rejects.toThrow();
     expect(integrations.executeRouterTool).not.toHaveBeenCalled();
   });

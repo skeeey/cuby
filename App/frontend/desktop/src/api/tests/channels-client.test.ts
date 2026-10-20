@@ -16,7 +16,7 @@ describe("channels-client", () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
       expect(init?.headers).toMatchObject({
-        "x-memmy-local-token": "token"
+        "x-cuby-local-token": "token"
       });
 
       if (url.endsWith("/api/v1/channels/definitions")) {

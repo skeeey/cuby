@@ -35,10 +35,10 @@ const envPath = findRepoEnvFile(moduleDir);
 const parsed = envPath ? (loadDotenv({ path: envPath, processEnv: {} }).parsed ?? {}) : {};
 const testEnv = {
   ...parsed,
-  MEMMY_CLOUD_SERVICE: "https://cloud.test.invalid",
-  MEMMY_MEMORY_URL: "http://memory.test.invalid",
+  CUBY_CLOUD_SERVICE: "https://cloud.test.invalid",
+  CUBY_MEMORY_URL: "http://memory.test.invalid",
   MEMORY_SERVICE_URL: "http://memory.test.invalid",
-  MEMMY_MEMORY_TOKEN: "",
+  CUBY_MEMORY_TOKEN: "",
   MEMORY_SERVICE_TOKEN: "",
 };
 

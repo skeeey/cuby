@@ -12,7 +12,7 @@ declare global {
   }
 }
 
-const MEASUREMENT_ID = (import.meta.env.MEMMY_GA4_MEASUREMENT_ID as string | undefined)?.trim();
+const MEASUREMENT_ID = (import.meta.env.CUBY_GA4_MEASUREMENT_ID as string | undefined)?.trim();
 
 let initialized = false;
 
@@ -20,7 +20,7 @@ export function initGtag(measurementId = MEASUREMENT_ID): void {
   if (initialized) return;
   void initializeDesktopAnalyticsContext();
   if (!measurementId) {
-    console.log("[analytics] initGtag skipped: MEMMY_GA4_MEASUREMENT_ID not set");
+    console.log("[analytics] initGtag skipped: CUBY_GA4_MEASUREMENT_ID not set");
     return;
   }
   initialized = true;

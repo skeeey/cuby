@@ -362,16 +362,16 @@ export class ComputerHistoryDemoService {
   } = {}) {
     this.recorderScript = input.recorderScript ?? moduleFile("record-human-history.js");
     this.historyDirectory = path.resolve(input.historyDirectory
-      ?? path.join(os.homedir(), ".memmy", "computer-history", "histories"));
+      ?? path.join(os.homedir(), ".cuby", "computer-history", "histories"));
     this.recordingDirectory = path.resolve(input.recordingDirectory
-      ?? path.join(os.homedir(), ".memmy", "computer-history", "recordings"));
+      ?? path.join(os.homedir(), ".cuby", "computer-history", "recordings"));
     this.workflowDirectory = path.resolve(input.workflowDirectory
-      ?? path.join(os.homedir(), ".memmy", "computer-history", "workflows"));
+      ?? path.join(os.homedir(), ".cuby", "computer-history", "workflows"));
     this.observationSettings = new ObservationSettingsStore(input.observationSettingsFile);
     this.applicationIcons = new ApplicationIconReader();
     this.permissionReader = input.permissionReader ?? readHistoryPermissions;
     this.liveSummaryIntervalMs = boundedInterval(
-      process.env.MEMMY_COMPUTER_HISTORY_LIVE_SUMMARY_INTERVAL_MS,
+      process.env.CUBY_COMPUTER_HISTORY_LIVE_SUMMARY_INTERVAL_MS,
       60_000,
       15_000,
       10 * 60_000,
