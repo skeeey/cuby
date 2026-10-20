@@ -12,5 +12,7 @@ describe("resolveMemoryLanguage", () => {
     expect(resolveMemoryLanguage(undefined, "phone")).toBe("zh-CN");
     expect(resolveMemoryLanguage("system", "email")).toBe("en-US");
     expect(resolveMemoryLanguage(undefined, "email")).toBe("en-US");
+    expect(resolveMemoryLanguage("system", "email", "zh-CN")).toBe("zh-CN");
+    expect(resolveMemoryLanguage("system", "phone", "en-US")).toBe("en-US");
   });
 });

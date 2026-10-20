@@ -5,11 +5,11 @@ export function resolveAnalyticsAppEnv(isProd = import.meta.env.PROD): Analytics
   return isProd ? "prod" : "dev";
 }
 
-/** Matches legal-links: CUBY_APP_EDITION=intl → intl, otherwise cn. */
+/** Derives the analytics edition from the UI language, matching legal-links. */
 export function resolveAnalyticsAppEdition(
-  rawEdition = import.meta.env.CUBY_APP_EDITION as string | undefined
+  language = typeof navigator === "undefined" ? "" : navigator.language
 ): AnalyticsAppEdition {
-  return rawEdition?.trim().toLowerCase() === "intl" ? "intl" : "cn";
+  return language.trim().toLowerCase().startsWith("zh") ? "cn" : "intl";
 }
 
 /** Dev builds always debug; prod can opt in via VITE_GA4_DEBUG=true. */

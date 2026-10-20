@@ -70,10 +70,9 @@ export function useOptionalApiClients(): ApiClientsContextValue {
 /**
  * Resolves the interface language.
  *
- * An explicit user choice wins. The stored default is "system", and a Chinese system has to
- * mean Chinese: reading that setting as "the edition's language" handed a Chinese Windows an
- * English UI because the package was built as the international edition. Every other locale
- * keeps following the edition, which is what decides between the two languages this app ships.
+ * An explicit user choice wins. The stored default is "system": a Chinese
+ * system means Chinese, every other locale means English. The app ships both
+ * languages in one universal build, so the package edition no longer decides.
  *
  * @param configuredLanguage The language stored in the app settings.
  * @returns The concrete language to render.
@@ -88,5 +87,5 @@ export function resolveDisplayLanguage(configuredLanguage: string | undefined): 
     return "zh-CN";
   }
 
-  return import.meta.env.CUBY_APP_EDITION === "intl" ? "en-US" : "zh-CN";
+  return "en-US";
 }

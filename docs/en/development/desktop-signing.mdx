@@ -58,8 +58,8 @@ export CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
 ### Commands
 
 ```bash
-bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --edition cn --sign signed
-bash scripts/package-mac.sh --version 1.2.3 --arch x64 --edition intl --sign signed
+bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --sign signed
+bash scripts/package-mac.sh --version 1.2.3 --arch x64 --sign signed
 ```
 
 This must run on macOS (`codesign`, `notarytool`, and `stapler` are Apple tools), and the build machine must stay online and awake.
@@ -117,7 +117,7 @@ In option B the script passes the SHA1 or subject name plus the RFC3161 timestam
 ```bash
 WIN_CSC_LINK=/abs/path/code-signing.pfx \
 WIN_CSC_KEY_PASSWORD=... \
-bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign signed
+bash scripts/package-win.sh --version 1.2.3 --arch x64 --sign signed
 ```
 
 ### SmartScreen
@@ -131,8 +131,8 @@ bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign signe
 Local development and CI smoke builds need no certificates:
 
 ```bash
-bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --edition cn --sign unsigned
-bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign unsigned
+bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --sign unsigned
+bash scripts/package-win.sh --version 1.2.3 --arch x64 --sign unsigned
 ```
 
 - macOS: `electron-builder.unsigned.yml` sets `identity: null` and disables hardened runtime and notarization. The output is for local testing only; Gatekeeper blocks it when distributed.
@@ -141,7 +141,7 @@ bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign unsig
 ## Signing in CI
 
 - `.github/workflows/build-desktop.yml` always uses `--sign unsigned`; GitHub Actions holds no signing credentials.
-- `.github/workflows/github-draft-release-v2.yml` does not build installers. It downloads the six already-signed installers (Windows cn/intl plus macOS arm64/x64 cn/intl) from the OSS CDN, verifies their integrity, and creates the Draft Release.
+- `.github/workflows/github-draft-release-v2.yml` does not build installers. It downloads the three already-signed installers (Windows x64 plus macOS arm64/x64) from the OSS CDN, verifies their integrity, and creates the Draft Release.
 - Signed installers are produced by an internal packaging machine outside this repository and uploaded to OSS. The GitHub repository therefore needs no Apple or Windows signing secrets.
 
 ## Handling Credentials

@@ -59,10 +59,12 @@ export function resolveAnalyticsAppEnv(env: NodeJS.ProcessEnv = process.env): An
   return env.NODE_ENV === "production" ? "prod" : "dev";
 }
 
-/** CUBY_APP_EDITION=intl → intl, otherwise cn (matches desktop gtag / legal-links). */
+/** Derives the analytics edition from the system/UI language. */
 export function resolveAnalyticsAppEdition(
   env: NodeJS.ProcessEnv = process.env,
 ): AnalyticsAppEdition {
+  const language = env.CUBY_SYSTEM_LANGUAGE?.trim().toLowerCase();
+  if (language) return language.startsWith("zh") ? "cn" : "intl";
   return env.CUBY_APP_EDITION?.trim().toLowerCase() === "intl" ? "intl" : "cn";
 }
 

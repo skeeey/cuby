@@ -216,7 +216,11 @@ export function createMemmyConfigWriter(options: CreateMemmyConfigWriterOptions 
     },
 
     async writeMemoryLanguage(language) {
-      const resolved = resolveMemoryLanguage(language, options.accountChannel);
+      const resolved = resolveMemoryLanguage(
+        language,
+        options.accountChannel,
+        process.env.CUBY_SYSTEM_LANGUAGE
+      );
       await mutateRuntimeConfig(configPath, (config) => {
         const memory = asRecord(config.memmyMemory) ?? {};
         memory.language = resolved;

@@ -388,12 +388,9 @@ jobs:
           mkdir -p release-assets
           base="https://memtensor-cdn.oss-cn-shanghai.aliyuncs.com/memmy/$VERSION"
           artifacts=(
-            "Cuby-$VERSION-win32-x64-cn-signed.exe"
-            "Cuby-$VERSION-win32-x64-intl-signed.exe"
-            "Cuby-$VERSION-darwin-arm64-cn-signed.dmg"
-            "Cuby-$VERSION-darwin-arm64-intl-signed.dmg"
-            "Cuby-$VERSION-darwin-x64-cn-signed.dmg"
-            "Cuby-$VERSION-darwin-x64-intl-signed.dmg"
+            "Cuby-$VERSION-win32-x64-signed.exe"
+            "Cuby-$VERSION-darwin-arm64-signed.dmg"
+            "Cuby-$VERSION-darwin-x64-signed.dmg"
           )
           : > release-assets/OSS_VERIFICATION.jsonl
 
@@ -696,12 +693,9 @@ jobs:
 
           ## Downloads
 
-          - Windows x64 (China): [Cuby-$VERSION-win32-x64-cn-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-win32-x64-cn-signed.exe)
-          - Windows x64 (International): [Cuby-$VERSION-win32-x64-intl-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-win32-x64-intl-signed.exe)
-          - macOS Apple Silicon (China): [Cuby-$VERSION-darwin-arm64-cn-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-arm64-cn-signed.dmg)
-          - macOS Apple Silicon (International): [Cuby-$VERSION-darwin-arm64-intl-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-arm64-intl-signed.dmg)
-          - macOS Intel (China): [Cuby-$VERSION-darwin-x64-cn-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-x64-cn-signed.dmg)
-          - macOS Intel (International): [Cuby-$VERSION-darwin-x64-intl-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-x64-intl-signed.dmg)
+          - Windows x64: [Cuby-$VERSION-win32-x64-signed.exe](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-win32-x64-signed.exe)
+          - macOS Apple Silicon: [Cuby-$VERSION-darwin-arm64-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-arm64-signed.dmg)
+          - macOS Intel: [Cuby-$VERSION-darwin-x64-signed.dmg](https://github.com/$GITHUB_REPOSITORY/releases/download/$TAG/Cuby-$VERSION-darwin-x64-signed.dmg)
 
           ## Installation
 

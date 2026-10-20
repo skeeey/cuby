@@ -150,29 +150,20 @@ upload_pkg() {
 }
 
 # ============================================================
-# 5. Build + upload: domestic signed package (cn)
+# 5. Build + upload: universal signed package
 # ============================================================
-CURRENT_STEP="Build and upload Mac domestic signed package"
+CURRENT_STEP="Build and upload Mac signed package"
 log "$CURRENT_STEP"
 set_cloud_service "$CN_CLOUD_SERVICE"
-bash scripts/package-mac.sh --version "$NEW_VERSION" --arch arm64 --edition cn --sign signed
-upload_pkg "$RELEASE_DIR/Cuby-$NEW_VERSION-darwin-arm64-cn-signed.dmg" "darwin-arm64-cn-signed"
+bash scripts/package-mac.sh --version "$NEW_VERSION" --arch arm64 --sign signed
+upload_pkg "$RELEASE_DIR/Cuby-$NEW_VERSION-darwin-arm64-signed.dmg" "darwin-arm64-signed"
 
 # ============================================================
-# 6. Build + upload: international signed package (intl)
-# ============================================================
-CURRENT_STEP="Build and upload Mac international signed package"
-log "$CURRENT_STEP"
-set_cloud_service "$INTL_CLOUD_SERVICE"
-bash scripts/package-mac.sh --version "$NEW_VERSION" --arch arm64 --edition intl --sign signed
-upload_pkg "$RELEASE_DIR/Cuby-$NEW_VERSION-darwin-arm64-intl-signed.dmg" "darwin-arm64-intl-signed"
-
-# ============================================================
-# 7. Done
+# 6. Done
 # ============================================================
 CURRENT_STEP="Done"
-log "All done: v$NEW_VERSION (cn + intl) released"
-notify "✅ Release succeeded v$NEW_VERSION (Mac domestic + international signed packages are live)" "Glass"
+log "All done: v$NEW_VERSION released"
+notify "✅ Release succeeded v$NEW_VERSION (Mac signed package is live)" "Glass"
 
 # ============================================================
 # Appendix: install as a daily 20:30 scheduled job (launchd)

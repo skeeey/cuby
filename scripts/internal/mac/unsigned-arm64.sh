@@ -17,7 +17,7 @@ case "${CUBY_ACCOUNT_CHANNEL:-phone}" in
     ;;
 esac
 
-ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-darwin-arm64-$PACKAGE_EDITION-unsigned.\${ext}"
+ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-darwin-arm64-unsigned.\${ext}"
 
 export CUBY_SKIP_CODESIGN=1
 export CUBY_PACKAGE_SIGNING=unsigned

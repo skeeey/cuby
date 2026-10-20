@@ -980,7 +980,7 @@ describe("desktop packaged runtime boundaries", () => {
     expect(mainSource).toContain('join(systemRoot, "System32", "WindowsPowerShell", "v1.0", "powershell.exe")');
     expect(mainSource).toContain("function resolveWindowsUpdatePromptLanguageFromAppSettings");
     expect(mainSource).toContain('language === "zh-CN" || language === "en-US"');
-    expect(mainSource).toContain('resolveCurrentDesktopEdition() === "intl" ? "en-US" : "zh-CN"');
+    expect(mainSource).toContain('app.getLocale().toLowerCase().startsWith("zh") ? "zh-CN" : "en-US"');
     expect(mainSource).toContain("await writeWindowsUpdatePromptLanguage(resolveWindowsUpdatePromptLanguageFromAppSettings())");
     expect(mainSource).toContain("await writeWindowsUpdatePromptMarker()");
     expect(mainSource).toContain("showUpdatePrompt: shouldShowWindowsUpdatePromptForPreparedUpdate(update)");
@@ -1371,22 +1371,18 @@ describe("desktop packaged runtime boundaries", () => {
     const rootPackage = readJson<PackageJson>(rootPackagePath);
     const scripts = rootPackage.scripts ?? {};
 
-    expect(packageWinSource).toContain("Usage: package-win.sh --version <version> --arch <x64> --edition <cn|intl> --sign <signed|unsigned>");
+    expect(packageWinSource).toContain("Usage: package-win.sh --version <version> --arch <x64> --sign <signed|unsigned>");
     expect(packageWinSource).toContain("--version is required. Example: --version 0.0.1");
     expect(packageWinSource).toContain('export CUBY_DESKTOP_VERSION="$VERSION"');
-    expect(packageWinSource).toContain("export CUBY_ACCOUNT_CHANNEL=phone");
     expect(packageWinSource).toContain("export CUBY_ACCOUNT_CHANNEL=email");
+    expect(packageWinSource).toContain("export CUBY_APP_EDITION=intl");
     expect(packageWinSource).toContain("export CUBY_SKIP_CODESIGN=1");
     expect(packageWinSource).toContain("unset CUBY_SKIP_CODESIGN");
     expect(packageWinSource).toContain('BASE_SCRIPT="$ROOT_DIR/scripts/internal/win/$SIGN-$ARCH.sh"');
     expect(packageWinSource).toContain('bash "$BASE_SCRIPT" "${PASSTHROUGH_ARGS[@]}"');
 
-    expect(scripts["package:win:x64"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --edition cn --sign signed");
-    expect(scripts["package:win:x64:unsigned"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --edition cn --sign unsigned");
-    expect(scripts["package:win:x64:cn:signed"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --edition cn --sign signed");
-    expect(scripts["package:win:x64:cn:unsigned"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --edition cn --sign unsigned");
-    expect(scripts["package:win:x64:intl:signed"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --edition intl --sign signed");
-    expect(scripts["package:win:x64:intl:unsigned"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --edition intl --sign unsigned");
+    expect(scripts["package:win:x64"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --sign signed");
+    expect(scripts["package:win:x64:unsigned"]).toBe("bash scripts/package-win.sh --version $npm_package_version --arch x64 --sign unsigned");
   });
 
   it("validates the bundled browser runtime during Windows packaging", () => {
@@ -1476,24 +1472,20 @@ describe("desktop packaged runtime boundaries", () => {
     const rootPackage = readJson<PackageJson>(rootPackagePath);
     const scripts = rootPackage.scripts ?? {};
 
-    expect(packageMacSource).toContain("Usage: package-mac.sh --version <version> --arch <arm64|x64> --edition <cn|intl> --sign <signed|unsigned>");
+    expect(packageMacSource).toContain("Usage: package-mac.sh --version <version> --arch <arm64|x64> --sign <signed|unsigned>");
     expect(packageMacSource).toContain("--version is required. Example: --version 0.0.1");
     expect(packageMacSource).toContain('export CUBY_DESKTOP_VERSION="$VERSION"');
-    expect(packageMacSource).toContain("export CUBY_ACCOUNT_CHANNEL=phone");
     expect(packageMacSource).toContain("export CUBY_ACCOUNT_CHANNEL=email");
+    expect(packageMacSource).toContain("export CUBY_APP_EDITION=intl");
     expect(packageMacSource).toContain("export CUBY_SKIP_CODESIGN=1");
     expect(packageMacSource).toContain("unset CUBY_SKIP_CODESIGN");
     expect(packageMacSource).toContain('BASE_SCRIPT="$ROOT_DIR/scripts/internal/mac/$SIGN-$ARCH.sh"');
     expect(packageMacSource).toContain('bash "$BASE_SCRIPT" "${PASSTHROUGH_ARGS[@]}"');
 
-    expect(scripts["package:mac:arm64:cn:signed"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --edition cn --sign signed");
-    expect(scripts["package:mac:arm64:cn:unsigned"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --edition cn --sign unsigned");
-    expect(scripts["package:mac:arm64:intl:signed"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --edition intl --sign signed");
-    expect(scripts["package:mac:arm64:intl:unsigned"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --edition intl --sign unsigned");
-    expect(scripts["package:mac:x64:cn:signed"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch x64 --edition cn --sign signed");
-    expect(scripts["package:mac:x64:cn:unsigned"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch x64 --edition cn --sign unsigned");
-    expect(scripts["package:mac:x64:intl:signed"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch x64 --edition intl --sign signed");
-    expect(scripts["package:mac:x64:intl:unsigned"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch x64 --edition intl --sign unsigned");
+    expect(scripts["package:mac:arm64:signed"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --sign signed");
+    expect(scripts["package:mac:arm64:unsigned"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --sign unsigned");
+    expect(scripts["package:mac:x64:signed"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch x64 --sign signed");
+    expect(scripts["package:mac:x64:unsigned"]).toBe("bash scripts/package-mac.sh --version $npm_package_version --arch x64 --sign unsigned");
   });
 
   it("supports Windows signing through PFX files and SimplySign certificate store thumbprints", () => {
@@ -1588,8 +1580,8 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("desktop-edition.json");
     expect(source).toContain("write-desktop-edition-manifest.mjs");
     expect(source).toContain('--signing "$PACKAGE_SIGNING"');
-    expect(source).toContain('FINAL_EXE="$DESKTOP_DIR/release/Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.exe"');
-    expect(source).toContain('ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_EDITION-$PACKAGE_SIGNING.\\${ext}"');
+    expect(source).toContain('FINAL_EXE="$DESKTOP_DIR/release/Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_SIGNING.exe"');
+    expect(source).toContain('ARTIFACT_NAME="Cuby-$DESKTOP_VERSION-win32-$PACKAGE_ARCH-$PACKAGE_SIGNING.\\${ext}"');
     expect(source).toContain('BUILDER_ARGS+=(--config.extraMetadata.version="$DESKTOP_VERSION")');
     expect(source).toContain('npx electron-builder "${BUILDER_ARGS[@]}" --win nsis --x64 "$@" --config.artifactName="$ARTIFACT_NAME"');
     expect(source).not.toContain("use_final_artifact_name");

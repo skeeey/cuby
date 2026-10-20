@@ -3,7 +3,10 @@ export type MemmyAccountRegion = "cn" | "intl";
 
 export function resolveMemmyAccountRegion(
   edition = process.env.CUBY_APP_EDITION,
+  language = process.env.CUBY_SYSTEM_LANGUAGE,
 ): MemmyAccountRegion {
+  const normalizedLanguage = language?.trim().toLowerCase();
+  if (normalizedLanguage) return normalizedLanguage.startsWith("zh") ? "cn" : "intl";
   return edition?.trim().toLowerCase() === "intl" ? "intl" : "cn";
 }
 

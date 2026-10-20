@@ -12,12 +12,12 @@ describe("gtag config", () => {
     expect(resolveAnalyticsAppEnv(false)).toBe("dev");
   });
 
-  it("maps CUBY_APP_EDITION to app_edition and defaults to cn", () => {
-    expect(resolveAnalyticsAppEdition("intl")).toBe("intl");
-    expect(resolveAnalyticsAppEdition("INTL")).toBe("intl");
-    expect(resolveAnalyticsAppEdition("cn")).toBe("cn");
-    expect(resolveAnalyticsAppEdition("")).toBe("cn");
-    expect(resolveAnalyticsAppEdition(undefined)).toBe("cn");
+  it("derives app_edition from the UI language", () => {
+    expect(resolveAnalyticsAppEdition("zh-CN")).toBe("cn");
+    expect(resolveAnalyticsAppEdition("zh-TW")).toBe("cn");
+    expect(resolveAnalyticsAppEdition("en-US")).toBe("intl");
+    expect(resolveAnalyticsAppEdition("fr-FR")).toBe("intl");
+    expect(resolveAnalyticsAppEdition("")).toBe("intl");
   });
 
   it("enables debug_mode in dev or when explicitly requested", () => {

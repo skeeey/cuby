@@ -20,7 +20,7 @@ describe("cloud-analytics", () => {
 
   beforeEach(() => {
     vi.stubEnv("CUBY_CLOUD_SERVICE", "https://cloud.example.com/");
-    vi.stubEnv("CUBY_APP_EDITION", "cn");
+    vi.stubGlobal("navigator", { language: "zh-CN" });
     resetAnalyticsContextForTests();
     resetDesktopCloudAnalyticsForTests({ fetchImpl: fetchMock });
     setDesktopAnalyticsContext({
@@ -33,6 +33,7 @@ describe("cloud-analytics", () => {
 
   afterEach(() => {
     vi.unstubAllEnvs();
+    vi.unstubAllGlobals();
     resetAnalyticsContextForTests();
     resetDesktopCloudAnalyticsForTests();
   });
