@@ -64,6 +64,9 @@ export default defineConfig(({ mode }) => {
     envDir: REPO_ROOT_DIR,
     envPrefix: ["VITE_"],
     define: publicMemmyEnv,
+    test: {
+      setupFiles: [fileURLToPath(new URL("./src/test-setup.ts", import.meta.url))]
+    },
     plugins: [react(), memmyRuntimeConfigPlugin()],
     resolve: {
       alias: [
@@ -99,7 +102,7 @@ export default defineConfig(({ mode }) => {
         }
       }
     }
-  };
+  } as unknown as import("vite").UserConfig;
 });
 
 /** Handles memmy runtime config plugin. */
