@@ -36,10 +36,6 @@ const createMemoryRuntimeManifestPath = fileURLToPath(
 );
 const winUnsignedBuilderPath = fileURLToPath(new URL("../electron-builder.win.unsigned.yml", import.meta.url));
 const winUnsignedInstallerIncludePath = fileURLToPath(new URL("../build/installer-win-unsigned.nsh", import.meta.url));
-const winStandardUpgradeCheckPath = fileURLToPath(new URL("../build/CubyWindowsStandardUpgradeCheck.ps1", import.meta.url));
-const winUpgradeRelayScriptPath = fileURLToPath(new URL("../build/CubyWindowsUpgradeRelay.ps1", import.meta.url));
-const winUpgradeRecoveryScriptPath = fileURLToPath(new URL("../build/CubyWindowsUpgradeRecovery.ps1", import.meta.url));
-const winDataMigrationScriptPath = fileURLToPath(new URL("../build/CubyWindowsDataMigration.ps1", import.meta.url));
 const electronBuilderInstallSectionPath = fileURLToPath(
   new URL("../../../../node_modules/app-builder-lib/templates/nsis/installSection.nsh", import.meta.url)
 );
@@ -494,8 +490,6 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain('app.setPath("userData", userDataPath);');
     expect(source).not.toContain('return join(dirname(process.execPath), "data");');
     expect(source).toContain('windowsDataLayout?.updatesPath ?? join(app.getPath("userData"), "updates")');
-    expect(source).toContain("advanceWindowsDataMigrationAfterBoot(");
-    expect(source).toContain('[join(homedir(), ".cuby")]');
     expect(source).toContain("process.env.CUBY_MEMORY_DB = memoryDatabasePath;");
     expect(source).toContain('const appDatabaseFile = join(app.getPath("userData"), "app.sqlite");');
     expect(source).toContain("accountChannel: resolveCurrentDesktopAccountChannel()");
@@ -510,42 +504,6 @@ describe("desktop packaged runtime boundaries", () => {
     expect(source).toContain("resolveDevelopmentRuntimeEntryPaths(import.meta.dirname)");
     expect(source).toContain("memmyConfigPath: process.env.CUBY_CONFIG");
     expect(source).not.toContain("startDesktopRuntimeServices");
-  });
-
-  it("waits for an active renderer bootstrap handshake before verifying migrated data", () => {
-    const mainSource = readFileSync(mainSourcePath, "utf8");
-    const preloadSource = readFileSync(preloadSourcePath, "utf8");
-    const frontendSource = readFileSync(frontendAppSourcePath, "utf8");
-    const verificationStart = mainSource.indexOf("function waitForInitialRendererVerification");
-    const verificationEnd = mainSource.indexOf("function isWindowsDataMigrationConsistencyError", verificationStart);
-    const verificationSource = mainSource.slice(verificationStart, verificationEnd);
-
-    expect(mainSource).toContain('ipcMain.on("memmy:renderer-ready"');
-    expect(preloadSource).toContain('ipcRenderer.send("memmy:renderer-ready")');
-    expect(frontendSource).toContain("window.memmy.notifyRendererReady()");
-    expect(frontendSource).toContain("!clients");
-    expect(frontendSource).toContain("!state.bootstrap");
-    expect(verificationSource).toContain("rendererReadyWaiters.set");
-    expect(verificationSource).not.toContain("did-finish-load");
-  });
-
-  it("journals each prepared Windows data copy before later migration steps can fail", () => {
-    const migrationSource = readFileSync(winDataMigrationScriptPath, "utf8");
-    const transactionStart = migrationSource.indexOf("function Invoke-TransactionalDirectoryCopy");
-    const transactionEnd = migrationSource.indexOf("function Write-UnicodeFileAtomically", transactionStart);
-    const transactionSource = migrationSource.slice(transactionStart, transactionEnd);
-    const journalIndex = transactionSource.indexOf("Write-PreparedRollbackJournal");
-    const destinationBackupMoveIndex = transactionSource.indexOf("Move-Item -LiteralPath $Destination -Destination $backupPath");
-    const stagedReplacementMoveIndex = transactionSource.indexOf("Move-Item -LiteralPath $stagingPath -Destination $Destination");
-
-    expect(journalIndex).toBeGreaterThan(-1);
-    expect(destinationBackupMoveIndex).toBeGreaterThan(journalIndex);
-    expect(stagedReplacementMoveIndex).toBeGreaterThan(journalIndex);
-    expect(transactionSource).toContain("-Copies @($PreviouslyPreparedCopies + $copyRecord)");
-    expect(transactionSource).toContain("StagingPath = $stagingPath");
-    expect(migrationSource).toContain('Prepared copy staging path is outside the validated migration staging path');
-    expect(migrationSource).toContain('phase = "recovery-required"');
-    expect(migrationSource).toContain("rollback requires recovery from '$StatePath'");
   });
 
   it("persists gtag client_id into the shared ~/.cuby analytics-client-id file", () => {
@@ -644,204 +602,6 @@ describe("desktop packaged runtime boundaries", () => {
     expect(customCheckSource).toContain("!insertmacro _CHECK_APP_RUNNING");
     expect(customCheckSource).toContain('StrCpy $IsPowerShellAvailable "1"');
     expect(customCheckSource).toContain("!ifndef BUILD_UNINSTALLER");
-    expect(customCheckSource).toContain("Call MemmyPrepareDirectDataMigration");
-  });
-
-  it("relays legacy in-app upgrades outside the installed data directory", () => {
-    const signedBuilderConfig = readFileSync(winElectronBuilderPath, "utf8");
-    const unsignedBuilderConfig = readFileSync(winUnsignedBuilderPath, "utf8");
-    const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
-    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
-    const recoverySource = readFileSync(winUpgradeRecoveryScriptPath, "utf8");
-    const mainSource = readFileSync(mainSourcePath, "utf8");
-
-    expect(signedBuilderConfig).toContain("include: build/installer-win-unsigned.nsh");
-    expect(unsignedBuilderConfig).toContain("include: build/installer-win-unsigned.nsh");
-    expect(includeSource).toContain("!macro customInit");
-    expect(includeSource).toContain("--memmy-upgrade-relayed");
-    expect(includeSource).toContain("CubyWindowsUpgradeRelay.ps1");
-    expect(includeSource).toContain("CubyWindowsUpgradeRecovery.ps1");
-    expect(includeSource).toContain('$LOCALAPPDATA\\Cuby\\upgrade-staging');
-    expect(includeSource).toContain("GetCurrentProcessId");
-    expect(includeSource).toContain('ReadRegStr $MemmyPreviousInstalledVersion HKCU "${UNINSTALL_REGISTRY_KEY}" "DisplayVersion"');
-    expect(includeSource).not.toContain('ReadRegStr $MemmyPreviousInstalledVersion HKCU "${INSTALL_REGISTRY_KEY}" "DisplayVersion"');
-    expect(includeSource).toContain('upgrade-staging\\$2');
-    expect(includeSource).toContain("OriginalInstallerPid $2");
-    expect(includeSource).toContain("LegacyHelperPid $3");
-    expect(includeSource).toContain("ReopenAfterInstall");
-    expect(includeSource).toContain('$APPDATA\\Cuby\\prepared-required-update.json');
-    expect(includeSource).toContain("CubyWindowsDataMigration.ps1");
-    expect(includeSource).not.toContain("Call MemmyRestoreRelayedUpgradeData");
-    expect(includeSource).toContain("Call MemmyClearRelayedUpgradeMarkers");
-    expect(includeSource).not.toContain("Call MemmyLaunchRelayedUpgrade");
-    expect(includeSource).not.toContain("Call MemmyScheduleRelayedUpgradeCleanup");
-    expect(includeSource).toContain("CUBY_UPGRADE_WORK_DIR");
-    expect(includeSource).toContain("CUBY_UPGRADE_REOPEN_AFTER_INSTALL");
-    expect(includeSource).toContain("relay-ready");
-    expect(includeSource).toContain("ReadyPath");
-    expect(includeSource).toContain("CubyWindowsUpgradeCleanup.ps1");
-    expect(includeSource).toContain('FileOpen $0 "$R4" w');
-    expect(includeSource.indexOf('FileOpen $0 "$R4" w')).toBeLessThan(includeSource.indexOf('CopyFiles /SILENT "$EXEPATH" "$R4"'));
-    expect(includeSource).toContain('ExecShell "open" "$R5"');
-    expect(includeSource.match(/ExecShell "open" .* SW_HIDE/g)).toHaveLength(1);
-    expect(includeSource).not.toContain('Exec \'$\\\"$R5$\\\"');
-    expect(includeSource).not.toContain('Exec \'$\\\"$INSTDIR\\${PRODUCT_FILENAME}.exe$\\\" --updated\'');
-    expect(includeSource).toContain('$LOCALAPPDATA\\Cuby\\upgrade-staging\\active.lock');
-    expect(includeSource).toContain('GetFullPathName $4 "$MemmyUpgradeWorkDir"');
-    expect(includeSource).not.toContain('GetFullPathName $5 "$MemmyUpgradeBackupRoot"');
-    expect(includeSource).toContain('${GetFileName} "$MemmyUpgradeWorkDir" $5');
-    expect(includeSource).toContain('StrCpy $0 "$MemmyUpgradeSourceInstallDir.cuby-upgrade-backup\\$4"');
-    expect(includeSource).toContain('StrCmp $MemmyUpgradeBackupRoot $0 0 memmy_relay_context_failed');
-    expect(includeSource).toContain("CUBY_UPGRADE_SOURCE_INSTALL_DIR");
-    expect(includeSource).toContain("CUBY_UPGRADE_TARGET_INSTALL_DIR");
-    const finishPageMacroStart = includeSource.indexOf("!macro customFinishPage");
-    const finishPageMacroEnd = includeSource.indexOf("!macroend", finishPageMacroStart);
-    const finishPageMacroSource = includeSource.slice(finishPageMacroStart, finishPageMacroEnd);
-    expect(finishPageMacroStart).toBeGreaterThan(-1);
-    expect(finishPageMacroSource).toContain("Function MemmySkipRelayedFinishPage");
-    expect(finishPageMacroSource).toContain('StrCmp $MemmyIsRelayedUpgrade "1"');
-    expect(finishPageMacroSource).toContain("Abort");
-    expect(finishPageMacroSource).toContain("Function MemmyStartAppAfterInstall");
-    expect(finishPageMacroSource).toContain('${StdUtils.ExecShellAsUser} $0 "$launchLink" "open" "$1"');
-    expect(finishPageMacroSource).toContain("!define MUI_PAGE_CUSTOMFUNCTION_PRE MemmySkipRelayedFinishPage");
-    expect(finishPageMacroSource).toContain("!define MUI_FINISHPAGE_RUN_FUNCTION MemmyStartAppAfterInstall");
-    expect(finishPageMacroSource).toContain("!insertmacro MUI_PAGE_FINISH");
-    const relayInitIndex = includeSource.indexOf("Function MemmyRelayLegacyUpgrade");
-    const earlyLaunchProxyIndex = includeSource.indexOf("Call MemmyInstallLaunchProxy", relayInitIndex);
-    const relayStartIndex = includeSource.indexOf('ExecShell "open" "$R5"', relayInitIndex);
-    expect(earlyLaunchProxyIndex).toBeGreaterThan(relayInitIndex);
-    expect(earlyLaunchProxyIndex).toBeLessThan(relayStartIndex);
-    expect(includeSource).toContain("SetErrorLevel");
-    expect(relaySource).toContain("Move-CubyDirectory");
-    expect(relaySource).toContain("Assert-CubySameVolume");
-    expect(relaySource).toContain(".cuby-upgrade-backup");
-    expect(relaySource).toContain("active.lock\\state.json");
-    expect(relaySource).toContain("Restore-CubyData");
-    expect(relaySource).toContain("Invoke-CubyDataMigration -Mode Prepare");
-    expect(relaySource).toContain("Invoke-CubyDataMigration -Mode Complete");
-    expect(relaySource).toContain("Invoke-CubyDataMigration -Mode Rollback");
-    expect(relaySource).toContain("migration-completed");
-    expect(relaySource).toContain("Resolve-CubyLegacyHelperReopenIntent");
-    expect(relaySource).toContain("Wait-CubyInstallProcessesExit -TimeoutSeconds 20");
-    expect(relaySource).toContain("forcing remaining installed app processes to exit after timeout");
-    expect(relaySource).toContain("if ($InstalledVersion)");
-    expect(relaySource).toContain("data migration $Mode output:");
-    expect(relaySource).toContain("$roamingMarkerPath");
-    expect(relaySource).toContain("CUBY_UPGRADE_WORK_DIR");
-    expect(relaySource).toContain("CUBY_UPGRADE_REOPEN_AFTER_INSTALL");
-    expect(relaySource).toContain("$installerProcess.WaitForExit()");
-    expect(relaySource).not.toContain("-Wait -PassThru");
-    expect(relaySource.indexOf("Write-CubyRelayState", relaySource.indexOf("$installerProcess = Start-Process"))).toBeGreaterThan(-1);
-    expect(relaySource).toContain("CubyWindowsUpgradeCleanup.ps1");
-    expect(relaySource).not.toContain("cmd.exe");
-    expect(relaySource).not.toContain("$env:ComSpec");
-    expect(relaySource).not.toContain("ping.exe");
-    expect(relaySource).toContain("--memmy-upgrade-relayed");
-    expect(relaySource).toContain("upgrade verified");
-    expect(recoverySource).toContain("Test-CubyUpgradeProcessRunning");
-    expect(recoverySource).toContain("data-backup");
-    expect(recoverySource).toContain("installer-created-data");
-    expect(recoverySource).toContain("completed migration lock cleared without restoring install-local data");
-    expect(recoverySource).toContain("Remove-Item -LiteralPath $LockPath");
-    expect(mainSource).toContain('spawn("/bin/zsh", [helperPath, filePath, destinationAppPath, logPath, String(process.pid), options.openAfterInstall ? "1" : "0"');
-  });
-
-  it("keeps the relay's legacy home on Memmy while its C-drive target stays on Cuby", () => {
-    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
-    const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
-
-    // The legacy variable names the pre-rename home: it is handed to the migration as
-    // -LegacyRuntimeHomePath and persisted as state.legacyRuntimeHomePath.
-    expect(relaySource).toContain(
-      "$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }"
-    );
-    expect(relaySource).toContain("'-LegacyRuntimeHomePath', $legacyRuntimeHomePath,");
-    expect(relaySource).toContain("legacyRuntimeHomePath = $legacyRuntimeHomePath");
-
-    // The C:\ install-drive branch is the target runtime home, so it must resolve to .cuby
-    // on its own instead of reusing the legacy variable.
-    const cDriveBranchStart = relaySource.indexOf("[string]::Equals($installDriveRoot, 'C:\\'");
-    expect(cDriveBranchStart).toBeGreaterThan(-1);
-    const cDriveBranch = relaySource.slice(
-      relaySource.indexOf("{", cDriveBranchStart),
-      relaySource.indexOf("} else {", cDriveBranchStart)
-    );
-    expect(cDriveBranch).toContain("Join-Path $env:USERPROFILE '.cuby'");
-    expect(cDriveBranch).not.toContain("$legacyRuntimeHomePath");
-
-    // The NSIS direct path keeps passing the old home on purpose.
-    expect(includeSource).toContain('-LegacyRuntimeHomePath $\\"$PROFILE\\.memmy$\\"');
-  });
-
-  it("keeps the recovery's legacy home on Memmy and agrees with the relay about it", () => {
-    const relaySource = readFileSync(winUpgradeRelayScriptPath, "utf8");
-    const recoverySource = readFileSync(winUpgradeRecoveryScriptPath, "utf8");
-
-    // The recovery's legacy home is the old install's home: it is handed to the migration as
-    // -LegacyRuntimeHomePath and compared against the field the relay persists.
-    const recoveryLegacyDefaultStart = recoverySource.indexOf(
-      "$expectedLegacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) {"
-    );
-    expect(recoveryLegacyDefaultStart).toBeGreaterThan(-1);
-    const recoveryLegacyDefault = recoverySource.slice(
-      recoveryLegacyDefaultStart,
-      recoverySource.indexOf("\n$", recoveryLegacyDefaultStart)
-    );
-    expect(recoveryLegacyDefault).toContain("Join-Path $env:USERPROFILE '.memmy'");
-    expect(recoveryLegacyDefault).not.toContain(".cuby");
-    expect(recoverySource).toContain("'-LegacyRuntimeHomePath', $expectedLegacyRuntimeHomePath,");
-
-    // The cross-file contract behind the comparison below: both defaults must name the same path,
-    // because the recovery asserts the relay's persisted legacyRuntimeHomePath against its own.
-    expect(relaySource).toContain(
-      "$legacyRuntimeHomePath = if ($LegacyRuntimeHomePathOverride) { $LegacyRuntimeHomePathOverride } else { Join-Path $env:USERPROFILE '.memmy' }"
-    );
-    expect(recoverySource).toContain(
-      "Assert-CubySamePath -Actual ([string]$state.legacyRuntimeHomePath) -Expected $expectedLegacyRuntimeHomePath"
-    );
-
-    // Every C:\-drive target branch resolves .cuby itself, never through the legacy variable.
-    const cDriveBranches = [
-      ...recoverySource.matchAll(/'C:\\', \[System\.StringComparison\]::OrdinalIgnoreCase\)\) \{\r?\n([\s\S]*?)\n\s*\}/g)
-    ].map((match) => match[1]);
-    expect(cDriveBranches).toHaveLength(3);
-    for (const branch of cDriveBranches) {
-      expect(branch).toContain(".cuby");
-      expect(branch).not.toContain("$expectedLegacyRuntimeHomePath");
-    }
-  });
-
-  it("bridges electron-builder shortcut retention across relayed install-directory changes", () => {
-    const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
-    const installSectionSource = readFileSync(electronBuilderInstallSectionPath, "utf8");
-    const customCheckStart = includeSource.indexOf("!macro customCheckAppRunning");
-    const customCheckEnd = includeSource.indexOf("!macroend", customCheckStart);
-    const customCheckSource = includeSource.slice(customCheckStart, customCheckEnd);
-    const uninstallCheckStart = includeSource.indexOf("!macro customUnInstallCheck");
-    const uninstallCheckEnd = includeSource.indexOf("!macroend", uninstallCheckStart);
-    const uninstallCheckSource = includeSource.slice(uninstallCheckStart, uninstallCheckEnd);
-
-    const targetAssignment = installSectionSource.indexOf('StrCpy $appExe "$INSTDIR\\${APP_EXECUTABLE_FILENAME}"');
-    const runningCheck = installSectionSource.indexOf("!insertmacro CHECK_APP_RUNNING");
-    const shortcutProbe = installSectionSource.indexOf('${FileExists} "$appExe"');
-    const oldUninstall = installSectionSource.indexOf("!insertmacro uninstallOldVersion SHELL_CONTEXT");
-    const newFiles = installSectionSource.indexOf("!insertmacro installApplicationFiles");
-    expect(targetAssignment).toBeGreaterThan(-1);
-    expect(targetAssignment).toBeLessThan(runningCheck);
-    expect(runningCheck).toBeLessThan(shortcutProbe);
-    expect(shortcutProbe).toBeLessThan(oldUninstall);
-    expect(oldUninstall).toBeLessThan(newFiles);
-
-    const sourceBridge = 'StrCpy $appExe "$MemmyUpgradeSourceInstallDir\\${PRODUCT_FILENAME}.exe"';
-    const targetRestore = 'StrCpy $appExe "$MemmyUpgradeTargetInstallDir\\${PRODUCT_FILENAME}.exe"';
-    expect(customCheckSource).toContain(sourceBridge);
-    expect(customCheckSource.indexOf("!insertmacro _CHECK_APP_RUNNING")).toBeLessThan(
-      customCheckSource.indexOf(sourceBridge)
-    );
-    expect(uninstallCheckSource.match(new RegExp(targetRestore.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "g"))).toHaveLength(2);
-    expect(uninstallCheckSource.indexOf(targetRestore)).toBeLessThan(
-      uninstallCheckSource.indexOf("${If} $R0 != 0")
-    );
   });
 
   it("records the final Windows install directory in uninstall metadata", () => {
@@ -857,94 +617,19 @@ describe("desktop packaged runtime boundaries", () => {
     );
   });
 
-  it("validates Windows install and external data permissions before uninstalling the old version", () => {
+  it("validates the install folder and Cuby data permissions before installing", () => {
     const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
-    const customInitIndex = includeSource.indexOf("!macro customInit");
-    const customInstallIndex = includeSource.indexOf("!macro customInstall", customInitIndex);
-    const customInitEnd = includeSource.indexOf("!macroend", customInitIndex);
-    const customInitSource = includeSource.slice(customInitIndex, customInitEnd);
-    const customCheckStart = includeSource.indexOf("!macro customCheckAppRunning");
-    const customCheckEnd = includeSource.indexOf("!macroend", customCheckStart);
-    const customCheckSource = includeSource.slice(customCheckStart, customCheckEnd);
-    const installPageStart = includeSource.indexOf("Function MemmyValidateInstallPage");
-    const installPageEnd = includeSource.indexOf("FunctionEnd", installPageStart);
-    const installPageSource = includeSource.slice(installPageStart, installPageEnd);
-    const directPrepareStart = includeSource.indexOf("Function MemmyPrepareDirectDataMigration");
-    const directPrepareEnd = includeSource.indexOf("FunctionEnd", directPrepareStart);
-    const directPrepareSource = includeSource.slice(directPrepareStart, directPrepareEnd);
-    const directCompleteStart = includeSource.indexOf("Function MemmyCompleteDirectDataMigration");
-    const directCompleteEnd = includeSource.indexOf("FunctionEnd", directCompleteStart);
-    const directCompleteSource = includeSource.slice(directCompleteStart, directCompleteEnd);
-    const directCompleteFailureStart = directCompleteSource.indexOf("migration completion failed");
-    const directCompleteSuccessLabel = directCompleteSource.indexOf("memmy_direct_complete_succeeded:");
-    const directCompleteFailureSource = directCompleteSource.slice(directCompleteFailureStart, directCompleteSuccessLabel);
 
-    expect(includeSource).toContain("!macro customPageAfterChangeDir");
+    expect(includeSource).toContain("!macro customInit");
     expect(includeSource).toContain("Function MemmyProbeWritableDirectory");
     expect(includeSource).toContain("Function MemmyValidateSelectedDirectories");
+    expect(includeSource).toContain("Function MemmyValidateInstallPage");
     expect(includeSource).toContain('StrCpy $R0 "$INSTDIR"');
     expect(includeSource).toContain('StrCpy $R0 "$MemmyTargetUserDataPath"');
     expect(includeSource).toContain('StrCpy $R0 "$MemmyTargetRuntimeHomePath"');
-    expect(includeSource).toContain('ReadRegStr $MemmyPreviousInstallDir HKCU "${INSTALL_REGISTRY_KEY}" "InstallLocation"');
-    expect(includeSource).toContain('StrCpy $MemmyDirectSourceDataPath "$MemmyPreviousInstallDir\\data"');
     expect(includeSource).toContain('StrCpy $MemmyTargetRuntimeHomePath "$0\\CubyData\\.cuby"');
     expect(includeSource).toContain('StrCpy $MemmyTargetRuntimeHomePath "$PROFILE\\.cuby"');
-    expect(includeSource).toContain("Call MemmyPrepareDirectDataMigration");
-    expect(includeSource).toContain("Call MemmyCompleteDirectDataMigration");
-    expect(customCheckSource).toContain("!insertmacro IS_POWERSHELL_AVAILABLE");
-    expect(customCheckSource).toContain("!insertmacro _CHECK_APP_RUNNING");
-    expect(includeSource).toContain("Var pid");
-    expect(customCheckSource).toContain('StrCpy $IsPowerShellAvailable "1"');
-    expect(customCheckSource).not.toContain('StrCpy $INSTDIR "$MemmyPreviousInstallDir"');
-    expect(customCheckSource).not.toContain('StrCpy $INSTDIR "$R7"');
-    expect(customCheckSource).toContain("Call MemmyPrepareDirectDataMigration");
-    expect(customCheckSource.indexOf("!insertmacro _CHECK_APP_RUNNING"))
-      .toBeLessThan(customCheckSource.indexOf("Call MemmyPrepareDirectDataMigration"));
-    expect(customInitSource).not.toContain("Call MemmyPrepareDirectDataMigration");
-    expect(customCheckSource.indexOf("Call MemmyPrepareDirectDataMigration"))
-      .toBeLessThan(customCheckSource.indexOf("${IfNot} ${Silent}"));
-    expect(customCheckSource).toContain('StrCmp $MemmyIsRelayedUpgrade "1"');
-    expect(installPageSource).not.toContain("Call MemmyPrepareDirectDataMigration");
-    expect(includeSource).not.toContain("Function MemmyEnsureManualInstallAppStopped");
-    expect(includeSource).not.toContain("MemmyWindowsInstallProcessControl.ps1");
-    expect(includeSource).not.toContain("MB_ICONQUESTION|MB_YESNO|MB_DEFBUTTON1");
-    expect(includeSource).not.toContain("-GracefulTimeoutSeconds 10");
-    expect(directPrepareSource).toContain("-AcquireLock");
-    expect(directPrepareSource).toContain("migration was skipped after a safe rollback; installation will continue");
-    expect(directPrepareSource).toContain('RMDir /r "$MemmyMigrationLockPath"');
-    expect(includeSource).toContain("migration completion failed; the migration will be rolled back and installation will continue");
-    expect(directCompleteSource).not.toContain("SetErrorLevel 5");
-    expect(directCompleteSource).not.toContain("Quit");
-    expect(directCompleteFailureSource).toContain("Call MemmyRecoverDirectDataMigration");
-    expect(directCompleteFailureSource).not.toContain('RMDir /r "$MemmyMigrationLockPath"');
-    expect(includeSource).toContain("Function MemmyRecoverDirectDataMigration");
-    expect(includeSource).toContain("-Mode Recover");
-    expect(includeSource).toContain("-Mode RequireRecovery");
-    expect(includeSource).toContain("startup will conservatively recover the remaining prepared state");
-    expect(includeSource).toContain("Function .onInstFailed");
-    expect(includeSource).toContain("Function MemmyOnUserAbort");
-    expect(includeSource).toContain('$LOCALAPPDATA\\Cuby\\upgrade-staging\\active.lock');
-    expect(customInitIndex).toBeGreaterThan(-1);
-    expect(customInstallIndex).toBeGreaterThan(customInitIndex);
-  });
-
-  it("explains the existing Windows install directory and requires manual relocation", () => {
-    const includeSource = readFileSync(winUnsignedInstallerIncludePath, "utf8");
-    const standardUpgradeCheckSource = readFileSync(winStandardUpgradeCheckPath, "utf8");
-    const noticeCall = includeSource.indexOf("Call MemmyShowPreviousInstallDirectoryNotice");
-    const noticeFunction = includeSource.indexOf("Function MemmyShowPreviousInstallDirectoryNotice");
-    const validationFunction = includeSource.indexOf("Function MemmyValidateSelectedDirectories");
-    const validationProbe = includeSource.indexOf("Call MemmyProbeWritableDirectory", validationFunction);
-    const previousDirectoryGuard = includeSource.indexOf("memmy_validate_previous_directory_failed", validationFunction);
-
-    expect(noticeCall).toBeGreaterThan(-1);
-    expect(noticeFunction).toBeGreaterThan(noticeCall);
-    expect(includeSource).toContain("$MemmyPreviousInstallDir");
-    expect(includeSource).toContain("If you want to move Cuby, manually migrate your files");
-    expect(includeSource).toContain("如果要更换目录，请先手动迁移 Cuby 文件");
-    expect(previousDirectoryGuard).toBeGreaterThan(validationFunction);
-    expect(previousDirectoryGuard).toBeLessThan(validationProbe);
-    expect(standardUpgradeCheckSource).toContain("manually migrate files before choosing a new directory");
+    expect(includeSource).toContain("Call MemmyValidateSelectedDirectories");
   });
 
   it("adds packaged Windows CLI launchers to the user PATH", () => {
@@ -982,19 +667,12 @@ describe("desktop packaged runtime boundaries", () => {
     expect(includeSource).toContain('StrCpy $0 "$LOCALAPPDATA\\Cuby\\launcher"');
     expect(includeSource).toContain('File /oname=Cuby.ico "${BUILD_RESOURCES_DIR}\\icon.ico"');
     expect(includeSource).toContain('File /oname=CubyUpdatePrompt.ps1 "${BUILD_RESOURCES_DIR}\\CubyUpdatePrompt.ps1"');
-    expect(includeSource).toContain('File /oname=CubyWindowsUpgradeRecovery.ps1 "${BUILD_RESOURCES_DIR}\\CubyWindowsUpgradeRecovery.ps1"');
     expect(includeSource).toContain('FileOpen $1 "$0\\CubyLauncher.vbs" w');
     expect(includeSource).toContain('promptPath = $\\"$0\\CubyUpdatePrompt.ps1$\\"');
     expect(includeSource).toContain('userDataRoot = shell.ExpandEnvironmentStrings($\\"%APPDATA%$\\") & $\\"\\Cuby$\\"');
-    expect(includeSource).toContain('legacyUserDataRoot = $\\"$INSTDIR\\data\\Memmy$\\"');
     expect(includeSource).toContain('languagePath = userDataRoot & $\\"\\update-prompt-language.txt$\\"');
     expect(includeSource).toContain('markerPath = userDataRoot & $\\"\\prepared-required-update.json$\\"');
-    expect(includeSource).toContain('relayLockPath = shell.ExpandEnvironmentStrings($\\"%LOCALAPPDATA%$\\") & $\\"\\Cuby\\upgrade-staging\\active.lock$\\"');
-    expect(includeSource).toContain('recoveryPath = $\\"$0\\CubyWindowsUpgradeRecovery.ps1$\\"');
-    expect(includeSource).toContain("If fso.FolderExists(relayLockPath) And fso.FileExists(recoveryPath) Then");
-    expect(includeSource).toContain("If fso.FolderExists(relayLockPath) Then");
-    expect(includeSource).toContain("lockPath = relayLockPath");
-    expect(includeSource).toContain("If fso.FolderExists(lockPath) And LCase(lockPath) <> LCase(relayLockPath) And fso.FileExists(recoveryPath) Then");
+    expect(includeSource).toContain('lockPath = markerPath & $\\".lock$\\"');
     expect(includeSource).toContain("WindowsPowerShell\\v1.0\\powershell.exe");
     expect(includeSource).toContain('promptMarkerPath = markerPath & $\\".prompt$\\"');
     expect(includeSource).toContain("If fso.FolderExists(lockPath) And fso.FileExists(promptMarkerPath) Then");
