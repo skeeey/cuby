@@ -204,7 +204,7 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     expect(input.modelAssignments.byok.embedding).toBe(byokPresetId);
   });
 
-  it("keeps only the platform card shell and uses the platform Agent identity", () => {
+  it("shows the platform Agent identity in the default-model picker", () => {
     renderWorkspace(createAccountSeedConfig(), "account");
 
     const platformCard = [...container.querySelectorAll("article")]
@@ -212,16 +212,53 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     expect(platformCard).not.toBeNull();
     expect(platformCard.querySelector(".provider-model-list")).toBeNull();
     expect(container.querySelectorAll(".provider-model-list")).toHaveLength(1);
-    expect(container.querySelector(".task-model-selection-summary")?.textContent).toContain("agent_chat");
 
-    act(() => [...container.querySelectorAll<HTMLButtonElement>("button")]
-      .find((button) => button.textContent?.includes("2 个已选"))!.click());
+    const defaultSelect = getAssignmentCombobox("默认模型");
+    expect(defaultSelect.textContent).toContain("Cuby Agent 模型");
+    act(() => defaultSelect.click());
 
-    const platformChoice = [...container.querySelectorAll<HTMLElement>(".task-model-picker__choice")]
-      .find((choice) => choice.textContent?.includes("agent_chat"))!;
-    expect(platformChoice.textContent).toContain("agent_chat");
-    expect(platformChoice.textContent).toContain("Cuby Platform");
-    expect(platformChoice.textContent).not.toContain("通用文本");
+    expect([...container.querySelectorAll('[role="option"]')].map((option) => option.textContent?.trim()))
+      .toEqual([
+        "Cuby Platform · Cuby Agent 模型",
+        "OpenAI 兼容 · gpt-4o"
+      ]);
+  });
+
+  it("persists any chat model as the default and enrolls every chat model as a candidate", async () => {
+    const seedConfig = createAccountSeedConfig();
+    const configClient = {
+      getModelConfig: vi.fn(async () => seedConfig),
+      saveModelCatalog: vi.fn(async () => seedConfig),
+      testModelConfig: vi.fn(async () => ({
+        ok: true,
+        message: "ok",
+        checkedAt: "2026-08-13T00:00:00.000Z"
+      }))
+    };
+
+    await act(async () => {
+      root.render(
+        <I18nProvider language="zh-CN">
+          <ModelWorkspaceSection mode="account" seedConfig={seedConfig} configClient={configClient} />
+        </I18nProvider>
+      );
+      await Promise.resolve();
+    });
+
+    const defaultSelect = getAssignmentCombobox("默认模型");
+    act(() => defaultSelect.click());
+    act(() => getOption("OpenAI 兼容 · gpt-4o")!.click());
+
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    const input = configClient.saveModelCatalog.mock.calls[0]![0];
+    expect(input.modelAssignments.account.agent).toEqual({
+      candidates: ["platform-agent", "custom-agent"],
+      default: "custom-agent"
+    });
+    expect(input.modelAssignments.byok.agent).toEqual({
+      candidates: ["custom-agent"],
+      default: "custom-agent"
+    });
   });
 
   function renderWorkspace(seedConfig: ModelProviderConfig, mode: "byok" | "account" = "byok") {

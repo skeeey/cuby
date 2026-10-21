@@ -50,8 +50,8 @@ export interface ModelConnectionModel {
 export interface ModelWorkspaceSpace {
   connections: ModelConnection[];
   assignments: Partial<Record<ModelAssignmentKind, string>>;
-  taskCandidateIds: string[];
-  defaultTaskCandidateId: string | null;
+  agentCandidateIds: string[];
+  defaultAgentModelId: string | null;
 }
 
 export interface ModelWorkspace {
@@ -170,6 +170,8 @@ export function modelConfigInput(workspace: ModelWorkspace): ModelConfigInput {
 }
 
 export function modelConfigInputFromView(view: ModelConfigView): ModelConfigInput {
+  const modelAssignments = cloneAssignments(view.modelAssignments);
+  syncAgentCandidates(view, modelAssignments);
   return {
     configRevision: view.configRevision,
     providers: view.providers.filter((provider) => provider.editable && !provider.accountManaged).map((provider) => ({
@@ -186,7 +188,7 @@ export function modelConfigInputFromView(view: ModelConfigView): ModelConfigInpu
         capabilities: [...model.capabilities]
       }))
     })),
-    modelAssignments: cloneAssignments(view.modelAssignments)
+    modelAssignments
   };
 }
 
@@ -712,23 +714,23 @@ export function setTaskModelCandidates(
   return createModelWorkspace(next);
 }
 
-export function setDefaultTaskModel(
+export function setDefaultAgentModel(
   workspace: ModelWorkspace,
   mode: ModelWorkspaceMode,
   candidateId: string
 ): ModelWorkspace {
+  const allowed = new Set(getModelCandidates(workspace, mode, "chat").map((candidate) => candidate.id));
+  if (!allowed.has(candidateId)) return workspace;
   const next = cloneCatalog(workspace.catalog);
-  if (next.modelAssignments[mode].agent.candidates.includes(candidateId)) {
-    next.modelAssignments[mode].agent.default = candidateId;
-  }
+  next.modelAssignments[mode].agent.default = candidateId;
   return createModelWorkspace(next);
 }
 
 /**
  * Builds the persistence payload that makes `candidateId` the `mode` default, or null when there
  * is nothing to persist (the id is not a chat-capable model visible in this mode, or it is already
- * the default). A model picked from the full chat catalog is enrolled as a conversation candidate
- * so the backend keeps it as the default across restarts.
+ * the default). `modelConfigInputFromView` enrolls every chat model as a candidate, so the default
+ * is accepted by the backend even when the user picked a model the config did not list yet.
  */
 export function defaultModelSelectionInput(
   workspace: ModelWorkspace,
@@ -740,23 +742,7 @@ export function defaultModelSelectionInput(
   const agent = workspace.catalog.modelAssignments[mode].agent;
   if (agent.default === candidateId && agent.candidates.includes(candidateId)) return null;
   const next = cloneCatalog(workspace.catalog);
-  const modeAgent = next.modelAssignments[mode].agent;
-  if (!modeAgent.candidates.includes(candidateId)) {
-    modeAgent.candidates = [...modeAgent.candidates, candidateId];
-  }
-  modeAgent.default = candidateId;
-  // The backend re-derives account candidates from the BYOK candidate list on every account-mode
-  // startup, so a BYOK model picked while in account mode must also be enrolled there.
-  if (mode === "account" && candidate.source === "byok") {
-    const byokAgent = next.modelAssignments.byok.agent;
-    if (!byokAgent.candidates.includes(candidateId)) {
-      byokAgent.candidates = [...byokAgent.candidates, candidateId];
-    }
-    if (!byokAgent.default || !byokAgent.candidates.includes(byokAgent.default)) {
-      byokAgent.default = candidateId;
-    }
-  }
-  refreshEffectiveCandidates(next);
+  next.modelAssignments[mode].agent.default = candidateId;
   return modelConfigInputFromView(next);
 }
 
@@ -849,8 +835,8 @@ function createSpace(catalog: ModelConfigView, mode: ModelWorkspaceMode): ModelW
       asr: assignment.asr ?? undefined,
       image: assignment.imageGeneration ?? undefined
     },
-    taskCandidateIds: [...assignment.agent.candidates],
-    defaultTaskCandidateId: assignment.agent.default
+    agentCandidateIds: [...assignment.agent.candidates],
+    defaultAgentModelId: assignment.agent.default
   };
 }
 
@@ -1046,6 +1032,38 @@ function visiblePresets(catalog: ModelConfigView, mode: ModelWorkspaceMode): Tex
       && Boolean(ownerAccountId)
       && preset.ownerAccountId === ownerAccountId;
   });
+}
+
+/**
+ * The catalog is the source of truth: every chat-capable model visible in the mode is an Agent
+ * candidate, so users no longer curate the list by hand. Platform models lead the account list,
+ * mirroring the backend's account projection.
+ */
+function syncAgentCandidates(
+  view: ModelConfigView,
+  assignments: ModelConfigView["modelAssignments"]
+): void {
+  fillAgentCandidates(view, assignments.byok, "byok");
+  if (assignments.account.ownerAccountId) {
+    fillAgentCandidates(view, assignments.account, "account");
+  }
+}
+
+function fillAgentCandidates(
+  view: ModelConfigView,
+  assignment: { agent: { candidates: string[]; default: string | null } },
+  mode: ModelWorkspaceMode
+): void {
+  const agentPresets = visiblePresets(view, mode)
+    .filter((preset) => preset.capabilities.includes("agent"));
+  const candidateIds = [
+    ...agentPresets.filter((preset) => preset.source === "account"),
+    ...agentPresets.filter((preset) => preset.source === "byok")
+  ].map((preset) => preset.presetId);
+  assignment.agent.candidates = candidateIds;
+  if (!assignment.agent.default || !candidateIds.includes(assignment.agent.default)) {
+    assignment.agent.default = candidateIds[0] ?? null;
+  }
 }
 
 function presetHasCapability(catalog: ModelConfigView, presetId: string, capability: CatalogCapability): boolean {
