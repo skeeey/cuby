@@ -2248,6 +2248,56 @@ describe("bootstrap repository writes", () => {
     expect(upgradedCredential).toEqual(credential);
   });
 
+  it("keeps the newer canonical credential when a legacy ref still exists", () => {
+    // A prefixed account row and its legacy credential can coexist with the normalized row and
+    // the canonical credential the app has been refreshing (for example after an account
+    // activation). Moving the legacy row must not make it look newer than the canonical one:
+    // the migration would then overwrite a valid credential with a stale one.
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
+    const databasePath = join(tempDir, "app.sqlite");
+    const canonicalCredential = {
+      accessToken: "jwt-canonical",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-canonical"
+    };
+    const legacyCredential = {
+      accessToken: "jwt-legacy",
+      accessExpiresAt: 1790000000,
+      refreshToken: "rt-legacy"
+    };
+    const canonicalRef = "account:10113:cuberouter-credential";
+    const legacyRef = "account:cuberouter:10113:cuberouter-credential";
+    const store = createAppStateStore({ databasePath });
+    const now = new Date().toISOString();
+    const older = new Date(Date.now() - 60_000).toISOString();
+
+    store.db.prepare(
+      "INSERT INTO cloud_accounts (uuid, user_id, raw_profile_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run("cuberouter:10113", "10113", JSON.stringify({ _memmyAuthChannel: "cuberouter" }), now, now);
+    store.db.prepare(
+      "INSERT INTO cloud_accounts (uuid, user_id, raw_profile_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run("10113", "10113", JSON.stringify({ _memmyAuthChannel: "cuberouter" }), now, now);
+    store.db.prepare("UPDATE app_settings SET active_uuid = 'cuberouter:10113', user_mode = 'byok' WHERE id = 'default'").run();
+    store.secretStore.set(canonicalRef, JSON.stringify(canonicalCredential), {
+      uuid: "10113",
+      purpose: "cuberouter_credential"
+    });
+    store.secretStore.set(legacyRef, JSON.stringify(legacyCredential), {
+      uuid: "cuberouter:10113",
+      purpose: "cuberouter_credential"
+    });
+    // The canonical credential was refreshed after the legacy login.
+    store.db.prepare("UPDATE secret_store SET updated_at = ? WHERE ref = ?").run(older, legacyRef);
+    store.db.prepare("UPDATE secret_store SET updated_at = ? WHERE ref = ?").run(now, canonicalRef);
+    store.close();
+
+    const upgradedStore = createAppStateStore({ databasePath });
+    const upgradedCredential = upgradedStore.repositories.accountSession.getCuberouterCredential();
+    upgradedStore.close();
+
+    expect(upgradedCredential).toEqual(canonicalCredential);
+  });
+
   it("patches app settings, privacy, and onboarding without overwriting omitted fields", () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
     const databasePath = join(tempDir, "app.sqlite");

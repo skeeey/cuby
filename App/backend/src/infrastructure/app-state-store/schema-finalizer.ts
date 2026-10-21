@@ -385,7 +385,9 @@ function moveAccountScopedRows(db: DatabaseSync, fromUuid: string, toUuid: strin
     "status_code",
     "created_at"
   ]);
-  db.prepare("UPDATE secret_store SET uuid = ?, updated_at = ? WHERE uuid = ?").run(toUuid, new Date().toISOString(), fromUuid);
+  // Keep each secret's updated_at: it records when the value was last written, and the
+  // cuberouter credential selection relies on it to keep the freshest token pair.
+  db.prepare("UPDATE secret_store SET uuid = ? WHERE uuid = ?").run(toUuid, fromUuid);
 }
 
 /**
