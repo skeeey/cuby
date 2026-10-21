@@ -4,6 +4,11 @@ import {
   LLMResponse,
 } from "./base.js";
 import {
+  logProviderCircuitOpen,
+  logProviderFallback,
+  logProviderFallbackSuccess,
+} from "./provider-log.js";
+import {
   coversInputModalities,
   getModelInputModalities,
   requiredInputModalities,
@@ -130,6 +135,8 @@ export class FallbackProvider extends LLMProvider {
     hasStreamed: boolean[] | null,
   ): Promise<LLMResponse> {
     const primaryModel = args.model ?? this.primary.getDefaultModel();
+    const primaryProvider = providerName(this.primary) ?? this.primary.constructor.name;
+    let primaryFailure: LLMResponse | null = null;
     let lastResponse: LLMResponse | null = null;
     if (this.primaryAvailable()) {
       const response = LLMProvider.classifyImageInputUnsupportedResponse(annotateExecution(
@@ -145,10 +152,23 @@ export class FallbackProvider extends LLMProvider {
       if (hasStreamed?.[0]) return response;
       if (!FallbackProvider.shouldFallback(response)) return response;
       lastResponse = response;
+      primaryFailure = response;
       if (response.errorCategory !== "quota_exhausted") {
         this.primaryFailures += 1;
         if (this.primaryFailures >= PRIMARY_FAILURE_THRESHOLD) {
           this.primaryTrippedAt = Date.now();
+          logProviderCircuitOpen({
+            provider: primaryProvider,
+            model: primaryModel,
+            status: response.errorStatusCode ?? null,
+            kind: response.errorKind ?? null,
+            type: response.errorType ?? null,
+            code: response.errorCode ?? null,
+            category: response.errorCategory ?? null,
+            detail: response.content ?? null,
+            failures: this.primaryFailures,
+            cooldownSeconds: PRIMARY_COOLDOWN_MS / 1000,
+          });
         }
       }
     }
@@ -164,6 +184,7 @@ export class FallbackProvider extends LLMProvider {
       } catch {
         continue;
       }
+      const fallbackProviderName = providerName(fallbackProvider) ?? fallbackProvider.constructor.name;
 
       const original = {
         model: Object.prototype.hasOwnProperty.call(args, "model") ? args.model : MISSING,
@@ -181,11 +202,32 @@ export class FallbackProvider extends LLMProvider {
         args.reasoningEffort = reasoning;
       }
       try {
+        logProviderFallback({
+          provider: primaryProvider,
+          model: primaryModel,
+          status: primaryFailure?.errorStatusCode ?? null,
+          kind: primaryFailure?.errorKind ?? null,
+          type: primaryFailure?.errorType ?? null,
+          code: primaryFailure?.errorCode ?? null,
+          category: primaryFailure?.errorCategory ?? null,
+          detail: primaryFailure?.content ?? null,
+          reason: primaryFailure ? "primary_failed" : "primary_circuit_open",
+          toProvider: fallbackProviderName,
+          toModel: fallback.model,
+        });
         const response = LLMProvider.classifyImageInputUnsupportedResponse(
           annotateExecution(await call(fallbackProvider, args), fallbackProvider, fallback.model),
           args.messages,
         );
-        if (response.finishReason !== "error") return response;
+        if (response.finishReason !== "error") {
+          logProviderFallbackSuccess({
+            provider: primaryProvider,
+            model: primaryModel,
+            toProvider: fallbackProviderName,
+            toModel: fallback.model,
+          });
+          return response;
+        }
         if (response.errorCategory === "image_input_unsupported") return response;
         lastResponse = response;
       } finally {

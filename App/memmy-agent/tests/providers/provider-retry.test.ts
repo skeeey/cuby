@@ -1,5 +1,6 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from "vitest";
 import { GenerationSettings, LLMProvider, LLMResponse } from "../../src/providers/base.js";
+import { FallbackProvider } from "../../src/providers/fallback-provider.js";
 
 class CancelledError extends Error {
   constructor() {
@@ -27,12 +28,53 @@ class ScriptedProvider extends LLMProvider {
     return response ?? new LLMResponse({ content: "ok" });
   }
 
-  protected override async sleep(seconds: number): Promise<void> {
+  protected override async sleepWithHeartbeat(seconds: number): Promise<void> {
     this.delays.push(seconds);
   }
 
   getDefaultModel(): string {
     return "test-model";
+  }
+}
+
+/** Emits one streamed delta before failing the first attempt, then succeeds. */
+class StreamingScriptedProvider extends LLMProvider {
+  calls = 0;
+  delays: number[] = [];
+
+  async chat(): Promise<LLMResponse> {
+    throw new Error("chat not used");
+  }
+
+  override async chatStream(args: any): Promise<LLMResponse> {
+    this.calls += 1;
+    if (this.calls === 1) {
+      await args.onContentDelta?.("partial answer");
+      return new LLMResponse({ content: "429 rate limit", finishReason: "error" });
+    }
+    return new LLMResponse({ content: "complete answer", finishReason: "stop" });
+  }
+
+  protected override async sleepWithHeartbeat(seconds: number): Promise<void> {
+    this.delays.push(seconds);
+  }
+
+  getDefaultModel(): string {
+    return "test-model";
+  }
+}
+
+/** A scripted provider with a distinguishing model name for fallback logs. */
+class ModelScriptedProvider extends ScriptedProvider {
+  constructor(
+    private readonly modelName: string,
+    responses: Array<LLMResponse | Error>,
+  ) {
+    super(responses);
+  }
+
+  override getDefaultModel(): string {
+    return this.modelName;
   }
 }
 
@@ -53,6 +95,99 @@ function imageMessage() {
 }
 
 describe("chatWithRetry", () => {
+  let warnSpy: MockInstance<typeof console.warn>;
+  let errorSpy: MockInstance<typeof console.error>;
+  let infoSpy: MockInstance<typeof console.info>;
+
+  beforeEach(() => {
+    warnSpy = vi.spyOn(console, "warn").mockImplementation(() => {});
+    errorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
+    infoSpy = vi.spyOn(console, "info").mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it("logs retry attempts and the final failure without logging prompts", async () => {
+    const provider = new ScriptedProvider(
+      Array.from({ length: 8 }, (_, index) => new LLMResponse({
+        content: `503 failure ${index + 1}`,
+        finishReason: "error",
+        errorStatusCode: 503,
+        errorKind: "server_error",
+        errorType: "server_error",
+        errorCode: "server_error",
+      })),
+    );
+
+    await provider.chatWithRetry({ messages: userMessages() });
+
+    const retries = warnSpy.mock.calls.filter(([message]) => message === "[provider] retrying model request");
+    expect(retries).toHaveLength(7);
+    expect(retries[0]?.[1]).toMatchObject({
+      provider: "ScriptedProvider",
+      model: "test-model",
+      attempt: 1,
+      delaySeconds: 1,
+      status: 503,
+      kind: "server_error",
+      category: null,
+    });
+    expect(retries[6]?.[1]).toMatchObject({ attempt: 7, delaySeconds: 32 });
+    expect(errorSpy).toHaveBeenCalledWith(
+      "[provider] model request failed",
+      expect.objectContaining({
+        provider: "ScriptedProvider",
+        model: "test-model",
+        reason: "retry_exhausted",
+        attempts: 7,
+        status: 503,
+      }),
+    );
+    expect(JSON.stringify(warnSpy.mock.calls)).not.toContain("hello");
+  });
+
+  it("logs a fallback switch and the successful backup model", async () => {
+    const primary = new ModelScriptedProvider("primary-model", [
+      new LLMResponse({
+        content: "503 primary failed",
+        finishReason: "error",
+        errorStatusCode: 503,
+        errorKind: "server_error",
+      }),
+    ]);
+    const backup = new ModelScriptedProvider("backup-model", [new LLMResponse({ content: "ok" })]);
+    const provider = new FallbackProvider({
+      primary,
+      fallbackPresets: [{ model: "backup-model" }],
+      providerFactory: () => backup,
+    });
+
+    const response = await provider.chatWithRetry({ messages: userMessages() });
+
+    expect(response.content).toBe("ok");
+    expect(warnSpy).toHaveBeenCalledWith(
+      "[provider] falling back to backup model",
+      expect.objectContaining({
+        provider: "ModelScriptedProvider",
+        model: "primary-model",
+        toProvider: "ModelScriptedProvider",
+        toModel: "backup-model",
+        status: 503,
+      }),
+    );
+    expect(infoSpy).toHaveBeenCalledWith(
+      "[provider] fallback model succeeded",
+      expect.objectContaining({
+        provider: "ModelScriptedProvider",
+        model: "primary-model",
+        toProvider: "ModelScriptedProvider",
+        toModel: "backup-model",
+      }),
+    );
+  });
+
   it("retries a transient error and then succeeds", async () => {
     const provider = new ScriptedProvider([
       new LLMResponse({ content: "429 rate limit", finishReason: "error" }),
@@ -78,12 +213,16 @@ describe("chatWithRetry", () => {
       new LLMResponse({ content: "429 rate limit a", finishReason: "error" }),
       new LLMResponse({ content: "429 rate limit b", finishReason: "error" }),
       new LLMResponse({ content: "429 rate limit c", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit d", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit e", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit f", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit g", finishReason: "error" }),
       new LLMResponse({ content: "503 final server error", finishReason: "error" }),
     ]);
     const response = await provider.chatWithRetry({ messages: userMessages() });
     expect(response.content).toBe("503 final server error");
-    expect(provider.calls).toBe(4);
-    expect(provider.delays).toEqual([1, 2, 4]);
+    expect(provider.calls).toBe(8);
+    expect(provider.delays).toEqual([1, 2, 4, 8, 16, 32, 32]);
   });
 
   it("emits terminal progress when standard retries are exhausted", async () => {
@@ -91,6 +230,10 @@ describe("chatWithRetry", () => {
       new LLMResponse({ content: "429 rate limit a", finishReason: "error" }),
       new LLMResponse({ content: "429 rate limit b", finishReason: "error" }),
       new LLMResponse({ content: "429 rate limit c", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit d", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit e", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit f", finishReason: "error" }),
+      new LLMResponse({ content: "503 rate limit g", finishReason: "error" }),
       new LLMResponse({ content: "503 final server error", finishReason: "error" }),
     ]);
     const progress: string[] = [];
@@ -101,7 +244,23 @@ describe("chatWithRetry", () => {
       },
     });
     expect(response.content).toBe("503 final server error");
-    expect(progress.at(-1)).toBe("Model request failed after 4 retries, giving up.");
+    expect(progress.at(-1)).toBe("Model request failed after 7 retries, giving up.");
+  });
+
+  it("does not retry once streamed content has reached the caller", async () => {
+    const provider = new StreamingScriptedProvider();
+    const deltas: string[] = [];
+    const response = await provider.chatStreamWithRetry({
+      messages: userMessages(),
+      onContentDelta: (delta) => {
+        deltas.push(delta);
+      },
+    });
+    expect(response.finishReason).toBe("error");
+    expect(response.content).toBe("429 rate limit");
+    expect(deltas).toEqual(["partial answer"]);
+    expect(provider.calls).toBe(1);
+    expect(provider.delays).toEqual([]);
   });
 
   it("preserves CancelledError exceptions", async () => {
@@ -414,7 +573,7 @@ describe("chatWithRetry", () => {
     expect(response.finishReason).toBe("error");
     expect(response.content).toBe("429 rate limit");
     expect(provider.calls).toBe(10);
-    expect(provider.delays).toEqual([1, 2, 4, 4, 4, 4, 4, 4, 4]);
+    expect(provider.delays).toEqual([1, 2, 4, 8, 16, 32, 32, 32, 32]);
   });
 
   it("emits terminal progress when persistent identical error limit is reached", async () => {
