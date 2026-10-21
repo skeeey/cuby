@@ -111,7 +111,7 @@ export interface ResolvedModelSelection {
   candidate: ModelCandidate | null;
   candidateId: string | null;
   unavailable: boolean;
-  reason: "saved" | "committed" | "initial" | "unavailable" | "empty";
+  reason: "saved" | "initial" | "unavailable" | "empty";
   previousModel?: string | null;
   previousProvider?: string | null;
 }
@@ -500,34 +500,23 @@ export function getTaskModelCandidates(workspace: ModelWorkspace, mode: ModelWor
 export function resolveModelSelection(
   workspace: ModelWorkspace,
   mode: ModelWorkspaceMode,
-  selectedPresetId?: string | null,
-  options: { allowUnassignedSelected?: boolean } = {}
+  selectedPresetId?: string | null
 ): ResolvedModelSelection {
-  const candidates = getTaskModelCandidates(workspace, mode);
+  const candidates = getModelCandidates(workspace, mode, "chat");
   if (!candidates.length) {
     if (!selectedPresetId) {
       return { candidate: null, candidateId: null, unavailable: false, reason: "empty" };
     }
-    const committed = options.allowUnassignedSelected
-      ? getModelCandidates(workspace, mode, "chat").find((item) => item.id === selectedPresetId) ?? null
-      : null;
-    return committed
-      ? { candidate: committed, candidateId: selectedPresetId, unavailable: !committed.available, reason: "committed" }
-      : { candidate: null, candidateId: selectedPresetId, unavailable: true, reason: "unavailable" };
+    return { candidate: null, candidateId: selectedPresetId, unavailable: true, reason: "unavailable" };
   }
   const candidateId = selectedPresetId ?? workspace.catalog.modelAssignments[mode].agent.default;
   if (!candidateId) {
     return { candidate: candidates[0]!, candidateId: candidates[0]!.id, unavailable: false, reason: "initial" };
   }
   const candidate = candidates.find((item) => item.id === candidateId) ?? null;
-  const committed = !candidate && options.allowUnassignedSelected
-    ? getModelCandidates(workspace, mode, "chat").find((item) => item.id === candidateId) ?? null
-    : null;
   return candidate
     ? { candidate, candidateId, unavailable: !candidate.available, reason: "saved" }
-    : committed
-      ? { candidate: committed, candidateId, unavailable: !committed.available, reason: "committed" }
-      : { candidate: null, candidateId, unavailable: true, reason: "unavailable" };
+    : { candidate: null, candidateId, unavailable: true, reason: "unavailable" };
 }
 
 export function upsertModelConnection(
@@ -737,18 +726,38 @@ export function setDefaultTaskModel(
 
 /**
  * Builds the persistence payload that makes `candidateId` the `mode` default, or null when there
- * is nothing to persist (the id is not a candidate for this mode, or it is already the default).
- * Used to remember the model picked in the chat selector as the default for new chats across
- * restart, without redundant config writes.
+ * is nothing to persist (the id is not a chat-capable model visible in this mode, or it is already
+ * the default). A model picked from the full chat catalog is enrolled as a conversation candidate
+ * so the backend keeps it as the default across restarts.
  */
 export function defaultModelSelectionInput(
   workspace: ModelWorkspace,
   mode: ModelWorkspaceMode,
   candidateId: string
 ): ModelConfigInput | null {
+  const candidate = getModelCandidates(workspace, mode, "chat").find((item) => item.id === candidateId);
+  if (!candidate) return null;
   const agent = workspace.catalog.modelAssignments[mode].agent;
-  if (!agent.candidates.includes(candidateId) || agent.default === candidateId) return null;
-  return modelConfigInput(setDefaultTaskModel(workspace, mode, candidateId));
+  if (agent.default === candidateId && agent.candidates.includes(candidateId)) return null;
+  const next = cloneCatalog(workspace.catalog);
+  const modeAgent = next.modelAssignments[mode].agent;
+  if (!modeAgent.candidates.includes(candidateId)) {
+    modeAgent.candidates = [...modeAgent.candidates, candidateId];
+  }
+  modeAgent.default = candidateId;
+  // The backend re-derives account candidates from the BYOK candidate list on every account-mode
+  // startup, so a BYOK model picked while in account mode must also be enrolled there.
+  if (mode === "account" && candidate.source === "byok") {
+    const byokAgent = next.modelAssignments.byok.agent;
+    if (!byokAgent.candidates.includes(candidateId)) {
+      byokAgent.candidates = [...byokAgent.candidates, candidateId];
+    }
+    if (!byokAgent.default || !byokAgent.candidates.includes(byokAgent.default)) {
+      byokAgent.default = candidateId;
+    }
+  }
+  refreshEffectiveCandidates(next);
+  return modelConfigInputFromView(next);
 }
 
 export function setModelAssignment(

@@ -895,10 +895,7 @@ export function HomePage() {
   const resolvedConversationModel = resolveModelSelection(
     modelWorkspace,
     modelWorkspaceMode,
-    selectedModelPreset,
-    {
-      allowUnassignedSelected: pendingModelPreset == null && Boolean(committedModelSelection)
-    }
+    selectedModelPreset
   );
   // Persist the model the user picks in the chat selector as the mode default, so a new chat
   // after restart defaults to the last-used model instead of the platform default. Only the

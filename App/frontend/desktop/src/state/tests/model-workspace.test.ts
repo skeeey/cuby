@@ -910,15 +910,27 @@ describe("canonical model workspace adapter", () => {
     expect(selected.catalog.modelAssignments.byok.agent.candidates).toContain(newPresetId);
   });
 
-  it("defaultModelSelectionInput：仅在选中项是候选且非当前默认时才产出持久化 payload", () => {
+  it("defaultModelSelectionInput：目录内对话模型都能记住为默认，非对话模型与不存在模型不产出 payload", () => {
     const workspace = createModelWorkspace(catalog());
-    // account 当前默认是 account-agent;选候选内的 byok-agent → 产出把默认设为 byok-agent 的 payload
+    workspace.catalog.modelAssignments.account.agent = { candidates: ["account-agent"], default: "account-agent" };
+    workspace.catalog.modelAssignments.byok.agent = { candidates: [], default: null };
+
+    // 选目录内但不是会话候选的 byok-agent → 自动加入候选并设为默认
     const input = defaultModelSelectionInput(workspace, "account", "byok-agent");
     expect(input).not.toBeNull();
-    expect(input!.modelAssignments.account.agent.default).toBe("byok-agent");
+    expect(input!.modelAssignments.account.agent).toEqual({
+      candidates: ["account-agent", "byok-agent"],
+      default: "byok-agent"
+    });
+    // BYOK 真源同时登记，后端账号投影重启后不会丢掉这个默认
+    expect(input!.modelAssignments.byok.agent).toEqual({
+      candidates: ["byok-agent"],
+      default: "byok-agent"
+    });
     // 已是当前默认 → 无需写,返回 null(避免重复持久化)
     expect(defaultModelSelectionInput(workspace, "account", "account-agent")).toBeNull();
-    // 不是该模式候选 → null
+    // 非对话能力模型 / 不存在模型 → null
+    expect(defaultModelSelectionInput(workspace, "account", "byok-embedding")).toBeNull();
     expect(defaultModelSelectionInput(workspace, "account", "not-a-candidate")).toBeNull();
   });
 
@@ -972,9 +984,12 @@ describe("canonical model workspace adapter", () => {
     expect(resolveModelSelection(workspace, "byok", "missing")).toMatchObject({ unavailable: true, candidateId: "missing" });
   });
 
-  it("会话唯一 Agent 候选被删除后仍保留 unavailable 墓碑", () => {
+  it("已从目录删除的已选模型仍保留 unavailable 墓碑", () => {
     const workspace = createModelWorkspace(catalog());
-    workspace.catalog.modelAssignments.byok.agent = { candidates: [], default: null };
+    workspace.catalog.providers = workspace.catalog.providers.map((provider) => ({
+      ...provider,
+      models: provider.models.filter((model) => model.presetId !== "byok-agent")
+    }));
 
     expect(resolveModelSelection(workspace, "byok", "byok-agent")).toEqual({
       candidate: null,
@@ -984,22 +999,21 @@ describe("canonical model workspace adapter", () => {
     });
   });
 
-  it("历史会话可继续使用目录中仍有效但已从当前候选移除的已提交模型", () => {
+  it("下拉可直接使用目录中任意对话模型，不再要求已加入会话候选", () => {
     const workspace = createModelWorkspace(catalog());
     workspace.catalog.modelAssignments.account.agent = {
       candidates: ["account-agent"],
       default: "account-agent"
     };
 
-    expect(resolveModelSelection(workspace, "account", "byok-agent", {
-      allowUnassignedSelected: true
-    })).toMatchObject({
+    expect(resolveModelSelection(workspace, "account", "byok-agent")).toMatchObject({
       candidate: { id: "byok-agent", model: "gpt-4o", available: true },
       candidateId: "byok-agent",
       unavailable: false,
-      reason: "committed"
+      reason: "saved"
     });
-    expect(resolveModelSelection(workspace, "account", "byok-agent"))
+    // 非对话能力模型仍不可选
+    expect(resolveModelSelection(workspace, "account", "byok-embedding"))
       .toMatchObject({ candidate: null, unavailable: true, reason: "unavailable" });
   });
 

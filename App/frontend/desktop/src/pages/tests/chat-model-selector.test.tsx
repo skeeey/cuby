@@ -5,10 +5,11 @@ import { describe, expect, it } from "vitest";
 import { ChatModelSelector } from "../home-page.js";
 
 describe("ChatModelSelector", () => {
-  it("Agent selector uses catalog Agent candidates and Agent-state preset selection only", () => {
+  it("Agent selector uses the full chat catalog and Agent-state preset selection only", () => {
     const source = readFileSync(resolve(__dirname, "..", "..", "components", "agent-model-selector.tsx"), "utf8");
 
-    expect(source).toContain("getTaskModelCandidates(workspace, props.mode)");
+    expect(source).toContain('getModelCandidates(workspace, props.mode, "chat")');
+    expect(source).not.toContain("getTaskModelCandidates");
     expect(source).toContain("pendingPresetByScope");
     expect(source).toContain("committedModelSelectionByScope");
     expect(source).toContain("agentActions.pendingModelPresetUpdated");
@@ -17,6 +18,9 @@ describe("ChatModelSelector", () => {
     expect(source).not.toContain("!hasNoModels && resolved.unavailable");
     expect(source).not.toContain("useModelWorkspace");
     expect(source).not.toContain("localStorage");
+    expect(source).not.toContain("menuFooter");
+    expect(source).not.toContain("configureCustom");
+    expect(source).not.toContain("byokGroup");
   });
 
   it("uses provider logos with model-only labels and omits unavailable presets", () => {

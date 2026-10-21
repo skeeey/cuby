@@ -959,36 +959,6 @@ body.cuby-window-fullscreen {
   margin-right: 2px;
 }
 
-.agent-model-selector__footer {
-  margin-top: 6px;
-  padding-top: 8px;
-  border-top: 1px solid color-mix(in srgb, var(--color-border-stone) 36%, transparent);
-}
-
-.agent-model-selector__configure {
-  display: flex;
-  width: 100%;
-  min-height: 34px;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 8px 9px;
-  border: 0;
-  border-radius: 7px;
-  background: transparent;
-  color: color-mix(in srgb, var(--color-action-sky) 88%, var(--color-text-ink));
-  cursor: pointer;
-  font-family: inherit;
-  font-size: 13px;
-  font-weight: 400;
-  line-height: 1.25;
-  text-align: left;
-}
-
-.agent-model-selector__configure:hover {
-  background: color-mix(in srgb, var(--color-action-sky) 10%, transparent);
-}
-
 .agent-model-selector__menu .select-control__option--selected,
 .agent-model-selector__menu .select-control__option--selected.select-control__option--active {
   background: transparent;
