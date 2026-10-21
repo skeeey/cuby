@@ -2,6 +2,12 @@ import {
   classifyImageInputUnsupported,
   type ProviderErrorCategory,
 } from "./provider-error-classifier.js";
+import {
+  logProviderFailure,
+  logProviderRecovered,
+  logProviderRetry,
+  logProviderStreamedFailure,
+} from "./provider-log.js";
 
 export type AccountImageTextFallbackArgs = {
   messages: Record<string, any>[];
@@ -141,7 +147,7 @@ export const SYNTHETIC_USER_CONTENT = "(conversation continued)";
 
 export abstract class LLMProvider {
   static supportsProgressDeltas = false;
-  protected static CHAT_RETRY_DELAYS = [1, 2, 4];
+  protected static CHAT_RETRY_DELAYS = [1, 2, 4, 8, 16, 32, 32];
   protected static PERSISTENT_MAX_DELAY = 60;
   protected static PERSISTENT_IDENTICAL_ERROR_LIMIT = 10;
   protected static RETRY_HEARTBEAT_CHUNK = 30;
@@ -545,6 +551,52 @@ export abstract class LLMProvider {
     const retryMode = args.retryMode ?? "standard";
     const onRetryWait = args.onRetryWait;
     const requestArgs = this.buildRetryArgs(args) as TArgs;
+    // A retry after text, reasoning or tool-call deltas already reached the caller would
+    // append a second stream to the same message. Track every streamed channel and stop
+    // with the error instead of duplicating output.
+    let streamed = false;
+    const streamingArgs = requestArgs as TArgs & {
+      onContentDelta?: (delta: string) => Promise<void> | void;
+      onThinkingDelta?: (delta: string) => Promise<void> | void;
+      onToolCallDelta?: (delta: Record<string, any>) => Promise<void> | void;
+    };
+    const wrapDelta = <T>(
+      current: ((delta: T) => Promise<void> | void) | undefined,
+      emit: (delta: T) => void,
+    ): ((delta: T) => Promise<void> | void) | undefined => {
+      if (typeof current !== "function") return current;
+      return async (delta: T) => {
+        emit(delta);
+        await current(delta);
+      };
+    };
+    streamingArgs.onContentDelta = wrapDelta(streamingArgs.onContentDelta, (delta) => {
+      if (delta) streamed = true;
+    });
+    streamingArgs.onThinkingDelta = wrapDelta(streamingArgs.onThinkingDelta, (delta) => {
+      if (delta) streamed = true;
+    });
+    streamingArgs.onToolCallDelta = wrapDelta(streamingArgs.onToolCallDelta, (delta) => {
+      if (delta) streamed = true;
+    });
+    const logBase = () => {
+      const requestedModel = (requestArgs as { model?: unknown }).model;
+      return {
+        provider: this.constructor.name,
+        model: typeof requestedModel === "string" && requestedModel.trim()
+          ? requestedModel
+          : this.getDefaultModel(),
+      };
+    };
+    const logFields = (response: LLMResponse) => ({
+      ...logBase(),
+      status: response.errorStatusCode ?? null,
+      kind: response.errorKind ?? null,
+      type: response.errorType ?? null,
+      code: response.errorCode ?? null,
+      category: response.errorCategory ?? null,
+      detail: response.content ?? null,
+    });
     let identicalErrors = 0;
     let lastError = "";
     let attempt = 0;
@@ -552,17 +604,38 @@ export abstract class LLMProvider {
     while (true) {
       const response = await operation(requestArgs);
 
-      if (response.finishReason !== "error") return response;
-      if (response.errorCategory === "quota_exhausted") return response;
+      if (response.finishReason !== "error") {
+        if (attempt > 0) logProviderRecovered({ ...logBase(), attempts: attempt });
+        return response;
+      }
+      if (response.errorCategory === "quota_exhausted") {
+        logProviderFailure({ ...logFields(response), reason: "quota_exhausted" });
+        return response;
+      }
       LLMProvider.classifyImageInputUnsupportedResponse(response, requestArgs.messages);
-      if (response.errorCategory === "image_input_unsupported") return response;
+      if (response.errorCategory === "image_input_unsupported") {
+        logProviderFailure({ ...logFields(response), reason: "image_input_unsupported" });
+        return response;
+      }
 
-      if (!LLMProvider.isTransientResponse(response)) return response;
+      if (!LLMProvider.isTransientResponse(response)) {
+        logProviderFailure({ ...logFields(response), reason: "non_retryable" });
+        return response;
+      }
+      if (streamed) {
+        logProviderStreamedFailure({ ...logFields(response), reason: "streamed_output" });
+        return response;
+      }
 
       const errorKey = `${response.errorStatusCode ?? ""}|${response.errorKind ?? ""}|${response.errorType ?? ""}|${response.errorCode ?? ""}|${response.content ?? ""}`;
       identicalErrors = errorKey === lastError ? identicalErrors + 1 : 1;
       lastError = errorKey;
       if (retryMode === "persistent" && identicalErrors >= LLMProvider.PERSISTENT_IDENTICAL_ERROR_LIMIT) {
+        logProviderFailure({
+          ...logFields(response),
+          reason: "persistent_identical_errors",
+          attempts: identicalErrors,
+        });
         await onRetryWait?.(`Persistent retry stopped after ${LLMProvider.PERSISTENT_IDENTICAL_ERROR_LIMIT} identical errors.`);
         return response;
       }
@@ -574,10 +647,12 @@ export abstract class LLMProvider {
           : LLMProvider.CHAT_RETRY_DELAYS[attempt]);
 
       if (delay == null) {
-        await onRetryWait?.(`Model request failed after ${LLMProvider.CHAT_RETRY_DELAYS.length + 1} retries, giving up.`);
+        logProviderFailure({ ...logFields(response), reason: "retry_exhausted", attempts: attempt });
+        await onRetryWait?.(`Model request failed after ${LLMProvider.CHAT_RETRY_DELAYS.length} retries, giving up.`);
         return response;
       }
       const retryAttempt = attempt + 1;
+      logProviderRetry({ ...logFields(response), attempt: retryAttempt, delaySeconds: delay });
       await onRetryWait?.(`Model request failed, retrying attempt ${retryAttempt} in ${delay}s...`);
       await this.sleepWithHeartbeat(delay, (message) => onRetryWait?.(`Retry attempt ${retryAttempt}: ${message}`));
       attempt += 1;
