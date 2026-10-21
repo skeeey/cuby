@@ -47,6 +47,64 @@ describe("SettingsPage account card", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("当前线路"));
     expect(container.textContent).toContain("alice");
     expect(container.textContent).not.toContain("未登录");
+    expect(container.textContent).not.toContain("当前使用自定义大模型 API Key");
+  });
+
+  it("appends the organization after the account name", async () => {
+    render(
+      { getNodes: vi.fn(async () => ({ nodes: ["cn", "hk"], currentNodeId: "cn" })) },
+      { signedIn: true, organizationName: "yeebo" }
+    );
+
+    await vi.waitFor(() => expect(container.textContent).toContain("当前线路"));
+    expect(container.textContent).toContain("alice (yeebo)");
+  });
+
+  it("changes the password from the account card", async () => {
+    const changePassword = vi.fn(async () => ({ ok: true }));
+    render(
+      {
+        getNodes: vi.fn(async () => ({ nodes: ["cn", "hk"], currentNodeId: "cn" })),
+        changePassword
+      },
+      { signedIn: true }
+    );
+
+    await vi.waitFor(() => expect(container.textContent).toContain("当前线路"));
+    await clickButton("修改密码");
+    await fillInput("当前密码", "Passw0rd1");
+    await fillInput("新密码", "Passw0rd2");
+    await fillInput("确认新密码", "Passw0rd2");
+    await clickSubmit();
+
+    await vi.waitFor(() =>
+      expect(changePassword).toHaveBeenCalledWith({
+        originalPassword: "Passw0rd1",
+        newPassword: "Passw0rd2"
+      })
+    );
+    await vi.waitFor(() => expect(container.textContent).toContain("密码已修改"));
+    expect(container.querySelector('input[aria-label="当前密码"]')).toBeNull();
+  });
+
+  it("does not offer a password change to a signed-out BYOK machine", async () => {
+    render({ getNodes: vi.fn(async () => ({ nodes: [], currentNodeId: null })) });
+
+    await act(async () => await Promise.resolve());
+    expect(container.textContent).not.toContain("修改密码");
+  });
+
+  it("does not offer a password change to a memmy cloud account", async () => {
+    render(
+      {
+        getNodes: vi.fn(async () => ({ nodes: [], currentNodeId: null })),
+        changePassword: vi.fn(async () => ({ ok: true }))
+      },
+      { signedIn: true, identityProvider: "memmy_cloud" }
+    );
+
+    await act(async () => await Promise.resolve());
+    expect(container.textContent).not.toContain("修改密码");
   });
 
   it("shows nothing when no line is configured", async () => {
@@ -56,7 +114,43 @@ describe("SettingsPage account card", () => {
     expect(container.textContent).not.toContain("当前线路");
   });
 
-  function render(accountClient: Partial<AccountClient>, options: { signedIn?: boolean } = {}) {
+  async function fillInput(label: string, value: string) {
+    const input = container.querySelector<HTMLInputElement>(`input[aria-label="${label}"]`);
+    if (!input) {
+      throw new Error(`input not found: ${label}`);
+    }
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  }
+
+  async function clickButton(label: string) {
+    const button = [...container.querySelectorAll("button")].find(
+      (candidate) => candidate.textContent?.trim() === label
+    );
+    if (!button) {
+      throw new Error(`button not found: ${label}`);
+    }
+    await act(async () => button.click());
+  }
+
+  async function clickSubmit() {
+    const button = container.querySelector<HTMLButtonElement>('section[role="dialog"] button[type="submit"]');
+    if (!button) {
+      throw new Error("dialog submit button not found");
+    }
+    await act(async () => button.click());
+  }
+
+  function render(
+    accountClient: Partial<AccountClient>,
+    options: {
+      signedIn?: boolean;
+      organizationName?: string | null;
+      identityProvider?: "cuberouter" | "memmy_cloud";
+    } = {}
+  ) {
     const bootstrap = {
       ...mockBootstrap,
       app: { ...mockBootstrap.app, userMode: "byok" as const, language: "zh-CN" as const }
@@ -70,7 +164,8 @@ describe("SettingsPage account card", () => {
             phoneNumber: null,
             nickname: "alice",
             registeredAt: null,
-            identityProvider: "cuberouter" as const
+            identityProvider: options.identityProvider ?? ("cuberouter" as const),
+            organizationName: options.organizationName ?? null
           })
         )
       : appReducer(createInitialAppState(), appActions.bootstrapLoaded(bootstrap, "/settings"));

@@ -53,6 +53,7 @@ import {
   type OptionalModelMissingWarningKind
 } from "./optional-model-missing-warning-modal.js";
 import { ConfirmDialog } from "../components/confirm-dialog.js";
+import { ChangePasswordDialog } from "../components/change-password-dialog.js";
 import { Cuby } from "../components/mascot/cuby.js";
 import { ModelProviderLogo } from "../components/model-provider-logo.js";
 import { Select, type SelectOption } from "../components/Select.js";
@@ -376,6 +377,9 @@ export function SettingsPageView(props: SettingsPageViewProps) {
   const [accountBusy, setAccountBusy] = useState(false);
   const [accountIdCopied, setAccountIdCopied] = useState(false);
   const [accountError, setAccountError] = useState<string | null>(null);
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
+  const [accountPasswordSaved, setAccountPasswordSaved] = useState(false);
+  const passwordSavedTimerRef = useRef<number | null>(null);
   const [activeTabState, setActiveTabState] = useState<SettingsTabId>(() => {
     return readInitialSettingsTab(typeof window === "undefined" ? undefined : window.location.hash);
   });
@@ -493,10 +497,18 @@ export function SettingsPageView(props: SettingsPageViewProps) {
       cancelled = true;
     };
   }, [accountClient]);
+  useEffect(() => () => {
+    if (passwordSavedTimerRef.current !== null) {
+      window.clearTimeout(passwordSavedTimerRef.current);
+    }
+  }, []);
   // The account card follows the session, not the user mode. A cuberouter login persists
   // "byok", so a mode-first question labelled a signed-in account "not signed in" (and gating
   // the logout entry on account mode once left the only way to sign out unreachable).
   const isSignedIn = Boolean(state.account.userId);
+  const canChangePassword = isSignedIn
+    && state.account.identityProvider === "cuberouter"
+    && Boolean(accountClient?.changePassword);
   const accountIdentifier = resolveAccountIdentifier(state);
   const maskedAccountIdentifier = maskAccountIdentifier(accountIdentifier);
   // Signed in is a question about the session, not about the mode: a cuberouter identity runs in
@@ -505,7 +517,9 @@ export function SettingsPageView(props: SettingsPageViewProps) {
   const accountName = isSignedIn
     ? state.account.nickname || maskedAccountIdentifier || resolveAccountFallback(t)
     : resolveAccountFallback(t);
-  const accountMeta = isByokMode ? resolveAccountMeta(appSettings?.userMode, t) : maskedAccountIdentifier || resolveAccountMeta(appSettings?.userMode, t);
+  const accountMeta = isByokMode ? "" : maskedAccountIdentifier || t("settings.account.noIdentifier");
+  const accountOrganization = isSignedIn ? state.account.organizationName : null;
+  const accountDisplayName = accountOrganization ? `${accountName} (${accountOrganization})` : accountName;
   const accountInitial = isSignedIn ? resolveAccountInitials(accountName) : "·";
   const registeredAtText = formatRegisteredAt(state.account.registeredAt, t);
   const defaultLaunchMode = appSettings?.defaultLaunchMode ?? state.navigation.preferredMode ?? "last";
@@ -1415,6 +1429,27 @@ export function SettingsPageView(props: SettingsPageViewProps) {
     }
   }
 
+  /** Changes the signed-in cuberouter account's password. */
+  async function changeAccountPassword(input: { originalPassword: string; newPassword: string }) {
+    if (!accountClient?.changePassword) {
+      throw new Error(t("settings.account.changePasswordFailed"));
+    }
+    await accountClient.changePassword(input);
+  }
+
+  /** Confirms a successful password change and closes the dialog. */
+  function handleAccountPasswordChanged() {
+    setChangePasswordOpen(false);
+    setAccountPasswordSaved(true);
+    if (passwordSavedTimerRef.current !== null) {
+      window.clearTimeout(passwordSavedTimerRef.current);
+    }
+    passwordSavedTimerRef.current = window.setTimeout(() => {
+      setAccountPasswordSaved(false);
+      passwordSavedTimerRef.current = null;
+    }, 3000);
+  }
+
   /** Handles the registered account logout confirmation. */
   async function handleConfirmAccountExit() {
     if (accountBusy) return;
@@ -1493,7 +1528,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
                     <>
                       <OverflowTooltipText
                         className="settings-account-heading-name text-sm font-semibold text-text-ink truncate"
-                        text={accountName}
+                        text={accountDisplayName}
                       />
                       {isAccountMode && (
                         <button type="button" aria-label={t("settings.account.editNickname")} onClick={startNicknameEdit} className="shrink-0 text-xs text-action-sky hover:underline cursor-pointer">
@@ -1506,7 +1541,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
                 <div className="min-w-0 text-xs text-text-ink/55 leading-relaxed">
                   {isAccountMode ? (
                     <div className="min-w-0 space-y-0.5">
-                      <OverflowTooltipText className="settings-account-meta-line block truncate" text={accountMeta} />
+                      {accountMeta && <OverflowTooltipText className="settings-account-meta-line block truncate" text={accountMeta} />}
                       <div className="text-text-ink/45">{t("settings.account.registeredAt", { value: registeredAtText })}</div>
                       {state.account.userId && (
                         <div className="flex items-center gap-2 min-w-0 text-text-ink/45">
@@ -1537,8 +1572,13 @@ export function SettingsPageView(props: SettingsPageViewProps) {
                       )}
                       {accountError && <div className="text-status-error">{accountError}</div>}
                     </div>
-                  ) : (
+                  ) : accountMeta ? (
                     <OverflowTooltipText className="settings-account-meta-line block truncate" text={accountMeta} />
+                  ) : null}
+                  {accountPasswordSaved && (
+                    <div className="settings-account-line text-status-success">
+                      {t("settings.account.changePasswordSuccess")}
+                    </div>
                   )}
                   {currentNodeId ? (
                     <div className="settings-account-line text-text-ink/45">
@@ -1549,14 +1589,26 @@ export function SettingsPageView(props: SettingsPageViewProps) {
               </div>
             </div>
             {isSignedIn && (
-              <button
-                type="button"
-                onClick={() => setConfirm("logout")}
-                disabled={accountBusy}
-                className="settings-account-action shrink-0 flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-text-ink/70 border border-border-stone/40 rounded-btn hover:bg-canvas-oat/60 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                <LogOut size={12} /> {t("settings.logout")}
-              </button>
+              <div className="settings-account-action flex shrink-0 items-center gap-2">
+                {canChangePassword && (
+                  <button
+                    type="button"
+                    onClick={() => setChangePasswordOpen(true)}
+                    disabled={accountBusy}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-text-ink/70 border border-border-stone/40 rounded-btn hover:bg-canvas-oat/60 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    <KeyRound size={12} /> {t("settings.account.changePassword")}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setConfirm("logout")}
+                  disabled={accountBusy}
+                  className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs text-text-ink/70 border border-border-stone/40 rounded-btn hover:bg-canvas-oat/60 transition-colors cursor-pointer disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <LogOut size={12} /> {t("settings.logout")}
+                </button>
+              </div>
             )}
             {isByokMode && !isSignedIn && (
               <button
@@ -1960,6 +2012,14 @@ export function SettingsPageView(props: SettingsPageViewProps) {
           width={360}
           onCancel={() => setConfirm(null)}
           onConfirm={handleConfirmAccountExit}
+        />
+      )}
+      {changePasswordOpen && (
+        <ChangePasswordDialog
+          open
+          onClose={() => setChangePasswordOpen(false)}
+          onSubmit={changeAccountPassword}
+          onSuccess={handleAccountPasswordChanged}
         />
       )}
       {showApplyMore && (
@@ -3567,16 +3627,6 @@ function formatRegisteredAt(value: string | null, t: SettingsTranslate): string 
  */
 function resolveAccountFallback(t: SettingsTranslate): string {
   return t("settings.account.noAccount");
-}
-
-/**
- * Resolves the fallback text for the account description.
- *
- * @param userMode The current user mode.
- * @returns The account-area description; in account mode it favors neither email nor phone number.
- */
-function resolveAccountMeta(userMode: AppSettingsDto["userMode"] | undefined, t: SettingsTranslate): string {
-  return userMode === "byok" ? t("settings.account.customApiKeyMeta") : t("settings.account.noIdentifier");
 }
 
 /**

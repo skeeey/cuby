@@ -796,7 +796,7 @@ describe("SettingsPageView", () => {
     const source = readFileSync(settingsPageSourcePath, "utf8");
 
     expect(html).toContain("未登录");
-    expect(html).toContain("当前使用自定义大模型 API Key");
+    expect(html).not.toContain("当前使用自定义大模型 API Key");
     expect(html).toContain("登录 / 注册");
     expect(source).toContain('dispatch(appActions.navigate("/welcome"))');
     expect(source).not.toContain('setConfirm("exitLocal")');
@@ -807,7 +807,7 @@ describe("SettingsPageView", () => {
     const html = normalizeSsrHtml(renderSettingsPageView(createByokModeState()));
 
     expect(html).toContain("未登录");
-    expect(html).toContain("当前使用自定义大模型 API Key");
+    expect(html).not.toContain("当前使用自定义大模型 API Key");
     expect(html).toContain("登录 / 注册");
     expect(html).toContain("自定义 API Key");
     expect(html).toContain("还没有自定义模型");

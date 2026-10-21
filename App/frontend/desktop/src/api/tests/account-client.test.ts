@@ -55,6 +55,30 @@ describe("account-client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("通过本地路由修改 cuberouter 密码", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(input.toString()).toBe("http://127.0.0.1:18100/api/account/cuberouter/password");
+      expect(init?.method).toBe("POST");
+      expect(init?.headers).toMatchObject({
+        "x-cuby-local-token": "token"
+      });
+      expect(JSON.parse(String(init?.body))).toEqual({
+        originalPassword: "Passw0rd1",
+        newPassword: "Passw0rd2"
+      });
+      return jsonResponse({ ok: true });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(
+      createHttpAccountClient(config).changePassword({
+        originalPassword: "Passw0rd1",
+        newPassword: "Passw0rd2"
+      })
+    ).resolves.toEqual({ ok: true });
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("通过真实本地 API 完成注册、登录和昵称更新", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
