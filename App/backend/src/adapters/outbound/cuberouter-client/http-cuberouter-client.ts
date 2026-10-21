@@ -1,6 +1,8 @@
 /** Http cuberouter client module. */
 import type {
   CuberouterClient,
+  CuberouterCurrencyDisplayType,
+  CuberouterCurrencySettings,
   CuberouterErrorCode,
   CuberouterSession,
   CuberouterOrganizationToken,
@@ -68,6 +70,17 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
         turnstileRequired: data.turnstile_check === true,
         serverAddress: readString(data.server_address) ?? null
       };
+    },
+
+    async getCurrencySettings() {
+      const data = await request<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        "/api/status",
+        { method: "GET" }
+      );
+      return readCurrencySettings(data);
     },
 
     async sendEmailVerificationCode(email) {
@@ -475,6 +488,54 @@ function toOrganizationToken(row: Record<string, unknown>): CuberouterOrganizati
 function readCount(value: unknown): number | null {
   const parsed = typeof value === "number" ? value : Number.parseInt(String(value ?? ""), 10);
   return Number.isInteger(parsed) && parsed >= 0 ? parsed : null;
+}
+
+/** The instances' shipped default: 500,000 quota units per USD. */
+const DEFAULT_QUOTA_PER_UNIT = 500_000;
+
+/**
+ * Maps `/api/status` onto the display currency. The instance's own rule (`general_setting.go`):
+ * USD = $, CNY = ¥ at `usd_exchange_rate`, CUSTOM = its symbol at its rate, TOKENS = raw quota.
+ * A status that names no display type falls back to the legacy `display_in_currency` flag, and
+ * then to raw quota rather than guessing a currency the instance never declared.
+ */
+function readCurrencySettings(data: Record<string, unknown>): CuberouterCurrencySettings {
+  const declared = readString(data.quota_display_type)?.toUpperCase();
+  const displayType: CuberouterCurrencyDisplayType = isCurrencyDisplayType(declared)
+    ? declared
+    : data.display_in_currency === false
+      ? "TOKENS"
+      : "USD";
+  const quotaPerUnit = readPositiveNumber(data.quota_per_unit) ?? DEFAULT_QUOTA_PER_UNIT;
+  switch (displayType) {
+    case "CNY":
+      return {
+        displayType,
+        quotaPerUnit,
+        usdToCurrencyRate: readPositiveNumber(data.usd_exchange_rate) ?? 1,
+        symbol: "¥"
+      };
+    case "CUSTOM":
+      return {
+        displayType,
+        quotaPerUnit,
+        usdToCurrencyRate: readPositiveNumber(data.custom_currency_exchange_rate) ?? 1,
+        symbol: readString(data.custom_currency_symbol) ?? "¤"
+      };
+    case "TOKENS":
+      return { displayType, quotaPerUnit, usdToCurrencyRate: 1, symbol: "" };
+    default:
+      return { displayType: "USD", quotaPerUnit, usdToCurrencyRate: 1, symbol: "$" };
+  }
+}
+
+function isCurrencyDisplayType(value: string | undefined): value is CuberouterCurrencyDisplayType {
+  return value === "USD" || value === "CNY" || value === "TOKENS" || value === "CUSTOM";
+}
+
+function readPositiveNumber(value: unknown): number | null {
+  const parsed = typeof value === "number" ? value : typeof value === "string" ? Number(value) : Number.NaN;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : null;
 }
 
 function asRecord(value: unknown): Record<string, unknown> {

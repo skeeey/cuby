@@ -1279,12 +1279,26 @@ export const CuberouterKeyOptionSchema = z.object({
 });
 export type CuberouterKeyOption = z.infer<typeof CuberouterKeyOptionSchema>;
 
+/** The instance's quota display currency, as its public status declares it. */
+export const CuberouterCurrencySettingsSchema = z.object({
+    displayType: z.enum(["USD", "CNY", "TOKENS", "CUSTOM"]),
+    /** Quota units that equal one USD. */
+    quotaPerUnit: z.number().positive(),
+    /** 1 USD in the display currency. */
+    usdToCurrencyRate: z.number().positive(),
+    /** `$`, `¥`, a configured custom symbol such as HKD, or empty for raw quota. */
+    symbol: z.string()
+});
+export type CuberouterCurrencySettings = z.infer<typeof CuberouterCurrencySettingsSchema>;
+
 /** The model page's data: my keys with billing, the selectable models. */
 export const CuberouterModelChoicesViewSchema = z.object({
     account: z.object({ username: z.string(), organizationName: z.string().nullable() }),
     apiBase: z.string(),
     keys: z.array(CuberouterKeyOptionSchema),
-    models: z.array(z.string())
+    models: z.array(z.string()),
+    /** Optional so an older backend that predates money display still parses. */
+    currency: CuberouterCurrencySettingsSchema.optional()
 });
 export type CuberouterModelChoicesView = z.infer<typeof CuberouterModelChoicesViewSchema>;
 

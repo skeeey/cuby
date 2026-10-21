@@ -16,6 +16,7 @@ import { CuberouterModelSection, toggleAgentModel } from "../cuberouter-model-se
 const CHOICES: CuberouterModelChoicesView = {
   account: { username: "alice@a.com", organizationName: "yeebo" },
   apiBase: "https://cn.example/v1",
+  currency: { displayType: "CNY", quotaPerUnit: 500000, usdToCurrencyRate: 7.3, symbol: "¥" },
   keys: [
     {
       scope: "organization",
@@ -139,7 +140,7 @@ describe("cuberouter model section", () => {
 
     await vi.waitFor(() => expect(container.textContent).toContain("cuby-desktop-alice"));
     expect(container.textContent).toContain("计费：组织 yeebo");
-    expect(container.textContent).toContain("剩余 97500");
+    expect(container.textContent).toContain("剩余 ¥1.42");
     // No remembered switch: the provisioned cuby-desktop-* key is the selected one.
     expect(radio("cuby-desktop-alice").checked).toBe(true);
     expect(radio("cuby-desktop-alice").disabled).toBe(false);

@@ -6,6 +6,7 @@ import type {
 import {
   DESKTOP_TOKEN_NAME,
   type CuberouterClient,
+  type CuberouterCurrencySettings,
   type CuberouterErrorCode,
   type CuberouterOrganization,
   type CuberouterPersonalToken,
@@ -18,6 +19,17 @@ import { FALLBACK_NODE_ID, type CuberouterNodeRouter } from "./cuberouter-node-r
 
 /** Renew this long before the deadline, so a call in flight cannot outlive its token. */
 const ACCESS_TOKEN_RENEWAL_SKEW_SECONDS = 60;
+
+/**
+ * What the panel shows when `/api/status` cannot be read: the raw quota, never a currency the
+ * instance did not name.
+ */
+const FALLBACK_CURRENCY: CuberouterCurrencySettings = {
+  displayType: "TOKENS",
+  quotaPerUnit: 500_000,
+  usdToCurrencyRate: 1,
+  symbol: ""
+};
 
 const CUBEROUTER_ERROR_CODES: Record<CuberouterErrorCode, ApiErrorCode> = {
   two_factor_required: "invalid_argument",
@@ -94,6 +106,8 @@ export interface CuberouterModelChoices {
       | { kind: "organization"; organizationName: string; remainingQuota: number | null };
   }>;
   models: string[];
+  /** How this line wants its quota shown; raw quota when the status read failed. */
+  currency: CuberouterCurrencySettings;
 }
 
 export interface CuberouterAccountService {
@@ -451,8 +465,15 @@ export function createCuberouterAccountService(
     const accessToken = await resolveAccessToken(client);
 
     // Core reads propagate: the panel must show its retry state, not an empty key list that looks
-    // like "the account has no keys". Only the balance degrades, because it is decoration.
-    const organizations = await client.listOrganizations(accessToken);
+    // like "the account has no keys". Only the balance and the display currency degrade, because
+    // they are decoration.
+    const [organizations, currency] = await Promise.all([
+      client.listOrganizations(accessToken),
+      client.getCurrencySettings().catch((error) => {
+        log(`[cuberouter] reading currency settings failed: ${error instanceof Error ? error.message : String(error)}`);
+        return FALLBACK_CURRENCY;
+      })
+    ]);
     const organization = organizations[0] ?? null;
     // The instance numbers users, and a profile without a usable id must not be sent as one:
     // 0 is the instance's own "no server-side filter", and the row filter below decides instead.
@@ -505,7 +526,8 @@ export function createCuberouterAccountService(
           billing: { kind: "personal" as const, remainingQuota: personalQuota }
         }))
       ],
-      models
+      models,
+      currency
     };
   }
 
