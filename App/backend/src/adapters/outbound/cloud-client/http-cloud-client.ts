@@ -498,6 +498,8 @@ async function requestCloudData<T>(
 }
 
 function normalizeAgentRegion(value: string | undefined): "cn" | "intl" {
+  const language = process.env.CUBY_SYSTEM_LANGUAGE?.trim().toLowerCase();
+  if (language) return language.startsWith("zh") ? "cn" : "intl";
   return value?.trim().toLowerCase() === "intl" ? "intl" : "cn";
 }
 

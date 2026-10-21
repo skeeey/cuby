@@ -283,14 +283,13 @@ describe("SourcesSubPage", () => {
     expect(zhCNMessages).not.toHaveProperty("memory.daemonAddress");
   });
 
-  it("记忆服务帮助入口按应用版本打开对应官网文档", () => {
-    expect(resolveMemoryDocsUrl("intl")).toBe("https://memmy.bot/docs/memory/overview/");
-    expect(resolveMemoryDocsUrl("INTL")).toBe("https://memmy.bot/docs/memory/overview/");
-    expect(resolveMemoryDocsUrl("cn")).toBe("https://memmy.cn/docs/memory/overview/");
-    expect(resolveMemoryDocsUrl(undefined)).toBe("https://memmy.cn/docs/memory/overview/");
+  it("记忆服务帮助入口按应用语言打开对应官网文档", () => {
+    expect(resolveMemoryDocsUrl("zh-CN")).toBe("https://memmy.cn/docs/memory/overview/");
+    expect(resolveMemoryDocsUrl("en-US")).toBe("https://memmy.bot/docs/memory/overview/");
+    expect(resolveMemoryDocsUrl(undefined)).toBe("https://memmy.bot/docs/memory/overview/");
 
     const source = readFileSync(resolve(__dirname, "..", "..", "memory-sources-page.tsx"), "utf8");
-    expect(source).toContain("openExternalUrl(resolveMemoryDocsUrl())");
+    expect(source).toContain("openExternalUrl(resolveMemoryDocsUrl(language))");
     expect(zhCNMessages["memory.openDocs"]).toBe("查看记忆服务文档");
     expect(enUSMessages["memory.openDocs"]).toBe("View memory service documentation");
     expect(zhCNMessages["memory.learnMore"]).toBe("了解更多");

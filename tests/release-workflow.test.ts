@@ -370,7 +370,7 @@ describe("GitHub Draft Release v2 workflow", () => {
     expect(download).toContain("Installer checksum verification failed");
     expect(download).toContain('[[ ! -s "release-assets/$artifact" ]]');
     expect(download).toContain("Installer download is empty");
-    expect(download.match(/Cuby-\$VERSION-/g)).toHaveLength(6);
+    expect(download.match(/Cuby-\$VERSION-/g)).toHaveLength(3);
     expect(download).toContain("MD5SUMS.txt");
     expect(download).toContain("SHA256SUMS.txt");
     expect(ossIntegritySource).toContain('metadata.objectType === "Normal"');
@@ -476,10 +476,13 @@ describe("GitHub Draft Release v2 workflow", () => {
       "doc-agent: source-id=memmy-official-changelog-v2",
     );
     expect(releaseNotes).toContain(
-      "macOS Intel (China): [Cuby-$VERSION-darwin-x64-cn-signed.dmg]",
+      "Windows x64: [Cuby-$VERSION-win32-x64-signed.exe]",
     );
     expect(releaseNotes).toContain(
-      "macOS Intel (International): [Cuby-$VERSION-darwin-x64-intl-signed.dmg]",
+      "macOS Apple Silicon: [Cuby-$VERSION-darwin-arm64-signed.dmg]",
+    );
+    expect(releaseNotes).toContain(
+      "macOS Intel: [Cuby-$VERSION-darwin-x64-signed.dmg]",
     );
     expect(releaseNotes).toContain("On Apple Silicon or Intel Macs");
     const uploadAudit = draftSteps.find((step) => step.name === "Upload release audit artifact");

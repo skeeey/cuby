@@ -58,8 +58,8 @@ export CODESIGN_IDENTITY="Developer ID Application: Your Name (TEAMID)"
 ### 命令
 
 ```bash
-bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --edition cn --sign signed
-bash scripts/package-mac.sh --version 1.2.3 --arch x64 --edition intl --sign signed
+bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --sign signed
+bash scripts/package-mac.sh --version 1.2.3 --arch x64 --sign signed
 ```
 
 必须在 macOS 上执行（`codesign`、`notarytool`、`stapler` 均为 Apple 工具），构建机需要保持联网且不休眠。
@@ -117,7 +117,7 @@ export WIN_CSC_TIMESTAMP_SERVER=http://timestamp.digicert.com
 ```bash
 WIN_CSC_LINK=/abs/path/code-signing.pfx \
 WIN_CSC_KEY_PASSWORD=... \
-bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign signed
+bash scripts/package-win.sh --version 1.2.3 --arch x64 --sign signed
 ```
 
 ### SmartScreen
@@ -131,8 +131,8 @@ bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign signe
 本地开发、CI 冒烟构建不需要证书：
 
 ```bash
-bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --edition cn --sign unsigned
-bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign unsigned
+bash scripts/package-mac.sh --version 1.2.3 --arch arm64 --sign unsigned
+bash scripts/package-win.sh --version 1.2.3 --arch x64 --sign unsigned
 ```
 
 - macOS：`electron-builder.unsigned.yml` 设置 `identity: null`、关闭 hardened runtime 和公证，产物仅用于本地测试，向外分发会被 Gatekeeper 拦截。
@@ -141,7 +141,7 @@ bash scripts/package-win.sh --version 1.2.3 --arch x64 --edition cn --sign unsig
 ## CI 中的签名
 
 - `.github/workflows/build-desktop.yml` 始终使用 `--sign unsigned`，GitHub Actions 中不配置任何签名凭据。
-- `.github/workflows/github-draft-release-v2.yml` 不构建安装包，而是从 OSS CDN 下载已经签名的 6 个安装包（Windows cn/intl + macOS arm64/x64 cn/intl），校验完整性后创建 Draft Release。
+- `.github/workflows/github-draft-release-v2.yml` 不构建安装包，而是从 OSS CDN 下载已经签名的 3 个安装包（Windows x64 + macOS arm64/x64），校验完整性后创建 Draft Release。
 - 签名版安装包由仓库外的内部打包机产出并上传 OSS。因此 GitHub 仓库的 secrets 中不需要 Apple 或 Windows 签名证书。
 
 ## 凭据保管

@@ -13,6 +13,7 @@ import { createSkillTargetRegistry } from "../src/agent-source/integration/targe
 import type { MemoryService } from "../src/service/memory-service.js";
 
 const roots: string[] = [];
+const realSetTimeout = globalThis.setTimeout;
 
 afterEach(() => {
   vi.useRealTimers();
@@ -801,11 +802,12 @@ function fixtureMessage(
 }
 
 async function waitForFakeTimerScan(executor: ReturnType<typeof createAgentSourceExecutor>): Promise<void> {
-  // The scan performs real filesystem work between timer ticks, so give it
-  // enough event-loop turns even when the CI runner is under load.
+  // The scan performs real filesystem work, so yield to the real event loop
+  // without advancing the fake clock. Advancing fake time can trigger the
+  // recurring scan before the first one settles.
   for (let attempt = 0; attempt < 1000; attempt += 1) {
     if (!executor.scanStatus().running) return;
-    await vi.advanceTimersByTimeAsync(1);
+    await new Promise<void>((resolve) => realSetTimeout(resolve, 0));
   }
   throw new Error("automatic scan did not complete");
 }

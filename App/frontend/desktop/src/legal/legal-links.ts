@@ -10,7 +10,7 @@ export function getLegalLinkUrl(
   language: ResolvedLanguage,
   _remote?: LegalAgreementUrls
 ): string {
-  const international = import.meta.env.CUBY_APP_EDITION === "intl";
+  const international = language === "en-US";
   const envKey = international ? "CUBY_LEGAL_INTL_BASE_URL" : "CUBY_LEGAL_CN_BASE_URL";
   const baseUrl = (international
     ? import.meta.env.CUBY_LEGAL_INTL_BASE_URL

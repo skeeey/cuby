@@ -440,6 +440,7 @@ function configureAppIdentity(): void {
   const userDataPath = windowsDataLayout?.userDataPath ?? resolveDesktopUserDataPath(edition);
   const memmyHome = windowsDataLayout?.runtimeHomePath ?? resolveDesktopRuntimeHomePath(edition);
   app.setName("Cuby");
+  process.env.CUBY_SYSTEM_LANGUAGE = app.getLocale();
   if (process.platform === "win32") {
     app.setAppUserModelId(WINDOWS_APP_USER_MODEL_ID);
   }
@@ -1449,10 +1450,10 @@ function resolveWindowsUpdatePromptLanguageFromAppSettings(): WindowsUpdatePromp
 /**
  * Display language used before the app settings are available.
  *
- * @returns The default display language of the current edition.
+ * @returns The display language matching the system locale.
  */
 function resolveDefaultDesktopDisplayLanguage(): StartupSplashLanguage {
-  return resolveCurrentDesktopEdition() === "intl" ? "en-US" : "zh-CN";
+  return app.getLocale().toLowerCase().startsWith("zh") ? "zh-CN" : "en-US";
 }
 
 /**
@@ -2949,7 +2950,7 @@ function resolveUpdatesDirectory(): string {
 /**
  * Parses the version number from an update package / pre-expanded app file name.
  *
- * File names look like `Cuby-0.0.2-darwin-arm64-cn-unsigned.dmg` / `...-unsigned.staged.app`.
+ * File names look like `Cuby-0.0.2-darwin-arm64-unsigned.dmg` / `...-unsigned.staged.app`.
  *
  * @param fileName The file name.
  * @returns The version number (e.g. "0.0.2"); null when it cannot be parsed.

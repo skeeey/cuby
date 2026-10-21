@@ -70,7 +70,7 @@ export const MANUAL_AGENT_NAME_PRESETS = ["kimi code", "zcode", "minimax code", 
 export function MemorySourcesContent(props: MemorySourcesContentProps = {}) {
   const { state, dispatch } = useAppState();
   const { clients } = useApiClients();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [manualName, setManualName] = useState("");
   const [manualHistoryPath, setManualHistoryPath] = useState("");
   const [manualValidating, setManualValidating] = useState(false);
@@ -697,7 +697,7 @@ export function MemorySourcesContent(props: MemorySourcesContentProps = {}) {
               <button
                 type="button"
                 aria-label={t("memory.openDocs")}
-                onClick={() => void openExternalUrl(resolveMemoryDocsUrl())}
+                onClick={() => void openExternalUrl(resolveMemoryDocsUrl(language))}
                 className="ml-1 inline-flex items-center gap-0.5 text-[10px] text-text-ink/40 transition-colors hover:text-text-ink/60 focus:outline-none focus-visible:ring-2 focus-visible:ring-action-sky/25 cursor-pointer"
               >
                 <span style={{ textDecoration: "underline", textUnderlineOffset: "2px" }}>
@@ -1535,12 +1535,8 @@ export function formatMemoryServiceAddress(baseUrl: string | undefined): string 
   }
 }
 
-export function resolveMemoryDocsUrl(
-  rawEdition = import.meta.env.CUBY_APP_EDITION as string | undefined
-): string {
-  return rawEdition?.trim().toLowerCase() === "intl"
-    ? MEMORY_DOCS_URLS.intl
-    : MEMORY_DOCS_URLS.cn;
+export function resolveMemoryDocsUrl(language: string | undefined): string {
+  return language === "zh-CN" ? MEMORY_DOCS_URLS.cn : MEMORY_DOCS_URLS.intl;
 }
 
 function formatCliProfilePaths(profilePaths: string[]): string {

@@ -1,6 +1,7 @@
 /** Vite configuration. */
 import react from "@vitejs/plugin-react";
 import { readFile } from "node:fs/promises";
+import type { IncomingMessage } from "node:http";
 import { homedir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -64,6 +65,9 @@ export default defineConfig(({ mode }) => {
     envDir: REPO_ROOT_DIR,
     envPrefix: ["VITE_"],
     define: publicMemmyEnv,
+    test: {
+      setupFiles: [fileURLToPath(new URL("./src/test-setup.ts", import.meta.url))]
+    },
     plugins: [react(), memmyRuntimeConfigPlugin()],
     resolve: {
       alias: [
@@ -95,11 +99,11 @@ export default defineConfig(({ mode }) => {
           target: memmyAgentWsTarget,
           ws: true,
           changeOrigin: true,
-          bypass: (request) => (request.headers.upgrade === "websocket" ? undefined : request.url)
+          bypass: (request: IncomingMessage) => (request.headers.upgrade === "websocket" ? undefined : request.url)
         }
       }
     }
-  };
+  } as unknown as import("vite").UserConfig;
 });
 
 /** Handles memmy runtime config plugin. */

@@ -8,22 +8,20 @@ apply_package_mirrors
 
 ARCH="x64"
 VERSION=""
-EDITION="cn"
 SIGN="unsigned"
 PASSTHROUGH_ARGS=()
 
 usage() {
   cat <<'USAGE'
-Usage: package-win.sh --version <version> --arch <x64> --edition <cn|intl> --sign <signed|unsigned> [electron-builder args...]
+Usage: package-win.sh --version <version> --arch <x64> --sign <signed|unsigned> [electron-builder args...]
 
 Examples:
-  bash scripts/package-win.sh --version 0.0.1 --arch x64 --edition cn --sign signed
-  bash scripts/package-win.sh --version 0.0.1 --arch x64 --edition intl --sign unsigned
-  bash scripts/package-win.sh --version 0.0.1 --edition cn --sign signed
+  bash scripts/package-win.sh --version 0.0.1 --arch x64 --sign signed
+  bash scripts/package-win.sh --version 0.0.1 --arch x64 --sign unsigned
+  bash scripts/package-win.sh --version 0.0.1 --sign signed
 
 Defaults:
   --arch     x64
-  --edition  cn
   --sign     unsigned
 
 Required:
@@ -59,26 +57,6 @@ while [ "$#" -gt 0 ]; do
       ;;
     --x64|x64)
       ARCH="x64"
-      shift
-      ;;
-    --edition)
-      if [ "$#" -lt 2 ]; then
-        echo "--edition requires cn or intl" >&2
-        exit 1
-      fi
-      EDITION="$2"
-      shift 2
-      ;;
-    --edition=*)
-      EDITION="${1#--edition=}"
-      shift
-      ;;
-    --cn|cn)
-      EDITION="cn"
-      shift
-      ;;
-    --intl|intl)
-      EDITION="intl"
       shift
       ;;
     --sign|--signing)
@@ -123,9 +101,9 @@ if [ -z "$VERSION" ]; then
   exit 1
 fi
 
-package_log_init "package-win-$VERSION-$ARCH-$EDITION-$SIGN" "$ROOT_DIR/App/shell/desktop/release/logs"
+package_log_init "package-win-$VERSION-$ARCH-universal-$SIGN" "$ROOT_DIR/App/shell/desktop/release/logs"
 package_install_error_trap
-package_log "Package request: platform=win version=$VERSION arch=$ARCH edition=$EDITION sign=$SIGN"
+package_log "Package request: platform=win version=$VERSION arch=$ARCH edition=universal sign=$SIGN"
 
 if [ "${#PASSTHROUGH_ARGS[@]}" -gt 0 ]; then
   for passthrough_arg in "${PASSTHROUGH_ARGS[@]}"; do
@@ -151,20 +129,10 @@ case "$ARCH" in
     ;;
 esac
 
-case "$EDITION" in
-  cn)
-    export CUBY_ACCOUNT_CHANNEL=phone
-    export CUBY_APP_EDITION=cn
-    ;;
-  intl)
-    export CUBY_ACCOUNT_CHANNEL=email
-    export CUBY_APP_EDITION=intl
-    ;;
-  *)
-    echo "Unsupported Windows package edition: $EDITION" >&2
-    exit 1
-    ;;
-esac
+# One universal package: the app follows the system language and picks
+# legal/docs pages by language.
+export CUBY_ACCOUNT_CHANNEL=email
+export CUBY_APP_EDITION=intl
 
 case "$SIGN" in
   signed)

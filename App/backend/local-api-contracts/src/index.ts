@@ -1130,13 +1130,19 @@ export type AccountChannel = z.infer<typeof AccountChannelSchema>;
 
 /**
  * Map the desktop language setting onto a language Memory can write in.
- * `system` follows the package channel: phone/CN defaults to Chinese, email/intl to English.
+ * `system` follows the OS locale when known, then falls back to the package
+ * channel for older callers.
  */
 export function resolveMemoryLanguage(
   language: string | undefined,
-  accountChannel?: AccountChannel | string
+  accountChannel?: AccountChannel | string,
+  systemLanguage?: string
 ): "zh-CN" | "en-US" {
   if (language === "zh-CN" || language === "en-US") return language;
+  const normalizedSystemLanguage = systemLanguage?.trim().toLowerCase();
+  if (normalizedSystemLanguage) {
+    return normalizedSystemLanguage.startsWith("zh") ? "zh-CN" : "en-US";
+  }
   return accountChannel === "email" ? "en-US" : "zh-CN";
 }
 

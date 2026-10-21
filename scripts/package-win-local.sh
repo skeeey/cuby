@@ -25,8 +25,8 @@
 # package-win.sh untouched.
 #
 # Usage:
-#   bash scripts/package-win-local.sh                 # intl, unsigned, version from package.json
-#   bash scripts/package-win-local.sh --edition cn    # any package-win.sh flag is forwarded
+#   bash scripts/package-win-local.sh                 # unsigned, version from package.json
+#   bash scripts/package-win-local.sh --sign signed   # any package-win.sh flag is forwarded
 #   bash scripts/package-win-local.sh --prepare-only  # do the local setup, stop before packaging
 #
 # Environment:
@@ -39,11 +39,6 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 # The three values the packaging chain refuses to run without. They are read
 # from the root .env by vite and by the edition-manifest writer.
 REQUIRED_ENV_KEYS=(CUBY_LEGAL_CN_BASE_URL CUBY_LEGAL_INTL_BASE_URL CUBY_CLOUD_SERVICE)
-
-# The desktop builds in this repository have all been the international
-# edition; package-win.sh itself defaults to cn, which is easy to miss and
-# only shows up twenty minutes later in the artifact name.
-DEFAULT_EDITION="intl"
 
 PREPARE_ONLY=0
 PACKAGE_ARGS=()
@@ -161,9 +156,6 @@ clean_stale_output() {
 
 if ! has_package_arg --version; then
   PACKAGE_ARGS+=(--version "$(desktop_version)")
-fi
-if ! has_package_arg --edition; then
-  PACKAGE_ARGS+=(--edition "$DEFAULT_EDITION")
 fi
 
 # Opt-in for package-mirrors.sh; anything but "cn" leaves the downloads alone.

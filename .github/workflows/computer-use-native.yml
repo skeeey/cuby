@@ -8,7 +8,6 @@ on:
       - "App/memmy-agent/src/tools/computer-use/**"
       - "App/shell/desktop/electron-builder*.yml"
       - "scripts/internal/shared/check-open-computer-use.mjs"
-      - "scripts/internal/linux/**"
       - "scripts/internal/mac/**"
       - "tests/ocu-dev-install.test.mjs"
       - "scripts/internal/win/build-nsis.sh"
@@ -22,7 +21,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, ubuntu-24.04-arm, macos-15, windows-2025]
+        runner: [macos-15, windows-2025]
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 10
     defaults:
@@ -46,19 +45,9 @@ jobs:
           const arch = process.arch === 'x64' ? 'amd64' : process.arch;
           const relative = process.platform === 'darwin'
             ? 'dist/Open Computer Use.app/Contents/MacOS/OpenComputerUse'
-            : `dist/${process.platform === 'win32' ? 'windows' : 'linux'}/${arch}/open-computer-use${process.platform === 'win32' ? '.exe' : ''}`;
+            : `dist/windows/${arch}/open-computer-use.exe`;
           fs.appendFileSync(process.env.GITHUB_ENV, `OCU_BINARY=${path.join(root, relative)}\n`);
           NODE
-      - name: Prepare an isolated Linux desktop session
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y dbus-x11 xvfb
-          bash scripts/internal/linux/install-computer-use-deps.sh
-          bash scripts/internal/linux/install-computer-use-deps.sh
-      - name: Check Linux MCP and desktop backend
-        if: runner.os == 'Linux'
-        run: dbus-run-session -- xvfb-run -a node scripts/internal/shared/check-open-computer-use.mjs "$OCU_BINARY" --list-apps | tee ocu-native-result.json
       - name: Check Windows MCP and desktop backend
         if: runner.os == 'Windows'
         run: node scripts/internal/shared/check-open-computer-use.mjs "$OCU_BINARY" --list-apps | tee ocu-native-result.json
@@ -79,4 +68,4 @@ jobs:
           if-no-files-found: warn
       - name: Record validation boundary
         if: always()
-        run: echo 'Native checks validate MCP discovery and, on Linux/Windows, desktop enumeration. Signed installers, permission prompts, screenshots and input still require desktop acceptance.' >> "$GITHUB_STEP_SUMMARY"
+        run: echo 'Native checks validate MCP discovery and, on Windows, desktop enumeration. Signed installers, permission prompts, screenshots and input still require desktop acceptance.' >> "$GITHUB_STEP_SUMMARY"
