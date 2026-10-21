@@ -36,33 +36,48 @@ export interface ModelAssignmentRowSpec {
 }
 
 export interface ModelAssignmentSectionProps {
-  conversationGroups: AssignmentCandidateGroup[];
-  selectedCandidateIds: string[];
+  /** Multi-select conversation models for flows that still import a remote model list. */
+  conversationGroups?: AssignmentCandidateGroup[];
+  selectedCandidateIds?: string[];
   defaultCandidateId?: string | null;
-  onToggleCandidate(candidateId: string): void;
-  onChooseDefaultCandidate(candidateId: string): void;
+  onToggleCandidate?(candidateId: string): void;
+  onChooseDefaultCandidate?(candidateId: string): void;
+  /** Single default-model picker: every chat model in the catalog is selectable. */
+  defaultModel?: DefaultModelPickerSpec;
   rows: ModelAssignmentRowSpec[];
   onRowChange(kind: ModelAssignmentKind, value: string): void;
   /** Disables the picker and every row control, for a caller with a save in flight. */
   disabled?: boolean;
 }
 
+/** One default-model dropdown row: the value new conversations start with. */
+export interface DefaultModelPickerSpec {
+  label: string;
+  hint?: string;
+  value: string | null;
+  options: SelectOption[];
+  onChange: (value: string) => void;
+}
+
 /** Conversation-model picker plus one row per assignable purpose. */
 export function ModelAssignmentSection(props: ModelAssignmentSectionProps): ReactNode {
   const { t } = useTranslation();
   const [taskPickerOpen, setTaskPickerOpen] = useState(false);
+  const conversationGroups = props.conversationGroups ?? [];
+  const showsConversationPicker = props.conversationGroups !== undefined;
+  const selectedCandidateIds = props.selectedCandidateIds ?? [];
   const candidatesById = new Map(
-    props.conversationGroups
+    conversationGroups
       .flatMap((group) => group.candidates)
       .map((candidate) => [candidate.id, candidate])
   );
-  const selectedCandidates = props.selectedCandidateIds
+  const selectedCandidates = selectedCandidateIds
     .map((candidateId) => candidatesById.get(candidateId))
     .filter((candidate): candidate is AssignmentCandidate => Boolean(candidate));
   const selectedTaskModelsText = selectedCandidates.length > 0
     ? selectedCandidates.map((candidate) => candidate.label).join("、")
     : t("settings.modelWorkspace.notConfigured");
-  const hasConversationCandidates = props.conversationGroups
+  const hasConversationCandidates = conversationGroups
     .some((group) => group.candidates.length > 0);
 
   return (
@@ -76,6 +91,29 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
           {t("settings.modelWorkspace.bindingHint")}
         </p>
         <div className="mt-2 space-y-1">
+        {props.defaultModel && (
+          <div className="flex items-center justify-between gap-4 bg-action-sky/5 px-3.5 py-3">
+            <div className="min-w-0">
+              <p className="model-assignment-label">{props.defaultModel.label}</p>
+              {props.defaultModel.hint && (
+                <p className="mt-0.5 text-[11px] text-text-ink/45">{props.defaultModel.hint}</p>
+              )}
+            </div>
+            <SearchableSelect
+              label={t("settings.modelWorkspace.chooseFor", { feature: props.defaultModel.label })}
+              value={props.defaultModel.value ?? ""}
+              placeholder={t("settings.modelWorkspace.notConfigured")}
+              searchPlaceholder={t("settings.cuberouterModel.searchModels")}
+              options={props.defaultModel.options}
+              onValueChange={props.defaultModel.onChange}
+              disabled={props.disabled || props.defaultModel.options.length === 0}
+              className="select-control--compact select-control--subtle model-assignment-select"
+              menuClassName="model-assignment-select__menu"
+            />
+          </div>
+        )}
+        {showsConversationPicker && (
+        <>
         <div className="flex items-center justify-between gap-4 bg-action-sky/5 px-3.5 py-3">
           <div className="min-w-0">
             <p className="text-sm text-text-ink/80">{t("settings.modelWorkspace.conversationModels")}</p>
@@ -93,7 +131,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
             onClick={() => setTaskPickerOpen((open) => !open)}
             className="inline-flex shrink-0 items-center gap-1.5 rounded-btn bg-action-sky/10 px-2.5 py-1 text-xs text-action-sky transition-colors hover:bg-action-sky/15 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {t("settings.modelWorkspace.taskSelectedCount", { count: props.selectedCandidateIds.length })}
+            {t("settings.modelWorkspace.taskSelectedCount", { count: selectedCandidateIds.length })}
             {taskPickerOpen
               ? <ChevronUp size={12} aria-hidden="true" />
               : <ChevronDown size={12} aria-hidden="true" />}
@@ -101,7 +139,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
         </div>
         {taskPickerOpen && (
           <div className="task-model-picker">
-            {props.conversationGroups.map((group) => {
+            {conversationGroups.map((group) => {
               if (group.candidates.length === 0) return null;
               return (
                 <div key={group.key} className="task-model-picker__group">
@@ -110,8 +148,8 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
                     {group.title}
                   </div>
                   {group.candidates.map((candidate) => {
-                    const selected = props.selectedCandidateIds.includes(candidate.id);
-                    const lastSelected = selected && props.selectedCandidateIds.length === 1;
+                    const selected = selectedCandidateIds.includes(candidate.id);
+                    const lastSelected = selected && selectedCandidateIds.length === 1;
                     const isDefault = props.defaultCandidateId === candidate.id;
                     return (
                       <div key={candidate.id} className="task-model-picker__option">
@@ -121,7 +159,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
                           aria-checked={selected}
                           disabled={props.disabled || lastSelected}
                           title={lastSelected ? t("settings.modelWorkspace.taskAtLeastOne") : undefined}
-                          onClick={() => props.onToggleCandidate(candidate.id)}
+                          onClick={() => props.onToggleCandidate?.(candidate.id)}
                           className="task-model-picker__choice"
                         >
                         <span className={`task-model-picker__checkbox${selected ? " is-selected" : ""}`}>
@@ -139,7 +177,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
                             type="button"
                             aria-pressed={isDefault}
                             disabled={props.disabled}
-                            onClick={() => props.onChooseDefaultCandidate(candidate.id)}
+                            onClick={() => props.onChooseDefaultCandidate?.(candidate.id)}
                             className="task-model-picker__default-button shrink-0"
                           >
                             {isDefault
@@ -154,6 +192,8 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
               );
             })}
           </div>
+        )}
+        </>
         )}
         {props.rows.map((row) => (
           <Fragment key={row.kind}>

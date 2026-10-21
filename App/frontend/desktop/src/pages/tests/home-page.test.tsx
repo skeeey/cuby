@@ -189,7 +189,7 @@ describe("HomePage", () => {
     expect(source).toContain("disabled={isCurrentAgentRunning || isCreatingChat || messageSendInFlight}");
     expect(source).toContain("state.agent.pendingPresetByScope[modelSelectionScopeKey]");
     expect(source).toContain("state.agent.committedModelSelectionByScope[modelSelectionScopeKey]");
-    expect(source).toContain("allowUnassignedSelected: pendingModelPreset == null && Boolean(committedModelSelection)");
+    expect(source).not.toContain("allowUnassignedSelected");
     expect(source).toContain("modelPreset: resolvedConversationModel.candidateId ?? undefined");
     expect(source).not.toContain("copyScopedModelSelection");
     expect(selectorSource).toContain("agentActions.pendingModelPresetUpdated");
@@ -197,12 +197,12 @@ describe("HomePage", () => {
     expect(source).not.toContain('sendMessage({ chatId: state.agent.currentChatId, content: "/model');
     expect(styles).toContain(".agent-model-selector .agent-model-selector__menu");
     expect(styles).toContain("top: calc(100% + 6px)");
-    expect(styles).toContain(".agent-model-selector__configure");
+    expect(styles).not.toContain(".agent-model-selector__configure");
     expect(source).not.toContain("modelSwitchNotice");
     expect(selectorSource).not.toContain("onModelSwitch");
     expect(selectorSource).not.toContain("hasConversationContent");
     expect(selectorSource).not.toContain("SETTINGS_ADD_MODEL_RETURN_STORAGE_KEY");
-    expect(selectorSource).toContain('settingsTabHash("model")');
+    expect(selectorSource).not.toContain('settingsTabHash("model")');
     expect(styles).not.toContain(".agent-model-switch-event");
     expect(source).toContain("if (resolvedConversationModel.unavailable)");
     expect(source).toContain('message: "home.modelSelector.unavailable"');

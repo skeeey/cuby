@@ -582,9 +582,9 @@ describe("SettingsPageView", () => {
     expect(modelConfigHtml).toContain("模型库");
     expect(modelConfigHtml).toContain("平台提供");
     expect(modelConfigHtml).toContain("Cuby Platform");
-    expect(modelConfigHtml).toContain("通用文本");
+    expect(modelConfigHtml).toContain("Cuby Agent 模型");
     expect(modelConfigHtml).toContain("添加配置");
-    expect(modelConfigHtml).toContain("Agent 任务模型");
+    expect(modelConfigHtml).toContain("默认模型");
     expect(modelConfigHtml).toContain("Cuby Platform · ASR");
     expect(modelConfigHtml).not.toContain("为语音识别 ASR选择模型 Cuby Platform · 通用文本");
     expect(html).toContain("平台赠送额度");

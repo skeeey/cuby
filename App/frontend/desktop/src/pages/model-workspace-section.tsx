@@ -1,4 +1,4 @@
-import { AlertTriangle, KeyRound } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID } from "@memmy/local-api-contracts";
 import { useEffect, useRef, useState } from "react";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
@@ -8,11 +8,9 @@ import { useTranslation } from "../i18n/use-translation.js";
 import {
   createModelWorkspace,
   getModelCandidates,
-  getTaskModelCandidates,
   modelConfigInput,
+  setDefaultAgentModel,
   setModelAssignment,
-  setDefaultTaskModel,
-  setTaskModelCandidates,
   type ModelAssignmentKind,
   type ModelCapability,
   type ModelWorkspaceMode
@@ -61,7 +59,6 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
   const textCandidates = getModelCandidates(workspace, props.mode, "chat");
   const memorySummaryCandidates = getModelCandidates(workspace, props.mode, "memorySummary");
   const memoryEvolutionCandidates = getModelCandidates(workspace, props.mode, "memoryEvolution");
-  const taskCandidates = getTaskModelCandidates(workspace, props.mode);
   const embeddingCandidates = getModelCandidates(workspace, props.mode, "embedding");
   const asrCandidates = getModelCandidates(workspace, props.mode, "asr");
   const imageCandidates = getModelCandidates(workspace, props.mode, "image");
@@ -120,19 +117,26 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
     commitWorkspace(setModelAssignment(workspace, props.mode, kind, candidateId));
   }
 
-  function toggleTaskCandidate(candidateId: string) {
-    const selectedIds = taskCandidates.map((candidate) => candidate.id);
-    const selected = selectedIds.includes(candidateId);
-    if (selected && selectedIds.length === 1) return;
-    const nextIds = selected
-      ? selectedIds.filter((id) => id !== candidateId)
-      : [...selectedIds, candidateId];
-    commitWorkspace(setTaskModelCandidates(workspace, props.mode, nextIds));
+  function chooseDefaultAgentModel(candidateId: string) {
+    commitWorkspace(setDefaultAgentModel(workspace, props.mode, candidateId));
   }
 
-  function chooseDefaultTaskCandidate(candidateId: string) {
-    commitWorkspace(setDefaultTaskModel(workspace, props.mode, candidateId));
-  }
+  const defaultChatOptions: SelectOption[] = [
+    ...textCandidates.filter((candidate) => candidate.source === "platform"),
+    ...textCandidates.filter((candidate) => candidate.source === "byok")
+  ].map((candidate) => {
+    const providerLabel = candidate.source === "platform"
+      ? t("settings.modelWorkspace.platformName")
+      : connectionProtocolLabel(candidate.provider, t);
+    const modelLabel = candidate.source === "platform"
+      ? t("home.modelSelector.platformAgent")
+      : candidate.model;
+    return {
+      value: candidate.id,
+      label: `${providerLabel} · ${modelLabel}`,
+      selectedLabel: modelLabel
+    };
+  });
 
   const memorySummaryOptions = memorySummaryCandidates.map((candidate) => candidateOption(
     candidate.id,
@@ -249,30 +253,13 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
       )}
 
       <ModelAssignmentSection
-        conversationGroups={[
-          ...(textCandidates.some((candidate) => candidate.source === "platform")
-            ? [{
-                key: "platform",
-                title: t("settings.modelWorkspace.platformModels"),
-                icon: <ModelProviderLogo provider="memmy" size={14} />,
-                candidates: textCandidates.filter((candidate) => candidate.source === "platform")
-                  .map((candidate) => ({ id: candidate.id, label: candidate.model, detail: t("settings.modelWorkspace.platformName") }))
-              }]
-            : []),
-          ...(textCandidates.some((candidate) => candidate.source === "byok")
-            ? [{
-                key: "byok",
-                title: t("settings.modelWorkspace.byokConnections"),
-                icon: <KeyRound size={12} aria-hidden="true" />,
-                candidates: textCandidates.filter((candidate) => candidate.source === "byok")
-                  .map((candidate) => ({ id: candidate.id, label: candidate.model, detail: connectionProtocolLabel(candidate.provider, t) }))
-              }]
-            : [])
-        ]}
-        selectedCandidateIds={taskCandidates.map((candidate) => candidate.id)}
-        defaultCandidateId={space.defaultTaskCandidateId}
-        onToggleCandidate={toggleTaskCandidate}
-        onChooseDefaultCandidate={chooseDefaultTaskCandidate}
+        defaultModel={{
+          label: t("settings.model.defaultModel"),
+          hint: t("settings.modelWorkspace.defaultChatModelHint"),
+          value: space.defaultAgentModelId,
+          options: defaultChatOptions,
+          onChange: chooseDefaultAgentModel
+        }}
         rows={[
           { kind: "memorySummary", label: t("settings.model.memorySummary"), description: t("settings.model.memoryDesc"), tip: t("apiKey.modelPage.memoryHint"), value: space.assignments.memorySummary, options: memorySummaryOptions },
           { kind: "memoryEvolution", label: t("settings.model.skillEvolution"), description: t("settings.model.skillDesc"), value: space.assignments.memoryEvolution, options: memoryEvolutionOptions },

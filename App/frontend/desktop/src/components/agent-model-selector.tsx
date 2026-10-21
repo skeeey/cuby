@@ -1,17 +1,13 @@
-import { Settings2 } from "lucide-react";
 import type { ModelProviderConfig } from "../api/config-client.js";
 import { useTranslation } from "../i18n/use-translation.js";
-import { agentActions, appActions } from "../state/app-actions.js";
+import { agentActions } from "../state/app-actions.js";
 import { useAppState } from "../state/app-state.js";
 import {
-  getTaskModelCandidates,
   createModelWorkspace,
+  getModelCandidates,
   resolveModelSelection,
   type ModelWorkspaceMode
 } from "../state/model-workspace.js";
-import {
-  settingsTabHash
-} from "../pages/settings-nav.js";
 import { ModelProviderLogo } from "./model-provider-logo.js";
 import { Select, type SelectOption } from "./Select.js";
 
@@ -33,38 +29,28 @@ export function AgentModelSelector(props: AgentModelSelectorProps) {
   const { t } = useTranslation();
   const { state, dispatch } = useAppState();
   const workspace = createModelWorkspace(props.seedConfig ?? state.modelConfig);
-  const candidates = getTaskModelCandidates(workspace, props.mode);
+  const candidates = getModelCandidates(workspace, props.mode, "chat");
   const committedSelection = state.agent.committedModelSelectionByScope[props.scopeKey];
   const pendingPreset = state.agent.pendingPresetByScope[props.scopeKey];
   const selectedPreset = pendingPreset
     ?? committedSelection?.presetId
     ?? null;
-  const resolved = resolveModelSelection(workspace, props.mode, selectedPreset, {
-    allowUnassignedSelected: pendingPreset == null && Boolean(committedSelection)
-  });
+  const resolved = resolveModelSelection(workspace, props.mode, selectedPreset);
   const hasNoModels = candidates.length === 0 && !resolved.candidate;
 
   const optionForCandidate = (candidate: (typeof candidates)[number]): SelectOption => ({
         value: candidate.id,
         label: candidate.source === "platform" ? t("home.modelSelector.platformAgent") : candidate.model,
         selectedLabel: candidate.source === "platform" ? t("home.modelSelector.platformAgent") : candidate.model,
-        groupLabel: candidate.source === "platform"
-          ? t("home.modelSelector.platformGroup")
-          : t("home.modelSelector.byokGroup"),
         icon: <ModelProviderIcon source={candidate.source} provider={candidate.provider} />
   });
   const options: SelectOption[] = candidates.map(optionForCandidate);
-  const resolvedCandidate = resolved.candidate;
-  if (resolvedCandidate && !candidates.some((candidate) => candidate.id === resolvedCandidate.id)) {
-    options.push(optionForCandidate(resolvedCandidate));
-  }
   if (resolved.unavailable && resolved.candidateId) {
     const unavailableModel = committedSelection?.model ?? resolved.previousModel ?? t("home.modelSelector.unavailableOption");
     const unavailableOption: SelectOption = {
       value: resolved.candidateId,
       label: unavailableModel,
       selectedLabel: unavailableModel,
-      groupLabel: t("home.modelSelector.byokGroup"),
       icon: committedSelection?.provider || resolved.previousProvider
         ? <ModelProviderIcon
             source={committedSelection?.source === "account" ? "platform" : "byok"}
@@ -89,14 +75,6 @@ export function AgentModelSelector(props: AgentModelSelectorProps) {
     props.onDefaultModelSelected?.(candidateId);
   }
 
-  function openCustomModelSettings() {
-    if (typeof window !== "undefined") {
-      const nextUrl = `${window.location.pathname}${window.location.search}${settingsTabHash("model")}`;
-      window.history.replaceState(window.history.state, "", nextUrl);
-    }
-    dispatch(appActions.navigate("/settings"));
-  }
-
   return (
     <div className="agent-model-selector" data-model-selector-scope={props.scopeKey}>
       <Select
@@ -112,21 +90,6 @@ export function AgentModelSelector(props: AgentModelSelectorProps) {
         className="select-control--compact select-control--subtle agent-model-selector__control"
         buttonClassName="agent-model-selector__button"
         menuClassName="agent-model-selector__menu"
-        menuFooter={({ close }) => (
-          <div className="agent-model-selector__footer">
-            <button
-              type="button"
-              className="agent-model-selector__configure"
-              onClick={() => {
-                close();
-                openCustomModelSettings();
-              }}
-            >
-              <Settings2 size={13} aria-hidden="true" />
-              {t("home.modelSelector.configureCustom")}
-            </button>
-          </div>
-        )}
       />
     </div>
   );
