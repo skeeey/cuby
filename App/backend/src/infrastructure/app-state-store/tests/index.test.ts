@@ -2171,6 +2171,83 @@ describe("bootstrap repository writes", () => {
     });
   });
 
+  it("keeps the renewable cuberouter credential when the account uuid is normalized", () => {
+    // A cuberouter login writes the account under "cuberouter:<id>" and stores the renewable
+    // credential under a ref derived from that uuid. On the next launch the account uuid is
+    // normalized to the bare user id, and the credential must move with it — otherwise the
+    // lookup misses, `resolveAccessToken` falls back to the login-time access token, and the
+    // model page reports an expired session even though the refresh token is still good.
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
+    const databasePath = join(tempDir, "app.sqlite");
+    const legacyUuid = "cuberouter:10113";
+    const credential = {
+      accessToken: "jwt-renewed",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-1"
+    };
+    const store = createAppStateStore({ databasePath });
+    const now = new Date().toISOString();
+
+    store.db.prepare(
+      "INSERT INTO cloud_accounts (uuid, user_id, raw_profile_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run(legacyUuid, "10113", JSON.stringify({ _memmyAuthChannel: "cuberouter" }), now, now);
+    store.db.prepare("UPDATE app_settings SET active_uuid = ?, user_mode = 'byok' WHERE id = 'default'").run(legacyUuid);
+    store.secretStore.set(`account:${legacyUuid}:cuberouter-credential`, JSON.stringify(credential), {
+      uuid: legacyUuid,
+      purpose: "cuberouter_credential"
+    });
+    store.close();
+
+    const upgradedStore = createAppStateStore({ databasePath });
+    const upgradedCredential = upgradedStore.repositories.accountSession.getCuberouterCredential();
+    const credentialRefs = upgradedStore.db
+      .prepare("SELECT ref FROM secret_store WHERE purpose = 'cuberouter_credential'")
+      .all() as Array<{ ref: string }>;
+    const activeUuid = upgradedStore.db
+      .prepare("SELECT active_uuid FROM app_settings WHERE id = 'default'")
+      .get() as { active_uuid: string | null };
+    upgradedStore.close();
+
+    expect(activeUuid.active_uuid).toBe("10113");
+    expect(credentialRefs).toEqual([{ ref: "account:10113:cuberouter-credential" }]);
+    expect(upgradedCredential).toEqual(credential);
+  });
+
+  it("repairs a cuberouter credential left under a stale ref by an earlier normalization", () => {
+    // The account was already normalized by a previous launch, but the credential still carries
+    // the old ref. The repair runs on every store creation, so this must recover without a
+    // fresh login as long as the refresh token is still valid.
+    tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
+    const databasePath = join(tempDir, "app.sqlite");
+    const credential = {
+      accessToken: "jwt-renewed",
+      accessExpiresAt: 1790456789,
+      refreshToken: "rt-1"
+    };
+    const store = createAppStateStore({ databasePath });
+    const now = new Date().toISOString();
+
+    store.db.prepare(
+      "INSERT INTO cloud_accounts (uuid, user_id, raw_profile_json, created_at, updated_at) VALUES (?, ?, ?, ?, ?)"
+    ).run("10113", "10113", JSON.stringify({ _memmyAuthChannel: "cuberouter" }), now, now);
+    store.db.prepare("UPDATE app_settings SET active_uuid = '10113', user_mode = 'byok' WHERE id = 'default'").run();
+    store.secretStore.set("account:cuberouter:10113:cuberouter-credential", JSON.stringify(credential), {
+      uuid: "10113",
+      purpose: "cuberouter_credential"
+    });
+    store.close();
+
+    const upgradedStore = createAppStateStore({ databasePath });
+    const upgradedCredential = upgradedStore.repositories.accountSession.getCuberouterCredential();
+    const credentialRefs = upgradedStore.db
+      .prepare("SELECT ref FROM secret_store WHERE purpose = 'cuberouter_credential'")
+      .all() as Array<{ ref: string }>;
+    upgradedStore.close();
+
+    expect(credentialRefs).toEqual([{ ref: "account:10113:cuberouter-credential" }]);
+    expect(upgradedCredential).toEqual(credential);
+  });
+
   it("patches app settings, privacy, and onboarding without overwriting omitted fields", () => {
     tempDir = mkdtempSync(join(tmpdir(), "memmy-app-state-"));
     const databasePath = join(tempDir, "app.sqlite");

@@ -25,7 +25,8 @@ type SecretPurpose =
   | "memory_evolution_api_key"
   | "composio_machine_token"
   | "asr_api_key"
-  | "image_gen_api_key";
+  | "image_gen_api_key"
+  | "cuberouter_credential";
 
 interface CloudAccountRow {
   uuid: string;
@@ -103,6 +104,29 @@ function normalizeAccountSecretRefs(db: DatabaseSync): void {
         cloudUuidRef,
         new Date().toISOString(),
         account.uuid
+      );
+    }
+
+    // The cuberouter credential is the one account-scoped secret no business-table column
+    // names: its ref is derived from the account uuid. When `normalizeCloudAccountPrimaryKeys`
+    // renames the account, the uuid column moves but the ref does not, so the lookup would miss
+    // and the model page would fall back to the expired login-time token. Find it by its owner
+    // and purpose — that also repairs databases normalized by an earlier launch.
+    const cuberouterCredential = db
+      .prepare(
+        `SELECT ref FROM secret_store
+         WHERE uuid = ? AND purpose = 'cuberouter_credential'
+         ORDER BY updated_at DESC
+         LIMIT 1`
+      )
+      .get(account.uuid) as { ref: string } | undefined;
+    if (cuberouterCredential) {
+      normalizeSecretRef(
+        db,
+        cuberouterCredential.ref,
+        `account:${account.uuid}:cuberouter-credential`,
+        account.uuid,
+        "cuberouter_credential"
       );
     }
   }
