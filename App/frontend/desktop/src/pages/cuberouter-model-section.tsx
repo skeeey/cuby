@@ -20,6 +20,7 @@ import { saveCatalogMutation } from "../state/model-provisioning.js";
 import {
   clearCuberouterKeySelection,
   cuberouterKeySelectionStorage,
+  defaultCuberouterKey,
   readCuberouterKeySelection,
   writeCuberouterKeySelection
 } from "../state/cuberouter-key-selection.js";
@@ -90,8 +91,15 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   }, [choices, selection, props.seedConfig]);
 
   const record = props.username ? readCuberouterKeySelection(props.username, cuberouterKeySelectionStorage()) : null;
-  const selectedKey = record && choices
-    ? choices.keys.find((key) => key.scope === record.scope && key.id === record.id && key.usable) ?? null
+  // A remembered switch wins while its row is still usable. With no record, show the key the
+  // login flow provisions by default (`cuby-desktop-*`, organization first); the record is
+  // reserved for an explicit switch, so the implicit default is derived on every load.
+  const selectedKey = choices
+    ? record
+      ? choices.keys.find((key) => key.scope === record.scope && key.id === record.id && key.usable) ?? null
+      : props.username
+        ? defaultCuberouterKey(choices.keys, props.username)
+        : null
     : null;
 
   /** Replays the draft from one workspace: storage is the only truth for which models this line holds. */

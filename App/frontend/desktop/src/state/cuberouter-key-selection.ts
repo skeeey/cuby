@@ -3,14 +3,47 @@
  * config itself only holds the secret; this record is what lets the panel name the selected key
  * and the login flow keep it instead of re-provisioning over it.
  */
+import type { CuberouterKeyOption } from "@memmy/local-api-contracts";
 
 export const CUBEROUTER_KEY_SELECTION_STORAGE_KEY = "memmy.cuberouterKeySelection.v1";
+
+/** Mirrors the backend's `DESKTOP_TOKEN_NAME`: the prefix of the key the login flow provisions. */
+const DESKTOP_KEY_NAME_PREFIX = "cuby-desktop";
 
 export interface CuberouterKeySelection {
   username: string;
   scope: "organization" | "personal";
   id: number;
   name: string;
+}
+
+/**
+ * The key name the login flow provisions for this username. Mirrors `toDesktopTokenName` in
+ * `cuberouter-account-service.ts`; keep the two in step.
+ */
+export function desktopTokenName(username: string): string {
+  const trimmed = username.trim();
+  const domain = trimmed.indexOf("@");
+  const local = domain > 0 ? trimmed.slice(0, domain) : trimmed;
+  return `${DESKTOP_KEY_NAME_PREFIX}-${local.trim()}`;
+}
+
+type SelectableKey = Pick<CuberouterKeyOption, "scope" | "name" | "usable">;
+
+/**
+ * The key a login uses when this machine has no remembered choice: the provisioned
+ * `cuby-desktop-*` key, organization first (the backend provisions there whenever the account
+ * belongs to an organization), then personal. Null when the key list does not carry it.
+ */
+export function defaultCuberouterKey<T extends SelectableKey>(
+  keys: readonly T[],
+  username: string
+): T | null {
+  const name = desktopTokenName(username);
+  const matching = keys.filter((key) => key.name === name && key.usable);
+  return matching.find((key) => key.scope === "organization")
+    ?? matching.find((key) => key.scope === "personal")
+    ?? null;
 }
 
 type StoredSelections = Record<string, CuberouterKeySelection>;

@@ -33,6 +33,17 @@ const CHOICES: CuberouterModelChoicesView = {
       status: 2,
       usable: false,
       billing: { kind: "personal", remainingQuota: 100 }
+    },
+    {
+      // A second usable key: clicking the provisioned default is a no-op now that the panel
+      // selects it on load, so tests that only need a save switch to this one.
+      scope: "organization",
+      id: 12,
+      name: "backup-key",
+      secret: "sk-backup",
+      status: 1,
+      usable: true,
+      billing: { kind: "organization", organizationName: "yeebo", remainingQuota: 50000 }
     }
   ],
   models: ["deepseek-v4.1-flash", "gpt-oss-120b"]
@@ -129,8 +140,42 @@ describe("cuberouter model section", () => {
     await vi.waitFor(() => expect(container.textContent).toContain("cuby-desktop-alice"));
     expect(container.textContent).toContain("计费：组织 yeebo");
     expect(container.textContent).toContain("剩余 97500");
+    // No remembered switch: the provisioned cuby-desktop-* key is the selected one.
+    expect(radio("cuby-desktop-alice").checked).toBe(true);
     expect(radio("cuby-desktop-alice").disabled).toBe(false);
     expect(radio("my-own-key").disabled).toBe(true);
+  });
+
+  it("keeps a remembered switch selected instead of the provisioned default", async () => {
+    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
+      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
+    }));
+    await renderSection({
+      choices: async () => ({
+        ...CHOICES,
+        keys: [{ ...CHOICES.keys[1]!, status: 1, usable: true }]
+      })
+    });
+
+    await vi.waitFor(() => expect(radio("my-own-key").disabled).toBe(false));
+    expect(radio("my-own-key").checked).toBe(true);
+  });
+
+  it("defaults to the organization row when both scopes carry the provisioned key", async () => {
+    await renderSection({
+      choices: async () => ({
+        ...CHOICES,
+        keys: [
+          CHOICES.keys[0]!,
+          { ...CHOICES.keys[1]!, name: "cuby-desktop-alice", status: 1, usable: true }
+        ]
+      })
+    });
+
+    await vi.waitFor(() => expect(container.textContent).toContain("cuby-desktop-alice"));
+    const radios = [...container.querySelectorAll<HTMLInputElement>('input[type="radio"]')];
+    expect(radios[0]!.checked).toBe(true);
+    expect(radios[1]!.checked).toBe(false);
   });
 
   it("reveals a personal key on selection and writes it into the model config", async () => {
@@ -292,7 +337,7 @@ describe("cuberouter model section", () => {
     const { configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
 
     await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
-    await act(async () => radio("cuby-desktop-alice").click());
+    await act(async () => radio("backup-key").click());
     await awaitSave(configClient, 1);
 
     act(() => pickerToggle().click());
@@ -325,7 +370,7 @@ describe("cuberouter model section", () => {
     });
 
     await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
-    await act(async () => radio("cuby-desktop-alice").click());
+    await act(async () => radio("backup-key").click());
     await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
 
     expect(pickerToggle().disabled).toBe(true);
@@ -476,7 +521,7 @@ describe("cuberouter model section", () => {
     });
 
     await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
-    await act(async () => radio("cuby-desktop-alice").click());
+    await act(async () => radio("backup-key").click());
 
     await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(2));
     expect(attempts).toBe(2);
@@ -498,7 +543,7 @@ describe("cuberouter model section", () => {
     });
 
     await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
-    await act(async () => radio("cuby-desktop-alice").click());
+    await act(async () => radio("backup-key").click());
     await awaitSave(configClient, 1);
     await chooseRowModel(configClient, "记忆摘要", "deepseek-v4.1-flash", 2);
     expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
@@ -516,7 +561,7 @@ describe("cuberouter model section", () => {
     const { configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
 
     await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
-    await act(async () => radio("cuby-desktop-alice").click());
+    await act(async () => radio("backup-key").click());
     await awaitSave(configClient, 1);
     await chooseRowModel(configClient, "记忆摘要", "deepseek-v4.1-flash", 2);
     expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
