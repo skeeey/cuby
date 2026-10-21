@@ -34,6 +34,8 @@ export interface ModelAssignmentRowSpec {
   /** Renders a searchable dropdown instead of the plain Select (long model lists). */
   searchable?: boolean;
   testStatus?: ModelAssignmentTestStatus;
+  /** Keeps a fixed row visible but not editable (for example the built-in embedding model). */
+  disabled?: boolean;
 }
 
 /** Result of the unified connection test for one assignment row. */
@@ -119,28 +121,17 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
         </p>
         <div className="mt-2 space-y-1">
         {props.defaultModel && (
-          <div className="flex items-center justify-between gap-4 bg-action-sky/5 px-3.5 py-3">
-            <div className="min-w-0">
-              <p className="model-assignment-label">{props.defaultModel.label}</p>
-              {props.defaultModel.hint && (
-                <p className="mt-0.5 text-[11px] text-text-ink/45">{props.defaultModel.hint}</p>
-              )}
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-1">
-              <SearchableSelect
-                label={t("settings.modelWorkspace.chooseFor", { feature: props.defaultModel.label })}
-                value={props.defaultModel.value ?? ""}
-                placeholder={t("settings.modelWorkspace.notConfigured")}
-                searchPlaceholder={t("settings.cuberouterModel.searchModels")}
-                options={props.defaultModel.options}
-                onValueChange={props.defaultModel.onChange}
-                disabled={props.disabled || props.defaultModel.options.length === 0}
-                className="select-control--compact select-control--subtle model-assignment-select"
-                menuClassName="model-assignment-select__menu"
-              />
-              <AssignmentTestStatusLabel status={props.defaultModel.testStatus} />
-            </div>
-          </div>
+          <AssignmentRow
+            label={props.defaultModel.label}
+            description={props.defaultModel.hint}
+            value={props.defaultModel.value ?? ""}
+            options={props.defaultModel.options}
+            onChange={props.defaultModel.onChange}
+            preserveUnassigned
+            searchable
+            disabled={props.disabled}
+            testStatus={props.defaultModel.testStatus}
+          />
         )}
         {showsConversationPicker && (
         <>
@@ -229,17 +220,16 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
           <Fragment key={row.kind}>
             <div className="h-px bg-border-stone/30" />
             <AssignmentRow
-              kind={row.kind}
               label={row.label}
               description={row.description}
               tip={row.tip}
               badge={row.badge}
               value={row.value}
               options={row.options}
-              onChange={props.onRowChange}
+              onChange={(value) => props.onRowChange(row.kind, value)}
               preserveUnassigned={row.preserveUnassigned}
               searchable={row.searchable}
-              disabled={props.disabled}
+              disabled={props.disabled || row.disabled}
               testStatus={row.testStatus}
             />
           </Fragment>
@@ -251,14 +241,13 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
 }
 
 function AssignmentRow(props: {
-  kind: ModelAssignmentKind;
   label: string;
-  description: string;
+  description?: string;
   tip?: string;
   badge?: string;
   value: string | undefined;
   options: SelectOption[];
-  onChange: (kind: ModelAssignmentKind, value: string) => void;
+  onChange: (value: string) => void;
   preserveUnassigned?: boolean;
   searchable?: boolean;
   disabled?: boolean;
@@ -293,7 +282,9 @@ function AssignmentRow(props: {
             </span>
           )}
         </div>
-        <p className="mt-0.5 text-[11px] text-text-ink/45">{props.description}</p>
+        {props.description ? (
+          <p className="mt-0.5 text-[11px] text-text-ink/45">{props.description}</p>
+        ) : null}
       </div>
       <div className="flex shrink-0 flex-col items-end gap-1">
         {props.searchable ? (
@@ -303,7 +294,7 @@ function AssignmentRow(props: {
             placeholder={t("settings.modelWorkspace.notConfigured")}
             searchPlaceholder={t("settings.cuberouterModel.searchModels")}
             options={props.options}
-            onValueChange={(next) => props.onChange(props.kind, next)}
+            onValueChange={props.onChange}
             disabled={props.disabled || props.options.length === 0}
             className="select-control--compact select-control--subtle model-assignment-select"
             menuClassName="model-assignment-select__menu"
@@ -315,7 +306,7 @@ function AssignmentRow(props: {
             value={value}
             placeholder={t("settings.modelWorkspace.notConfigured")}
             options={props.options}
-            onValueChange={(next) => props.onChange(props.kind, next)}
+            onValueChange={props.onChange}
             disabled={props.disabled || props.options.length === 0}
             className="select-control--compact select-control--subtle model-assignment-select"
             menuClassName="model-assignment-select__menu"

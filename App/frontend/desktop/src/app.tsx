@@ -30,6 +30,7 @@ import {
   readCurrentRoute,
   reconcileInitialOnboarding,
   resolveInitialView,
+  resolveCuberouterSignedOutRoute,
   resolveMainWindowRouteTarget,
   resolvePreferredLaunchMode,
   resolveLaunchInitialView,
@@ -230,12 +231,19 @@ function RuntimeApp() {
           modelConfig,
           cuberouterAccountBackend: isCuberouterAccountBackend()
         });
-        const initialPath = resolveLaunchInitialView({
+        const launchPath = resolveLaunchInitialView({
           defaultPath: defaultInitialPath,
           currentRoute,
           launchRouteOverride: launchRouteOverride ?? (isComputerHistorySupported() && readHistoryPermissionSetup() && launchModeOverride !== "pet" ? "/memory" : null),
           launchModeOverride,
           petIntent
+        });
+        // A cuberouter-only build has one signed-out surface. A launch override, a remembered
+        // route or a pet launch must not hand a signed-out visitor any other page.
+        const initialPath = resolveCuberouterSignedOutRoute({
+          cuberouterAccountBackend: isCuberouterAccountBackend(),
+          authenticated: accountSession.authenticated,
+          path: launchPath
         });
 
         if (!isActive) {
@@ -252,6 +260,25 @@ function RuntimeApp() {
         setClients(clients);
         setAnalyticsUserMode(effectiveBootstrap.app.userMode);
         setAnalyticsUserId(accountSession.authenticated ? accountSession.profile.userId : null);
+        // Set the session before the startup status turns ready: the signed-out route guard
+        // reads both in the same render and must not mistake "not loaded yet" for "signed out".
+        if (accountSession.authenticated) {
+          dispatch(appActions.accountUpdated({
+            userId: accountSession.profile.userId,
+            email: accountSession.profile.email ?? "",
+            phoneNumber: accountSession.profile.phoneNumber,
+            nickname: accountSession.profile.nickname,
+            registeredAt: accountSession.profile.registeredAt,
+            identityProvider: accountSession.profile.identityProvider,
+            username: accountSession.profile.username ?? null,
+            organizationName: accountSession.profile.organizationName ?? null
+          }));
+        } else if (effectiveBootstrap.app.userMode === "byok") {
+          const localNickname = readLocalNickname(typeof window === "undefined" ? undefined : window.localStorage);
+          if (localNickname) {
+            dispatch(appActions.accountUpdated({ nickname: localNickname }));
+          }
+        }
         dispatch(appActions.bootstrapLoaded(effectiveBootstrap, initialPath));
         if (bootstrap.tokenUsage.totalTokens > 0) {
           const u = bootstrap.tokenUsage;
@@ -270,23 +297,6 @@ function RuntimeApp() {
           trackAgentSourceScanOutcome(scanStatus.completion);
           dispatch(appActions.agentSourceScanCompleted(scanStatus.completion));
           scheduleScanCompletionExpiry(scanStatus.completion.jobId);
-        }
-        if (accountSession.authenticated) {
-          dispatch(appActions.accountUpdated({
-            userId: accountSession.profile.userId,
-            email: accountSession.profile.email ?? "",
-            phoneNumber: accountSession.profile.phoneNumber,
-            nickname: accountSession.profile.nickname,
-            registeredAt: accountSession.profile.registeredAt,
-            identityProvider: accountSession.profile.identityProvider,
-            username: accountSession.profile.username ?? null,
-            organizationName: accountSession.profile.organizationName ?? null
-          }));
-        } else if (effectiveBootstrap.app.userMode === "byok") {
-          const localNickname = readLocalNickname(typeof window === "undefined" ? undefined : window.localStorage);
-          if (localNickname) {
-            dispatch(appActions.accountUpdated({ nickname: localNickname }));
-          }
         }
         dispatch(appActions.modelConfigUpdated(modelConfig));
         dispatch(appActions.preferredModeUpdated(persistedPreferredMode));

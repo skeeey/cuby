@@ -28,12 +28,14 @@ import {
   readCurrentRoute,
   readDeferredGuidanceStep,
   readLaunchModeOverride,
+  resolveCuberouterSignedOutRoute,
   writeCurrentRoute,
   writeDeferredGuidanceStep,
   writeGuidanceCompleted,
   type AppRoutePath,
   type DeferredGuidanceStep
 } from "./routes.js";
+import { isCuberouterAccountBackend } from "./account-backend.js";
 import { accountProvidesNickname, persistNickname } from "./nickname.js";
 import { useOptionalApiClients } from "./providers.js";
 import { canUseCloudFeatures } from "../state/app-reducer.js";
@@ -83,6 +85,22 @@ export function AppRouter(props: { onRetry: () => void }) {
   const [petGuideRequest, setPetGuideRequest] = useState<MainWindowActionRequest | null>(null);
   const isPetWindowContext = isPetWindow(state.navigation.currentPath);
   const windowDragRegion = !isPetWindowContext ? <WindowDragRegion /> : null;
+
+  // A cuberouter-only build has no signed-out page but the login form. Keep every redirect,
+  // deep link and expired session on /welcome once the startup state has loaded.
+  useEffect(() => {
+    if (!state.bootstrap) {
+      return;
+    }
+    const nextPath = resolveCuberouterSignedOutRoute({
+      cuberouterAccountBackend: isCuberouterAccountBackend(),
+      authenticated: Boolean(state.account.userId),
+      path: state.navigation.currentPath
+    });
+    if (nextPath !== state.navigation.currentPath) {
+      dispatch(appActions.navigate(nextPath));
+    }
+  }, [dispatch, state.account.userId, state.bootstrap, state.navigation.currentPath]);
 
   const completeMainWindowAction = useCallback(
     (request: MainWindowActionRequest, resolution: MainWindowActionResolution) => {

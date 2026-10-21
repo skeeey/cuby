@@ -1423,14 +1423,14 @@ export function SettingsPageView(props: SettingsPageViewProps) {
     try {
       await (accountClient?.logout() ?? Promise.resolve({ ok: true as const }));
       track({ name: "account_logout", params: { page_path: "/settings" }, consentTier: "basic" });
-      const nextUserMode = await finalizeAccountLogout({
+      await finalizeAccountLogout({
         modelConfig: state.modelConfig,
         configClient,
         dispatch
       });
-      if (nextUserMode === "unset") {
-        dispatch(appActions.navigate("/welcome"));
-      }
+      // A cuberouter-only build has nothing behind the sign-in form. Even when a local BYOK
+      // catalog survives, the signed-out surface must stay the login page.
+      dispatch(appActions.navigate("/welcome"));
       setConfirm(null);
     } catch (error) {
       console.warn("logout account failed", error);

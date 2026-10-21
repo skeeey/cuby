@@ -1,16 +1,20 @@
 /** cuberouter model configuration section module. */
-import { ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
+import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import type { CuberouterKeyOption, CuberouterModelChoicesView } from "@memmy/local-api-contracts";
+import {
+  BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID,
+  type CuberouterKeyOption,
+  type CuberouterModelChoicesView
+} from "@memmy/local-api-contracts";
 import type { AccountClient } from "../api/account-client.js";
 import { ApiRequestError } from "../api/http.js";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
 import { Button } from "../components/button.js";
-import { ModelProviderLogo } from "../components/model-provider-logo.js";
 import type { MessageKey } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import {
   applyCuberouterSelection,
+  chatModelTestTarget,
   createModelWorkspace,
   readCuberouterSelection,
   type CuberouterSelection,
@@ -24,10 +28,8 @@ import {
   readCuberouterKeySelection,
   writeCuberouterKeySelection
 } from "../state/cuberouter-key-selection.js";
-import { ModelAssignmentSection } from "./model-assignment-section.js";
-import { ModelLibrarySection } from "./model-library-section.js";
+import { ModelAssignmentSection, type ModelAssignmentTestStatus } from "./model-assignment-section.js";
 import { formatCuberouterRemaining } from "./cuberouter-money.js";
-import type { StoredConnectionTestState } from "./model-workspace-connection-test-state.js";
 
 const PROTOCOL = "openai-chat-completions" as const;
 
@@ -57,8 +59,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   const [pendingKeyId, setPendingKeyId] = useState<string | null>(null);
   const [savePending, setSavePending] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
-  const [testStates, setTestStates] = useState<Record<string, StoredConnectionTestState>>({});
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [assignmentTests, setAssignmentTests] = useState<
+    Partial<Record<"agent" | "memorySummary" | "memoryEvolution", ModelAssignmentTestStatus>>
+  >({});
+  const [testingAssignments, setTestingAssignments] = useState(false);
   /** Guards the single save path before a render could re-disable its controls. */
   const saveInFlightRef = useRef(false);
   // A key action starts before its save: revealing a personal key is an await of its own, and
@@ -145,24 +149,12 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     }
   }
 
-  /**
-   * Takes the whole next workspace from the advanced library (it hands over a workspace, not a
-   * mutation) and reports whether the panel accepted it: false while a save is in flight, which
-   * tells the library to skip the state changes that commit would have carried.
-   */
-  function commitWorkspace(next: ModelWorkspace, onSaved?: (saved: ModelWorkspace) => void): boolean {
-    if (!props.configClient || !choices || saveInFlightRef.current) return false;
-    void commit(() => next).then((saved) => {
-      if (saved) onSaved?.(saved);
-    });
-    return true;
-  }
-
   /** Applies one key: personal keys are revealed on demand, organization ones ship their secret. */
   async function selectKey(key: CuberouterKeyOption): Promise<void> {
     if (!props.username || !selection) return;
     const id = `${key.scope}:${key.id}`;
     setPendingKeyId(id);
+    setAssignmentTests({});
     try {
       const plaintext = key.secret ?? (await props.accountClient!.revealPersonalKey(key.id)).key;
       const saved = await commit((current, apiBase) => applyCuberouterSelection(current, {
@@ -190,6 +182,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     if (!props.configClient || !props.accountClient || !props.username) return;
     setSaveError(null);
     setSavePending(true);
+    setAssignmentTests({});
     try {
       const provisioning = await props.accountClient.reprovisionKey();
       // The same preferred-default rule as the login: the model this instance actually lists —
@@ -228,6 +221,13 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   function updateSelection(patch: Partial<CuberouterSelection>): void {
     // Dropped, not queued: a change that arrives while a save runs would race that PUT.
     if (!selection || savePending) return;
+    setAssignmentTests((current) => {
+      const next = { ...current };
+      if (patch.agent) delete next.agent;
+      if ("memorySummary" in patch) delete next.memorySummary;
+      if ("memoryEvolution" in patch) delete next.memoryEvolution;
+      return next;
+    });
     const next = { ...selection, ...patch };
     setSelection(next);
     void commit((current, apiBase) => applyCuberouterSelection(current, {
@@ -235,6 +235,81 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       protocol: PROTOCOL,
       selection: next
     }));
+  }
+
+  /** Chooses the default chat model, enrolling it first when the catalog does not hold it yet. */
+  function chooseDefaultModel(model: string): void {
+    if (!selection) return;
+    updateSelection({
+      agent: {
+        models: selection.agent.models.includes(model)
+          ? selection.agent.models
+          : [...selection.agent.models, model],
+        default: model
+      }
+    });
+  }
+
+  /** Probes every distinct model assigned to the three chat roles, one request per model. */
+  async function testAssignedModels(): Promise<void> {
+    const configClient = props.configClient;
+    if (!configClient || testingAssignments) return;
+    const space = workspace.spaces.byok;
+    const targets: Array<{
+      key: "agent" | "memorySummary" | "memoryEvolution";
+      presetId: string | null;
+    }> = [
+      { key: "agent", presetId: space.defaultAgentModelId },
+      { key: "memorySummary", presetId: space.assignments.memorySummary ?? null },
+      { key: "memoryEvolution", presetId: space.assignments.memoryEvolution ?? null }
+    ];
+    const unconfigured: ModelAssignmentTestStatus = {
+      status: "skipped",
+      message: t("settings.modelWorkspace.notConfigured")
+    };
+    const statusFor = (
+      presetId: string | null,
+      results: Map<string, ModelAssignmentTestStatus>
+    ): ModelAssignmentTestStatus => (presetId ? results.get(presetId)! : unconfigured);
+
+    setTestingAssignments(true);
+    setAssignmentTests({
+      agent: targets[0]!.presetId ? { status: "testing" } : unconfigured,
+      memorySummary: targets[1]!.presetId ? { status: "testing" } : unconfigured,
+      memoryEvolution: targets[2]!.presetId ? { status: "testing" } : unconfigured
+    });
+
+    const uniquePresetIds = [...new Set(targets.flatMap(({ presetId }) => presetId ? [presetId] : []))];
+    const results = new Map<string, ModelAssignmentTestStatus>();
+    await Promise.all(uniquePresetIds.map(async (presetId) => {
+      const target = chatModelTestTarget(workspace, presetId);
+      if (target.status === "platform") {
+        results.set(presetId, {
+          status: "skipped",
+          message: t("settings.modelWorkspace.testPlatformSkipped")
+        });
+        return;
+      }
+      if (target.status === "missing") {
+        results.set(presetId, { status: "error", message: t("settings.modelWorkspace.testFailed") });
+        return;
+      }
+      try {
+        const result = await configClient.testModelConfig(target.config, "chat");
+        results.set(presetId, result.ok
+          ? { status: "success", message: t("settings.modelWorkspace.testSuccess") }
+          : { status: "error", message: result.message || t("settings.modelWorkspace.testFailed") });
+      } catch {
+        results.set(presetId, { status: "error", message: t("settings.modelWorkspace.testFailed") });
+      }
+    }));
+
+    setAssignmentTests({
+      agent: statusFor(targets[0]!.presetId, results),
+      memorySummary: statusFor(targets[1]!.presetId, results),
+      memoryEvolution: statusFor(targets[2]!.presetId, results)
+    });
+    setTestingAssignments(false);
   }
 
   const models = choices?.models ?? [];
@@ -341,20 +416,20 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       {selection && (
         <>
           <ModelAssignmentSection
-            conversationGroups={conversationModels.length > 0 ? [{
-              key: "cuberouter",
-              title: t("settings.cuberouterModel.modelsGroup"),
-              icon: <ModelProviderLogo provider="openai" size={14} />,
-              candidates: conversationModels.map((model) => ({
-                id: model,
-                label: model,
-                detail: t("settings.cuberouterModel.modelsGroup")
-              }))
-            }] : []}
-            selectedCandidateIds={selection.agent.models}
-            defaultCandidateId={selection.agent.default ?? null}
-            onToggleCandidate={(model) => updateSelection({ agent: toggleAgentModel(selection.agent, model) })}
-            onChooseDefaultCandidate={(model) => updateSelection({ agent: { ...selection.agent, default: model } })}
+            defaultModel={{
+              label: t("settings.cuberouterModel.defaultChatModel"),
+              hint: t("settings.modelWorkspace.defaultChatModelHint"),
+              value: selection.agent.default ?? null,
+              options: conversationModels.map((model) => ({ value: model, label: model })),
+              onChange: chooseDefaultModel,
+              testStatus: assignmentTests.agent
+            }}
+            testAll={{
+              label: t("settings.modelWorkspace.testAssignedModels"),
+              pending: testingAssignments,
+              disabled: !props.configClient || busy,
+              onTest: () => void testAssignedModels()
+            }}
             rows={[
               {
                 kind: "memorySummary",
@@ -364,7 +439,8 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
                 value: selection.memorySummary,
                 options: rowOptionsFor(selection.memorySummary),
                 searchable: true,
-                preserveUnassigned: true
+                preserveUnassigned: true,
+                testStatus: assignmentTests.memorySummary
               },
               {
                 kind: "memoryEvolution",
@@ -373,12 +449,25 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
                 value: selection.memoryEvolution,
                 options: rowOptionsFor(selection.memoryEvolution),
                 searchable: true,
-                preserveUnassigned: true
+                preserveUnassigned: true,
+                testStatus: assignmentTests.memoryEvolution
+              },
+              {
+                kind: "embedding",
+                label: t("settings.model.embeddingSearch"),
+                description: t("settings.model.embeddingDesc"),
+                value: BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID,
+                options: [{
+                  value: BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID,
+                  label: t("settings.cuberouterModel.embeddingBuiltin")
+                }],
+                disabled: true
               }
             ]}
-            onRowChange={(kind, value) => updateSelection(
-              kind === "memorySummary" ? { memorySummary: value } : { memoryEvolution: value }
-            )}
+            onRowChange={(kind, value) => {
+              if (kind === "memorySummary") updateSelection({ memorySummary: value });
+              else if (kind === "memoryEvolution") updateSelection({ memoryEvolution: value });
+            }}
             disabled={busy}
           />
           {showsOffListHint && (
@@ -386,59 +475,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
               {t("settings.cuberouterModel.offListHint")}
             </p>
           )}
-          {/* Read-only: the local embedding model stays memmy's built-in default. */}
-          <div className="flex items-center justify-between gap-4 px-3.5 py-2.5">
-            <span className="text-sm text-text-ink/80">{t("settings.model.embeddingSearch")}</span>
-            <span className="text-xs text-text-ink/50">{t("settings.cuberouterModel.embeddingBuiltin")}</span>
-          </div>
         </>
       )}
-      {/* The generic connection library, folded away: a cuberouter user can still add an endpoint. */}
-      <section className="mt-8">
-        <button
-          type="button"
-          aria-expanded={advancedOpen}
-          onClick={() => setAdvancedOpen((open) => !open)}
-          className="inline-flex items-center gap-1 text-xs text-text-ink/50"
-        >
-          {t("settings.cuberouterModel.advanced")}
-          {advancedOpen ? <ChevronUp size={12} aria-hidden="true" /> : <ChevronDown size={12} aria-hidden="true" />}
-        </button>
-        {advancedOpen && (
-          <ModelLibrarySection
-            mode="byok"
-            workspace={workspace}
-            space={workspace.spaces.byok}
-            commitWorkspace={commitWorkspace}
-            savePending={busy}
-            saveError={saveError}
-            testStates={testStates}
-            setTestStates={setTestStates}
-            configClient={props.configClient}
-            setSaveError={setSaveError}
-          />
-        )}
-      </section>
     </div>
   );
-}
-
-/** Toggles one conversation model, keeping at least one selected (the picker's own rule). */
-export function toggleAgentModel(
-  agent: CuberouterSelection["agent"],
-  model: string
-): CuberouterSelection["agent"] {
-  const models = agent.models.includes(model)
-    ? agent.models.filter((item) => item !== model)
-    : [...agent.models, model];
-  const next: CuberouterSelection["agent"] = {
-    models: models.length > 0 ? models : agent.models,
-    ...(agent.default ? { default: agent.default } : {})
-  };
-  if (next.default && !next.models.includes(next.default)) {
-    next.default = next.models[0];
-  }
-  return next;
 }
 
 /** The status badge message for one instance token state. */
