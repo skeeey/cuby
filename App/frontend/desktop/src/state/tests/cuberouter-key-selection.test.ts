@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   CUBEROUTER_KEY_SELECTION_STORAGE_KEY,
   clearCuberouterKeySelection,
+  defaultCuberouterKey,
+  desktopTokenName,
   readCuberouterKeySelection,
   writeCuberouterKeySelection
 } from "../cuberouter-key-selection.js";
@@ -54,5 +56,26 @@ describe("cuberouter key selection", () => {
 
     expect(readCuberouterKeySelection("alice@a.com", storage)).toBeNull();
     expect(readCuberouterKeySelection("bob@a.com", storage)?.name).toBe("bobs-key");
+  });
+
+  it("derives the provisioned key name exactly as the backend does", () => {
+    expect(desktopTokenName("alice@a.com")).toBe("cuby-desktop-alice");
+    expect(desktopTokenName("Liang.YT@yeebo.com.cn")).toBe("cuby-desktop-Liang.YT");
+    expect(desktopTokenName("liangyt")).toBe("cuby-desktop-liangyt");
+    expect(desktopTokenName("  alice@a.com  ")).toBe("cuby-desktop-alice");
+    expect(desktopTokenName("@yeebo.com.cn")).toBe("cuby-desktop-@yeebo.com.cn");
+  });
+
+  it("defaults to the provisioned key, preferring the organization row", () => {
+    const personal = { scope: "personal" as const, name: "cuby-desktop-alice", usable: true };
+    const organization = { scope: "organization" as const, name: "cuby-desktop-alice", usable: true };
+    const other = { scope: "organization" as const, name: "cuby-desktop-bob", usable: true };
+
+    expect(defaultCuberouterKey([personal, other, organization], "alice@a.com")).toBe(organization);
+    expect(defaultCuberouterKey([personal], "alice@a.com")).toBe(personal);
+    expect(defaultCuberouterKey([other], "alice@a.com")).toBeNull();
+    expect(defaultCuberouterKey([
+      { ...organization, usable: false }
+    ], "alice@a.com")).toBeNull();
   });
 });
