@@ -261,6 +261,59 @@ describe("ModelWorkspaceSection BYOK connection deletion", () => {
     });
   });
 
+  it("tests the default, memory summary and skill evolution models once per distinct model", async () => {
+    const seedConfig = createAccountSeedConfig();
+    const customAgent = seedConfig.catalog.providers[0]!.models
+      .find((model) => model.presetId === "custom-agent")!;
+    customAgent.capabilities = ["agent", "memory_summary", "memory_evolution"];
+    seedConfig.catalog.modelAssignments.account.memorySummary = "custom-agent";
+    seedConfig.catalog.modelAssignments.account.memoryEvolution = "custom-agent";
+    const configClient = {
+      getModelConfig: vi.fn(async () => seedConfig),
+      saveModelCatalog: vi.fn(async () => seedConfig),
+      testModelConfig: vi.fn(async () => ({
+        ok: true,
+        message: "连接成功",
+        checkedAt: "2026-08-13T00:00:00.000Z"
+      }))
+    };
+
+    await act(async () => {
+      root.render(
+        <I18nProvider language="zh-CN">
+          <ModelWorkspaceSection mode="account" seedConfig={seedConfig} configClient={configClient} />
+        </I18nProvider>
+      );
+      await Promise.resolve();
+    });
+
+    const testButton = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((button) => button.textContent?.trim() === "测试模型")!;
+    await act(async () => {
+      testButton.click();
+      await Promise.resolve();
+    });
+
+    await vi.waitFor(() => expect(configClient.testModelConfig).toHaveBeenCalledTimes(1));
+    expect(configClient.testModelConfig).toHaveBeenCalledWith(
+      expect.objectContaining({
+        provider: "openai_compatible",
+        endpointId: "endpoint-1",
+        protocol: "openai-chat-completions",
+        endpoint: "https://api-1.example.com/v1",
+        model: "gpt-4o",
+        apiKey: "",
+        apiKeyMasked: "••••test"
+      }),
+      "chat"
+    );
+    // The platform default has no local endpoint to probe.
+    expect(container.textContent).toContain("平台模型由 Cuby 托管");
+    // Both text rows share the same model, so the single probe reports on both.
+    expect([...container.querySelectorAll(".model-assignment-test-status")]
+      .filter((node) => node.textContent?.includes("连接成功"))).toHaveLength(2);
+  });
+
   function renderWorkspace(seedConfig: ModelProviderConfig, mode: "byok" | "account" = "byok") {
     act(() => {
       root.render(

@@ -6,6 +6,7 @@ import { ModelProviderLogo } from "../components/model-provider-logo.js";
 import type { SelectOption } from "../components/Select.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import {
+  chatModelTestTarget,
   createModelWorkspace,
   getModelCandidates,
   modelConfigInput,
@@ -15,7 +16,10 @@ import {
   type ModelCapability,
   type ModelWorkspaceMode
 } from "../state/model-workspace.js";
-import { ModelAssignmentSection } from "./model-assignment-section.js";
+import {
+  ModelAssignmentSection,
+  type ModelAssignmentTestStatus
+} from "./model-assignment-section.js";
 import {
   ModelLibrarySection,
   connectionProtocolLabel,
@@ -44,6 +48,8 @@ export interface ModelWorkspaceSectionProps {
   onReturnToMain?: () => void;
 }
 
+type AssignmentTestKey = "agent" | "memorySummary" | "memoryEvolution";
+
 /**
  * Multi-provider settings UI backed by the revisioned local model catalog API.
  */
@@ -55,6 +61,8 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
   const saveInFlightRef = useRef(false);
   const hasMutatedRef = useRef(false);
   const [testStates, setTestStates] = useState<Record<string, StoredConnectionTestState>>({});
+  const [assignmentTests, setAssignmentTests] = useState<Partial<Record<AssignmentTestKey, ModelAssignmentTestStatus>>>({});
+  const [testingAssignments, setTestingAssignments] = useState(false);
   const space = workspace.spaces[props.mode];
   const textCandidates = getModelCandidates(workspace, props.mode, "chat");
   const memorySummaryCandidates = getModelCandidates(workspace, props.mode, "memorySummary");
@@ -114,11 +122,72 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
   }, [props.configClient]);
 
   function updateAssignment(kind: ModelAssignmentKind, candidateId: string) {
+    // A changed assignment invalidates the previous probe result for that row.
+    setAssignmentTests((current) => ({ ...current, [kind]: undefined }));
     commitWorkspace(setModelAssignment(workspace, props.mode, kind, candidateId));
   }
 
   function chooseDefaultAgentModel(candidateId: string) {
+    setAssignmentTests((current) => ({ ...current, agent: undefined }));
     commitWorkspace(setDefaultAgentModel(workspace, props.mode, candidateId));
+  }
+
+  /** Probes every distinct model assigned to the three chat roles, one request per model. */
+  async function testAssignedModels() {
+    const configClient = props.configClient;
+    if (!configClient || testingAssignments) return;
+    const targets: Array<{ key: AssignmentTestKey; presetId: string | null }> = [
+      { key: "agent", presetId: space.defaultAgentModelId },
+      { key: "memorySummary", presetId: space.assignments.memorySummary ?? null },
+      { key: "memoryEvolution", presetId: space.assignments.memoryEvolution ?? null }
+    ];
+    const unconfigured: ModelAssignmentTestStatus = {
+      status: "skipped",
+      message: t("settings.modelWorkspace.notConfigured")
+    };
+    const statusFor = (
+      presetId: string | null,
+      results: Map<string, ModelAssignmentTestStatus>
+    ): ModelAssignmentTestStatus => (presetId ? results.get(presetId)! : unconfigured);
+
+    setTestingAssignments(true);
+    setAssignmentTests({
+      agent: targets[0]!.presetId ? { status: "testing" } : unconfigured,
+      memorySummary: targets[1]!.presetId ? { status: "testing" } : unconfigured,
+      memoryEvolution: targets[2]!.presetId ? { status: "testing" } : unconfigured
+    });
+
+    const uniquePresetIds = [...new Set(targets.flatMap(({ presetId }) => presetId ? [presetId] : []))];
+    const results = new Map<string, ModelAssignmentTestStatus>();
+    await Promise.all(uniquePresetIds.map(async (presetId) => {
+      const target = chatModelTestTarget(workspace, presetId);
+      if (target.status === "platform") {
+        results.set(presetId, {
+          status: "skipped",
+          message: t("settings.modelWorkspace.testPlatformSkipped")
+        });
+        return;
+      }
+      if (target.status === "missing") {
+        results.set(presetId, { status: "error", message: t("settings.modelWorkspace.testFailed") });
+        return;
+      }
+      try {
+        const result = await configClient.testModelConfig(target.config, "chat");
+        results.set(presetId, result.ok
+          ? { status: "success", message: t("settings.modelWorkspace.testSuccess") }
+          : { status: "error", message: result.message || t("settings.modelWorkspace.testFailed") });
+      } catch {
+        results.set(presetId, { status: "error", message: t("settings.modelWorkspace.testFailed") });
+      }
+    }));
+
+    setAssignmentTests({
+      agent: statusFor(targets[0]!.presetId, results),
+      memorySummary: statusFor(targets[1]!.presetId, results),
+      memoryEvolution: statusFor(targets[2]!.presetId, results)
+    });
+    setTestingAssignments(false);
   }
 
   const defaultChatOptions: SelectOption[] = [
@@ -258,11 +327,18 @@ export function ModelWorkspaceSection(props: ModelWorkspaceSectionProps) {
           hint: t("settings.modelWorkspace.defaultChatModelHint"),
           value: space.defaultAgentModelId,
           options: defaultChatOptions,
-          onChange: chooseDefaultAgentModel
+          onChange: chooseDefaultAgentModel,
+          testStatus: assignmentTests.agent
+        }}
+        testAll={{
+          label: t("settings.modelWorkspace.testAssignedModels"),
+          pending: testingAssignments,
+          disabled: !props.configClient,
+          onTest: () => void testAssignedModels()
         }}
         rows={[
-          { kind: "memorySummary", label: t("settings.model.memorySummary"), description: t("settings.model.memoryDesc"), tip: t("apiKey.modelPage.memoryHint"), value: space.assignments.memorySummary, options: memorySummaryOptions },
-          { kind: "memoryEvolution", label: t("settings.model.skillEvolution"), description: t("settings.model.skillDesc"), value: space.assignments.memoryEvolution, options: memoryEvolutionOptions },
+          { kind: "memorySummary", label: t("settings.model.memorySummary"), description: t("settings.model.memoryDesc"), tip: t("apiKey.modelPage.memoryHint"), value: space.assignments.memorySummary, options: memorySummaryOptions, testStatus: assignmentTests.memorySummary },
+          { kind: "memoryEvolution", label: t("settings.model.skillEvolution"), description: t("settings.model.skillDesc"), value: space.assignments.memoryEvolution, options: memoryEvolutionOptions, testStatus: assignmentTests.memoryEvolution },
           { kind: "embedding", label: t("settings.model.embeddingSearch"), description: t("settings.model.embeddingDesc"), value: embeddingAssignment, options: embeddingOptions, preserveUnassigned: props.mode === "account" },
           { kind: "asr", label: t("settings.model.asr"), description: t("settings.model.asrDesc"), badge: t("settings.modelWorkspace.optional"), value: space.assignments.asr, options: asrOptions },
           { kind: "image", label: t("settings.model.imageGen"), description: t("settings.model.imageGenDesc"), badge: t("settings.modelWorkspace.optional"), value: space.assignments.image, options: imageOptions }

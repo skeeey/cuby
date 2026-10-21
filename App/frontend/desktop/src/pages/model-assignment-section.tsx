@@ -33,6 +33,13 @@ export interface ModelAssignmentRowSpec {
   preserveUnassigned?: boolean;
   /** Renders a searchable dropdown instead of the plain Select (long model lists). */
   searchable?: boolean;
+  testStatus?: ModelAssignmentTestStatus;
+}
+
+/** Result of the unified connection test for one assignment row. */
+export interface ModelAssignmentTestStatus {
+  status: "testing" | "success" | "error" | "skipped";
+  message?: string;
 }
 
 export interface ModelAssignmentSectionProps {
@@ -44,6 +51,13 @@ export interface ModelAssignmentSectionProps {
   onChooseDefaultCandidate?(candidateId: string): void;
   /** Single default-model picker: every chat model in the catalog is selectable. */
   defaultModel?: DefaultModelPickerSpec;
+  /** Unified connection test across the assigned chat models. */
+  testAll?: {
+    label: string;
+    pending: boolean;
+    onTest: () => void;
+    disabled?: boolean;
+  };
   rows: ModelAssignmentRowSpec[];
   onRowChange(kind: ModelAssignmentKind, value: string): void;
   /** Disables the picker and every row control, for a caller with a save in flight. */
@@ -57,6 +71,7 @@ export interface DefaultModelPickerSpec {
   value: string | null;
   options: SelectOption[];
   onChange: (value: string) => void;
+  testStatus?: ModelAssignmentTestStatus;
 }
 
 /** Conversation-model picker plus one row per assignable purpose. */
@@ -82,9 +97,21 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
 
   return (
     <section className="mt-8">
-      <div className="mb-3 flex items-center gap-2">
-        <Wrench size={16} className="text-text-ink/60" aria-hidden="true" />
-        <h3 className="text-sm font-semibold text-text-ink">{t("settings.modelWorkspace.bindingTitle")}</h3>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <Wrench size={16} className="text-text-ink/60" aria-hidden="true" />
+          <h3 className="text-sm font-semibold text-text-ink">{t("settings.modelWorkspace.bindingTitle")}</h3>
+        </div>
+        {props.testAll && (
+          <button
+            type="button"
+            disabled={props.disabled || props.testAll.disabled || props.testAll.pending}
+            onClick={props.testAll.onTest}
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-btn bg-action-sky/10 px-2.5 py-1 text-xs text-action-sky transition-colors hover:bg-action-sky/15 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {props.testAll.pending ? t("settings.modelWorkspace.testing") : props.testAll.label}
+          </button>
+        )}
       </div>
       <div className="bg-background-paper rounded-card-lg border-content-panel p-6">
         <p className="text-xs leading-relaxed text-text-ink/45">
@@ -99,17 +126,20 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
                 <p className="mt-0.5 text-[11px] text-text-ink/45">{props.defaultModel.hint}</p>
               )}
             </div>
-            <SearchableSelect
-              label={t("settings.modelWorkspace.chooseFor", { feature: props.defaultModel.label })}
-              value={props.defaultModel.value ?? ""}
-              placeholder={t("settings.modelWorkspace.notConfigured")}
-              searchPlaceholder={t("settings.cuberouterModel.searchModels")}
-              options={props.defaultModel.options}
-              onValueChange={props.defaultModel.onChange}
-              disabled={props.disabled || props.defaultModel.options.length === 0}
-              className="select-control--compact select-control--subtle model-assignment-select"
-              menuClassName="model-assignment-select__menu"
-            />
+            <div className="flex shrink-0 flex-col items-end gap-1">
+              <SearchableSelect
+                label={t("settings.modelWorkspace.chooseFor", { feature: props.defaultModel.label })}
+                value={props.defaultModel.value ?? ""}
+                placeholder={t("settings.modelWorkspace.notConfigured")}
+                searchPlaceholder={t("settings.cuberouterModel.searchModels")}
+                options={props.defaultModel.options}
+                onValueChange={props.defaultModel.onChange}
+                disabled={props.disabled || props.defaultModel.options.length === 0}
+                className="select-control--compact select-control--subtle model-assignment-select"
+                menuClassName="model-assignment-select__menu"
+              />
+              <AssignmentTestStatusLabel status={props.defaultModel.testStatus} />
+            </div>
           </div>
         )}
         {showsConversationPicker && (
@@ -210,6 +240,7 @@ export function ModelAssignmentSection(props: ModelAssignmentSectionProps): Reac
               preserveUnassigned={row.preserveUnassigned}
               searchable={row.searchable}
               disabled={props.disabled}
+              testStatus={row.testStatus}
             />
           </Fragment>
         ))}
@@ -231,6 +262,7 @@ function AssignmentRow(props: {
   preserveUnassigned?: boolean;
   searchable?: boolean;
   disabled?: boolean;
+  testStatus?: ModelAssignmentTestStatus;
 }) {
   const { t } = useTranslation();
   const optionExists = props.options.some((option) => option.value === props.value);
@@ -263,31 +295,59 @@ function AssignmentRow(props: {
         </div>
         <p className="mt-0.5 text-[11px] text-text-ink/45">{props.description}</p>
       </div>
-      {props.searchable ? (
-        <SearchableSelect
-          label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
-          value={value}
-          placeholder={t("settings.modelWorkspace.notConfigured")}
-          searchPlaceholder={t("settings.cuberouterModel.searchModels")}
-          options={props.options}
-          onValueChange={(next) => props.onChange(props.kind, next)}
-          disabled={props.disabled || props.options.length === 0}
-          className="select-control--compact select-control--subtle model-assignment-select"
-          menuClassName="model-assignment-select__menu"
-        />
-      ) : (
-        <Select
-          label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
-          labelClassName="sr-only"
-          value={value}
-          placeholder={t("settings.modelWorkspace.notConfigured")}
-          options={props.options}
-          onValueChange={(next) => props.onChange(props.kind, next)}
-          disabled={props.disabled || props.options.length === 0}
-          className="select-control--compact select-control--subtle model-assignment-select"
-          menuClassName="model-assignment-select__menu"
-        />
-      )}
+      <div className="flex shrink-0 flex-col items-end gap-1">
+        {props.searchable ? (
+          <SearchableSelect
+            label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
+            value={value}
+            placeholder={t("settings.modelWorkspace.notConfigured")}
+            searchPlaceholder={t("settings.cuberouterModel.searchModels")}
+            options={props.options}
+            onValueChange={(next) => props.onChange(props.kind, next)}
+            disabled={props.disabled || props.options.length === 0}
+            className="select-control--compact select-control--subtle model-assignment-select"
+            menuClassName="model-assignment-select__menu"
+          />
+        ) : (
+          <Select
+            label={t("settings.modelWorkspace.chooseFor", { feature: props.label })}
+            labelClassName="sr-only"
+            value={value}
+            placeholder={t("settings.modelWorkspace.notConfigured")}
+            options={props.options}
+            onValueChange={(next) => props.onChange(props.kind, next)}
+            disabled={props.disabled || props.options.length === 0}
+            className="select-control--compact select-control--subtle model-assignment-select"
+            menuClassName="model-assignment-select__menu"
+          />
+        )}
+        <AssignmentTestStatusLabel status={props.testStatus} />
+      </div>
     </div>
+  );
+}
+
+function AssignmentTestStatusLabel(props: { status?: ModelAssignmentTestStatus }): ReactNode {
+  const { t } = useTranslation();
+  if (!props.status) return null;
+  const text = props.status.status === "testing"
+    ? t("settings.modelWorkspace.testing")
+    : props.status.status === "success"
+      ? t("settings.modelWorkspace.testSuccess")
+      : props.status.status === "skipped"
+        ? props.status.message ?? t("settings.modelWorkspace.notConfigured")
+        : t("settings.modelWorkspace.testFailed");
+  const tone = props.status.status === "success"
+    ? "text-status-success"
+    : props.status.status === "error"
+      ? "text-status-error"
+      : "text-text-ink/40";
+  return (
+    <span
+      className={`model-assignment-test-status block max-w-[220px] truncate text-[10px] ${tone}`}
+      title={props.status.message ?? text}
+    >
+      {text}
+    </span>
   );
 }

@@ -18,6 +18,7 @@ import {
   applyCuberouterSelection,
   assignCatalogPreset,
   assignedCatalogEndpointId,
+  chatModelTestTarget,
   clearLegacyModelWorkspace,
   createModelWorkspace,
   defaultModelSelectionInput,
@@ -954,6 +955,31 @@ describe("canonical model workspace adapter", () => {
 
     expect(input.modelAssignments.account.agent).toEqual({ candidates: [], default: null });
     expect(input.modelAssignments.byok.agent).toEqual({ candidates: ["byok-agent"], default: "byok-agent" });
+  });
+
+  it("chatModelTestTarget：BYOK 模型生成连接测试配置，平台模型标记为跳过", () => {
+    const workspace = createModelWorkspace(catalog());
+
+    expect(chatModelTestTarget(workspace, "byok-agent")).toEqual({
+      presetId: "byok-agent",
+      status: "ready",
+      config: {
+        provider: "openai_compatible",
+        endpointId: "chat",
+        protocol: "openai-chat-completions",
+        endpoint: "https://api.openai.com/v1",
+        model: "gpt-4o",
+        apiKey: "",
+        apiKeyMasked: "sk••••test",
+        configured: true
+      }
+    });
+    expect(chatModelTestTarget(workspace, "account-agent")).toEqual({
+      presetId: "account-agent",
+      status: "platform",
+      config: null
+    });
+    expect(chatModelTestTarget(workspace, "missing").status).toBe("missing");
   });
 
   it("defaultModelSelectionInput：目录内对话模型都能记住为默认，非对话模型与不存在模型不产出 payload", () => {
