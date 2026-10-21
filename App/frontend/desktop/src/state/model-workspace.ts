@@ -72,6 +72,60 @@ export interface ModelCandidate {
   available: boolean;
 }
 
+/** One assigned model prepared for the local provider connection test. */
+export type ChatModelTestTarget =
+  | { presetId: string; status: "ready"; config: ModelProviderConfig }
+  | { presetId: string; status: "platform"; config: null }
+  | { presetId: string; status: "missing"; config: null };
+
+/** Test-provider names accepted by the local API's model test endpoint. */
+const MODEL_TEST_PROVIDER: Record<CatalogProviderId, string> = {
+  openai: "openai_compatible",
+  anthropic: "anthropic",
+  gemini: "google",
+  deepseek: "deepseek",
+  zhipu: "zhipu",
+  dashscope: "qwen",
+  moonshot: "kimi",
+  minimax: "minimax",
+  qianfan: "baidu",
+  volcengine: "doubao",
+  stepfun: "stepfun",
+  xiaomi_mimo: "xiaomi",
+  memmy_account: "memmy_account"
+};
+
+/** Builds the connection-test payload for one assigned model; platform models have no local endpoint. */
+export function chatModelTestTarget(workspace: ModelWorkspace, presetId: string): ChatModelTestTarget {
+  const preset = workspace.catalog.providers
+    .flatMap((provider) => provider.models)
+    .find((model) => model.presetId === presetId);
+  const provider = preset
+    ? workspace.catalog.providers.find((item) => item.provider === preset.provider)
+    : undefined;
+  if (!preset) return { presetId, status: "missing", config: null };
+  if (!provider) return { presetId, status: "missing", config: null };
+  if (preset.source === "account" || provider.accountManaged) {
+    return { presetId, status: "platform", config: null };
+  }
+  const endpoint = provider.endpoints.find((item) => item.endpointId === preset.endpointId);
+  if (!endpoint) return { presetId, status: "missing", config: null };
+  return {
+    presetId,
+    status: "ready",
+    config: {
+      provider: MODEL_TEST_PROVIDER[preset.provider],
+      endpointId: preset.endpointId,
+      protocol: preset.protocol,
+      endpoint: endpoint.apiBase,
+      model: preset.model,
+      apiKey: "",
+      apiKeyMasked: endpoint.apiKeyMasked || provider.apiKeyMasked,
+      configured: true
+    }
+  };
+}
+
 export interface ModelConnectionInput {
   id?: string;
   provider: string;
