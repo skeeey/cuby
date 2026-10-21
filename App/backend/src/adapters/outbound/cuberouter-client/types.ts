@@ -41,6 +41,24 @@ export interface CuberouterRegistrationRequirements {
   serverAddress: string | null;
 }
 
+/** How the instance's public status says quotas should be shown. */
+export type CuberouterCurrencyDisplayType = "USD" | "CNY" | "TOKENS" | "CUSTOM";
+
+/**
+ * The display currency the instance publishes on `/api/status`. The instance stores quota in
+ * units where `quotaPerUnit` equals one USD; every money display is
+ * `quota / quotaPerUnit * usdToCurrencyRate`.
+ */
+export interface CuberouterCurrencySettings {
+  displayType: CuberouterCurrencyDisplayType;
+  /** Quota units that equal one USD (500,000 on the instances this was built against). */
+  quotaPerUnit: number;
+  /** 1 USD in the display currency; 1 for USD, `usd_exchange_rate` for CNY, custom rate otherwise. */
+  usdToCurrencyRate: number;
+  /** `$`, `¥`, the configured custom symbol (HKD), or empty when displaying raw quota. */
+  symbol: string;
+}
+
 /** An organization the signed-in member belongs to, as that instance numbers it. */
 export interface CuberouterOrganization {
   id: string;
@@ -96,6 +114,8 @@ export interface CuberouterClient {
   refreshSession(refreshToken: string): Promise<CuberouterAccess>;
   /** Reads the instance's public status so the form can match what it will accept. */
   getRegistrationRequirements(options?: { timeoutMs?: number }): Promise<CuberouterRegistrationRequirements>;
+  /** Reads the quota display currency the model panel uses for balances. */
+  getCurrencySettings(): Promise<CuberouterCurrencySettings>;
   /** Asks the instance to email a verification code. */
   sendEmailVerificationCode(email: string): Promise<void>;
   /**

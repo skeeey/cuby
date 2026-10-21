@@ -200,6 +200,71 @@ describe("cuberouter client", () => {
     ).resolves.toEqual({ emailVerificationRequired: false, turnstileRequired: false, serverAddress: null });
   });
 
+  it("maps the instance's CNY quota display settings", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        message: "",
+        data: {
+          quota_display_type: "CNY",
+          quota_per_unit: 500000,
+          usd_exchange_rate: 7.3,
+          custom_currency_symbol: "¤",
+          custom_currency_exchange_rate: 1
+        }
+      })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).getCurrencySettings()
+    ).resolves.toEqual({
+      displayType: "CNY",
+      quotaPerUnit: 500000,
+      usdToCurrencyRate: 7.3,
+      symbol: "¥"
+    });
+  });
+
+  it("maps the instance's custom quota display currency (HKD on the Hong Kong line)", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        message: "",
+        data: {
+          quota_display_type: "CUSTOM",
+          quota_per_unit: 500000,
+          usd_exchange_rate: 7.3,
+          custom_currency_symbol: "HKD",
+          custom_currency_exchange_rate: 7.3
+        }
+      })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).getCurrencySettings()
+    ).resolves.toEqual({
+      displayType: "CUSTOM",
+      quotaPerUnit: 500000,
+      usdToCurrencyRate: 7.3,
+      symbol: "HKD"
+    });
+  });
+
+  it("falls back to raw quota when the instance does not describe a display currency", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ success: true, message: "", data: { display_in_currency: false } })
+    );
+
+    await expect(
+      clientWith(fetchImpl as unknown as typeof fetch).getCurrencySettings()
+    ).resolves.toEqual({
+      displayType: "TOKENS",
+      quotaPerUnit: 500000,
+      usdToCurrencyRate: 1,
+      symbol: ""
+    });
+  });
+
   it("sends the email and verification code only when registering with them", async () => {
     const responses = [
       jsonResponse({ success: true, message: "" }),

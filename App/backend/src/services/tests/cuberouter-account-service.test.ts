@@ -24,6 +24,12 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
       turnstileRequired: false,
       serverAddress: "http://127.0.0.1:3000"
     })),
+    getCurrencySettings: vi.fn(async () => ({
+      displayType: "USD",
+      quotaPerUnit: 500000,
+      usdToCurrencyRate: 1,
+      symbol: "$"
+    })),
     sendEmailVerificationCode: vi.fn(async () => undefined),
     listOrganizations: vi.fn(async () => [{ id: "7", name: "yeebo" }]),
     // Echoes the name asked for: the service provisions the per-account token it looked up.
@@ -928,8 +934,42 @@ describe("cuberouter model choices", () => {
     expect(choices.models).toEqual(["deepseek-v4.1-flash", "gpt-oss-120b"]);
   });
 
-  it("keeps only the member's own organization rows and drops disabled personal keys' usability", async () => {
+  it("carries the instance's display currency for the balance", async () => {
+    const currency = {
+      displayType: "CUSTOM" as const,
+      quotaPerUnit: 500000,
+      usdToCurrencyRate: 7.3,
+      symbol: "HKD"
+    };
+    const client = fakeClient({ getCurrencySettings: vi.fn(async () => currency) });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    const choices = await service.readModelChoices();
+
+    expect(choices.currency).toEqual(currency);
+  });
+
+  it("falls back to raw quota when the instance will not describe its display currency", async () => {
+    // Currency is decoration: a failed /api/status must not take the key list and models with it.
     const client = fakeClient({
+      getCurrencySettings: vi.fn(async () => {
+        throw new Error("status boom");
+      })
+    });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    const choices = await service.readModelChoices();
+
+    expect(choices.currency).toEqual({
+      displayType: "TOKENS",
+      quotaPerUnit: 500000,
+      usdToCurrencyRate: 1,
+      symbol: ""
+    });
+    expect(choices.keys).toHaveLength(2);
+  });
+
+  it("keeps only the member's own organization rows and drops disabled personal keys' usability", async () => {    const client = fakeClient({
       listMyOrganizationTokens: vi.fn(async () => [
         { id: 11, name: "mine", key: "sk-mine", status: 1, responsibleUserId: 7 },
         { id: 12, name: "someone-else", key: "sk-other", status: 1, responsibleUserId: 99 }

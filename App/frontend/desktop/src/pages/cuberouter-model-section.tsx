@@ -26,6 +26,7 @@ import {
 } from "../state/cuberouter-key-selection.js";
 import { ModelAssignmentSection } from "./model-assignment-section.js";
 import { ModelLibrarySection } from "./model-library-section.js";
+import { formatCuberouterRemaining } from "./cuberouter-money.js";
 import type { StoredConnectionTestState } from "./model-workspace-connection-test-state.js";
 
 const PROTOCOL = "openai-chat-completions" as const;
@@ -47,7 +48,7 @@ export interface CuberouterModelSectionProps {
 }
 
 export function CuberouterModelSection(props: CuberouterModelSectionProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [choices, setChoices] = useState<CuberouterModelChoicesView | null>(null);
   const [choicesError, setChoicesError] = useState<CuberouterChoicesError | null>(null);
   const [workspace, setWorkspace] = useState<ModelWorkspace>(() => createModelWorkspace(props.seedConfig));
@@ -305,7 +306,13 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
                 {" · "}
                 {key.billing.remainingQuota === null
                   ? t("settings.cuberouterModel.balanceUnknown")
-                  : t("settings.cuberouterModel.remaining", { amount: String(key.billing.remainingQuota) })}
+                  : t("settings.cuberouterModel.remaining", {
+                      amount: formatCuberouterRemaining(
+                        key.billing.remainingQuota,
+                        choices?.currency,
+                        language
+                      )
+                    })}
               </span>
               {key.status !== undefined && key.status !== 1 && (
                 <span className="shrink-0 rounded-tag bg-canvas-oat px-2 py-0.5 text-[10px] text-text-ink/50">
