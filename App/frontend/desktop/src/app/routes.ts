@@ -136,6 +136,20 @@ export interface ResolvedMainWindowRouteTarget {
   agentChatId: string | null;
 }
 
+/**
+ * Keeps a cuberouter-only build on its login page while signed out.
+ *
+ * The welcome page is the whole signed-out surface for this build: a deep link, a launch
+ * override or a stale pet route must not reach any page the session could not open.
+ */
+export function resolveCuberouterSignedOutRoute(input: {
+  cuberouterAccountBackend: boolean;
+  authenticated: boolean;
+  path: AppRoutePath;
+}): AppRoutePath {
+  return input.cuberouterAccountBackend && !input.authenticated ? "/welcome" : input.path;
+}
+
 /** Handles resolve initial view. */
 export function resolveInitialView(input: ResolveInitialViewInput): AppRoutePath {
   if (input.bootstrap.app.userMode === "account") {

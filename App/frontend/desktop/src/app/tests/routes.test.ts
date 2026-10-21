@@ -22,6 +22,7 @@ import {
   resolveByokEntry,
   resolveByokModelCompletion,
   resolveInitialView,
+  resolveCuberouterSignedOutRoute,
   resolveLaunchInitialView,
   resolvePostLoginRoute,
   resolvePostOnboardingRoute,
@@ -1131,6 +1132,34 @@ describe("desktop route table", () => {
     expect(resolvePreferredLaunchMode({ defaultLaunchMode: "full", lastLaunchMode: "pet" })).toBe("full");
     expect(resolvePreferredLaunchMode({ defaultLaunchMode: "last", lastLaunchMode: "pet" })).toBe("pet");
     expect(resolvePreferredLaunchMode({ defaultLaunchMode: "last", lastLaunchMode: "full" })).toBe("full");
+  });
+});
+
+describe("resolveCuberouterSignedOutRoute", () => {
+  it("keeps a signed-out cuberouter build on the login page", () => {
+    expect(resolveCuberouterSignedOutRoute({
+      cuberouterAccountBackend: true,
+      authenticated: false,
+      path: "/settings"
+    })).toBe("/welcome");
+    expect(resolveCuberouterSignedOutRoute({
+      cuberouterAccountBackend: true,
+      authenticated: false,
+      path: "/welcome"
+    })).toBe("/welcome");
+  });
+
+  it("leaves authenticated sessions and non-cuberouter builds untouched", () => {
+    expect(resolveCuberouterSignedOutRoute({
+      cuberouterAccountBackend: true,
+      authenticated: true,
+      path: "/settings"
+    })).toBe("/settings");
+    expect(resolveCuberouterSignedOutRoute({
+      cuberouterAccountBackend: false,
+      authenticated: false,
+      path: "/settings"
+    })).toBe("/settings");
   });
 });
 

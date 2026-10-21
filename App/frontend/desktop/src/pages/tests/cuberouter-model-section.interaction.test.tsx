@@ -9,7 +9,7 @@ import { I18nProvider } from "../../i18n/i18n-provider.js";
 import { ApiRequestError } from "../../api/http.js";
 import { CUBEROUTER_KEY_SELECTION_STORAGE_KEY } from "../../state/cuberouter-key-selection.js";
 import { applyCuberouterSelection, createModelWorkspace, maskApiKey } from "../../state/model-workspace.js";
-import { CuberouterModelSection, toggleAgentModel } from "../cuberouter-model-section.js";
+import { CuberouterModelSection } from "../cuberouter-model-section.js";
 
 (globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT = true;
 
@@ -334,17 +334,14 @@ describe("cuberouter model section", () => {
     expect(container.textContent).toContain("退出登录");
   });
 
-  it("assigns instance models per slot and writes one preset per used model", async () => {
+  it("assigns one default chat model and writes one preset per used model", async () => {
     const { configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
 
     await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
     await act(async () => radio("backup-key").click());
     await awaitSave(configClient, 1);
 
-    act(() => pickerToggle().click());
-    act(() => candidateCheckbox("gpt-oss-120b").click());
-    await awaitSave(configClient, 2);
-
+    await chooseRowModel(configClient, "默认对话模型", "gpt-oss-120b", 2);
     await chooseRowModel(configClient, "记忆摘要", "deepseek-v4.1-flash", 3);
     await chooseRowModel(configClient, "技能进化", "deepseek-v4.1-flash", 4);
 
@@ -357,8 +354,38 @@ describe("cuberouter model section", () => {
       .toEqual(["memory_evolution", "memory_summary"]);
     const presetIdOf = (model: string) => presets.find((preset) => preset.model === model)!.presetId;
     expect(written.modelAssignments.byok.agent.candidates).toEqual([presetIdOf("gpt-oss-120b")]);
+    expect(written.modelAssignments.byok.agent.default).toBe(presetIdOf("gpt-oss-120b"));
     expect(written.modelAssignments.byok.memorySummary).toBe(presetIdOf("deepseek-v4.1-flash"));
     expect(written.modelAssignments.byok.memoryEvolution).toBe(presetIdOf("deepseek-v4.1-flash"));
+  });
+
+  it("tests the assigned chat models through the cuberouter endpoint", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: CHOICES.apiBase,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-stored",
+      selection: {
+        agent: { models: ["gpt-oss-120b"], default: "gpt-oss-120b" },
+        memorySummary: "deepseek-v4.1-flash",
+        memoryEvolution: "deepseek-v4.1-flash"
+      }
+    });
+    const { configClient } = await renderSection({
+      seedConfig: { catalog: seeded.catalog, configRevision: "rev-1" }
+    });
+
+    await vi.waitFor(() => expect(container.textContent).toContain("cuby-desktop-alice"));
+    const testButton = [...container.querySelectorAll<HTMLButtonElement>("button")]
+      .find((candidate) => candidate.textContent?.trim() === "测试模型");
+    expect(testButton).toBeInstanceOf(HTMLButtonElement);
+    await act(async () => testButton!.click());
+
+    await vi.waitFor(() => expect(configClient.testModelConfig).toHaveBeenCalledTimes(2));
+    const testedModels = configClient.testModelConfig.mock.calls
+      .map(([config]) => (config as { model: string }).model)
+      .sort();
+    expect(testedModels).toEqual(["deepseek-v4.1-flash", "gpt-oss-120b"]);
+    await vi.waitFor(() => expect(container.textContent).toContain("连接成功"));
   });
 
   it("disables the assignment controls while a save is in flight", async () => {
@@ -374,15 +401,15 @@ describe("cuberouter model section", () => {
     await act(async () => radio("backup-key").click());
     await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
 
-    expect(pickerToggle().disabled).toBe(true);
+    expect(assignmentCombobox("默认对话模型").disabled).toBe(true);
     expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
 
     await act(async () => releaseSave());
     await awaitIdle();
-    expect(pickerToggle().disabled).toBe(false);
+    expect(assignmentCombobox("默认对话模型").disabled).toBe(false);
   });
 
-  it("keeps the assignment rows and the fold closed while a key reveal is still in flight", async () => {
+  it("keeps the assignment rows disabled while a key reveal is still in flight", async () => {
     let revealKey: () => void = () => {};
     const { configClient } = await renderSection({
       choices: async () => ({
@@ -395,16 +422,14 @@ describe("cuberouter model section", () => {
     });
 
     await vi.waitFor(() => expect(radio("my-own-key").disabled).toBe(false));
-    await act(async () => advancedToggle().click());
     act(() => radio("my-own-key").click());
 
     // The key's save has not started yet — its plaintext is still being revealed — but every
     // other control waits for the whole key action, so no second save can slip into that window.
     expect(configClient.saveModelCatalog).not.toHaveBeenCalled();
+    expect(assignmentCombobox("默认对话模型").disabled).toBe(true);
     expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
     expect(assignmentCombobox("技能进化").disabled).toBe(true);
-    expect(pickerToggle().disabled).toBe(true);
-    expect(addConnectionButton()!.disabled).toBe(true);
 
     await act(async () => revealKey());
 
@@ -416,14 +441,14 @@ describe("cuberouter model section", () => {
     expect(assignmentCombobox("记忆摘要").disabled).toBe(false);
   });
 
-  it("shows the built-in local embedding row without offering other choices", async () => {
+  it("renders the four model rows with the same assignment layout", async () => {
     await renderSection();
 
     await vi.waitFor(() => expect(container.textContent).toContain("本地向量模型（内建）"));
-    expect(container.textContent).toContain("Embedding 检索");
     expect([...container.querySelectorAll(".model-assignment-label")].map((node) => node.textContent))
-      .toEqual(["记忆摘要", "技能进化"]);
-    expect(container.querySelectorAll('[role="combobox"]')).toHaveLength(2);
+      .toEqual(["默认对话模型", "记忆摘要", "技能进化", "Embedding 检索"]);
+    expect(container.querySelectorAll('[role="combobox"]')).toHaveLength(4);
+    expect(assignmentCombobox("Embedding 检索").disabled).toBe(true);
     expect(container.querySelector('button[aria-label*="ASR"]')).toBeNull();
     expect(container.querySelector('button[aria-label*="生图"]')).toBeNull();
   });
@@ -432,15 +457,15 @@ describe("cuberouter model section", () => {
     await renderSection({ choices: async () => ({ ...CHOICES, models: [] }) });
 
     await vi.waitFor(() => expect(container.textContent).toContain("实例未返回可选模型。"));
-    expect(pickerToggle().disabled).toBe(true);
+    expect(assignmentCombobox("默认对话模型").disabled).toBe(true);
     expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
     expect(assignmentCombobox("技能进化").disabled).toBe(true);
   });
 
   it("surfaces models that left the instance list so they stay visible and re-choosable", async () => {
     // The stored draft names two models the instance no longer lists: the memory row must show
-    // the real name instead of the 未配置 placeholder, the conversation picker must still offer
-    // the agent model (so it can be unchecked), and one hint must say the list changed.
+    // the real name instead of the 未配置 placeholder, the default row must still offer the
+    // stale agent model, and one hint must say the list changed.
     const seeded = applyCuberouterSelection(createModelWorkspace(null), {
       apiBase: CHOICES.apiBase,
       protocol: "openai-chat-completions",
@@ -461,52 +486,13 @@ describe("cuberouter model section", () => {
     expect(assignmentCombobox("记忆摘要").textContent).not.toContain("未配置");
     // The row still pointing at a listed model is untouched.
     expect(assignmentCombobox("技能进化").textContent).toContain("gpt-oss-120b");
+    expect(assignmentCombobox("默认对话模型").textContent).toContain("gpt-oss-120b");
 
-    act(() => pickerToggle().click());
-    expect(candidateCheckbox("retired-agent")).toBeInstanceOf(HTMLButtonElement);
-    expect(candidateCheckbox("gpt-oss-120b")).toBeInstanceOf(HTMLButtonElement);
+    act(() => assignmentCombobox("默认对话模型").click());
+    expect(option("retired-agent")).not.toBeNull();
+    expect(option("gpt-oss-120b")).not.toBeNull();
 
     expect(container.textContent).toContain("有模型已不在实例可选列表中，请重新选择。");
-  });
-
-  it("keeps one agent model selected and repairs a default that left the list", () => {
-    expect(toggleAgentModel({ models: ["gpt-oss-120b"] }, "gpt-oss-120b"))
-      .toEqual({ models: ["gpt-oss-120b"] });
-    expect(toggleAgentModel({ models: ["a", "b"], default: "a" }, "b"))
-      .toEqual({ models: ["a"], default: "a" });
-    expect(toggleAgentModel({ models: ["a", "b"], default: "b" }, "b"))
-      .toEqual({ models: ["a"], default: "a" });
-    expect(toggleAgentModel({ models: ["a"], default: "a" }, "b"))
-      .toEqual({ models: ["a", "b"], default: "a" });
-  });
-
-  it("keeps the generic library behind an advanced fold, sharing the same save path", async () => {
-    const { configClient } = await renderSection();
-
-    await vi.waitFor(() => expect(advancedToggle()).toBeInstanceOf(HTMLButtonElement));
-    expect(advancedToggle().getAttribute("aria-expanded")).toBe("false");
-    expect(addConnectionButton()).toBeNull();
-
-    await act(async () => advancedToggle().click());
-
-    expect(advancedToggle().getAttribute("aria-expanded")).toBe("true");
-    expect(addConnectionButton()).toBeInstanceOf(HTMLButtonElement);
-    // 「高级」里的连接编辑与 key/分配共用同一份 workspace：一次保存带上整份目录。
-    await act(async () => addConnectionButton()!.click());
-    const dialog = container.querySelector<HTMLElement>('[role="dialog"]');
-    expect(dialog?.textContent).toContain("API 地址");
-    expect(configClient.saveModelCatalog).not.toHaveBeenCalled();
-
-    // The fold hands its own client down: 测试连接 must reach the real one, not a simulated pass.
-    const apiKeyField = dialog!.querySelector<HTMLInputElement>('input[type="password"]');
-    expect(apiKeyField).toBeInstanceOf(HTMLInputElement);
-    act(() => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
-        .call(apiKeyField, "sk-advanced");
-      apiKeyField!.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    await act(async () => testConnectionButton(dialog!).click());
-    expect(configClient.testModelConfig).toHaveBeenCalledTimes(1);
   });
 
   it("retries once when the catalog changed under a save", async () => {
@@ -556,36 +542,6 @@ describe("cuberouter model section", () => {
     // The refused pick is gone: the row is back on what the catalog still holds.
     expect(assignmentCombobox("技能进化").textContent).toContain("未配置");
     expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
-  });
-
-  it("saves an advanced connection edit through the panel and replays the draft from the new catalog", async () => {
-    const { configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
-
-    await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
-    await act(async () => radio("backup-key").click());
-    await awaitSave(configClient, 1);
-    await chooseRowModel(configClient, "记忆摘要", "deepseek-v4.1-flash", 2);
-    expect(assignmentCombobox("记忆摘要").textContent).toContain("deepseek-v4.1-flash");
-
-    await act(async () => advancedToggle().click());
-    await act(async () => editConnectionButton().click());
-    const dialog = container.querySelector<HTMLElement>('[role="dialog"]');
-    expect(dialog).not.toBeNull();
-    const endpointField = [...dialog!.querySelectorAll<HTMLInputElement>("input")]
-      .find((input) => input.value === CHOICES.apiBase);
-    expect(endpointField).toBeInstanceOf(HTMLInputElement);
-    act(() => {
-      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")!.set!
-        .call(endpointField, "https://other.example/v1");
-      endpointField!.dispatchEvent(new Event("input", { bubbles: true }));
-    });
-    await act(async () => dialog!.querySelector<HTMLButtonElement>('button[aria-label="保存"]')!.click());
-    await awaitSave(configClient, 3);
-
-    // One save carried the whole catalog; the line moved, so the draft follows storage again.
-    const written = configClient.saveModelCatalog.mock.calls.at(-1)![0] as ModelConfigInput;
-    expect(written.providers[0]!.endpoints[0]!.apiBase).toBe("https://other.example/v1");
-    expect(assignmentCombobox("记忆摘要").textContent).toContain("未配置");
   });
 
   type SectionConfigClient = Awaited<ReturnType<typeof renderSection>>["configClient"];
@@ -653,60 +609,6 @@ describe("cuberouter model section", () => {
       .find((candidate) => candidate.textContent?.includes("重新获取 key"));
     if (!target) {
       throw new Error("refresh keys button not found");
-    }
-    return target;
-  }
-
-  /** The panel's 「高级」 fold, which hides the generic connection library. */
-  function advancedToggle(): HTMLButtonElement {
-    const target = [...container.querySelectorAll<HTMLButtonElement>("button")]
-      .find((candidate) => candidate.textContent?.trim() === "高级");
-    if (!target) {
-      throw new Error("advanced fold toggle not found");
-    }
-    return target;
-  }
-
-  /** The library's add-connection button; null while the fold keeps the library unmounted. */
-  function addConnectionButton(): HTMLButtonElement | null {
-    return [...container.querySelectorAll<HTMLButtonElement>("button")]
-      .find((candidate) => candidate.getAttribute("aria-label") === "添加配置") ?? null;
-  }
-
-  /** The library's per-connection edit button inside an open fold. */
-  function editConnectionButton(): HTMLButtonElement {
-    const target = [...container.querySelectorAll<HTMLButtonElement>("button")]
-      .find((candidate) => /^编辑 .+ 配置$/.test(candidate.getAttribute("aria-label") ?? ""));
-    if (!target) {
-      throw new Error("edit connection button not found");
-    }
-    return target;
-  }
-
-  /** The connection editor's 测试连接 button. */
-  function testConnectionButton(dialog: HTMLElement): HTMLButtonElement {
-    const target = [...dialog.querySelectorAll<HTMLButtonElement>("button")]
-      .find((candidate) => candidate.textContent?.trim() === "测试");
-    if (!target) {
-      throw new Error("connection test button not found");
-    }
-    return target;
-  }
-
-  function pickerToggle(): HTMLButtonElement {
-    const target = [...container.querySelectorAll<HTMLButtonElement>("button")]
-      .find((candidate) => candidate.textContent?.includes("个已选"));
-    if (!target) {
-      throw new Error("conversation picker toggle not found");
-    }
-    return target;
-  }
-
-  function candidateCheckbox(model: string): HTMLButtonElement {
-    const target = [...container.querySelectorAll<HTMLButtonElement>('button[role="checkbox"]')]
-      .find((candidate) => candidate.textContent?.includes(model));
-    if (!target) {
-      throw new Error(`candidate checkbox not found: ${model}`);
     }
     return target;
   }

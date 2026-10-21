@@ -1043,7 +1043,7 @@ describe("SettingsPageView", () => {
       "settings/updated"
     ]);
     const source = readFileSync(settingsPageSourcePath, "utf8");
-    expect(source).toContain('if (nextUserMode === "unset")');
+    expect(source).not.toContain('if (nextUserMode === "unset")');
     expect(source).toContain('dispatch(appActions.navigate("/welcome"))');
   });
 
