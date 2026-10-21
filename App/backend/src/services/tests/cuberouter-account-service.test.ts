@@ -14,6 +14,7 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
       accessExpiresAt: 4102444800,
       refreshToken: "rt-1"
     })),
+    changePassword: vi.fn(async () => ({ accessToken: "jwt-2", accessExpiresAt: 4102444800 })),
     refreshSession: vi.fn(async () => ({
       accessToken: "jwt-1",
       accessExpiresAt: 4102444800,
@@ -160,6 +161,7 @@ function createTestService(input: {
           refreshToken: "rt-1"
         };
       },
+      changePassword: async () => ({ accessToken: "jwt-password-changed", accessExpiresAt: 4102444800 }),
       refreshSession: async () => ({ accessToken: `jwt-refreshed`, accessExpiresAt: 4102444800, refreshToken: "rt-2" }),
       getRegistrationRequirements: async () => {
         input.onRequirements?.(url);
@@ -1015,6 +1017,48 @@ describe("cuberouter model choices", () => {
     const service = singleNodeService(client, authenticatedRepository());
 
     await expect(service.getPersonalKey(41)).resolves.toEqual({ key: "sk-plain" });
+  });
+});
+
+describe("cuberouter password change", () => {
+  it("changes the password and stores the rotated access token", async () => {
+    const client = fakeClient();
+    const repository = authenticatedRepository({ ...LIVE_CREDENTIAL });
+    const service = singleNodeService(client, repository);
+
+    await expect(
+      service.changePassword({ originalPassword: "Passw0rd1", newPassword: "Passw0rd2" })
+    ).resolves.toEqual({ ok: true });
+
+    expect(client.changePassword).toHaveBeenCalledWith("jwt-live", {
+      originalPassword: "Passw0rd1",
+      newPassword: "Passw0rd2"
+    });
+    expect(repository.setCuberouterCredential).toHaveBeenCalledWith({
+      accessToken: "jwt-2",
+      accessExpiresAt: 4102444800,
+      refreshToken: "rt-1"
+    });
+  });
+
+  it("refuses to change the password without a session", async () => {
+    const service = singleNodeService(fakeClient(), {
+      get: () => ({ authenticated: false, profile: {} }),
+      getCloudUuid: () => null,
+      getAuthChannel: () => null,
+      getCuberouterCredential: () => null,
+      setCuberouterCredential: vi.fn(),
+      clearCuberouterCredential: vi.fn(),
+      upsert: vi.fn(),
+      clear: vi.fn()
+    } as any);
+
+    await expect(
+      service.changePassword({ originalPassword: "Passw0rd1", newPassword: "Passw0rd2" })
+    ).rejects.toMatchObject({
+      code: "invalid_argument",
+      message: "尚未登录 cuberouter 账号"
+    });
   });
 });
 

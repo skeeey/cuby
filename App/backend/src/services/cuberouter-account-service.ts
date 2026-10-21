@@ -1,7 +1,8 @@
 /** Cuberouter account service module. */
 import type {
   CuberouterAuthInput,
-  CuberouterAuthResult
+  CuberouterAuthResult,
+  OkResponse
 } from "@memmy/local-api-contracts";
 import {
   DESKTOP_TOKEN_NAME,
@@ -125,6 +126,11 @@ export interface CuberouterAccountService {
   readModelChoices(): Promise<CuberouterModelChoices>;
   /** One personal key's plaintext, read at the moment the user selects it. */
   getPersonalKey(tokenId: number): Promise<{ key: string }>;
+  /**
+   * Changes the signed-in account's password. The instance verifies the current password and
+   * rotates this session's access token; every other session is revoked.
+   */
+  changePassword(input: { originalPassword: string; newPassword: string }): Promise<OkResponse>;
   /** Re-runs the instance-side find-or-create of the signed-in account's key, without a login. */
   reprovisionKey(): Promise<{ apiKey: string; apiBase: string; model: string }>;
   logout(): Promise<{ ok: true }>;
@@ -541,6 +547,32 @@ export function createCuberouterAccountService(
     return { key: await client.getPersonalTokenKey(accessToken, tokenId) };
   }
 
+  /**
+   * Changes the account password. The instance invalidates the old access token as part of the
+   * change, so the rotated one it answers with has to replace the stored credential before the
+   * next call — otherwise every request after a successful change would answer 401.
+   */
+  async function changePassword(input: {
+    originalPassword: string;
+    newPassword: string;
+  }): Promise<OkResponse> {
+    if (!options.accountSessionRepository.get().authenticated) {
+      throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
+    }
+    const { client } = clientForNode(await currentOrProbedNodeId());
+    const accessToken = await resolveAccessToken(client);
+    const rotated = await client.changePassword(accessToken, input);
+    const credential = options.accountSessionRepository.getCuberouterCredential();
+    options.accountSessionRepository.setCuberouterCredential({
+      accessToken: rotated.accessToken,
+      accessExpiresAt: rotated.accessExpiresAt,
+      // The refresh token is not rotated by a password change, and a session that predates
+      // credentials stays without one — renewal then reports an expired session, as before.
+      refreshToken: credential?.refreshToken ?? null
+    });
+    return { ok: true };
+  }
+
   return {
     async register(input) {
       // Resolved once, before the try: the account must be created and then logged into on the
@@ -638,6 +670,8 @@ export function createCuberouterAccountService(
     readModelChoices: asApiErrors(readModelChoices),
 
     getPersonalKey: asApiErrors(getPersonalKey),
+
+    changePassword: asApiErrors(changePassword),
 
     reprovisionKey: asApiErrors(async () => {
       const session = options.accountSessionRepository.get();

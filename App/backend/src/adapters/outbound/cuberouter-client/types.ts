@@ -108,6 +108,14 @@ export interface CuberouterClient {
   }): Promise<void>;
   login(input: { username: string; password: string }): Promise<CuberouterSession>;
   /**
+   * Changes the signed-in account's password. Cuberouter verifies `originalPassword` and
+   * returns a new access token for this session; every other session is revoked.
+   */
+  changePassword(
+    accessToken: string,
+    input: { originalPassword: string; newPassword: string }
+  ): Promise<{ accessToken: string; accessExpiresAt: number }>;
+  /**
    * Renews the access token from the refresh cookie the login handed back. The instance
    * rotates the cookie on every call, so the returned one replaces the stored one.
    */

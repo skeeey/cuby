@@ -292,6 +292,43 @@ describe("account local api routes", () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it("changes the cuberouter password through the account service", async () => {
+    const calls: string[] = [];
+    app = createServer({
+      cuberouterAccount: {
+        async changePassword(input: { originalPassword: string; newPassword: string }) {
+          calls.push(`${input.originalPassword}->${input.newPassword}`);
+          return { ok: true };
+        }
+      }
+    });
+
+    const response = await injectJson("POST", "/api/account/cuberouter/password", {
+      originalPassword: "Passw0rd1",
+      newPassword: "Passw0rd2"
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ ok: true });
+    expect(calls).toEqual(["Passw0rd1->Passw0rd2"]);
+  });
+
+  it("rejects a password change without the current password", async () => {
+    app = createServer({
+      cuberouterAccount: {
+        async changePassword() {
+          throw new Error("changePassword should not be called");
+        }
+      }
+    });
+
+    const response = await injectJson("POST", "/api/account/cuberouter/password", {
+      newPassword: "Passw0rd2"
+    });
+
+    expect(response.statusCode).toBe(400);
+  });
+
   it("serves the cuberouter model choices view", async () => {
     app = createServer({
       cuberouterAccount: {
@@ -453,6 +490,9 @@ function unusedCuberouterAccount() {
     },
     async getPersonalKey() {
       throw new Error("getPersonalKey not used");
+    },
+    async changePassword() {
+      throw new Error("changePassword not used");
     },
     async reprovisionKey() {
       throw new Error("reprovisionKey not used");

@@ -84,6 +84,27 @@ describe("cuberouter client", () => {
     expect((init.headers as Record<string, string>).cookie).toBe("new_api_refresh=rt-1");
   });
 
+  it("changes the password with the current one and returns the rotated access token", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ success: true, message: "", data: { access_token: "jwt-2", access_expires_at: 1790456999 } })
+    );
+
+    const next = await clientWith(fetchImpl as unknown as typeof fetch).changePassword("jwt-1", {
+      originalPassword: "Passw0rd1",
+      newPassword: "Passw0rd2"
+    });
+
+    expect(next).toEqual({ accessToken: "jwt-2", accessExpiresAt: 1790456999 });
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://127.0.0.1:3000/api/user/self");
+    expect(init.method).toBe("PUT");
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer jwt-1");
+    expect(JSON.parse(String(init.body))).toEqual({
+      original_password: "Passw0rd1",
+      password: "Passw0rd2"
+    });
+  });
+
   it("reports a rejected access token as an expired session, not a plain rejection", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ success: false, message: "无权进行此操作" }, 401));
 

@@ -8,6 +8,7 @@ import {
   CuberouterModelChoicesViewSchema,
   CuberouterNodeProbeViewSchema,
   CuberouterNodesViewSchema,
+  CuberouterPasswordChangeInputSchema,
   CuberouterPersonalKeyViewSchema,
   CuberouterProvisioningSchema,
   CuberouterRegistrationRequirementsSchema,
@@ -22,6 +23,7 @@ import {
   type CuberouterModelChoicesView,
   type CuberouterNodeProbeView,
   type CuberouterNodesView,
+  type CuberouterPasswordChangeInput,
   type CuberouterPersonalKeyView,
   type CuberouterProvisioning,
   type CuberouterRegistrationRequirements,
@@ -50,6 +52,8 @@ export interface AccountClient {
   getModelChoices(): Promise<CuberouterModelChoicesView>;
   /** Reads one personal key's plaintext, at the moment the user selects it. */
   revealPersonalKey(tokenId: number): Promise<CuberouterPersonalKeyView>;
+  /** Changes the signed-in cuberouter account's password; other sessions are revoked. */
+  changePassword(input: CuberouterPasswordChangeInput): Promise<OkResponse>;
   /** Re-runs the instance-side find-or-create of the account's key, without a fresh login. */
   reprovisionKey(): Promise<CuberouterProvisioning>;
 }
@@ -175,6 +179,16 @@ export function createHttpAccountClient(config: RuntimeConfig): AccountClient {
         schema: CuberouterPersonalKeyViewSchema,
         init: { method: "POST" },
         body: {}
+      });
+    },
+
+    async changePassword(input) {
+      return requestJson({
+        config,
+        path: "/api/account/cuberouter/password",
+        schema: OkResponseSchema,
+        init: { method: "POST" },
+        body: CuberouterPasswordChangeInputSchema.parse(input)
       });
     },
 

@@ -122,6 +122,31 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
       };
     },
 
+    async changePassword(accessToken, input) {
+      const { data } = await requestRaw<Record<string, unknown>>(
+        fetchImpl,
+        baseUrl,
+        options.timeoutMs,
+        "/api/user/self",
+        {
+          method: "PUT",
+          accessToken,
+          body: {
+            original_password: input.originalPassword,
+            password: input.newPassword
+          }
+        }
+      );
+      // The instance rotates this session's access token when the password changes and
+      // invalidates the old one, so a response without a replacement is unusable.
+      const nextAccessToken = readString(data.access_token);
+      const accessExpiresAt = readEpochSeconds(data.access_expires_at);
+      if (!nextAccessToken || accessExpiresAt === null) {
+        throw cuberouterError("rejected", "cuberouter 改密响应缺少新的访问令牌");
+      }
+      return { accessToken: nextAccessToken, accessExpiresAt };
+    },
+
     async refreshSession(refreshToken) {
       const { data, refreshToken: rotated } = await requestRaw<Record<string, unknown>>(
         fetchImpl,
@@ -299,7 +324,7 @@ async function request<T>(
 }
 
 interface CuberouterRequestInput {
-  method: "GET" | "POST";
+  method: "GET" | "POST" | "PUT";
   body?: Record<string, unknown>;
   accessToken?: string;
   /** Extra request headers (organization routes need the account-context pair). */

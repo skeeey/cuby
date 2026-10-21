@@ -1247,6 +1247,13 @@ export const CuberouterAuthInputSchema = z.object({
 });
 export type CuberouterAuthInput = z.infer<typeof CuberouterAuthInputSchema>;
 
+/** 修改 cuberouter 账号密码的入参：当前密码用于服务端二次验证。 */
+export const CuberouterPasswordChangeInputSchema = z.object({
+    originalPassword: z.string().min(1),
+    newPassword: z.string().min(8).max(20)
+});
+export type CuberouterPasswordChangeInput = z.infer<typeof CuberouterPasswordChangeInputSchema>;
+
 /** 线路查询参数：读取某个具体节点的注册要求。 */
 export const CuberouterNodeIdQuerySchema = z.object({
     nodeId: z.string().trim().min(1).max(32).optional()
