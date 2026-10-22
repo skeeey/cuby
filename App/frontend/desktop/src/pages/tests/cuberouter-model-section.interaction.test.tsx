@@ -221,7 +221,10 @@ describe("cuberouter model section", () => {
     window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
       "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
     }));
-    const { accountClient, configClient } = await renderSection({ storedConfig: storedConfigWithEndpoint() });
+    const { accountClient, configClient } = await renderSection({
+      storedConfig: storedConfigWithEndpoint(),
+      keyModels: async () => ({ models: ["deepseek-v4.1-flash"] })
+    });
 
     await vi.waitFor(() => expect(refreshKeysButton()).toBeInstanceOf(HTMLButtonElement));
     await act(async () => refreshKeysButton().click());
@@ -250,6 +253,7 @@ describe("cuberouter model section", () => {
     }));
     const { accountClient, configClient } = await renderSection({
       storedConfig: storedConfigWithEndpoint(),
+      keyModels: async () => ({ models: ["deepseek-v4.1-flash"] }),
       reprovision: async () => ({
         apiKey: "sk-fresh",
         apiBase: CHOICES.apiBase,
@@ -347,13 +351,17 @@ describe("cuberouter model section", () => {
 
     const written = configClient.saveModelCatalog.mock.calls.at(-1)![0] as ModelConfigInput;
     const presets = written.providers[0]!.models;
-    // One preset per used model, not per slot: the shared model serves both memory slots.
+    // Every allowed model is enrolled as an agent candidate; the shared memory model also
+    // carries the two memory capabilities.
     expect(presets.map((preset) => preset.model).sort()).toEqual(["deepseek-v4.1-flash", "gpt-oss-120b"]);
     expect(presets.find((preset) => preset.model === "gpt-oss-120b")!.capabilities).toEqual(["agent"]);
-    expect(presets.find((preset) => preset.model === "deepseek-v4.1-flash")!.capabilities)
-      .toEqual(["memory_evolution", "memory_summary"]);
+    expect(presets.find((preset) => preset.model === "deepseek-v4.1-flash")!.capabilities.sort())
+      .toEqual(["agent", "memory_evolution", "memory_summary"]);
     const presetIdOf = (model: string) => presets.find((preset) => preset.model === model)!.presetId;
-    expect(written.modelAssignments.byok.agent.candidates).toEqual([presetIdOf("gpt-oss-120b")]);
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([
+      presetIdOf("deepseek-v4.1-flash"),
+      presetIdOf("gpt-oss-120b")
+    ]);
     expect(written.modelAssignments.byok.agent.default).toBe(presetIdOf("gpt-oss-120b"));
     expect(written.modelAssignments.byok.memorySummary).toBe(presetIdOf("deepseek-v4.1-flash"));
     expect(written.modelAssignments.byok.memoryEvolution).toBe(presetIdOf("deepseek-v4.1-flash"));
@@ -375,6 +383,9 @@ describe("cuberouter model section", () => {
     });
 
     await vi.waitFor(() => expect(container.textContent).toContain("cuby-desktop-alice"));
+    // The panel enrolls the instance's other models first; wait for that one migration save.
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    await awaitIdle();
     const testButton = [...container.querySelectorAll<HTMLButtonElement>("button")]
       .find((candidate) => candidate.textContent?.trim() === "测试模型");
     expect(testButton).toBeInstanceOf(HTMLButtonElement);
@@ -454,18 +465,18 @@ describe("cuberouter model section", () => {
   });
 
   it("shows the instance message and disables the assignment controls when it offers no models", async () => {
-    await renderSection({ choices: async () => ({ ...CHOICES, models: [] }) });
+    await renderSection({
+      choices: async () => ({ ...CHOICES, models: [] }),
+      keyModels: async () => ({ models: [] })
+    });
 
-    await vi.waitFor(() => expect(container.textContent).toContain("实例未返回可选模型。"));
+    await vi.waitFor(() => expect(container.textContent).toContain("该 API Key 未开放任何模型"));
     expect(assignmentCombobox("默认对话模型").disabled).toBe(true);
     expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
     expect(assignmentCombobox("技能进化").disabled).toBe(true);
   });
 
-  it("surfaces models that left the instance list so they stay visible and re-choosable", async () => {
-    // The stored draft names two models the instance no longer lists: the memory row must show
-    // the real name instead of the 未配置 placeholder, the default row must still offer the
-    // stale agent model, and one hint must say the list changed.
+  it("removes models the selected key does not allow and falls back the default", async () => {
     const seeded = applyCuberouterSelection(createModelWorkspace(null), {
       apiBase: CHOICES.apiBase,
       protocol: "openai-chat-completions",
@@ -477,22 +488,60 @@ describe("cuberouter model section", () => {
       }
     });
 
-    await renderSection({
+    const { configClient } = await renderSection({
       choices: async () => ({ ...CHOICES, models: ["deepseek-v4.1-flash", "gpt-oss-120b"] }),
+      keyModels: async () => ({ models: ["gpt-oss-120b"] }),
       seedConfig: { catalog: seeded.catalog, configRevision: "rev-1" }
     });
 
-    await vi.waitFor(() => expect(assignmentCombobox("记忆摘要").textContent).toContain("retired-summary"));
-    expect(assignmentCombobox("记忆摘要").textContent).not.toContain("未配置");
-    // The row still pointing at a listed model is untouched.
-    expect(assignmentCombobox("技能进化").textContent).toContain("gpt-oss-120b");
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    await awaitIdle();
+
+    const written = configClient.saveModelCatalog.mock.calls[0]![0] as ModelConfigInput;
+    const provider = written.providers[0]!;
+    const presetId = provider.models.find((preset) => preset.model === "gpt-oss-120b")!.presetId;
+    expect(provider.models.map((preset) => preset.model)).toEqual(["gpt-oss-120b"]);
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([presetId]);
+    expect(written.modelAssignments.byok.agent.default).toBe(presetId);
+    expect(written.modelAssignments.byok.memorySummary).toBe(presetId);
+    expect(written.modelAssignments.byok.memoryEvolution).toBe(presetId);
     expect(assignmentCombobox("默认对话模型").textContent).toContain("gpt-oss-120b");
+    expect(assignmentCombobox("记忆摘要").textContent).toContain("gpt-oss-120b");
+    expect(container.textContent).toContain("部分模型不在当前 Key 的允许列表中");
+  });
 
-    act(() => assignmentCombobox("默认对话模型").click());
-    expect(option("retired-agent")).not.toBeNull();
-    expect(option("gpt-oss-120b")).not.toBeNull();
+  it("restricts the selection when switching to a key that allows fewer models", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: CHOICES.apiBase,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-stored",
+      selection: {
+        agent: { models: ["deepseek-v4.1-flash"], default: "deepseek-v4.1-flash" },
+        memorySummary: "deepseek-v4.1-flash",
+        memoryEvolution: "deepseek-v4.1-flash"
+      }
+    });
+    const { configClient } = await renderSection({
+      seedConfig: { catalog: seeded.catalog, configRevision: "rev-1" },
+      keyModels: async ({ id }) => ({
+        models: id === 12 ? ["gpt-oss-120b"] : CHOICES.models
+      })
+    });
 
-    expect(container.textContent).toContain("有模型已不在实例可选列表中，请重新选择。");
+    await vi.waitFor(() => expect(radio("backup-key").disabled).toBe(false));
+    await act(async () => radio("backup-key").click());
+    await awaitIdle();
+
+    const written = configClient.saveModelCatalog.mock.calls.at(-1)![0] as ModelConfigInput;
+    const provider = written.providers[0]!;
+    const presetId = provider.models.find((preset) => preset.model === "gpt-oss-120b")!.presetId;
+    expect(provider.endpoints[0]!.apiKey).toBe("sk-backup");
+    expect(provider.models.map((preset) => preset.model)).toEqual(["gpt-oss-120b"]);
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([presetId]);
+    expect(written.modelAssignments.byok.agent.default).toBe(presetId);
+    expect(written.modelAssignments.byok.memorySummary).toBe(presetId);
+    expect(written.modelAssignments.byok.memoryEvolution).toBe(presetId);
+    expect(container.textContent).toContain("部分模型不在当前 Key 的允许列表中");
   });
 
   it("retries once when the catalog changed under a save", async () => {
@@ -548,6 +597,7 @@ describe("cuberouter model section", () => {
 
   async function renderSection(input: {
     choices?: () => Promise<CuberouterModelChoicesView>;
+    keyModels?: (input: { scope: "organization" | "personal"; id: number }) => Promise<{ models: string[] }>;
     reveal?: (tokenId: number) => Promise<{ key: string }>;
     reprovision?: () => Promise<{ apiKey: string; apiBase: string; model: string }>;
     save?: (payload: ModelConfigInput, previous: ModelConfigView) => Promise<{ catalog: ModelConfigView; configRevision: string }>;
@@ -557,9 +607,10 @@ describe("cuberouter model section", () => {
   } = {}) {
     // The local API answers a write with the catalog it stored, and the panel reads that answer
     // back into its workspace: the fake has to keep what it was handed.
-    let stored = input.storedConfig?.catalog ?? createModelWorkspace(null).catalog;
+    let stored = input.storedConfig?.catalog ?? input.seedConfig?.catalog ?? createModelWorkspace(null).catalog;
     const accountClient = {
       getModelChoices: vi.fn(input.choices ?? (async () => CHOICES)),
+      getKeyModels: vi.fn(input.keyModels ?? (async () => ({ models: CHOICES.models }))),
       revealPersonalKey: vi.fn(input.reveal ?? (async () => ({ key: "sk-personal" }))),
       reprovisionKey: vi.fn(input.reprovision ?? (async () => ({
         apiKey: "sk-fresh",

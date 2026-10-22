@@ -4,7 +4,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID,
   type CuberouterKeyOption,
-  type CuberouterModelChoicesView
+  type CuberouterModelChoicesView,
+  type ModelConfigView
 } from "@memmy/local-api-contracts";
 import type { AccountClient } from "../api/account-client.js";
 import { ApiRequestError } from "../api/http.js";
@@ -45,7 +46,7 @@ export interface CuberouterModelSectionProps {
   organizationName: string | null;
   seedConfig?: ModelProviderConfig | null;
   configClient?: Pick<ConfigClient, "getModelConfig" | "saveModelCatalog" | "testModelConfig">;
-  accountClient?: Pick<AccountClient, "getModelChoices" | "revealPersonalKey" | "reprovisionKey">;
+  accountClient?: Pick<AccountClient, "getModelChoices" | "getKeyModels" | "revealPersonalKey" | "reprovisionKey">;
   onConfigSaved?: (config: ModelProviderConfig) => void;
 }
 
@@ -63,6 +64,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     Partial<Record<"agent" | "memorySummary" | "memoryEvolution", ModelAssignmentTestStatus>>
   >({});
   const [testingAssignments, setTestingAssignments] = useState(false);
+  const [keyModels, setKeyModels] = useState<string[] | null>(null);
+  const [keyModelsStatus, setKeyModelsStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
+  const [keyFallbackNotice, setKeyFallbackNotice] = useState(false);
+  const keyModelsCacheRef = useRef(new Map<string, string[]>());
   /** Guards the single save path before a render could re-disable its controls. */
   const saveInFlightRef = useRef(false);
   // A key action starts before its save: revealing a personal key is an await of its own, and
@@ -106,6 +111,68 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
         ? defaultCuberouterKey(choices.keys, props.username)
         : null
     : null;
+
+  /**
+   * Reads the model list the selected key may actually call. `/api/user/models` only knows the
+   * member's groups; the relay's `/v1/models` also applies the token's own model limits.
+   */
+  useEffect(() => {
+    const client = props.accountClient;
+    if (!choices || !selectedKey || !client?.getKeyModels) {
+      setKeyModels(null);
+      setKeyModelsStatus("idle");
+      return;
+    }
+    const cacheKey = `${selectedKey.scope}:${selectedKey.id}`;
+    const cached = keyModelsCacheRef.current.get(cacheKey);
+    if (cached) {
+      setKeyModels(cached);
+      setKeyModelsStatus("ready");
+      return;
+    }
+    let active = true;
+    setKeyFallbackNotice(false);
+    setKeyModels(null);
+    setKeyModelsStatus("loading");
+    void client.getKeyModels({ scope: selectedKey.scope, id: selectedKey.id })
+      .then(({ models }) => {
+        if (!active) return;
+        keyModelsCacheRef.current.set(cacheKey, models);
+        setKeyModels(models);
+        setKeyModelsStatus("ready");
+      })
+      .catch(() => {
+        if (!active) return;
+        setKeyModels(null);
+        setKeyModelsStatus("error");
+      });
+    return () => { active = false; };
+  }, [choices, props.accountClient, selectedKey?.scope, selectedKey?.id]);
+
+  /**
+   * Aligns the catalog with what the selected key may call: every allowed model becomes an agent
+   * candidate (the conversation picker reads that list), a disallowed default falls back to the
+   * first allowed model, and a disallowed memory model does the same. Idempotent: once the saved
+   * selection matches, reconcile returns no change and nothing is written.
+   */
+  useEffect(() => {
+    if (!choices || !selection || savePending || saveInFlightRef.current) return;
+    if (keyModelsStatus === "idle" || keyModelsStatus === "loading") return;
+    const allowed = keyModels ?? choices.models;
+    if (allowed.length === 0) return;
+    if (!catalogHasEndpoint(workspace.catalog, choices.apiBase)) return;
+    const next = reconcileCuberouterSelection(selection, allowed);
+    if (!next.changed) return;
+    if (next.fellBack) setKeyFallbackNotice(true);
+    setSelection(next.selection);
+    void commit((current, apiBase) => applyCuberouterSelection(current, {
+      apiBase,
+      protocol: PROTOCOL,
+      selection: next.selection
+    }));
+    // The save reseeds the draft, after which this effect sees no difference.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [choices, keyModels, keyModelsStatus, savePending, selection, workspace.catalog]);
 
   /** Replays the draft from one workspace: storage is the only truth for which models this line holds. */
   function reseedSelection(from: ModelWorkspace): void {
@@ -155,13 +222,36 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     const id = `${key.scope}:${key.id}`;
     setPendingKeyId(id);
     setAssignmentTests({});
+    setKeyFallbackNotice(false);
     try {
       const plaintext = key.secret ?? (await props.accountClient!.revealPersonalKey(key.id)).key;
+      // The new key's relay list decides which models may stay selected. A failed read falls
+      // back to the instance list and leaves the warning visible; the key still switches.
+      let allowed = keyModelsCacheRef.current.get(id);
+      if (!allowed && props.accountClient?.getKeyModels) {
+        try {
+          const result = await props.accountClient.getKeyModels({ scope: key.scope, id: key.id });
+          allowed = result.models;
+          keyModelsCacheRef.current.set(id, result.models);
+        } catch {
+          allowed = undefined;
+        }
+      }
+      const candidates = allowed ?? choices?.models ?? [];
+      if (candidates.length === 0) {
+        setSaveError(t("settings.cuberouterModel.noKeyModels"));
+        return;
+      }
+      const reconciled = reconcileCuberouterSelection(selection, candidates);
+      setSelection(reconciled.selection);
+      setKeyFallbackNotice(reconciled.fellBack);
+      setKeyModels(candidates);
+      setKeyModelsStatus(allowed ? "ready" : "error");
       const saved = await commit((current, apiBase) => applyCuberouterSelection(current, {
         apiBase,
         protocol: PROTOCOL,
         apiKey: plaintext,
-        selection
+        selection: reconciled.selection
       }));
       // The record names the key the catalog actually holds: a failed save must not claim it.
       if (saved) {
@@ -312,20 +402,22 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setTestingAssignments(false);
   }
 
-  const models = choices?.models ?? [];
-  const modelOptions = models.map((model) => ({ value: model, label: model }));
-  /** Draft agent models the instance no longer lists; the union keeps them visible to uncheck. */
-  const staleAgentModels = (selection?.agent.models ?? []).filter((model) => !models.includes(model));
-  const conversationModels = [...models, ...staleAgentModels];
+  // The selected key's own list is authoritative once it has loaded; the instance list is the
+  // provisional/fallback source while it loads or when the relay read fails.
+  const availableModels = keyModels ?? choices?.models ?? [];
+  const modelOptions = availableModels.map((model) => ({ value: model, label: model }));
+  /** Draft agent models the selected key/instance no longer lists; kept visible while reconciling. */
+  const staleAgentModels = (selection?.agent.models ?? []).filter((model) => !availableModels.includes(model));
+  const conversationModels = [...availableModels, ...staleAgentModels];
   const showsOffListHint = selection !== null && (
     staleAgentModels.length > 0
-    || (selection.memorySummary !== "" && !models.includes(selection.memorySummary))
-    || (selection.memoryEvolution !== "" && !models.includes(selection.memoryEvolution))
+    || (selection.memorySummary !== "" && !availableModels.includes(selection.memorySummary))
+    || (selection.memoryEvolution !== "" && !availableModels.includes(selection.memoryEvolution))
   );
 
-  /** One memory row's options, appending a stored value the instance dropped (else it reads 未配置). */
+  /** One memory row's options, appending a stored value the selected key no longer allows. */
   function rowOptionsFor(value: string): Array<{ value: string; label: string }> {
-    return value !== "" && !models.includes(value)
+    return value !== "" && !availableModels.includes(value)
       ? [...modelOptions, { value, label: value }]
       : modelOptions;
   }
@@ -410,7 +502,22 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
 
       {saveError && <p className="mt-3 text-xs text-text-ink/60">{saveError}</p>}
 
-      {choices && models.length === 0 && (
+      {keyModelsStatus === "error" && (
+        <p className="mt-3 text-xs text-text-ink/60">
+          {t("settings.cuberouterModel.keyModelsFailed")}
+        </p>
+      )}
+      {keyFallbackNotice && (
+        <p className="mt-3 text-xs text-text-ink/60">
+          {t("settings.cuberouterModel.keyFallback")}
+        </p>
+      )}
+      {choices && keyModelsStatus === "ready" && keyModels?.length === 0 && (
+        <p className="mt-3 text-xs text-text-ink/60">
+          {t("settings.cuberouterModel.noKeyModels")}
+        </p>
+      )}
+      {choices && availableModels.length === 0 && keyModelsStatus !== "ready" && (
         <p className="mt-3 text-xs text-text-ink/60">{t("settings.cuberouterModel.noModels")}</p>
       )}
       {selection && (
@@ -468,7 +575,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
               if (kind === "memorySummary") updateSelection({ memorySummary: value });
               else if (kind === "memoryEvolution") updateSelection({ memoryEvolution: value });
             }}
-            disabled={busy}
+            disabled={busy || keyModelsStatus === "loading"}
           />
           {showsOffListHint && (
             <p className="mt-2 px-3.5 text-xs leading-relaxed text-text-ink/60">
@@ -479,6 +586,54 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       )}
     </div>
   );
+}
+
+/**
+ * Aligns one draft with the models a key may call. Every allowed model is enrolled so the
+ * conversation picker can offer it; a default or memory model that is no longer allowed falls
+ * back to the first allowed model, while an unset memory slot stays unset.
+ */
+export function reconcileCuberouterSelection(
+  selection: CuberouterSelection,
+  allowed: string[]
+): { selection: CuberouterSelection; changed: boolean; fellBack: boolean } {
+  const nextDefault = selection.agent.default && allowed.includes(selection.agent.default)
+    ? selection.agent.default
+    : allowed[0]!;
+  const nextMemorySummary = selection.memorySummary
+    ? (allowed.includes(selection.memorySummary) ? selection.memorySummary : allowed[0]!)
+    : "";
+  const nextMemoryEvolution = selection.memoryEvolution
+    ? (allowed.includes(selection.memoryEvolution) ? selection.memoryEvolution : allowed[0]!)
+    : "";
+  const next: CuberouterSelection = {
+    agent: { models: allowed, default: nextDefault },
+    memorySummary: nextMemorySummary,
+    memoryEvolution: nextMemoryEvolution
+  };
+  const fellBack = (selection.agent.default !== undefined && !allowed.includes(selection.agent.default))
+    || selection.agent.models.some((model) => !allowed.includes(model))
+    || (selection.memorySummary !== "" && !allowed.includes(selection.memorySummary))
+    || (selection.memoryEvolution !== "" && !allowed.includes(selection.memoryEvolution));
+  const changed = !sameStringSet(selection.agent.models, allowed)
+    || selection.agent.default !== nextDefault
+    || selection.memorySummary !== nextMemorySummary
+    || selection.memoryEvolution !== nextMemoryEvolution;
+  return { selection: next, changed, fellBack };
+}
+
+function sameStringSet(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  const values = new Set(left);
+  return right.every((value) => values.has(value));
+}
+
+/** Whether the catalog already carries a connection at this line's base. */
+function catalogHasEndpoint(catalog: ModelConfigView, apiBase: string): boolean {
+  const normalized = apiBase.trim().replace(/\/+$/, "");
+  return catalog.providers.some((provider) => provider.endpoints.some((endpoint) => (
+    endpoint.apiBase.replace(/\/+$/, "") === normalized
+  )));
 }
 
 /** The status badge message for one instance token state. */

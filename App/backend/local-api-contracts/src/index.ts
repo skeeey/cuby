@@ -1309,6 +1309,19 @@ export const CuberouterModelChoicesViewSchema = z.object({
 });
 export type CuberouterModelChoicesView = z.infer<typeof CuberouterModelChoicesViewSchema>;
 
+/** One selected key whose allowed models the panel asks the instance about. */
+export const CuberouterKeyModelsInputSchema = z.object({
+    scope: z.enum(["organization", "personal"]),
+    id: z.number().int()
+});
+export type CuberouterKeyModelsInput = z.infer<typeof CuberouterKeyModelsInputSchema>;
+
+/** The models a specific API key may call, as the instance's relay reports them. */
+export const CuberouterKeyModelsViewSchema = z.object({
+    models: z.array(z.string())
+});
+export type CuberouterKeyModelsView = z.infer<typeof CuberouterKeyModelsViewSchema>;
+
 export const CuberouterPersonalKeyViewSchema = z.object({ key: z.string() });
 export type CuberouterPersonalKeyView = z.infer<typeof CuberouterPersonalKeyViewSchema>;
 
@@ -1340,7 +1353,9 @@ export type CuberouterEmailCodeInput = z.infer<typeof CuberouterEmailCodeInputSc
 export const CuberouterProvisioningSchema = z.object({
     apiKey: z.string().min(1),
     apiBase: z.string().url(),
-    model: z.string().min(1)
+    model: z.string().min(1),
+    /** The models the provisioned key may call, when the instance's relay could be read. */
+    models: z.array(z.string()).nullable().optional()
 });
 export type CuberouterProvisioning = z.infer<typeof CuberouterProvisioningSchema>;
 

@@ -270,6 +270,30 @@ describe("provisionCuberouterKey", () => {
   // unlisted default falls back to the first model the list does offer. The connection is never
   // written without a model — the catalog contract rejects that (`TextModelProviderInputSchema`
   // requires at least one model per provider). The four cases below pin each combination.
+  it("enrolls every model the instance lists as an agent candidate", async () => {
+    const server = configClientServer();
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "http://127.0.0.1:3000/v1", protocol: "openai-chat-completions", apiKey: "sk-plain" },
+      defaultModel: "gpt-oss-120b",
+      availableModels: ["deepseek-flash", "gpt-oss-120b", "qwen3-235b"]
+    });
+
+    const written = server.saved[0];
+    const provider = written.providers[0];
+    const presetIdOf = (model: string) =>
+      provider.models.find((preset: any) => preset.model === model)!.presetId;
+    expect(provider.models.map((preset: any) => preset.model).sort())
+      .toEqual(["deepseek-flash", "gpt-oss-120b", "qwen3-235b"]);
+    expect(written.modelAssignments.byok.agent.candidates).toEqual([
+      presetIdOf("deepseek-flash"),
+      presetIdOf("gpt-oss-120b"),
+      presetIdOf("qwen3-235b")
+    ]);
+    expect(written.modelAssignments.byok.agent.default).toBe(presetIdOf("gpt-oss-120b"));
+  });
+
   it("seeds the build-time default into all three slots when the instance lists it", async () => {
     const server = configClientServer();
     const decision = await resolveCuberouterLoginKey({
@@ -302,13 +326,18 @@ describe("provisionCuberouterKey", () => {
     const written = server.saved[0];
     const provider = written.providers[0];
     expect(provider.endpoints[0].apiKey).toBe("sk-fresh");
-    expect(provider.models.map((preset: any) => preset.model)).toEqual(["deepseek-flash"]);
-    const presetId = provider.models[0].presetId;
+    expect(provider.models.map((preset: any) => preset.model).sort())
+      .toEqual(["deepseek-flash", "gpt-oss-120b"]);
+    const presetIdOf = (model: string) =>
+      provider.models.find((preset: any) => preset.model === model).presetId;
     const byok = written.modelAssignments.byok;
-    expect(byok.agent.candidates).toEqual([presetId]);
-    expect(byok.agent.default).toBe(presetId);
-    expect(byok.memorySummary).toBe(presetId);
-    expect(byok.memoryEvolution).toBe(presetId);
+    expect(byok.agent.candidates).toEqual([
+      presetIdOf("deepseek-flash"),
+      presetIdOf("gpt-oss-120b")
+    ]);
+    expect(byok.agent.default).toBe(presetIdOf("deepseek-flash"));
+    expect(byok.memorySummary).toBe(presetIdOf("deepseek-flash"));
+    expect(byok.memoryEvolution).toBe(presetIdOf("deepseek-flash"));
   });
 
   it("seeds the first listed model when the instance does not list the build-time default", async () => {
@@ -330,13 +359,18 @@ describe("provisionCuberouterKey", () => {
     expect(provider.endpoints[0].apiKey).toBe("sk-plain");
     // The contract's floor: a provider must carry at least one model.
     expect(provider.models.length).toBeGreaterThan(0);
-    expect(provider.models.map((preset: any) => preset.model)).toEqual(["gpt-oss-120b"]);
-    const presetId = provider.models[0].presetId;
+    expect(provider.models.map((preset: any) => preset.model).sort())
+      .toEqual(["gpt-oss-120b", "qwen3-235b"]);
+    const presetIdOf = (model: string) =>
+      provider.models.find((preset: any) => preset.model === model).presetId;
     const byok = written.modelAssignments.byok;
-    expect(byok.agent.candidates).toEqual([presetId]);
-    expect(byok.agent.default).toBe(presetId);
-    expect(byok.memorySummary).toBe(presetId);
-    expect(byok.memoryEvolution).toBe(presetId);
+    expect(byok.agent.candidates).toEqual([
+      presetIdOf("gpt-oss-120b"),
+      presetIdOf("qwen3-235b")
+    ]);
+    expect(byok.agent.default).toBe(presetIdOf("gpt-oss-120b"));
+    expect(byok.memorySummary).toBe(presetIdOf("gpt-oss-120b"));
+    expect(byok.memoryEvolution).toBe(presetIdOf("gpt-oss-120b"));
     expect(JSON.stringify(written)).not.toContain("deepseek-flash");
   });
 
@@ -366,10 +400,9 @@ describe("provisionCuberouterKey", () => {
     expect(byok.memoryEvolution).toBe(presetId);
   });
 
-  it("keeps a memory-only selection and seeds nothing over it", async () => {
-    // A machine that configured only the memory slots: its draft is a selection even while the
-    // agent slot is empty, so the build's default must not be seeded over it — the memory model
-    // survives untouched and only the key changes.
+  it("enrolls the instance's models without overwriting a memory-only selection", async () => {
+    // A machine that configured only the memory slots: those choices must survive, while the
+    // instance's chat models still become available in the conversation picker.
     const seeded = applyCuberouterSelection(createModelWorkspace(null), {
       apiBase: "http://127.0.0.1:3000/v1",
       protocol: "openai-chat-completions",
@@ -389,13 +422,18 @@ describe("provisionCuberouterKey", () => {
     const written = server.saved[0];
     const provider = written.providers[0];
     expect(provider.endpoints[0].apiKey).toBe("sk-new");
-    expect(provider.models.map((preset: any) => preset.model)).toEqual(["gpt-oss-120b"]);
+    expect(provider.models.map((preset: any) => preset.model).sort())
+      .toEqual(["deepseek-flash", "gpt-oss-120b"]);
+    const presetIdOf = (model: string) =>
+      provider.models.find((preset: any) => preset.model === model).presetId;
     const byok = written.modelAssignments.byok;
-    expect(byok.agent.candidates).toEqual([]);
-    expect(byok.agent.default).toBeNull();
-    expect(byok.memorySummary).toBe(provider.models[0].presetId);
+    expect([...byok.agent.candidates].sort()).toEqual([
+      presetIdOf("deepseek-flash"),
+      presetIdOf("gpt-oss-120b")
+    ].sort());
+    expect(byok.agent.default).toBe(presetIdOf("deepseek-flash"));
+    expect(byok.memorySummary).toBe(presetIdOf("gpt-oss-120b"));
     expect(byok.memoryEvolution).toBeNull();
-    expect(JSON.stringify(written)).not.toContain("deepseek-flash");
   });
 });
 

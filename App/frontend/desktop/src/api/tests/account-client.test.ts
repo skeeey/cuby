@@ -55,6 +55,19 @@ describe("account-client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("读取某个 cuberouter key 可用的模型", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(input.toString()).toBe("http://127.0.0.1:18100/api/account/cuberouter/key-models");
+      expect(init?.method).toBe("POST");
+      expect(JSON.parse(String(init?.body))).toEqual({ scope: "personal", id: 41 });
+      return jsonResponse({ models: ["gpt-4o"] });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(createHttpAccountClient(config).getKeyModels({ scope: "personal", id: 41 }))
+      .resolves.toEqual({ models: ["gpt-4o"] });
+  });
+
   it("通过本地路由修改 cuberouter 密码", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       expect(input.toString()).toBe("http://127.0.0.1:18100/api/account/cuberouter/password");

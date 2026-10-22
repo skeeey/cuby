@@ -284,6 +284,24 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
         : [];
     },
 
+    async getKeyModels(apiKey) {
+      const data = await request<unknown>(fetchImpl, baseUrl, options.timeoutMs, "/v1/models", {
+        method: "GET",
+        accessToken: apiKey
+      });
+      // The relay answers OpenAI's list shape. It has already applied the token's group,
+      // model limits and the member allow list, so no further filtering belongs here.
+      const rows = Array.isArray(data) ? data : asRecord(data).data;
+      if (!Array.isArray(rows)) return [];
+      const seen = new Set<string>();
+      return rows.flatMap((row) => {
+        const id = readString(asRecord(row).id);
+        if (!id || seen.has(id)) return [];
+        seen.add(id);
+        return [id];
+      });
+    },
+
     async listPersonalTokens(accessToken) {
       const query = new URLSearchParams({ page_size: "100" }).toString();
       const response = await request<Record<string, unknown>>(

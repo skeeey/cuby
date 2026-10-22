@@ -47,6 +47,7 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
     getPersonalTokenKey: vi.fn(async () => "sk-personal"),
     getSelf: vi.fn(async () => ({ quota: 100, usedQuota: 0 })),
     getUserModels: vi.fn(async () => ["deepseek-v4.1-flash", "gpt-oss-120b"]),
+    getKeyModels: vi.fn(async () => ["gpt-4o"]),
     listPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice", status: 1 }]),
     listMyOrganizationTokens: vi.fn(async () => [
       { id: 11, name: "cuby-desktop-alice", key: "sk-org", status: 1, responsibleUserId: 7 }
@@ -186,6 +187,7 @@ function createTestService(input: {
       getPersonalTokenKey: async () => "sk-personal",
       getSelf: async () => ({ quota: 0, usedQuota: 0 }),
       getUserModels: async () => [],
+      getKeyModels: async () => [],
       listPersonalTokens: async () => [],
       listMyOrganizationTokens: async () => []
     } satisfies CuberouterClient);
@@ -232,7 +234,8 @@ describe("cuberouter account service", () => {
     expect(result.provisioning).toEqual({
       apiKey: "sk-org",
       apiBase: "http://127.0.0.1:3000/v1",
-      model: "deepseek-flash"
+      model: "deepseek-flash",
+      models: ["gpt-4o"]
     });
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -542,6 +545,7 @@ describe("cuberouter account service", () => {
       listOrganizationTokens: async () => [{ id: 11, name: "cuby-desktop", key: "sk-org" }],
       getSelf: async () => ({ quota: 0, usedQuota: 0 }),
       getUserModels: async () => [],
+      getKeyModels: async () => [],
       listPersonalTokens: async () => [],
       listMyOrganizationTokens: async () => []
     }])) as never;
@@ -645,7 +649,8 @@ describe("cuberouter account service", () => {
           listOrganizationTokens: async (_token: string, _organizationId: string, tokenName: string) => {
             looked.push(tokenName);
             return [{ id: 11, name: tokenName, key: "sk-org" }];
-          }
+          },
+          getKeyModels: async () => []
         } as never
       }
     });
@@ -715,7 +720,8 @@ describe("cuberouter account service", () => {
     expect(result.provisioning).toEqual({
       apiKey: "sk-personal",
       apiBase: "http://127.0.0.1:3000/v1",
-      model: "deepseek-flash"
+      model: "deepseek-flash",
+      models: ["gpt-4o"]
     });
   });
 
@@ -826,7 +832,8 @@ describe("cuberouter account service", () => {
     expect(result.provisioning).toEqual({
       apiKey: "sk-org-created",
       apiBase: "http://127.0.0.1:3000/v1",
-      model: "deepseek-flash"
+      model: "deepseek-flash",
+      models: ["gpt-4o"]
     });
   });
 
@@ -1017,6 +1024,45 @@ describe("cuberouter model choices", () => {
     const service = singleNodeService(client, authenticatedRepository());
 
     await expect(service.getPersonalKey(41)).resolves.toEqual({ key: "sk-plain" });
+  });
+});
+
+describe("cuberouter key models", () => {
+  it("reads a personal key's models through the relay", async () => {
+    const client = fakeClient();
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.getKeyModels({ scope: "personal", id: 41 }))
+      .resolves.toEqual({ models: ["gpt-4o"] });
+
+    expect(client.getPersonalTokenKey).toHaveBeenCalledWith("jwt-1", 41);
+    expect(client.getKeyModels).toHaveBeenCalledWith("sk-personal");
+  });
+
+  it("reads an organization key's models through the relay", async () => {
+    const client = fakeClient();
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.getKeyModels({ scope: "organization", id: 11 }))
+      .resolves.toEqual({ models: ["gpt-4o"] });
+
+    expect(client.getKeyModels).toHaveBeenCalledWith("sk-org");
+  });
+
+  it("refuses to read key models without a session", async () => {
+    const service = singleNodeService(fakeClient(), {
+      get: () => ({ authenticated: false, profile: {} }),
+      getCloudUuid: () => null,
+      getAuthChannel: () => null,
+      getCuberouterCredential: () => null,
+      setCuberouterCredential: vi.fn(),
+      clearCuberouterCredential: vi.fn(),
+      upsert: vi.fn(),
+      clear: vi.fn()
+    } as any);
+
+    await expect(service.getKeyModels({ scope: "personal", id: 41 }))
+      .rejects.toMatchObject({ code: "invalid_argument" });
   });
 });
 
