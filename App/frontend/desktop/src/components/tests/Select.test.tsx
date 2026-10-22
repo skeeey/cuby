@@ -99,6 +99,29 @@ describe("Select", () => {
     expect(document.querySelector('[role="listbox"]')).toBeNull();
   });
 
+  it("pins the search row above the scrolling options", () => {
+    act(() => root.render(
+      <Select
+        ariaLabel="选择模型"
+        value=""
+        searchable
+        searchPlaceholder="搜索模型"
+        options={[
+          { value: "deepseek", label: "deepseek-v4.1-flash" },
+          { value: "gpt", label: "gpt-5.6-terra" }
+        ]}
+        onValueChange={() => undefined}
+      />
+    ));
+
+    act(() => getTrigger().click());
+
+    const menu = document.querySelector(".select-control__menu--searchable");
+    expect(menu).not.toBeNull();
+    expect(menu?.querySelector(".select-control__search input")).not.toBeNull();
+    expect(menu?.querySelector(".select-control__options [role='option']")).not.toBeNull();
+  });
+
   it("selects the active filtered option with Enter", () => {
     const onValueChange = vi.fn();
     act(() => root.render(

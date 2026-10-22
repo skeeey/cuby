@@ -60,6 +60,22 @@ describe("prototype style alignment", () => {
     expect(thumbRule).toContain("background-clip: padding-box;");
   });
 
+  it("pins the search row and keeps the model list scrollbar visible", () => {
+    const searchableMenuRule = globalCss.match(/\.select-control__menu--searchable\s*\{[^}]*\}/)?.[0] ?? "";
+    const searchRule = globalCss.match(/\.select-control__search\s*\{[^}]*\}/)?.[0] ?? "";
+    const optionsRule = globalCss.match(/\.select-control__options\s*\{[^}]*\}/)?.[0] ?? "";
+    const optionsScrollbarRule = globalCss.match(/\.select-control__options::-webkit-scrollbar\s*\{[^}]*\}/)?.[0] ?? "";
+    const optionsTrackRule = globalCss.match(/\.select-control__options::-webkit-scrollbar-track\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(searchableMenuRule).toContain("flex-direction: column;");
+    expect(searchableMenuRule).toContain("overflow: hidden;");
+    expect(searchRule).toContain("flex: 0 0 auto;");
+    expect(optionsRule).toContain("overflow-y: auto;");
+    expect(optionsScrollbarRule).toContain("width: 12px;");
+    expect(optionsTrackRule).toContain("border-radius: 999px;");
+    expect(optionsTrackRule).toContain("background:");
+  });
+
   it("does not expose dark theme token overrides", () => {
     expect(tokenCss).not.toContain('data-theme="dark"');
     expect(tokenCss).not.toContain("color-scheme: dark");
