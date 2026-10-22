@@ -124,6 +124,8 @@ export interface CuberouterAccountService {
   probeNodes(): Promise<{ nodes: string[]; defaultNodeId: string | null }>;
   /** The desktop's model page data: my keys with their billing, the selectable models, balance. */
   readModelChoices(): Promise<CuberouterModelChoices>;
+  /** The models one selected key may call, read through the instance's relay model list. */
+  getKeyModels(input: { scope: "organization" | "personal"; id: number }): Promise<{ models: string[] }>;
   /** One personal key's plaintext, read at the moment the user selects it. */
   getPersonalKey(tokenId: number): Promise<{ key: string }>;
   /**
@@ -287,7 +289,7 @@ export function createCuberouterAccountService(
   ): Promise<CuberouterAuthResult> {
     const { client, url } = clientForNode(nodeId);
     const session = await client.login({ username, password });
-    const { apiKey, apiBase, model, organizationName } = await provisionKey(
+    const { apiKey, apiBase, model, organizationName, models } = await provisionKey(
       client,
       url,
       session.accessToken,
@@ -339,7 +341,7 @@ export function createCuberouterAccountService(
 
     return {
       session: projection,
-      provisioning: { apiKey, apiBase, model }
+      provisioning: { apiKey, apiBase, model, models }
     };
   }
 
@@ -353,7 +355,7 @@ export function createCuberouterAccountService(
     accessToken: string,
     username: string,
     createDirectly: boolean
-  ): Promise<{ apiKey: string; apiBase: string; model: string; organizationName: string | null }> {
+  ): Promise<{ apiKey: string; apiBase: string; model: string; organizationName: string | null; models: string[] | null }> {
     // The organization comes from the membership list, never from a build setting: the same
     // organization has a different id on each deployment, and the list is already per instance.
     const organizations = await client.listOrganizations(accessToken);
@@ -367,11 +369,18 @@ export function createCuberouterAccountService(
     const apiKey = organization
       ? await ensureOrganizationKey(client, accessToken, organization.id, tokenName)
       : await ensurePersonalKey(client, accessToken, tokenName, createDirectly);
+    // The key's own list is keyed to its group and model limits; the account-level list is not.
+    // A relay outage must not fail login: the caller falls back to the account list.
+    const models = await client.getKeyModels(apiKey).catch((error) => {
+      log(`[cuberouter] reading key models failed: ${error instanceof Error ? error.message : String(error)}`);
+      return null;
+    });
     return {
       apiKey,
       apiBase: `${url}/v1`,
       model: options.model,
-      organizationName: organization?.name ?? null
+      organizationName: organization?.name ?? null,
+      models
     };
   }
 
@@ -548,6 +557,50 @@ export function createCuberouterAccountService(
   }
 
   /**
+   * The models one selected key may call. The relay's `/v1/models` applies the token's group,
+   * model limits and the member allow list, which `/api/user/models` does not.
+   */
+  async function getKeyModels(input: {
+    scope: "organization" | "personal";
+    id: number;
+  }): Promise<{ models: string[] }> {
+    const session = options.accountSessionRepository.get();
+    if (!session.authenticated) {
+      throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
+    }
+    const { client } = clientForNode(await currentOrProbedNodeId());
+    const accessToken = await resolveAccessToken(client);
+
+    let apiKey: string;
+    if (input.scope === "personal") {
+      apiKey = await client.getPersonalTokenKey(accessToken, input.id);
+    } else {
+      const organization = (await client.listOrganizations(accessToken))[0] ?? null;
+      if (!organization) {
+        throw Object.assign(new Error("当前账号不属于任何组织"), {
+          code: "organization_token_unavailable" as const
+        });
+      }
+      const ownerUserId = Number(session.profile.userId);
+      const hasOwner = Number.isFinite(ownerUserId) && ownerUserId > 0;
+      const tokens = await client.listMyOrganizationTokens(
+        accessToken,
+        organization.id,
+        hasOwner ? ownerUserId : 0
+      );
+      const token = tokens.find((item) => item.id === input.id);
+      if (!token?.key) {
+        throw Object.assign(new Error("未找到该组织 Key"), {
+          code: "organization_token_unavailable" as const
+        });
+      }
+      apiKey = token.key;
+    }
+
+    return { models: await client.getKeyModels(apiKey) };
+  }
+
+  /**
    * Changes the account password. The instance invalidates the old access token as part of the
    * change, so the rotated one it answers with has to replace the stored credential before the
    * next call — otherwise every request after a successful change would answer 401.
@@ -668,6 +721,8 @@ export function createCuberouterAccountService(
     },
 
     readModelChoices: asApiErrors(readModelChoices),
+
+    getKeyModels: asApiErrors(getKeyModels),
 
     getPersonalKey: asApiErrors(getPersonalKey),
 

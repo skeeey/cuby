@@ -105,6 +105,35 @@ describe("cuberouter client", () => {
     });
   });
 
+  it("lists the models a key may call through the relay model endpoint", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        success: true,
+        object: "list",
+        data: [{ id: "gpt-4o" }, { id: "claude-sonnet-4-6" }, { id: "gpt-4o" }]
+      })
+    );
+
+    await expect(clientWith(fetchImpl as unknown as typeof fetch).getKeyModels("sk-key"))
+      .resolves.toEqual(["gpt-4o", "claude-sonnet-4-6"]);
+    const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("http://127.0.0.1:3000/v1/models");
+    expect(init.method).toBe("GET");
+    expect((init.headers as Record<string, string>).authorization).toBe("Bearer sk-key");
+  });
+
+  it("accepts a bare OpenAI model list without the success envelope", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        object: "list",
+        data: [{ id: "gpt-4o" }, { id: "claude-sonnet-4-6" }]
+      })
+    );
+
+    await expect(clientWith(fetchImpl as unknown as typeof fetch).getKeyModels("sk-key"))
+      .resolves.toEqual(["gpt-4o", "claude-sonnet-4-6"]);
+  });
+
   it("reports a rejected access token as an expired session, not a plain rejection", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ success: false, message: "无权进行此操作" }, 401));
 

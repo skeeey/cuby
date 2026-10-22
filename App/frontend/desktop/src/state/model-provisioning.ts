@@ -11,6 +11,7 @@ import {
   createModelWorkspace,
   modelConfigInput,
   readCuberouterSelection,
+  type CuberouterSelection,
   type ModelWorkspace
 } from "./model-workspace.js";
 
@@ -65,8 +66,11 @@ function connectionHasCredential(catalog: ModelConfigView, apiBase: string): boo
  * Writes one cuberouter key. The catalog's current model selection always stays when it has one —
  * a login, provisioning included, must never reset the user's choices, and any non-empty slot
  * (an agent model or either memory model) counts as a selection. An empty selection is seeded
- * with exactly one model: the build's default while the instance's list (`availableModels`)
- * offers it or could not be consulted (`null`), otherwise the first model the list does offer.
+ * with the build's default while the instance's list (`availableModels`) offers it or could not
+ * be consulted (`null`), otherwise the first model the list does offer.
+ *
+ * Every model the instance lists is enrolled as an agent candidate, so the conversation model
+ * picker can offer the whole line instead of only the model that happened to be provisioned.
  * A connection cannot be written without a model — the catalog contract rejects that — so there
  * is no "seed nothing" branch.
  */
@@ -87,17 +91,41 @@ export async function provisionCuberouterKey(input: {
       // Only an empty selection gets the build's default, and only while the instance's list
       // leaves it standing: an unlisted default yields to the first model the list does offer.
       // The empty-list guard can only fire for a malformed list.
-      const listed = input.availableModels;
-      const seedModel = !listed || listed.includes(input.defaultModel)
+      const listed = (input.availableModels ?? []).map((model) => model.trim()).filter(Boolean);
+      const seedModel = input.availableModels === null || listed.includes(input.defaultModel)
         ? input.defaultModel
         : listed[0] ?? input.defaultModel;
-      const selection = hasSelection
-        ? current
-        : {
-            agent: { models: [seedModel], default: seedModel },
-            memorySummary: seedModel,
-            memoryEvolution: seedModel
-          };
+      let selection: CuberouterSelection;
+      if (listed.length > 0) {
+        // The key's list is authoritative: enroll every allowed model, keep a default/memory
+        // choice only while it is still allowed, and otherwise fall back to the first allowed one.
+        const defaultModel = current.agent.default && listed.includes(current.agent.default)
+          ? current.agent.default
+          : seedModel;
+        const memorySummary = !hasSelection
+          ? seedModel
+          : current.memorySummary
+            ? (listed.includes(current.memorySummary) ? current.memorySummary : listed[0]!)
+            : "";
+        const memoryEvolution = !hasSelection
+          ? seedModel
+          : current.memoryEvolution
+            ? (listed.includes(current.memoryEvolution) ? current.memoryEvolution : listed[0]!)
+            : "";
+        selection = {
+          agent: { models: listed, default: defaultModel },
+          memorySummary,
+          memoryEvolution
+        };
+      } else if (hasSelection) {
+        selection = current;
+      } else {
+        selection = {
+          agent: { models: [seedModel], default: seedModel },
+          memorySummary: seedModel,
+          memoryEvolution: seedModel
+        };
+      }
       return applyCuberouterSelection(workspace, {
         apiBase: input.endpoint.apiBase,
         protocol: input.endpoint.protocol,

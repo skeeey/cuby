@@ -225,6 +225,22 @@ export function AccountAuthPanel() {
         // overwrite the user's key — write nothing.
         saved = stored;
       } else {
+        // The key's own relay list decides which models the desktop may offer. A provision
+        // already carries it; a reuse asks for it now. Both fall back to the account list when
+        // the relay read failed, so login still completes.
+        let availableModels: string[] | null;
+        if (decision.action === "provision") {
+          availableModels = result.provisioning.models ?? decision.availableModels;
+        } else {
+          try {
+            availableModels = (await clients.account.getKeyModels({
+              scope: decision.record.scope,
+              id: decision.record.id
+            })).models;
+          } catch {
+            availableModels = null;
+          }
+        }
         saved = await provisionCuberouterKey({
           configClient: clients.config,
           endpoint: {
@@ -233,9 +249,7 @@ export function AccountAuthPanel() {
             apiKey: decision.action === "reuse" ? decision.apiKey : result.provisioning.apiKey
           },
           defaultModel: result.provisioning.model,
-          // Only a provision carries the instance's model list; a reuse never asked for it, so the
-          // list reads as unknown and the seeding falls back to the build-time default model.
-          availableModels: decision.action === "provision" ? decision.availableModels : null
+          availableModels
         });
         const storage = cuberouterKeySelectionStorage();
         if (decision.action === "reuse") {

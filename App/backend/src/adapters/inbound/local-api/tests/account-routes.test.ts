@@ -329,6 +329,27 @@ describe("account local api routes", () => {
     expect(response.statusCode).toBe(400);
   });
 
+  it("serves the models one key may call", async () => {
+    const calls: Array<{ scope: string; id: number }> = [];
+    app = createServer({
+      cuberouterAccount: {
+        async getKeyModels(input: { scope: string; id: number }) {
+          calls.push(input);
+          return { models: ["gpt-4o"] };
+        }
+      }
+    });
+
+    const response = await injectJson("POST", "/api/account/cuberouter/key-models", {
+      scope: "personal",
+      id: 41
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.json()).toEqual({ models: ["gpt-4o"] });
+    expect(calls).toEqual([{ scope: "personal", id: 41 }]);
+  });
+
   it("serves the cuberouter model choices view", async () => {
     app = createServer({
       cuberouterAccount: {
@@ -487,6 +508,9 @@ function unusedCuberouterAccount() {
     },
     async readModelChoices() {
       throw new Error("readModelChoices not used");
+    },
+    async getKeyModels() {
+      throw new Error("getKeyModels not used");
     },
     async getPersonalKey() {
       throw new Error("getPersonalKey not used");
