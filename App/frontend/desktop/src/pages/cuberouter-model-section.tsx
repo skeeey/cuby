@@ -68,6 +68,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   const [keyModelsStatus, setKeyModelsStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [keyFallbackNotice, setKeyFallbackNotice] = useState(false);
   const keyModelsCacheRef = useRef(new Map<string, string[]>());
+  const lastReconcileAttemptRef = useRef<string | null>(null);
   /** Guards the single save path before a render could re-disable its controls. */
   const saveInFlightRef = useRef(false);
   // A key action starts before its save: revealing a personal key is an await of its own, and
@@ -124,6 +125,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       return;
     }
     const cacheKey = `${selectedKey.scope}:${selectedKey.id}`;
+    lastReconcileAttemptRef.current = null;
     const cached = keyModelsCacheRef.current.get(cacheKey);
     if (cached) {
       setKeyModels(cached);
@@ -161,6 +163,11 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     const allowed = keyModels ?? choices.models;
     if (allowed.length === 0) return;
     if (!catalogHasEndpoint(workspace.catalog, choices.apiBase)) return;
+    // A failed save reseeds the same draft; without this guard the effect would immediately
+    // retry the identical reconcile forever. A changed key list or selection is a new attempt.
+    const attempt = JSON.stringify([allowed, selection]);
+    if (lastReconcileAttemptRef.current === attempt) return;
+    lastReconcileAttemptRef.current = attempt;
     const next = reconcileCuberouterSelection(selection, allowed);
     if (!next.changed) return;
     if (next.fellBack) setKeyFallbackNotice(true);
@@ -223,6 +230,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setPendingKeyId(id);
     setAssignmentTests({});
     setKeyFallbackNotice(false);
+    lastReconcileAttemptRef.current = null;
     try {
       const plaintext = key.secret ?? (await props.accountClient!.revealPersonalKey(key.id)).key;
       // The new key's relay list decides which models may stay selected. A failed read falls
@@ -311,6 +319,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   function updateSelection(patch: Partial<CuberouterSelection>): void {
     // Dropped, not queued: a change that arrives while a save runs would race that PUT.
     if (!selection || savePending) return;
+    lastReconcileAttemptRef.current = null;
     setAssignmentTests((current) => {
       const next = { ...current };
       if (patch.agent) delete next.agent;

@@ -122,6 +122,18 @@ describe("cuberouter client", () => {
     expect((init.headers as Record<string, string>).authorization).toBe("Bearer sk-key");
   });
 
+  it("accepts a bare OpenAI model list without the success envelope", async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({
+        object: "list",
+        data: [{ id: "gpt-4o" }, { id: "claude-sonnet-4-6" }]
+      })
+    );
+
+    await expect(clientWith(fetchImpl as unknown as typeof fetch).getKeyModels("sk-key"))
+      .resolves.toEqual(["gpt-4o", "claude-sonnet-4-6"]);
+  });
+
   it("reports a rejected access token as an expired session, not a plain rejection", async () => {
     const fetchImpl = vi.fn(async () => jsonResponse({ success: false, message: "无权进行此操作" }, 401));
 

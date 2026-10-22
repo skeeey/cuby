@@ -544,6 +544,27 @@ describe("cuberouter model section", () => {
     expect(container.textContent).toContain("部分模型不在当前 Key 的允许列表中");
   });
 
+  it("does not retry an identical reconcile save after it fails", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: CHOICES.apiBase,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-stored",
+      selection: { agent: { models: ["gpt-oss-120b"] }, memorySummary: "", memoryEvolution: "" }
+    });
+    const { configClient } = await renderSection({
+      seedConfig: { catalog: seeded.catalog, configRevision: "rev-1" },
+      keyModels: async () => ({ models: CHOICES.models }),
+      save: async () => {
+        throw Object.assign(new Error("down"), { code: "internal" });
+      }
+    });
+
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1));
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    expect(configClient.saveModelCatalog).toHaveBeenCalledTimes(1);
+    expect(container.textContent).toContain("模型配置保存失败");
+  });
+
   it("retries once when the catalog changed under a save", async () => {
     let attempts = 0;
     const { configClient } = await renderSection({

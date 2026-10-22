@@ -22,6 +22,7 @@ export interface CreateHttpCuberouterClientOptions {
 interface CuberouterEnvelope {
   success?: boolean;
   message?: string;
+  object?: string;
   data?: unknown;
 }
 
@@ -287,7 +288,8 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
     async getKeyModels(apiKey) {
       const data = await request<unknown>(fetchImpl, baseUrl, options.timeoutMs, "/v1/models", {
         method: "GET",
-        accessToken: apiKey
+        accessToken: apiKey,
+        acceptOpenAiList: true
       });
       // The relay answers OpenAI's list shape. It has already applied the token's group,
       // model limits and the member allow list, so no further filtering belongs here.
@@ -345,6 +347,8 @@ interface CuberouterRequestInput {
   method: "GET" | "POST" | "PUT";
   body?: Record<string, unknown>;
   accessToken?: string;
+  /** The relay's OpenAI model list omits the dashboard's `success` envelope. */
+  acceptOpenAiList?: boolean;
   /** Extra request headers (organization routes need the account-context pair). */
   headers?: Record<string, string>;
   /** Error code to raise instead of "rejected" when this call answers 429. */
@@ -402,11 +406,18 @@ async function requestRaw<T>(
     throw cuberouterError("session_expired", envelope.message || "cuberouter 登录已过期");
   }
 
-  if (!response.ok || envelope.success !== true) {
+  if (!response.ok || (envelope.success !== true && !isOpenAiList(input, envelope))) {
     throw cuberouterError("rejected", envelope.message || `cuberouter 请求失败（HTTP ${response.status}）`);
   }
 
   return { data: (envelope.data ?? {}) as T, refreshToken: readRefreshCookie(response.headers) };
+}
+
+/** A standard OpenAI list body: `{object:"list", data:[...]}` with no dashboard envelope. */
+function isOpenAiList(input: CuberouterRequestInput, envelope: CuberouterEnvelope): boolean {
+  return input.acceptOpenAiList === true
+    && envelope.object === "list"
+    && Array.isArray(envelope.data);
 }
 
 /**
