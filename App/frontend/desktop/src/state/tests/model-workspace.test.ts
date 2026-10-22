@@ -19,6 +19,7 @@ import {
   assignCatalogPreset,
   assignedCatalogEndpointId,
   chatModelTestTarget,
+  clearCuberouterAccount,
   clearLegacyModelWorkspace,
   createModelWorkspace,
   defaultModelSelectionInput,
@@ -1400,5 +1401,36 @@ describe("cuberouter selection", () => {
     for (const candidateId of assignment.agent.candidates) {
       expect(byId.get(candidateId)?.capabilities).toContain("agent");
     }
+  });
+
+  it("clears the cuberouter account without touching another provider", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "deepseek",
+      endpoint: "https://api.deepseek.com/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-deepseek",
+      model: "deepseek-chat",
+      capabilities: ["agent"]
+    });
+    const withCuberouter = applyCuberouterSelection(
+      setTaskModelCandidates(personal.workspace, "byok", [personal.presetId]),
+      {
+        apiBase: API_BASE,
+        protocol: "openai-chat-completions",
+        apiKey: "sk-1",
+        selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+      }
+    );
+
+    const cleared = clearCuberouterAccount(withCuberouter);
+
+    expect(cleared.catalog.providers.map((provider) => provider.provider)).toEqual(["deepseek"]);
+    const assignment = cleared.catalog.modelAssignments.byok;
+    expect(assignment.agent.candidates).toEqual([personal.presetId]);
+    expect(assignment.agent.default).toBe(personal.presetId);
+    expect(assignment.memorySummary).toBeNull();
+    expect(assignment.memoryEvolution).toBeNull();
+    expect(cleared.catalog.effectiveCandidates.byok.map((preset) => preset.presetId))
+      .toEqual([personal.presetId]);
   });
 });

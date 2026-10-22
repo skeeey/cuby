@@ -170,6 +170,33 @@ describe("provisionCuberouterKey", () => {
     expect(second.modelAssignments.byok.agent.default).toBe(second.providers[0].models[0].presetId);
   });
 
+  it("drops the previous node's endpoints and models when logging in on another node", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: "https://cn.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-cn",
+      selection: {
+        agent: { models: ["old-model"], default: "old-model" },
+        memorySummary: "old-model",
+        memoryEvolution: "old-model"
+      }
+    });
+    const server = configClientServer(seeded.catalog);
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "https://hk.example/v1", protocol: "openai-chat-completions", apiKey: "sk-hk" },
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash"]
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const provider = server.saved[0].providers[0];
+    expect(provider.endpoints.map((endpoint: any) => endpoint.apiBase)).toEqual(["https://hk.example/v1"]);
+    expect(provider.models.map((preset: any) => preset.model)).toEqual(["deepseek-flash"]);
+    expect(JSON.stringify(server.saved[0])).not.toContain("old-model");
+  });
+
   it("keeps the models the user assigned when a re-login re-provisions the key", async () => {
     // The re-login path: a new key arrives for the same line, and the assignments the user made
     // must survive it — only the credential changes.

@@ -213,7 +213,9 @@ export function AccountAuthPanel() {
       const decision = await resolveCuberouterLoginKey({
         apiBase: result.provisioning.apiBase,
         catalog: createModelWorkspace(stored).catalog,
-        record: username ? readCuberouterKeySelection(username, cuberouterKeySelectionStorage()) : null,
+        record: username
+          ? readCuberouterKeySelection(result.provisioning.apiBase, username, cuberouterKeySelectionStorage())
+          : null,
         getModelChoices: () => clients.account.getModelChoices(),
         revealPersonalKey: (tokenId) => clients.account.revealPersonalKey(tokenId)
       });
@@ -253,11 +255,11 @@ export function AccountAuthPanel() {
         });
         const storage = cuberouterKeySelectionStorage();
         if (decision.action === "reuse") {
-          writeCuberouterKeySelection(decision.record, storage);
+          writeCuberouterKeySelection(result.provisioning.apiBase, decision.record, storage);
         } else if (username) {
           // The remembered key is gone: drop the record so the panel stops calling it selected.
           // find-or-create is name-based, so the key it just wrote shows up in the panel's list.
-          clearCuberouterKeySelection(username, storage);
+          clearCuberouterKeySelection(result.provisioning.apiBase, username, storage);
         }
       }
       dispatch(appActions.modelConfigUpdated(saved));

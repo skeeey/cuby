@@ -26,7 +26,8 @@ import { useTranslation } from "../i18n/use-translation.js";
 import { appActions, type AppAction } from "../state/app-actions.js";
 import type { AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
-import type { ModelWorkspaceMode } from "../state/model-workspace.js";
+import { clearCuberouterAccount, type ModelWorkspaceMode } from "../state/model-workspace.js";
+import { saveCatalogMutation } from "../state/model-provisioning.js";
 import { AppFrame } from "./app-frame.js";
 import { CuberouterModelSection } from "./cuberouter-model-section.js";
 import { ModelWorkspaceSection } from "./model-workspace-section.js";
@@ -310,18 +311,37 @@ export function hasConfiguredByokAgentModel(catalog: ModelConfigView | null | un
 /** Reconciles local UI state after the backend account session has already been cleared. */
 export async function finalizeAccountLogout(input: {
   modelConfig: ModelProviderConfig;
-  configClient?: Pick<ConfigClient, "getModelConfig" | "updateSettings">;
+  /** True for a cuberouter identity: its models and API key must not survive the logout. */
+  clearCuberouter?: boolean;
+  configClient?: Pick<ConfigClient, "getModelConfig" | "updateSettings">
+    & Partial<Pick<ConfigClient, "saveModelCatalog">>;
   dispatch: Dispatch<AppAction>;
 }): Promise<"byok" | "unset"> {
   let latestModelConfig = input.modelConfig;
-  try {
-    const refreshedModelConfig = await input.configClient?.getModelConfig();
-    if (refreshedModelConfig) {
-      latestModelConfig = refreshedModelConfig;
+  let cleared = false;
+  if (input.clearCuberouter && input.configClient?.saveModelCatalog) {
+    try {
+      latestModelConfig = await saveCatalogMutation({
+        configClient: input.configClient as Pick<ConfigClient, "getModelConfig" | "saveModelCatalog">,
+        mutate: clearCuberouterAccount
+      });
+      cleared = true;
       input.dispatch(appActions.modelConfigUpdated(latestModelConfig));
+    } catch (error) {
+      console.warn("clear cuberouter models after logout failed", error);
     }
-  } catch (error) {
-    console.warn("refresh model config after logout failed", error);
+  }
+
+  if (!cleared) {
+    try {
+      const refreshedModelConfig = await input.configClient?.getModelConfig();
+      if (refreshedModelConfig) {
+        latestModelConfig = refreshedModelConfig;
+        input.dispatch(appActions.modelConfigUpdated(latestModelConfig));
+      }
+    } catch (error) {
+      console.warn("refresh model config after logout failed", error);
+    }
   }
 
   input.dispatch(appActions.accountCleared());
@@ -1460,6 +1480,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
       track({ name: "account_logout", params: { page_path: "/settings" }, consentTier: "basic" });
       await finalizeAccountLogout({
         modelConfig: state.modelConfig,
+        clearCuberouter: state.account.identityProvider === "cuberouter",
         configClient,
         dispatch
       });

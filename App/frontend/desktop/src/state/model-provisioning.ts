@@ -9,6 +9,7 @@ import type { CuberouterKeySelection } from "./cuberouter-key-selection.js";
 import {
   applyCuberouterSelection,
   createModelWorkspace,
+  keepCuberouterEndpoint,
   modelConfigInput,
   readCuberouterSelection,
   type CuberouterSelection,
@@ -84,7 +85,9 @@ export async function provisionCuberouterKey(input: {
   return saveCatalogMutation({
     configClient: input.configClient,
     mutate: (workspace) => {
-      const current = readCuberouterSelection(workspace.catalog, input.endpoint.apiBase);
+      // A login on another node must not carry the previous account's models along.
+      const loginWorkspace = keepCuberouterEndpoint(workspace, input.endpoint.apiBase);
+      const current = readCuberouterSelection(loginWorkspace.catalog, input.endpoint.apiBase);
       const hasSelection = current.agent.models.length > 0
         || Boolean(current.memorySummary)
         || Boolean(current.memoryEvolution);
@@ -126,7 +129,7 @@ export async function provisionCuberouterKey(input: {
           memoryEvolution: seedModel
         };
       }
-      return applyCuberouterSelection(workspace, {
+      return applyCuberouterSelection(loginWorkspace, {
         apiBase: input.endpoint.apiBase,
         protocol: input.endpoint.protocol,
         apiKey: input.endpoint.apiKey,

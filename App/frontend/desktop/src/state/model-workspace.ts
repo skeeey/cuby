@@ -489,6 +489,53 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
   return createModelWorkspace(next);
 }
 
+/**
+ * Removes the cuberouter account's provider, endpoints, models and assignments. Other providers
+ * stay untouched, so a local BYOK connection survives a cuberouter logout or account switch.
+ */
+export function clearCuberouterAccount(workspace: ModelWorkspace): ModelWorkspace {
+  const next = cloneCatalog(workspace.catalog);
+  const provider = cuberouterProvider(next.providers);
+  if (!provider) return workspace;
+  next.providers = next.providers.filter((item) => item !== provider);
+  const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
+  pruneInvalidAssignmentReferences(next.modelAssignments.byok, remainingIds);
+  pruneInvalidAssignmentReferences(next.modelAssignments.account, remainingIds);
+  refreshEffectiveCandidates(next);
+  return createModelWorkspace(next);
+}
+
+/**
+ * Keeps only the cuberouter endpoint at `apiBase` and drops the other nodes' endpoints, presets
+ * and assignment references. A same-node re-login keeps its selection; a switch to another node
+ * starts from the new account's list instead of carrying the previous account's models along.
+ */
+export function keepCuberouterEndpoint(workspace: ModelWorkspace, apiBase: string): ModelWorkspace {
+  const next = cloneCatalog(workspace.catalog);
+  const provider = cuberouterProvider(next.providers);
+  if (!provider) return workspace;
+  const normalized = apiBase.trim().replace(/\/+$/, "");
+  const keepEndpointIds = new Set(
+    provider.endpoints
+      .filter((endpoint) => endpoint.apiBase.replace(/\/+$/, "") === normalized)
+      .map((endpoint) => endpoint.endpointId)
+  );
+  const removedEndpoint = provider.endpoints.some((endpoint) => !keepEndpointIds.has(endpoint.endpointId));
+  const removedModel = provider.models.some((model) => !keepEndpointIds.has(model.endpointId));
+  if (!removedEndpoint && !removedModel) return workspace;
+
+  provider.endpoints = provider.endpoints.filter((endpoint) => keepEndpointIds.has(endpoint.endpointId));
+  provider.models = provider.models.filter((model) => keepEndpointIds.has(model.endpointId));
+  if (!provider.endpoints.length || !provider.models.length) {
+    next.providers = next.providers.filter((item) => item !== provider);
+  }
+  const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
+  pruneInvalidAssignmentReferences(next.modelAssignments.byok, remainingIds);
+  pruneInvalidAssignmentReferences(next.modelAssignments.account, remainingIds);
+  refreshEffectiveCandidates(next);
+  return createModelWorkspace(next);
+}
+
 /** Assigns one preset in one mode without touching the other mode. */
 export function assignCatalogPreset(
   workspace: ModelWorkspace,

@@ -154,9 +154,12 @@ export interface CreateCuberouterAccountServiceOptions {
   log?: (message: string) => void;
 }
 
-/** Handles to cuberouter account uuid. */
-export function toCuberouterAccountUuid(userId: string): string {
-  return `cuberouter:${userId}`;
+/**
+ * Handles to cuberouter account uuid. The node is part of the identity: the same username (and
+ * even the same numeric user id) on two deployments is two different accounts.
+ */
+export function toCuberouterAccountUuid(nodeId: string, userId: string): string {
+  return `cuberouter:${nodeId}:${userId}`;
 }
 
 /**
@@ -304,7 +307,7 @@ export function createCuberouterAccountService(
     // by every successful login — so it answers exactly this.
     const seenBefore = options.accountNodes.get(username) !== null;
     const projection = options.accountSessionRepository.upsert({
-      uuid: toCuberouterAccountUuid(session.userId),
+      uuid: toCuberouterAccountUuid(nodeId, session.userId),
       cloudUuid: session.accessToken,
       isNewUser: !seenBefore,
       authChannel: "cuberouter",
