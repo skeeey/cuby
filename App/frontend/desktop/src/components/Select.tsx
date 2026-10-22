@@ -219,12 +219,14 @@ export function Select(props: SelectProps) {
       {open && (
         <div
           id={props.searchable ? undefined : listboxId}
-          className={`select-control__menu ${props.menuClassName ?? ""}`}
+          className={`select-control__menu${
+            props.searchable ? " select-control__menu--searchable" : ""
+          } ${props.menuClassName ?? ""}`}
           role={props.searchable ? "presentation" : "listbox"}
           aria-labelledby={!props.searchable && props.label ? labelId : undefined}
         >
           {props.searchable && (
-            <div className="flex items-center gap-2 px-2 py-1.5">
+            <div className="select-control__search flex items-center gap-2 px-2 py-1.5">
               <Search size={12} aria-hidden="true" />
               <input
                 autoFocus
@@ -237,7 +239,12 @@ export function Select(props: SelectProps) {
             </div>
           )}
           {props.searchable ? (
-            <div id={listboxId} role="listbox" aria-labelledby={props.label ? labelId : undefined}>
+            <div
+              id={listboxId}
+              className="select-control__options"
+              role="listbox"
+              aria-labelledby={props.label ? labelId : undefined}
+            >
               {optionNodes}
             </div>
           ) : optionNodes}
