@@ -64,8 +64,43 @@ export function modelProviderLogoUrl(provider: string): string | undefined {
   return undefined;
 }
 
+/** Ordered brand tokens; the first match wins. Cuberouter serves every model under `openai`. */
+const MODEL_BRAND_TOKENS: ReadonlyArray<readonly [token: string, protocol: Protocol]> = [
+  ["claude", "anthropic"],
+  ["deepseek", "deepseek"],
+  ["doubao", "doubao"],
+  ["bytedance", "doubao"],
+  ["glm", "zhipu"],
+  ["zhipu", "zhipu"],
+  ["qwen", "qwen"],
+  ["tongyi", "qwen"],
+  ["kimi", "moonshot"],
+  ["moonshot", "moonshot"],
+  ["minimax", "minimax"],
+  ["gemini", "gemini"],
+  ["gemma", "gemini"],
+  ["google", "gemini"],
+  ["gpt", "openai"],
+  ["openai", "openai"],
+  ["ernie", "baidu"],
+  ["baidu", "baidu"],
+  ["stepfun", "stepfun"],
+  ["step-", "stepfun"],
+  ["mimo", "xiaomi"],
+  ["xiaomi", "xiaomi"]
+];
+
+/** Resolve a model's brand mark: the model id wins over the transport provider. */
+export function modelBrandLogoUrl(model: string, provider: string): string | undefined {
+  const key = model.trim().toLocaleLowerCase();
+  const brand = MODEL_BRAND_TOKENS.find(([token]) => key.includes(token));
+  return (brand ? PROTOCOL_LOGO_URLS[brand[1]] : undefined) ?? modelProviderLogoUrl(provider);
+}
+
 export interface ModelProviderLogoProps {
   provider: string;
+  /** Optional model id; its brand wins over the transport provider. */
+  model?: string;
   className?: string;
   size?: number;
 }
@@ -73,7 +108,7 @@ export interface ModelProviderLogoProps {
 /** Brand mark for a model protocol / provider. */
 export function ModelProviderLogo(props: ModelProviderLogoProps) {
   const size = props.size ?? 14;
-  const logoUrl = modelProviderLogoUrl(props.provider);
+  const logoUrl = modelBrandLogoUrl(props.model ?? "", props.provider);
   const className = ["model-provider-logo", props.className].filter(Boolean).join(" ");
 
   if (!logoUrl) {

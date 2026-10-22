@@ -76,6 +76,13 @@ export interface CuberouterSelfSummary {
   usedQuota: number;
 }
 
+/** One relay model row: its id and the endpoint kinds the instance says it serves. */
+export interface CuberouterModelInfo {
+  id: string;
+  /** `supported_endpoint_types`; empty when the instance omits or malforms the field. */
+  supportedEndpointTypes: string[];
+}
+
 /** One organization token, with the plaintext key the instance returns to permitted members. */
 export interface CuberouterOrganizationToken {
   id: number;
@@ -170,10 +177,10 @@ export interface CuberouterClient {
   /** The model names the member's groups may call. No capability metadata: names only. */
   getUserModels(accessToken: string): Promise<string[]>;
   /**
-   * The model names a specific API key may call, read through the relay's own `/v1/models`.
+   * The models a specific API key may call, read through the relay's own `/v1/models`.
    * Unlike `getUserModels`, this applies the key's model limits and group.
    */
-  getKeyModels(apiKey: string): Promise<string[]>;
+  getKeyModels(apiKey: string): Promise<CuberouterModelInfo[]>;
   /** Every personal token of the member (masked), newest first, one page. */
   listPersonalTokens(accessToken: string): Promise<CuberouterPersonalToken[]>;
   /**

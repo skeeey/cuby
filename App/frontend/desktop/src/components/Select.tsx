@@ -1,6 +1,6 @@
 /** Select module. */
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, Search } from "lucide-react";
 
 /** Contract for select option. */
 export interface SelectOption {
@@ -29,6 +29,10 @@ export interface SelectProps {
   menuClassName?: string;
   labelClassName?: string;
   placement?: "top" | "bottom";
+  /** Renders a filter box at the top of the menu; for lists too long to scan. */
+  searchable?: boolean;
+  /** Placeholder and accessible name of the filter box; used when `searchable` is set. */
+  searchPlaceholder?: string;
   /** Optional footer rendered below options; receives a close helper. */
   menuFooter?: (api: { close: () => void }) => ReactNode;
 }
@@ -41,20 +45,39 @@ export function Select(props: SelectProps) {
   const labelId = `${controlId}-label`;
   const rootRef = useRef<HTMLDivElement | null>(null);
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const [activeValue, setActiveValue] = useState(props.value);
 
-  const enabledOptions = useMemo(() => props.options.filter((option) => !option.disabled), [props.options]);
+  const visibleOptions = useMemo(() => {
+    if (!props.searchable) return props.options;
+    const needle = query.trim().toLowerCase();
+    if (!needle) return props.options;
+    return props.options.filter((option) => (
+      option.label.toLowerCase().includes(needle)
+      || (option.selectedLabel ?? "").toLowerCase().includes(needle)
+    ));
+  }, [props.options, props.searchable, query]);
+  const enabledOptions = useMemo(() => visibleOptions.filter((option) => !option.disabled), [visibleOptions]);
   const selectedOption = props.options.find((option) => option.value === props.value);
-  const activeOption = props.options.find((option) => option.value === activeValue && !option.disabled);
+  const activeOption = visibleOptions.find((option) => option.value === activeValue && !option.disabled);
+
+  function closeMenu() {
+    setOpen(false);
+    setQuery("");
+  }
 
   useEffect(() => {
     if (!open) return;
 
-    setActiveValue(props.value || enabledOptions[0]?.value || "");
+    // Prefer the committed value, but keep a navigable option active when the filter hides it.
+    setActiveValue(enabledOptions.some((option) => option.value === props.value)
+      ? props.value
+      : enabledOptions[0]?.value ?? "");
 
     const closeOnOutsideClick = (event: MouseEvent) => {
       if (!rootRef.current?.contains(event.target as Node)) {
         setOpen(false);
+        setQuery("");
       }
     };
 
@@ -81,11 +104,12 @@ export function Select(props: SelectProps) {
     if (!nextOption || nextOption.disabled) return;
 
     props.onValueChange(nextValue);
-    setOpen(false);
+    closeMenu();
   }
 
-  function handleKeyDown(event: KeyboardEvent<HTMLButtonElement>) {
+  function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
     if (props.disabled) return;
+    const typingInSearch = event.target instanceof HTMLInputElement;
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
@@ -103,11 +127,12 @@ export function Select(props: SelectProps) {
 
     if (event.key === "Escape") {
       event.preventDefault();
-      setOpen(false);
+      closeMenu();
       return;
     }
 
-    if (event.key === "Enter" || event.key === " ") {
+    // A space is search text while the filter box has focus; everywhere else it opens the menu.
+    if (event.key === "Enter" || (event.key === " " && !typingInSearch)) {
       event.preventDefault();
       if (open) {
         selectValue(activeOption?.value ?? props.value);
@@ -119,10 +144,42 @@ export function Select(props: SelectProps) {
 
   let previousGroupLabel: string | undefined;
 
+  const optionNodes = visibleOptions.map((option) => {
+    const showGroupLabel = Boolean(option.groupLabel && option.groupLabel !== previousGroupLabel);
+    previousGroupLabel = option.groupLabel;
+
+    return (
+      <div key={option.value}>
+        {showGroupLabel && <div className="select-control__group-label">{option.groupLabel}</div>}
+        <button
+          type="button"
+          role="option"
+          aria-selected={option.value === props.value}
+          disabled={option.disabled}
+          className={`select-control__option ${
+            option.value === props.value ? "select-control__option--selected" : ""
+          } ${option.value === activeValue ? "select-control__option--active" : ""}`}
+          onClick={() => selectValue(option.value)}
+        >
+          <span className="select-control__option-content">
+            {option.icon && (
+              <span className="select-control__option-icon" aria-hidden="true">{option.icon}</span>
+            )}
+            <span className="select-control__option-label">{option.label}</span>
+          </span>
+          {option.value === props.value && !option.disabled && (
+            <Check size={14} strokeWidth={2.6} className="select-control__option-check" aria-hidden="true" />
+          )}
+        </button>
+      </div>
+    );
+  });
+
   return (
     <div
       ref={rootRef}
       className={`select-control select-control--placement-${props.placement ?? "bottom"} ${props.className ?? ""}`}
+      onKeyDown={handleKeyDown}
     >
       {props.label && (
         <span id={labelId} className={props.labelClassName ?? "select-control__label"}>
@@ -144,8 +201,10 @@ export function Select(props: SelectProps) {
         aria-labelledby={props.label ? `${labelId} ${controlId}` : undefined}
         title={selectedOption?.label}
         disabled={props.disabled}
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={handleKeyDown}
+        onClick={() => {
+          if (open) closeMenu();
+          else setOpen(true);
+        }}
       >
         <span className="select-control__selection">
           {selectedOption?.icon && (
@@ -158,38 +217,31 @@ export function Select(props: SelectProps) {
         <ChevronDown size={16} strokeWidth={2.2} className="select-control__icon" aria-hidden="true" />
       </button>
       {open && (
-        <div id={listboxId} className={`select-control__menu ${props.menuClassName ?? ""}`} role="listbox" aria-labelledby={props.label ? labelId : undefined}>
-          {props.options.map((option) => {
-            const showGroupLabel = Boolean(option.groupLabel && option.groupLabel !== previousGroupLabel);
-            previousGroupLabel = option.groupLabel;
-
-            return (
-              <div key={option.value}>
-                {showGroupLabel && <div className="select-control__group-label">{option.groupLabel}</div>}
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={option.value === props.value}
-                  disabled={option.disabled}
-                  className={`select-control__option ${
-                    option.value === props.value ? "select-control__option--selected" : ""
-                  } ${option.value === activeValue ? "select-control__option--active" : ""}`}
-                  onClick={() => selectValue(option.value)}
-                >
-                  <span className="select-control__option-content">
-                    {option.icon && (
-                      <span className="select-control__option-icon" aria-hidden="true">{option.icon}</span>
-                    )}
-                    <span className="select-control__option-label">{option.label}</span>
-                  </span>
-                  {option.value === props.value && !option.disabled && (
-                    <Check size={14} strokeWidth={2.6} className="select-control__option-check" aria-hidden="true" />
-                  )}
-                </button>
-              </div>
-            );
-          })}
-          {props.menuFooter?.({ close: () => setOpen(false) })}
+        <div
+          id={props.searchable ? undefined : listboxId}
+          className={`select-control__menu ${props.menuClassName ?? ""}`}
+          role={props.searchable ? "presentation" : "listbox"}
+          aria-labelledby={!props.searchable && props.label ? labelId : undefined}
+        >
+          {props.searchable && (
+            <div className="flex items-center gap-2 px-2 py-1.5">
+              <Search size={12} aria-hidden="true" />
+              <input
+                autoFocus
+                value={query}
+                placeholder={props.searchPlaceholder}
+                aria-label={props.searchPlaceholder}
+                onChange={(event) => setQuery(event.target.value)}
+                className="w-full bg-transparent text-xs outline-none"
+              />
+            </div>
+          )}
+          {props.searchable ? (
+            <div id={listboxId} role="listbox" aria-labelledby={props.label ? labelId : undefined}>
+              {optionNodes}
+            </div>
+          ) : optionNodes}
+          {props.menuFooter?.({ close: closeMenu })}
         </div>
       )}
     </div>

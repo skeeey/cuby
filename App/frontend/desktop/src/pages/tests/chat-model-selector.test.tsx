@@ -13,7 +13,7 @@ describe("ChatModelSelector", () => {
     expect(source).toContain("pendingPresetByScope");
     expect(source).toContain("committedModelSelectionByScope");
     expect(source).toContain("agentActions.pendingModelPresetUpdated");
-    expect(source).toContain("if (resolved.unavailable && resolved.candidateId)");
+    expect(source).toContain("if (selectionUnavailable && resolved.candidateId)");
     expect(source).toContain('value={resolved.candidateId ?? ""}');
     expect(source).not.toContain("!hasNoModels && resolved.unavailable");
     expect(source).not.toContain("useModelWorkspace");

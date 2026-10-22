@@ -110,12 +110,19 @@ describe("cuberouter client", () => {
       jsonResponse({
         success: true,
         object: "list",
-        data: [{ id: "gpt-4o" }, { id: "claude-sonnet-4-6" }, { id: "gpt-4o" }]
+        data: [
+          { id: "gpt-4o", supported_endpoint_types: ["openai", "openai-response"] },
+          { id: "claude-sonnet-4-6", supported_endpoint_types: ["anthropic", "openai"] },
+          { id: "gpt-4o", supported_endpoint_types: ["openai"] }
+        ]
       })
     );
 
     await expect(clientWith(fetchImpl as unknown as typeof fetch).getKeyModels("sk-key"))
-      .resolves.toEqual(["gpt-4o", "claude-sonnet-4-6"]);
+      .resolves.toEqual([
+        { id: "gpt-4o", supportedEndpointTypes: ["openai", "openai-response"] },
+        { id: "claude-sonnet-4-6", supportedEndpointTypes: ["anthropic", "openai"] }
+      ]);
     const [url, init] = fetchImpl.mock.calls[0] as [string, RequestInit];
     expect(url).toBe("http://127.0.0.1:3000/v1/models");
     expect(init.method).toBe("GET");
@@ -126,12 +133,18 @@ describe("cuberouter client", () => {
     const fetchImpl = vi.fn(async () =>
       jsonResponse({
         object: "list",
-        data: [{ id: "gpt-4o" }, { id: "claude-sonnet-4-6" }]
+        data: [
+          { id: "gpt-4o" },
+          { id: "claude-sonnet-4-6", supported_endpoint_types: "anthropic" }
+        ]
       })
     );
 
     await expect(clientWith(fetchImpl as unknown as typeof fetch).getKeyModels("sk-key"))
-      .resolves.toEqual(["gpt-4o", "claude-sonnet-4-6"]);
+      .resolves.toEqual([
+        { id: "gpt-4o", supportedEndpointTypes: [] },
+        { id: "claude-sonnet-4-6", supportedEndpointTypes: [] }
+      ]);
   });
 
   it("reports a rejected access token as an expired session, not a plain rejection", async () => {

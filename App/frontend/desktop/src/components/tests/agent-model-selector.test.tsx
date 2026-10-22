@@ -7,6 +7,7 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ModelProviderConfig } from "../../api/config-client.js";
 import { AgentModelSelector } from "../agent-model-selector.js";
+import { modelProviderLogoUrl } from "../model-provider-logo.js";
 
 const mocks = vi.hoisted(() => ({
   dispatch: vi.fn()
@@ -58,6 +59,26 @@ function catalogView(): ModelConfigView {
     endpointId: "chat",
     protocol: "openai-chat-completions" as const,
     model: "gpt-4o-mini",
+    source: "byok" as const,
+    capabilities: ["agent" as const],
+    available: true
+  };
+  const byokDeepseek = {
+    presetId: "byok-deepseek",
+    provider: "openai" as const,
+    endpointId: "chat",
+    protocol: "openai-chat-completions" as const,
+    model: "deepseek-v4.1-flash",
+    source: "byok" as const,
+    capabilities: ["agent" as const],
+    available: true
+  };
+  const byokSeedance = {
+    presetId: "byok-seedance",
+    provider: "openai" as const,
+    endpointId: "chat",
+    protocol: "openai-chat-completions" as const,
+    model: "doubao-seedance-2-5-260628",
     source: "byok" as const,
     capabilities: ["agent" as const],
     available: true
@@ -120,7 +141,7 @@ function catalogView(): ModelConfigView {
         ],
         accountManaged: false,
         editable: true,
-        models: [byokAgent, byokMini, byokEmbedding]
+        models: [byokAgent, byokMini, byokDeepseek, byokSeedance, byokEmbedding]
       }
     ],
     modelAssignments: {
@@ -190,16 +211,71 @@ describe("AgentModelSelector", () => {
     return document.querySelectorAll<HTMLButtonElement>('[role="option"]');
   }
 
-  it("lists every chat-capable catalog model, including models outside the task candidates", () => {
+  function typeSearch(value: string): HTMLInputElement {
+    const input = document.querySelector<HTMLInputElement>(
+      'input[placeholder="home.modelSelector.searchPlaceholder"]'
+    );
+    if (!input) throw new Error("Missing model search input");
+    const setter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
+    act(() => {
+      setter?.call(input, value);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+    return input;
+  }
+
+  it("lists every text chat catalog model and hides relay models of other modalities", () => {
     renderSelector();
     const options = openMenu();
 
     expect([...options].map((option) => option.textContent)).toEqual([
       "home.modelSelector.platformAgent",
       "gpt-4o",
-      "gpt-4o-mini"
+      "gpt-4o-mini",
+      "deepseek-v4.1-flash"
     ]);
     expect(document.body.textContent).not.toContain("text-embedding-3-small");
+    expect(document.body.textContent).not.toContain("doubao-seedance-2-5-260628");
+  });
+
+  it("filters the model list with the search box", () => {
+    renderSelector();
+    openMenu();
+
+    typeSearch("deep");
+
+    expect([...document.querySelectorAll('[role="option"]')].map((option) => option.textContent))
+      .toEqual(["deepseek-v4.1-flash"]);
+  });
+
+  it("picks the brand icon from the model id instead of the provider", () => {
+    renderSelector();
+    openMenu();
+
+    const deepseek = [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')]
+      .find((option) => option.textContent === "deepseek-v4.1-flash");
+
+    expect(deepseek?.querySelector("img")?.getAttribute("src")).toBe(modelProviderLogoUrl("deepseek"));
+  });
+
+  it("keeps a stored non-text model visible as a disabled selection", () => {
+    const config = seedConfig();
+    config.catalog!.modelAssignments.byok.agent.default = "byok-seedance";
+
+    act(() => root.render(
+      <AgentModelSelector
+        mode="byok"
+        scopeKey="scope-1"
+        disabled={false}
+        seedConfig={config}
+      />
+    ));
+    openMenu();
+
+    const seedance = [...document.querySelectorAll<HTMLButtonElement>('[role="option"]')]
+      .find((option) => option.textContent === "doubao-seedance-2-5-260628");
+    expect(seedance?.getAttribute("aria-selected")).toBe("true");
+    expect(seedance?.disabled).toBe(true);
   });
 
   it("renders a flat list without custom-model wording or a settings footer", () => {
