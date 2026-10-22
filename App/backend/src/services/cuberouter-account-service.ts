@@ -1,8 +1,9 @@
 /** Cuberouter account service module. */
-import type {
-  CuberouterAuthInput,
-  CuberouterAuthResult,
-  OkResponse
+import {
+  isTextChatModelId,
+  type CuberouterAuthInput,
+  type CuberouterAuthResult,
+  type OkResponse
 } from "@memmy/local-api-contracts";
 import {
   DESKTOP_TOKEN_NAME,
@@ -17,6 +18,7 @@ import type { AccountSessionRepository } from "../infrastructure/app-state-store
 import type { CuberouterAccountNodeRepository } from "../infrastructure/app-state-store/repositories/cuberouter-account-node-repo.js";
 import type { ApiErrorCode } from "./error-envelope.js";
 import { FALLBACK_NODE_ID, type CuberouterNodeRouter } from "./cuberouter-node-router.js";
+import { textChatModelIds } from "./cuberouter-model-kinds.js";
 
 /** Renew this long before the deadline, so a call in flight cannot outlive its token. */
 const ACCESS_TOKEN_RENEWAL_SKEW_SECONDS = 60;
@@ -371,7 +373,7 @@ export function createCuberouterAccountService(
       : await ensurePersonalKey(client, accessToken, tokenName, createDirectly);
     // The key's own list is keyed to its group and model limits; the account-level list is not.
     // A relay outage must not fail login: the caller falls back to the account list.
-    const models = await client.getKeyModels(apiKey).catch((error) => {
+    const models = await client.getKeyModels(apiKey).then(textChatModelIds).catch((error) => {
       log(`[cuberouter] reading key models failed: ${error instanceof Error ? error.message : String(error)}`);
       return null;
     });
@@ -498,7 +500,7 @@ export function createCuberouterAccountService(
       ? await client.listMyOrganizationTokens(accessToken, organization.id, hasOwner ? ownerUserId : 0)
       : [];
     const personalTokens = await client.listPersonalTokens(accessToken);
-    const models = await client.getUserModels(accessToken);
+    const models = (await client.getUserModels(accessToken)).filter(isTextChatModelId);
     const self = await client.getSelf(accessToken).catch((error) => {
       log(`[cuberouter] reading self quota failed: ${error instanceof Error ? error.message : String(error)}`);
       return null;
@@ -597,7 +599,7 @@ export function createCuberouterAccountService(
       apiKey = token.key;
     }
 
-    return { models: await client.getKeyModels(apiKey) };
+    return { models: textChatModelIds(await client.getKeyModels(apiKey)) };
   }
 
   /**

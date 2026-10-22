@@ -49,6 +49,17 @@ describe("prototype style alignment", () => {
     expect(globalCss).not.toContain("*::-webkit-scrollbar-thumb");
   });
 
+  it("gives the model menu a scrollbar that is easy to grab", () => {
+    const menuRule = globalCss.match(/\.select-control__menu\s*\{[^}]*\}/)?.[0] ?? "";
+    const scrollbarRule = globalCss.match(/\.select-control__menu::-webkit-scrollbar\s*\{[^}]*\}/)?.[0] ?? "";
+    const thumbRule = globalCss.match(/\.select-control__menu::-webkit-scrollbar-thumb\s*\{[^}]*\}/)?.[0] ?? "";
+
+    expect(menuRule).toContain("scrollbar-width: auto;");
+    expect(scrollbarRule).toContain("display: block;");
+    expect(scrollbarRule).toContain("width: 12px;");
+    expect(thumbRule).toContain("background-clip: padding-box;");
+  });
+
   it("does not expose dark theme token overrides", () => {
     expect(tokenCss).not.toContain('data-theme="dark"');
     expect(tokenCss).not.toContain("color-scheme: dark");

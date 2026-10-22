@@ -7,7 +7,8 @@ import type {
   CuberouterSession,
   CuberouterOrganizationToken,
   CuberouterOrganization,
-  CuberouterPersonalToken
+  CuberouterPersonalToken,
+  CuberouterModelInfo
 } from "./types.js";
 
 export interface CreateHttpCuberouterClientOptions {
@@ -296,11 +297,19 @@ export function createHttpCuberouterClient(options: CreateHttpCuberouterClientOp
       const rows = Array.isArray(data) ? data : asRecord(data).data;
       if (!Array.isArray(rows)) return [];
       const seen = new Set<string>();
-      return rows.flatMap((row) => {
-        const id = readString(asRecord(row).id);
+      return rows.flatMap((row): CuberouterModelInfo[] => {
+        const record = asRecord(row);
+        const id = readString(record.id);
         if (!id || seen.has(id)) return [];
         seen.add(id);
-        return [id];
+        // `supported_endpoint_types` is the only type signal the relay gives; a malformed or
+        // missing value reads as empty, and the caller decides what that means.
+        const supportedEndpointTypes = Array.isArray(record.supported_endpoint_types)
+          ? record.supported_endpoint_types.flatMap((type) => (
+              typeof type === "string" && type.trim() ? [type.trim()] : []
+            ))
+          : [];
+        return [{ id, supportedEndpointTypes }];
       });
     },
 

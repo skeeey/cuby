@@ -7506,6 +7506,32 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack
   background: var(--color-background-paper);
   box-shadow: var(--shadow-popover);
   padding: 6px;
+  /* Model menus can be long: a 12px track with an 8px pill thumb is easier to grab than the
+     platform's hairline overlay scrollbar. */
+  scrollbar-width: auto;
+  scrollbar-color: var(--codex-scrollbar-thumb) transparent;
+}
+
+.select-control__menu::-webkit-scrollbar {
+  display: block;
+  width: 12px;
+  height: 12px;
+}
+
+.select-control__menu::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.select-control__menu::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background: var(--codex-scrollbar-thumb);
+  background-clip: padding-box;
+}
+
+.select-control__menu::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--color-text-ink) 32%, transparent);
+  background-clip: padding-box;
 }
 
 .select-control--placement-top .select-control__menu {

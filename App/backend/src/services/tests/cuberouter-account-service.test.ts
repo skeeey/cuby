@@ -46,8 +46,16 @@ function fakeClient(overrides: Partial<CuberouterClient> = {}): CuberouterClient
     createPersonalToken: vi.fn(async () => undefined),
     getPersonalTokenKey: vi.fn(async () => "sk-personal"),
     getSelf: vi.fn(async () => ({ quota: 100, usedQuota: 0 })),
-    getUserModels: vi.fn(async () => ["deepseek-v4.1-flash", "gpt-oss-120b"]),
-    getKeyModels: vi.fn(async () => ["gpt-4o"]),
+    getUserModels: vi.fn(async () => [
+      "deepseek-v4.1-flash",
+      "qwen3-embedding-8b",
+      "gpt-oss-120b"
+    ]),
+    getKeyModels: vi.fn(async () => [
+      { id: "gpt-4o", supportedEndpointTypes: ["openai", "openai-response"] },
+      { id: "qwen3-embedding-8b", supportedEndpointTypes: ["openai", "embeddings"] },
+      { id: "viduq3-pro", supportedEndpointTypes: ["openai"] }
+    ]),
     listPersonalTokens: vi.fn(async () => [{ id: 41, name: "cuby-desktop-alice", status: 1 }]),
     listMyOrganizationTokens: vi.fn(async () => [
       { id: 11, name: "cuby-desktop-alice", key: "sk-org", status: 1, responsibleUserId: 7 }
