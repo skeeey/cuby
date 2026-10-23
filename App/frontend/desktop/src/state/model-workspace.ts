@@ -489,6 +489,87 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
   return createModelWorkspace(next);
 }
 
+/**
+ * Removes the cuberouter endpoints at the given node bases, together with their models and
+ * assignment references. Other endpoints under the same provider (an ordinary OpenAI
+ * connection, for example) and other providers stay untouched.
+ */
+export function clearCuberouterAccount(
+  workspace: ModelWorkspace,
+  managedApiBases: readonly string[]
+): ModelWorkspace {
+  const next = cloneCatalog(workspace.catalog);
+  const provider = cuberouterProvider(next.providers);
+  if (!provider) return workspace;
+  const managed = new Set(managedApiBases.map(apiOrigin));
+  if (!managed.size) return workspace;
+  const removedEndpointIds = new Set(
+    provider.endpoints
+      .filter((endpoint) => managed.has(apiOrigin(endpoint.apiBase)))
+      .map((endpoint) => endpoint.endpointId)
+  );
+  if (!removedEndpointIds.size) return workspace;
+
+  provider.endpoints = provider.endpoints.filter((endpoint) => !removedEndpointIds.has(endpoint.endpointId));
+  provider.models = provider.models.filter((model) => !removedEndpointIds.has(model.endpointId));
+  if (!provider.endpoints.length || !provider.models.length) {
+    next.providers = next.providers.filter((item) => item !== provider);
+  }
+  const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
+  pruneInvalidAssignmentReferences(next.modelAssignments.byok, remainingIds);
+  pruneInvalidAssignmentReferences(next.modelAssignments.account, remainingIds);
+  refreshEffectiveCandidates(next);
+  return createModelWorkspace(next);
+}
+
+/**
+ * Keeps only the cuberouter endpoint at `apiBase` among the known node bases, dropping the other
+ * nodes' endpoints, presets and assignment references. An ordinary OpenAI endpoint at any other
+ * base is not a cuberouter endpoint and survives. A same-node re-login keeps its selection; a
+ * switch to another node starts from the new account's list.
+ */
+export function keepCuberouterEndpoint(
+  workspace: ModelWorkspace,
+  apiBase: string,
+  managedApiBases: readonly string[]
+): ModelWorkspace {
+  const next = cloneCatalog(workspace.catalog);
+  const provider = cuberouterProvider(next.providers);
+  if (!provider) return workspace;
+  const keepOrigin = apiOrigin(apiBase);
+  const managed = new Set(managedApiBases.map(apiOrigin));
+  managed.add(keepOrigin);
+  const removedEndpointIds = new Set(
+    provider.endpoints
+      .filter((endpoint) => {
+        const endpointOrigin = apiOrigin(endpoint.apiBase);
+        return endpointOrigin !== keepOrigin && managed.has(endpointOrigin);
+      })
+      .map((endpoint) => endpoint.endpointId)
+  );
+  if (!removedEndpointIds.size) return workspace;
+
+  provider.endpoints = provider.endpoints.filter((endpoint) => !removedEndpointIds.has(endpoint.endpointId));
+  provider.models = provider.models.filter((model) => !removedEndpointIds.has(model.endpointId));
+  if (!provider.endpoints.length || !provider.models.length) {
+    next.providers = next.providers.filter((item) => item !== provider);
+  }
+  const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
+  pruneInvalidAssignmentReferences(next.modelAssignments.byok, remainingIds);
+  pruneInvalidAssignmentReferences(next.modelAssignments.account, remainingIds);
+  refreshEffectiveCandidates(next);
+  return createModelWorkspace(next);
+}
+
+/** Endpoint identity is the origin: cuberouter node tables store the origin, the catalog the /v1 base. */
+function apiOrigin(apiBase: string): string {
+  try {
+    return new URL(apiBase.trim()).origin;
+  } catch {
+    return apiBase.trim().replace(/\/+$/, "");
+  }
+}
+
 /** Assigns one preset in one mode without touching the other mode. */
 export function assignCatalogPreset(
   workspace: ModelWorkspace,

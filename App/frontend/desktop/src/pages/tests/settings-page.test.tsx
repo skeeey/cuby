@@ -993,6 +993,14 @@ describe("SettingsPageView", () => {
     ]);
   });
 
+  it("clears cuberouter models before the session logout", () => {
+    const source = readFileSync(settingsPageSourcePath, "utf8");
+    const clearCall = source.indexOf("clearCuberouterAccountForLogout({");
+    const logoutCall = source.indexOf("accountClient?.logout()");
+    expect(clearCall).toBeGreaterThan(-1);
+    expect(logoutCall).toBeGreaterThan(clearCall);
+  });
+
   it("退出后的 canonical 刷新失败时仅使用缓存 BYOK catalog 回退", async () => {
     const dispatch = vi.fn();
     const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);

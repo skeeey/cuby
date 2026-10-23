@@ -101,7 +101,9 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setSelection(readCuberouterSelection(createModelWorkspace(props.seedConfig).catalog, choices.apiBase));
   }, [choices, selection, props.seedConfig]);
 
-  const record = props.username ? readCuberouterKeySelection(props.username, cuberouterKeySelectionStorage()) : null;
+  const record = props.username && choices
+    ? readCuberouterKeySelection(choices.apiBase, props.username, cuberouterKeySelectionStorage())
+    : null;
   // A remembered switch wins while its row is still usable. With no record, show the key the
   // login flow provisions by default (`cuby-desktop-*`, organization first); the record is
   // reserved for an explicit switch, so the implicit default is derived on every load.
@@ -225,7 +227,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
 
   /** Applies one key: personal keys are revealed on demand, organization ones ship their secret. */
   async function selectKey(key: CuberouterKeyOption): Promise<void> {
-    if (!props.username || !selection) return;
+    if (!props.username || !selection || !choices) return;
     const id = `${key.scope}:${key.id}`;
     setPendingKeyId(id);
     setAssignmentTests({});
@@ -264,6 +266,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       // The record names the key the catalog actually holds: a failed save must not claim it.
       if (saved) {
         writeCuberouterKeySelection(
+          choices.apiBase,
           { username: props.username!, scope: key.scope, id: key.id, name: key.name },
           cuberouterKeySelectionStorage()
         );
@@ -306,7 +309,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       // with it the entry) for a retry, and the list keeps describing what the catalog holds.
       if (!saved) return;
       // 刚写进去的这把 key 没有列表身份，记录清掉；面板重新拉列表后用户可再选。
-      clearCuberouterKeySelection(props.username, cuberouterKeySelectionStorage());
+      clearCuberouterKeySelection(provisioning.apiBase, props.username, cuberouterKeySelectionStorage());
       loadChoices();
     } catch {
       setSaveError(t("settings.modelWorkspace.saveFailed"));

@@ -1,8 +1,15 @@
 /** Model provisioning tests. */
 import type { CuberouterModelChoicesView } from "@memmy/local-api-contracts";
 import { describe, expect, it, vi } from "vitest";
-import { applyCuberouterSelection, createModelWorkspace } from "../model-workspace.js";
 import {
+  applyCuberouterSelection,
+  createModelWorkspace,
+  setTaskModelCandidates,
+  upsertByokPreset
+} from "../model-workspace.js";
+import {
+  clearCuberouterAccountForLogout,
+  collectCuberouterApiBases,
   provisionCuberouterKey,
   resolveCuberouterLoginKey,
   saveCatalogMutation
@@ -168,6 +175,71 @@ describe("provisionCuberouterKey", () => {
     // The server never echoes the stored secret, so every write must carry it again.
     expect(second.providers[0].endpoints[0].apiKey).toBe("sk-plain");
     expect(second.modelAssignments.byok.agent.default).toBe(second.providers[0].models[0].presetId);
+  });
+
+  it("drops the previous node's endpoints and models when logging in on another node", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: "https://cn.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-cn",
+      selection: {
+        agent: { models: ["old-model"], default: "old-model" },
+        memorySummary: "old-model",
+        memoryEvolution: "old-model"
+      }
+    });
+    const server = configClientServer(seeded.catalog);
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "https://hk.example/v1", protocol: "openai-chat-completions", apiKey: "sk-hk" },
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash"],
+      managedApiBases: ["https://cn.example/v1", "https://hk.example/v1"]
+    });
+
+    expect(server.saved).toHaveLength(1);
+    const provider = server.saved[0].providers[0];
+    expect(provider.endpoints.map((endpoint: any) => endpoint.apiBase)).toEqual(["https://hk.example/v1"]);
+    expect(provider.models.map((preset: any) => preset.model)).toEqual(["deepseek-flash"]);
+    expect(JSON.stringify(server.saved[0])).not.toContain("old-model");
+  });
+
+  it("keeps an ordinary OpenAI connection when switching cuberouter nodes", async () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://api.openai.com/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-openai",
+      model: "gpt-4o",
+      capabilities: ["agent"]
+    });
+    const seeded = applyCuberouterSelection(
+      setTaskModelCandidates(personal.workspace, "byok", [personal.presetId]),
+      {
+        apiBase: "https://cn.example/v1",
+        protocol: "openai-chat-completions",
+        apiKey: "sk-cn",
+        selection: { agent: { models: ["old-model"] }, memorySummary: "", memoryEvolution: "" }
+      }
+    );
+    const server = configClientServer(seeded.catalog);
+
+    await provisionCuberouterKey({
+      configClient: server.client,
+      endpoint: { apiBase: "https://hk.example/v1", protocol: "openai-chat-completions", apiKey: "sk-hk" },
+      defaultModel: "deepseek-flash",
+      availableModels: ["deepseek-flash"],
+      managedApiBases: ["https://cn.example/v1", "https://hk.example/v1"]
+    });
+
+    const provider = server.saved[0].providers.find((item: any) => item.provider === "openai");
+    expect(provider.endpoints.map((endpoint: any) => endpoint.apiBase).sort()).toEqual([
+      "https://api.openai.com/v1",
+      "https://hk.example/v1"
+    ]);
+    expect(provider.models.map((preset: any) => preset.model).sort()).toEqual(["deepseek-flash", "gpt-4o"]);
+    expect(provider.models.map((preset: any) => preset.presetId)).toContain(personal.presetId);
   });
 
   it("keeps the models the user assigned when a re-login re-provisions the key", async () => {
@@ -571,5 +643,56 @@ describe("saveCatalogMutation", () => {
 
     expect(client.saveModelCatalog).toHaveBeenCalledTimes(2);
     expect(client.getModelConfig).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe("cuberouter logout cleanup", () => {
+  it("collects the configured node origins plus the current base", async () => {
+    const accountClient = {
+      getNodes: vi.fn(async () => ({
+        nodes: ["cn", "hk"],
+        currentNodeId: "cn",
+        nodeUrls: { cn: "https://cn.example", hk: "https://hk.example/" }
+      })),
+      getModelChoices: vi.fn()
+    };
+
+    await expect(collectCuberouterApiBases({
+      accountClient,
+      fallbackApiBase: "https://cn.example/v1"
+    })).resolves.toEqual(["https://cn.example", "https://hk.example"]);
+    expect(accountClient.getModelChoices).not.toHaveBeenCalled();
+  });
+
+  it("falls back to the account's current base when the node table cannot be read", async () => {
+    const accountClient = {
+      getNodes: vi.fn(async () => { throw new Error("nodes offline"); }),
+      getModelChoices: vi.fn(async () => ({
+        account: { username: "alice", organizationName: null },
+        apiBase: "https://hk.example/v1",
+        keys: [],
+        models: []
+      }))
+    };
+
+    await expect(collectCuberouterApiBases({ accountClient })).resolves.toEqual(["https://hk.example"]);
+  });
+
+  it("throws when the logout clear cannot be saved", async () => {
+    const initial = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: "https://cn.example/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-cn",
+      selection: { agent: { models: ["a"] }, memorySummary: "", memoryEvolution: "" }
+    });
+    const client = {
+      getModelConfig: vi.fn(async () => initial),
+      saveModelCatalog: vi.fn(async () => { throw new Error("catalog offline"); })
+    };
+
+    await expect(clearCuberouterAccountForLogout({
+      configClient: client,
+      managedApiBases: ["https://cn.example"]
+    })).rejects.toThrow("catalog offline");
   });
 });

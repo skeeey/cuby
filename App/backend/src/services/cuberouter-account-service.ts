@@ -121,7 +121,12 @@ export interface CuberouterAccountService {
   /** Asks the target instance to email a verification code, for the line the caller picked. */
   sendEmailVerificationCode(email: string, nodeId?: string): Promise<{ ok: true }>;
   /** The configured lines and the one currently in effect. */
-  getNodes(): Promise<{ nodes: string[]; currentNodeId: string | null }>;
+  getNodes(): Promise<{
+    nodes: string[];
+    currentNodeId: string | null;
+    /** Node id to base URL, used by the desktop to identify endpoints it owns. */
+    nodeUrls: Record<string, string>;
+  }>;
   /** Measures every line and reports which one a first registration should use. */
   probeNodes(): Promise<{ nodes: string[]; defaultNodeId: string | null }>;
   /** The desktop's model page data: my keys with their billing, the selectable models, balance. */
@@ -154,9 +159,12 @@ export interface CreateCuberouterAccountServiceOptions {
   log?: (message: string) => void;
 }
 
-/** Handles to cuberouter account uuid. */
-export function toCuberouterAccountUuid(userId: string): string {
-  return `cuberouter:${userId}`;
+/**
+ * Handles to cuberouter account uuid. The node is part of the identity: the same username (and
+ * even the same numeric user id) on two deployments is two different accounts.
+ */
+export function toCuberouterAccountUuid(nodeId: string, userId: string): string {
+  return `cuberouter:${nodeId}:${userId}`;
 }
 
 /**
@@ -304,7 +312,7 @@ export function createCuberouterAccountService(
     // by every successful login — so it answers exactly this.
     const seenBefore = options.accountNodes.get(username) !== null;
     const projection = options.accountSessionRepository.upsert({
-      uuid: toCuberouterAccountUuid(session.userId),
+      uuid: toCuberouterAccountUuid(nodeId, session.userId),
       cloudUuid: session.accessToken,
       isNewUser: !seenBefore,
       authChannel: "cuberouter",
@@ -674,9 +682,14 @@ export function createCuberouterAccountService(
     },
 
     async getNodes() {
-      const nodes = options.nodeRouter.listNodes().map((node) => node.id);
+      const configured = options.nodeRouter.listNodes();
+      const nodes = configured.map((node) => node.id);
       const preferred = await options.nodeRouter.getPreferredNodeId();
-      return { nodes, currentNodeId: preferred && nodes.includes(preferred) ? preferred : null };
+      return {
+        nodes,
+        currentNodeId: preferred && nodes.includes(preferred) ? preferred : null,
+        nodeUrls: Object.fromEntries(configured.map((node) => [node.id, node.url]))
+      };
     },
 
     async probeNodes() {

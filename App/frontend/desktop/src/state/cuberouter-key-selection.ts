@@ -5,7 +5,7 @@
  */
 import type { CuberouterKeyOption } from "@memmy/local-api-contracts";
 
-export const CUBEROUTER_KEY_SELECTION_STORAGE_KEY = "memmy.cuberouterKeySelection.v1";
+export const CUBEROUTER_KEY_SELECTION_STORAGE_KEY = "memmy.cuberouterKeySelection.v2";
 
 /** Mirrors the backend's `DESKTOP_TOKEN_NAME`: the prefix of the key the login flow provisions. */
 const DESKTOP_KEY_NAME_PREFIX = "cuby-desktop";
@@ -48,20 +48,28 @@ export function defaultCuberouterKey<T extends SelectableKey>(
 
 type StoredSelections = Record<string, CuberouterKeySelection>;
 
+/** One record per account: the same username on two nodes is two accounts. */
+function selectionKey(apiBase: string, username: string): string {
+  return `${apiBase.trim().replace(/\/+$/, "")}\n${username.trim()}`;
+}
+
 export function readCuberouterKeySelection(
+  apiBase: string,
   username: string,
   storage?: Pick<Storage, "getItem">
 ): CuberouterKeySelection | null {
-  return readSelections(storage)[username.trim()] ?? null;
+  return readSelections(storage)[selectionKey(apiBase, username)] ?? null;
 }
 
 export function writeCuberouterKeySelection(
+  apiBase: string,
   selection: CuberouterKeySelection,
   storage?: Pick<Storage, "getItem" | "setItem">
 ): void {
   if (!storage) return;
   const selections = readSelections(storage);
-  selections[selection.username.trim()] = { ...selection, username: selection.username.trim() };
+  const username = selection.username.trim();
+  selections[selectionKey(apiBase, username)] = { ...selection, username };
   try {
     storage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify(selections));
   } catch {
@@ -70,13 +78,15 @@ export function writeCuberouterKeySelection(
 }
 
 export function clearCuberouterKeySelection(
+  apiBase: string,
   username: string,
   storage?: Pick<Storage, "getItem" | "setItem" | "removeItem">
 ): void {
   if (!storage) return;
   const selections = readSelections(storage);
-  if (!(username.trim() in selections)) return;
-  delete selections[username.trim()];
+  const key = selectionKey(apiBase, username);
+  if (!(key in selections)) return;
+  delete selections[key];
   try {
     if (Object.keys(selections).length > 0) {
       storage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify(selections));

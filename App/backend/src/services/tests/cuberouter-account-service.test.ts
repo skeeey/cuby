@@ -247,12 +247,25 @@ describe("cuberouter account service", () => {
     });
     expect(upsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        uuid: "cuberouter:7",
+        uuid: "cuberouter:default:7",
         cloudUuid: "jwt-1",
         authChannel: "cuberouter",
         profile: expect.objectContaining({ identityProvider: "cuberouter", nickname: "Alice" })
       })
     );
+  });
+
+  it("keys the same user id on two nodes as two different accounts", async () => {
+    const { repository, upsert } = fakeRepository();
+    const service = createTestService({ nodes: TWO_NODES, repository });
+
+    await service.login({ username: "alice", password: "Passw0rd1", nodeId: "cn" });
+    await service.login({ username: "alice", password: "Passw0rd1", nodeId: "hk" });
+
+    expect(upsert.mock.calls.map(([input]) => input.uuid)).toEqual([
+      "cuberouter:cn:7",
+      "cuberouter:hk:7"
+    ]);
   });
 
   it("forwards the email verification fields the instance asked for", async () => {
@@ -568,7 +581,11 @@ describe("cuberouter account service", () => {
   it("reports both lines and the one in effect", async () => {
     const service = createTestService({ nodes: TWO_NODES, preferredNodeId: "hk" });
 
-    await expect(service.getNodes()).resolves.toEqual({ nodes: ["cn", "hk"], currentNodeId: "hk" });
+    await expect(service.getNodes()).resolves.toEqual({
+      nodes: ["cn", "hk"],
+      currentNodeId: "hk",
+      nodeUrls: { cn: "https://cn.example", hk: "https://hk.example" }
+    });
   });
 
   it("preselects the build's default line when the probe reached nothing", async () => {

@@ -27,6 +27,10 @@ import { appActions, type AppAction } from "../state/app-actions.js";
 import type { AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import type { ModelWorkspaceMode } from "../state/model-workspace.js";
+import {
+  clearCuberouterAccountForLogout,
+  collectCuberouterApiBases
+} from "../state/model-provisioning.js";
 import { AppFrame } from "./app-frame.js";
 import { CuberouterModelSection } from "./cuberouter-model-section.js";
 import { ModelWorkspaceSection } from "./model-workspace-section.js";
@@ -1456,10 +1460,22 @@ export function SettingsPageView(props: SettingsPageViewProps) {
     setAccountBusy(true);
     setAccountError(null);
     try {
+      let modelConfig = state.modelConfig;
+      if (state.account.identityProvider === "cuberouter") {
+        // Clear the catalog while the session is still active: a failed save must abort the
+        // logout rather than leave the account's endpoint and API key behind.
+        if (!accountClient || !configClient?.saveModelCatalog) {
+          throw new Error("config client unavailable while clearing cuberouter models");
+        }
+        const managedApiBases = await collectCuberouterApiBases({ accountClient });
+        modelConfig = await clearCuberouterAccountForLogout({ configClient, managedApiBases });
+        dispatch(appActions.modelConfigUpdated(modelConfig));
+      }
+
       await (accountClient?.logout() ?? Promise.resolve({ ok: true as const }));
       track({ name: "account_logout", params: { page_path: "/settings" }, consentTier: "basic" });
       await finalizeAccountLogout({
-        modelConfig: state.modelConfig,
+        modelConfig,
         configClient,
         dispatch
       });

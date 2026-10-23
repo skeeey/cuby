@@ -19,6 +19,10 @@ import { AccountAuthPanel } from "../../components/account-auth-panel.js";
 import { appActions } from "../../state/app-actions.js";
 import { createInitialAppState, type AppState } from "../../state/app-reducer.js";
 import { applyCuberouterSelection, createModelWorkspace } from "../../state/model-workspace.js";
+import {
+  CUBEROUTER_KEY_SELECTION_STORAGE_KEY,
+  writeCuberouterKeySelection
+} from "../../state/cuberouter-key-selection.js";
 
 const mocks = vi.hoisted(() => ({
   clients: null as AppClients | null,
@@ -168,9 +172,11 @@ describe("auth flow", () => {
   });
 
   it("登录时保留机器上已选的 key（记录有效且仍可用）", async () => {
-    localStorage.setItem("memmy.cuberouterKeySelection.v1", JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
-    }));
+    writeCuberouterKeySelection(
+      "http://127.0.0.1:3100/v1",
+      { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" },
+      localStorage
+    );
     const server = createAuthServer(order, {
       modelChoices: {
         account: { username: "alice@a.com", organizationName: null },
@@ -198,9 +204,11 @@ describe("auth flow", () => {
   });
 
   it("记录里的 key 已不在列表时回落到登录 provision 的 key", async () => {
-    localStorage.setItem("memmy.cuberouterKeySelection.v1", JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
-    }));
+    writeCuberouterKeySelection(
+      "http://127.0.0.1:3100/v1",
+      { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" },
+      localStorage
+    );
     const server = createAuthServer(order, {
       modelChoices: {
         account: { username: "alice@a.com", organizationName: null },
@@ -217,7 +225,7 @@ describe("auth flow", () => {
     await vi.waitFor(() => expect(server.savedInput()).not.toBeNull());
     expect(server.savedInput()!.providers[0]!.endpoints[0]!.apiKey).toBe("sk-cuberouter");
     // The remembered key is gone: the record goes with it, so the panel stops naming it selected.
-    expect(localStorage.getItem("memmy.cuberouterKeySelection.v1")).toBeNull();
+    expect(localStorage.getItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY)).toBeNull();
   });
 
   it("choices 拉不到时不动已有配置", async () => {
@@ -231,9 +239,11 @@ describe("auth flow", () => {
         memoryEvolution: "deepseek-flash"
       }
     });
-    localStorage.setItem("memmy.cuberouterKeySelection.v1", JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
-    }));
+    writeCuberouterKeySelection(
+      "http://127.0.0.1:3100/v1",
+      { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" },
+      localStorage
+    );
     const server = createAuthServer(order, { choicesFailure: true, catalog: seeded.catalog });
     mocks.clients = server.client;
     await renderPanel();

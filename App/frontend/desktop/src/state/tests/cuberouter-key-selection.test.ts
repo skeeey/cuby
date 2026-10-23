@@ -9,6 +9,9 @@ import {
   writeCuberouterKeySelection
 } from "../cuberouter-key-selection.js";
 
+const CN = "https://cuberouter.cn/v1";
+const COM = "https://cuberouter.com/v1";
+
 function memoryStorage() {
   const map = new Map<string, string>();
   return {
@@ -20,42 +23,53 @@ function memoryStorage() {
 }
 
 describe("cuberouter key selection", () => {
-  it("round-trips one selection per username", () => {
+  it("round-trips one selection per account", () => {
     const storage = memoryStorage();
-    writeCuberouterKeySelection({ username: "alice@a.com", scope: "personal", id: 41, name: "my-key" }, storage);
-    writeCuberouterKeySelection({ username: "bob@a.com", scope: "organization", id: 11, name: "cuby-desktop-bob" }, storage);
+    writeCuberouterKeySelection(CN, { username: "alice@a.com", scope: "personal", id: 41, name: "my-key" }, storage);
+    writeCuberouterKeySelection(CN, { username: "bob@a.com", scope: "organization", id: 11, name: "cuby-desktop-bob" }, storage);
 
-    expect(readCuberouterKeySelection("alice@a.com", storage)).toEqual({
+    expect(readCuberouterKeySelection(CN, "alice@a.com", storage)).toEqual({
       username: "alice@a.com",
       scope: "personal",
       id: 41,
       name: "my-key"
     });
-    expect(readCuberouterKeySelection("bob@a.com", storage)).toEqual({
+    expect(readCuberouterKeySelection(CN, "bob@a.com", storage)).toEqual({
       username: "bob@a.com",
       scope: "organization",
       id: 11,
       name: "cuby-desktop-bob"
     });
-    expect(readCuberouterKeySelection("carol@a.com", storage)).toBeNull();
+    expect(readCuberouterKeySelection(CN, "carol@a.com", storage)).toBeNull();
+  });
+
+  it("keeps the same username on two nodes apart", () => {
+    const storage = memoryStorage();
+    writeCuberouterKeySelection(CN, { username: "alice@a.com", scope: "personal", id: 41, name: "cn-key" }, storage);
+    writeCuberouterKeySelection(COM, { username: "alice@a.com", scope: "personal", id: 9, name: "com-key" }, storage);
+
+    expect(readCuberouterKeySelection(CN, "alice@a.com", storage)?.name).toBe("cn-key");
+    expect(readCuberouterKeySelection(COM, "alice@a.com", storage)?.name).toBe("com-key");
   });
 
   it("ignores a corrupted record instead of throwing", () => {
     const storage = memoryStorage();
     storage.raw.set(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, "{not json");
 
-    expect(readCuberouterKeySelection("alice@a.com", storage)).toBeNull();
+    expect(readCuberouterKeySelection(CN, "alice@a.com", storage)).toBeNull();
   });
 
-  it("clears only the named username", () => {
+  it("clears only the named account", () => {
     const storage = memoryStorage();
-    writeCuberouterKeySelection({ username: "alice@a.com", scope: "personal", id: 41, name: "my-key" }, storage);
-    writeCuberouterKeySelection({ username: "bob@a.com", scope: "personal", id: 42, name: "bobs-key" }, storage);
+    writeCuberouterKeySelection(CN, { username: "alice@a.com", scope: "personal", id: 41, name: "my-key" }, storage);
+    writeCuberouterKeySelection(CN, { username: "bob@a.com", scope: "personal", id: 42, name: "bobs-key" }, storage);
+    writeCuberouterKeySelection(COM, { username: "alice@a.com", scope: "personal", id: 9, name: "com-key" }, storage);
 
-    clearCuberouterKeySelection("alice@a.com", storage);
+    clearCuberouterKeySelection(CN, "alice@a.com", storage);
 
-    expect(readCuberouterKeySelection("alice@a.com", storage)).toBeNull();
-    expect(readCuberouterKeySelection("bob@a.com", storage)?.name).toBe("bobs-key");
+    expect(readCuberouterKeySelection(CN, "alice@a.com", storage)).toBeNull();
+    expect(readCuberouterKeySelection(CN, "bob@a.com", storage)?.name).toBe("bobs-key");
+    expect(readCuberouterKeySelection(COM, "alice@a.com", storage)?.name).toBe("com-key");
   });
 
   it("derives the provisioned key name exactly as the backend does", () => {

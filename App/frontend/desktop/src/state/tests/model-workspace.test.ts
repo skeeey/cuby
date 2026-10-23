@@ -19,6 +19,7 @@ import {
   assignCatalogPreset,
   assignedCatalogEndpointId,
   chatModelTestTarget,
+  clearCuberouterAccount,
   clearLegacyModelWorkspace,
   createModelWorkspace,
   defaultModelSelectionInput,
@@ -1400,5 +1401,65 @@ describe("cuberouter selection", () => {
     for (const candidateId of assignment.agent.candidates) {
       expect(byId.get(candidateId)?.capabilities).toContain("agent");
     }
+  });
+
+  it("clears the cuberouter account without touching another provider", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "deepseek",
+      endpoint: "https://api.deepseek.com/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-deepseek",
+      model: "deepseek-chat",
+      capabilities: ["agent"]
+    });
+    const withCuberouter = applyCuberouterSelection(
+      setTaskModelCandidates(personal.workspace, "byok", [personal.presetId]),
+      {
+        apiBase: API_BASE,
+        protocol: "openai-chat-completions",
+        apiKey: "sk-1",
+        selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+      }
+    );
+
+    const cleared = clearCuberouterAccount(withCuberouter, [API_BASE]);
+
+    expect(cleared.catalog.providers.map((provider) => provider.provider)).toEqual(["deepseek"]);
+    const assignment = cleared.catalog.modelAssignments.byok;
+    expect(assignment.agent.candidates).toEqual([personal.presetId]);
+    expect(assignment.agent.default).toBe(personal.presetId);
+    expect(assignment.memorySummary).toBeNull();
+    expect(assignment.memoryEvolution).toBeNull();
+    expect(cleared.catalog.effectiveCandidates.byok.map((preset) => preset.presetId))
+      .toEqual([personal.presetId]);
+  });
+
+  it("keeps an ordinary OpenAI connection when clearing the cuberouter account", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://api.openai.com/v1",
+      protocol: "openai-chat-completions",
+      apiKey: "sk-openai",
+      model: "gpt-4o",
+      capabilities: ["agent"]
+    });
+    const withCuberouter = applyCuberouterSelection(
+      setTaskModelCandidates(personal.workspace, "byok", [personal.presetId]),
+      {
+        apiBase: API_BASE,
+        protocol: "openai-chat-completions",
+        apiKey: "sk-1",
+        selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+      }
+    );
+
+    const cleared = clearCuberouterAccount(withCuberouter, [API_BASE]);
+
+    const provider = cleared.catalog.providers.find((item) => item.provider === "openai");
+    expect(provider?.endpoints.map((endpoint) => endpoint.apiBase)).toEqual(["https://api.openai.com/v1"]);
+    expect(provider?.models.map((preset) => preset.model)).toEqual(["gpt-4o"]);
+    expect(cleared.catalog.modelAssignments.byok.agent.candidates).toEqual([personal.presetId]);
+    expect(cleared.catalog.modelAssignments.byok.agent.default).toBe(personal.presetId);
+    expect(cleared.catalog.modelAssignments.byok.memorySummary).toBeNull();
   });
 });

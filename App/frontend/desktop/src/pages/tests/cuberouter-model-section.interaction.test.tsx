@@ -7,7 +7,10 @@ import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../i18n/i18n-provider.js";
 import { ApiRequestError } from "../../api/http.js";
-import { CUBEROUTER_KEY_SELECTION_STORAGE_KEY } from "../../state/cuberouter-key-selection.js";
+import {
+  CUBEROUTER_KEY_SELECTION_STORAGE_KEY,
+  writeCuberouterKeySelection
+} from "../../state/cuberouter-key-selection.js";
 import { applyCuberouterSelection, createModelWorkspace, maskApiKey } from "../../state/model-workspace.js";
 import { CuberouterModelSection } from "../cuberouter-model-section.js";
 
@@ -148,9 +151,11 @@ describe("cuberouter model section", () => {
   });
 
   it("keeps a remembered switch selected instead of the provisioned default", async () => {
-    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" }
-    }));
+    writeCuberouterKeySelection(
+      CHOICES.apiBase,
+      { username: "alice@a.com", scope: "personal", id: 41, name: "my-own-key" },
+      window.localStorage
+    );
     await renderSection({
       choices: async () => ({
         ...CHOICES,
@@ -218,9 +223,11 @@ describe("cuberouter model section", () => {
 
   it("re-runs the provisioning behind 「重新获取 key」 and reloads the key list", async () => {
     // The record names a key the list no longer has: the panel offers the refresh entry.
-    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
-    }));
+    writeCuberouterKeySelection(
+      CHOICES.apiBase,
+      { username: "alice@a.com", scope: "personal", id: 99, name: "gone" },
+      window.localStorage
+    );
     const { accountClient, configClient } = await renderSection({
       storedConfig: storedConfigWithEndpoint(),
       keyModels: async () => ({ models: ["deepseek-v4.1-flash"] })
@@ -248,9 +255,11 @@ describe("cuberouter model section", () => {
     // The re-provisioned model is one this instance does not offer: seeding the three slots with
     // it would hand the account a model it cannot call, so the first listed model takes its place
     // — the connection cannot be written without one. The fresh key lands with that model.
-    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
-    }));
+    writeCuberouterKeySelection(
+      CHOICES.apiBase,
+      { username: "alice@a.com", scope: "personal", id: 99, name: "gone" },
+      window.localStorage
+    );
     const { accountClient, configClient } = await renderSection({
       storedConfig: storedConfigWithEndpoint(),
       keyModels: async () => ({ models: ["deepseek-v4.1-flash"] }),
@@ -284,9 +293,11 @@ describe("cuberouter model section", () => {
   it("keeps the record and the retry entry when the refresh save fails", async () => {
     // A refused save writes nothing, so nothing may be claimed: the record has to survive, or
     // the entry's own gate (`record && !selectedKey`) removes the only way to try again.
-    window.localStorage.setItem(CUBEROUTER_KEY_SELECTION_STORAGE_KEY, JSON.stringify({
-      "alice@a.com": { username: "alice@a.com", scope: "personal", id: 99, name: "gone" }
-    }));
+    writeCuberouterKeySelection(
+      CHOICES.apiBase,
+      { username: "alice@a.com", scope: "personal", id: 99, name: "gone" },
+      window.localStorage
+    );
     const { accountClient, configClient } = await renderSection({
       storedConfig: storedConfigWithEndpoint(),
       save: async () => {
