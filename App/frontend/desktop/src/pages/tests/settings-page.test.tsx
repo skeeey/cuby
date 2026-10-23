@@ -4,12 +4,12 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
-import type { ModelConfigInput, ModelConfigView } from "@memmy/local-api-contracts";
+import type { ModelConfigView } from "@memmy/local-api-contracts";
 import { I18nProvider } from "../../i18n/i18n-provider.js";
 import { mockBootstrap } from "./fixtures/bootstrap.js";
 import { appActions } from "../../state/app-actions.js";
 import { appReducer, createInitialAppState, type AppState } from "../../state/app-reducer.js";
-import { createModelWorkspace, clearCuberouterAccount, modelConfigInput, upsertModelConnection } from "../../state/model-workspace.js";
+import { createModelWorkspace, modelConfigInput, upsertModelConnection } from "../../state/model-workspace.js";
 import type { UpdateCoordinatorValue } from "../../app/update-coordinator.js";
 import {
   LOG_LEVEL_STORAGE_KEY,
@@ -993,67 +993,12 @@ describe("SettingsPageView", () => {
     ]);
   });
 
-  it("退出 cuberouter 账号时清掉模型并保存 catalog", async () => {
-    const dispatch = vi.fn();
-    const canonicalModelConfig = createAccountModeWithSavedModelState().modelConfig;
-    const clearedCatalog = clearCuberouterAccount(createModelWorkspace(canonicalModelConfig)).catalog;
-    const saveModelCatalog = vi.fn(async (_input: ModelConfigInput) => ({ catalog: clearedCatalog }));
-    const configClient = {
-      getModelConfig: vi.fn(async () => canonicalModelConfig),
-      saveModelCatalog,
-      updateSettings: vi.fn(async (settings) => settings)
-    };
-
-    await expect(finalizeAccountLogout({
-      modelConfig: canonicalModelConfig,
-      clearCuberouter: true,
-      configClient,
-      dispatch
-    })).resolves.toBe("unset");
-
-    expect(saveModelCatalog).toHaveBeenCalledOnce();
-    const written = saveModelCatalog.mock.calls[0]![0] as ModelConfigInput;
-    expect(written.providers).toEqual([]);
-    expect(configClient.getModelConfig).toHaveBeenCalledOnce();
-    expect(configClient.updateSettings).toHaveBeenCalledWith({ userMode: "unset" });
-    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "modelConfig/updated",
-      "account/cleared",
-      "settings/updated",
-      "settings/updated"
-    ]);
-  });
-
-  it("cuberouter 清理保存失败时回退到刷新 catalog", async () => {
-    const dispatch = vi.fn();
-    const warn = vi.spyOn(console, "warn").mockImplementation(() => undefined);
-    const canonicalModelConfig = createAccountModeWithSavedModelState().modelConfig;
-    const configClient = {
-      getModelConfig: vi.fn(async () => canonicalModelConfig),
-      saveModelCatalog: vi.fn(async () => { throw new Error("catalog offline"); }),
-      updateSettings: vi.fn(async (settings) => settings)
-    };
-
-    try {
-      await expect(finalizeAccountLogout({
-        modelConfig: canonicalModelConfig,
-        clearCuberouter: true,
-        configClient,
-        dispatch
-      })).resolves.toBe("byok");
-    } finally {
-      warn.mockRestore();
-    }
-
-    expect(configClient.saveModelCatalog).toHaveBeenCalledOnce();
-    // Once for the clear attempt, once for the fallback refresh.
-    expect(configClient.getModelConfig).toHaveBeenCalledTimes(2);
-    expect(dispatch.mock.calls.map(([action]) => action.type)).toEqual([
-      "modelConfig/updated",
-      "account/cleared",
-      "settings/updated",
-      "settings/updated"
-    ]);
+  it("clears cuberouter models before the session logout", () => {
+    const source = readFileSync(settingsPageSourcePath, "utf8");
+    const clearCall = source.indexOf("clearCuberouterAccountForLogout({");
+    const logoutCall = source.indexOf("accountClient?.logout()");
+    expect(clearCall).toBeGreaterThan(-1);
+    expect(logoutCall).toBeGreaterThan(clearCall);
   });
 
   it("退出后的 canonical 刷新失败时仅使用缓存 BYOK catalog 回退", async () => {
@@ -1108,7 +1053,6 @@ describe("SettingsPageView", () => {
     const source = readFileSync(settingsPageSourcePath, "utf8");
     expect(source).not.toContain('if (nextUserMode === "unset")');
     expect(source).toContain('dispatch(appActions.navigate("/welcome"))');
-    expect(source).toContain('clearCuberouter: state.account.identityProvider === "cuberouter"');
   });
 
   it("中文输入法组合输入中的 Enter 只确认候选，不保存账户昵称", () => {

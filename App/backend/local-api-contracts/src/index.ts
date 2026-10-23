@@ -1263,7 +1263,9 @@ export const CuberouterNodeIdQuerySchema = z.object({
 /** 配置的线路与当前生效的那一条。 */
 export const CuberouterNodesViewSchema = z.object({
     nodes: z.array(z.string()),
-    currentNodeId: z.string().nullable()
+    currentNodeId: z.string().nullable(),
+    /** Node id to its base URL; optional so an older backend view still parses. */
+    nodeUrls: z.record(z.string(), z.string().url()).optional()
 });
 export type CuberouterNodesView = z.infer<typeof CuberouterNodesViewSchema>;
 

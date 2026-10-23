@@ -18,7 +18,11 @@ import {
   readCuberouterKeySelection,
   writeCuberouterKeySelection
 } from "../state/cuberouter-key-selection.js";
-import { provisionCuberouterKey, resolveCuberouterLoginKey } from "../state/model-provisioning.js";
+import {
+  collectCuberouterApiBases,
+  provisionCuberouterKey,
+  resolveCuberouterLoginKey
+} from "../state/model-provisioning.js";
 import { createModelWorkspace } from "../state/model-workspace.js";
 import { openExternalUrl } from "../utils/open-url.js";
 import { AuthCredentialsForm } from "./auth-credentials-form.js";
@@ -243,6 +247,10 @@ export function AccountAuthPanel() {
             availableModels = null;
           }
         }
+        const managedApiBases = await collectCuberouterApiBases({
+          accountClient: clients.account,
+          fallbackApiBase: result.provisioning.apiBase
+        });
         saved = await provisionCuberouterKey({
           configClient: clients.config,
           endpoint: {
@@ -251,7 +259,8 @@ export function AccountAuthPanel() {
             apiKey: decision.action === "reuse" ? decision.apiKey : result.provisioning.apiKey
           },
           defaultModel: result.provisioning.model,
-          availableModels
+          availableModels,
+          managedApiBases
         });
         const storage = cuberouterKeySelectionStorage();
         if (decision.action === "reuse") {

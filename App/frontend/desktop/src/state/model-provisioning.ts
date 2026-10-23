@@ -5,9 +5,11 @@ import type {
   ModelEndpointProtocol
 } from "@memmy/local-api-contracts";
 import type { ConfigClient, ModelProviderConfig } from "../api/config-client.js";
+import type { AccountClient } from "../api/account-client.js";
 import type { CuberouterKeySelection } from "./cuberouter-key-selection.js";
 import {
   applyCuberouterSelection,
+  clearCuberouterAccount,
   createModelWorkspace,
   keepCuberouterEndpoint,
   modelConfigInput,
@@ -81,12 +83,18 @@ export async function provisionCuberouterKey(input: {
   defaultModel: string;
   /** The instance's model list; null when the choices request failed and the list is unknown. */
   availableModels: string[] | null;
+  /** Every configured cuberouter node base; endpoints at these bases belong to the account. */
+  managedApiBases?: string[];
 }): Promise<ModelProviderConfig> {
   return saveCatalogMutation({
     configClient: input.configClient,
     mutate: (workspace) => {
       // A login on another node must not carry the previous account's models along.
-      const loginWorkspace = keepCuberouterEndpoint(workspace, input.endpoint.apiBase);
+      const loginWorkspace = keepCuberouterEndpoint(
+        workspace,
+        input.endpoint.apiBase,
+        input.managedApiBases ?? [input.endpoint.apiBase]
+      );
       const current = readCuberouterSelection(loginWorkspace.catalog, input.endpoint.apiBase);
       const hasSelection = current.agent.models.length > 0
         || Boolean(current.memorySummary)
@@ -157,4 +165,51 @@ export async function saveCatalogMutation(input: {
     }
   }
   throw lastError ?? new Error("unreachable: saveCatalogMutation retried without resolving");
+}
+
+/**
+ * The node bases whose endpoints belong to the active cuberouter account. Reads the configured
+ * node table; a caller that already knows the current base can pass it as a fallback, and the
+ * account's own model choices are the last resort (and throw when the account is unreachable).
+ */
+export async function collectCuberouterApiBases(input: {
+  accountClient: Pick<AccountClient, "getNodes" | "getModelChoices">;
+  fallbackApiBase?: string;
+}): Promise<string[]> {
+  const bases = new Set<string>();
+  const add = (base: string | undefined | null) => {
+    const trimmed = base?.trim();
+    if (!trimmed) return;
+    try {
+      bases.add(new URL(trimmed).origin);
+    } catch {
+      bases.add(trimmed.replace(/\/+$/, ""));
+    }
+  };
+  try {
+    const nodes = await input.accountClient.getNodes();
+    for (const url of Object.values(nodes.nodeUrls ?? {})) add(url);
+  } catch {
+    // The caller may still know the current base; otherwise fall through to the account read.
+  }
+  add(input.fallbackApiBase);
+  if (!bases.size) {
+    const choices = await input.accountClient.getModelChoices();
+    add(choices.apiBase);
+  }
+  return [...bases];
+}
+
+/**
+ * Removes the active account's cuberouter endpoints before the session is cleared. Throwing on
+ * failure is deliberate: the caller must abort the logout so the key cannot be left behind.
+ */
+export async function clearCuberouterAccountForLogout(input: {
+  configClient: Pick<ConfigClient, "getModelConfig" | "saveModelCatalog">;
+  managedApiBases: readonly string[];
+}): Promise<ModelProviderConfig> {
+  return saveCatalogMutation({
+    configClient: input.configClient,
+    mutate: (workspace) => clearCuberouterAccount(workspace, input.managedApiBases)
+  });
 }
