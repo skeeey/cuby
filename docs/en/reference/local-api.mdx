@@ -3,7 +3,7 @@ title: Desktop Local API
 icon: Server
 ---
 
-The desktop local API is built on Fastify and binds to a random port on `127.0.0.1`. Everything except `/api/health` is authenticated with `x-memmy-local-token`; due to EventSource limitations, SSE passes the same token via `?token=`.
+The desktop local API is built on Fastify and binds to a random port on `127.0.0.1`. Everything except `/api/health` is authenticated with `x-cuby-local-token`; due to EventSource limitations, SSE passes the same token via `?token=`.
 
 ## Main Endpoint Groups
 
@@ -15,7 +15,7 @@ The desktop local API is built on Fastify and binds to a random port on `127.0.0
 | Agent Source | `GET /api/agent-sources`, `POST /api/agent-sources/scan`, `POST /api/agent-sources/:sourceId/skill` |
 | Local data | `POST /api/local-data/reveal`, `POST /api/local-data/export`, `DELETE /api/local-data` |
 | Memory proxy | `/api/v1/memory/*`, `/api/v1/panel/*` (proxied to the Memory Runtime) |
-| MCP bridge | `GET/POST/DELETE /mcp/composio` (separate `x-memmy-mcp-token`) |
+| MCP bridge | `GET/POST/DELETE /mcp/composio` (separate `x-cuby-mcp-token`) |
 
 ## SSE Events
 
