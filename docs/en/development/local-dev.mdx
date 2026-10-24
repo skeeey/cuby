@@ -8,14 +8,14 @@ icon: Package
 Get running in three steps:
 
 ```bash
-git clone https://github.com/MemTensor/memmy-agent.git && cd memmy-agent
+git clone https://github.com/MemTensor/cuby-agent.git && cd cuby-agent
 cp .env.example .env         # Cloud address is pre-filled — works out of the box
 bash scripts/dev-start.sh    # Install deps → build → start the full stack
 ```
 
-`scripts/dev-start.sh` does everything in one command: it installs dependencies, builds Memory and memmy-agent, installs the `memmy` / `memmy-memory` CLIs into `~/.local/bin`, and starts the full stack (Memory, Agent API, Gateway, frontend, and desktop backend). Once the desktop app opens, finish account sign-in or BYOK setup — the script waits for the model config and then starts the agent services automatically.
+`scripts/dev-start.sh` does everything in one command: it installs dependencies, builds Memory and cuby-agent, installs the `cuby` / `cuby-memory` CLIs into `~/.local/bin`, and starts the full stack (Memory, Agent API, Gateway, frontend, and desktop backend). Once the desktop app opens, finish account sign-in or BYOK setup — the script waits for the model config and then starts the agent services automatically.
 
-> `MEMMY_CLOUD_SERVICE` in `.env` defaults to `https://api.memmy.cn (use the origin only; clients append /api/... paths)`, so copying it connects you to the official cloud — no self-hosted backend or API key required. On Windows, run it in Git Bash; the script adds `~/.local/bin` to your PATH.
+> `CUBY_CLOUD_SERVICE` in `.env` defaults to `https://api.cuby.cn (use the origin only; clients append /api/... paths)`, so copying it connects you to the official cloud — no self-hosted backend or API key required. On Windows, run it in Git Bash; the script adds `~/.local/bin` to your PATH.
 
 ## Requirements
 
@@ -40,15 +40,15 @@ npm run package:win:x64
 ```bash
 npm run memory:serve:dev -- \
   --host 127.0.0.1 \
-  --port 18960 \
-  --db ~/.memmy/memory-service/memory.sqlite \
-  --config ~/.memmy/config.yaml
+  --port 28960 \
+  --db ~/.cuby/memory-service/memory.sqlite \
+  --config ~/.cuby/config.yaml
 ```
 
-## memmy-agent from Source
+## cuby-agent from Source
 
 ```bash
-cd App/memmy-agent
+cd App/cuby-agent
 npm install && npm run build
 node dist/main.js onboard
 node dist/main.js agent --message "Hi, introduce the current workspace"

@@ -1,5 +1,0 @@
-{
-  "title": "桌面端",
-  "icon": "Monitor",
-  "pages": ["workbench", "pet", "settings"]
-}

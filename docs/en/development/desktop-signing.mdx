@@ -149,7 +149,7 @@ bash scripts/package-win.sh --version 1.2.3 --arch x64 --sign unsigned
 - `Mac软件打包/` (certificates, `.p8`, password files) is ignored by `.gitignore`.
 - `.signing-local/` is covered by the `.*` rule and stores the generated keychain password.
 - Never commit `.p12` / `.p8` files or passwords, and never paste them into issues or logs.
-- The temporary keychain lives at `/private/tmp/memmy-build-<arch>.keychain-db` and is recreated for every build. On shared or multi-account build machines, point `CSC_KEYCHAIN` at a dedicated path.
+- The temporary keychain lives at `/private/tmp/cuby-build-<arch>.keychain-db` and is recreated for every build. On shared or multi-account build machines, point `CSC_KEYCHAIN` at a dedicated path.
 
 ## Minimum Credential Checklist
 

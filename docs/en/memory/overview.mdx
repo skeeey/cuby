@@ -3,13 +3,13 @@ title: How Memory Works
 icon: Workflow
 ---
 
-Memmy memory is hosted by the local Memory service. The default endpoint is `http://127.0.0.1:18960`, and data is stored in `~/.memmy/memory-service/memory.sqlite`. Hooks, plugins, the `memmy-memory` CLI, and the desktop app all read and write this service, so different Agents share the same memory store.
+Cuby memory is hosted by the local Memory service. The default endpoint is `http://127.0.0.1:28960`, and data is stored in `~/.cuby/memory-service/memory.sqlite`. Hooks, plugins, the `cuby-memory` CLI, and the desktop app all read and write this service, so different Agents share the same memory store.
 
 ## The Complete Path of One Request
 
 The path has seven stages:
 
-1. Before a request reaches the Agent, a Hook or plugin opens or reuses a Memmy session and calls `turn.start`.
+1. Before a request reaches the Agent, a Hook or plugin opens or reuses a Cuby session and calls `turn.start`.
 2. On the first turn of a new episode, the Memory service classifies intent and decides whether to recall memory and which layers are allowed.
 3. The request is converted into a semantic query, keywords, short-pattern terms, and structural error fragments.
 4. Recall channels run in parallel, then candidates are fused using memory layer, channel rank, quality, and time decay.
@@ -50,7 +50,7 @@ An L1 imported by an Agent history scan enters the `summary_queued` pipeline fir
 ### Episodes, feedback, and higher-level memory
 
 - Consecutive follow-ups are merged into one episode by default, with a maximum gap of 2 hours.
-- When an episode closes because of a topic boundary, session close, or 2 hours of inactivity, Memmy generates and scores reflections first.
+- When an episode closes because of a topic boundary, session close, or 2 hours of inactivity, Cuby generates and scores reflections first.
 - It waits through a default 30-second feedback window, then computes task reward and propagates it back through the episode's L1 traces.
 - Eligible L1 traces enter a candidate pool and are induced into L2. A new L2 triggers L3 abstraction and Skill crystallization.
 - Explicit user feedback, repeated tool failures, and divergent success/failure distributions can also adjust value and create failure-avoidance experience or decision repair.
@@ -95,8 +95,8 @@ The first turn of a new episode also passes an intent gate:
 | Intent | Layers recalled |
 | --- | --- |
 | Task or unknown | Skill, L2, L1, L3 |
-| Asking what Memmy remembers from before | Skill, L2, L1; no L3 |
-| Chitchat or a Memmy meta-command | Recall is skipped |
+| Asking what Cuby remembers from before | Skill, L2, L1; no L3 |
+| Chitchat or a Cuby meta-command | Recall is skipped |
 
 `turn_start` excludes L1 from the current session to prevent a just-observed turn from echoing back through the long-term-memory path. L2, L3, and Skill are not excluded by this rule.
 
@@ -155,7 +155,7 @@ relevance   = max(channelScore) + layer bonus + RRF bonus
 ### Thresholds, episode rollups, and MMR
 
 1. Each Tier's pre-pool is ordered by relevance, channel count, and vector score.
-2. When at least 2 high-ranking L1 traces share an episode, the representative vector similarity reaches 0.45, and its value is not negative, Memmy creates an episode rollup containing up to 6 steps.
+2. When at least 2 high-ranking L1 traces share an episode, the representative vector similarity reaches 0.45, and its value is not negative, Cuby creates an episode rollup containing up to 6 steps.
 3. Candidates below 20% of the highest relevance are dropped. Multi-channel bypass is on by default, so a candidate that hits at least 2 channels can survive.
 4. Queries containing long identifiers or error-code-like tokens require keyword confirmation from FTS, pattern, or structural channels for L1/L2. Skill and L3 are exempt.
 5. MMR selects using `0.7 × relevance - 0.3 × redundancy`. Smart seed requires the first candidate from a Tier to reach at least 70% of the global top relevance.
@@ -165,7 +165,7 @@ relevance   = max(channelScore) + layer bonus + RRF bonus
 
 ### Final LLM filter
 
-After mechanical ranking, Memmy prefers the evolution model for relevance filtering and falls back to the summary model when evolution is not configured:
+After mechanical ranking, Cuby prefers the evolution model for relevance filtering and falls back to the summary model when evolution is not configured:
 
 | Setting | Default | Effect |
 | --- | ---: | --- |
@@ -191,7 +191,7 @@ A normal snippet is capped at 640 characters. Skills use `summary` mode by defau
 
 ## Tuning config.yaml
 
-The main configuration file is `~/.memmy/config.yaml` unless `MEMMY_CONFIG` points elsewhere. The following block lists the effective core settings and their defaults. You only need to keep fields you want to override:
+The main configuration file is `~/.cuby/config.yaml` unless `CUBY_CONFIG` points elsewhere. The following block lists the effective core settings and their defaults. You only need to keep fields you want to override:
 
 ```yaml
 memmyMemory:
@@ -272,7 +272,7 @@ memmyMemory:
 After saving the file, run:
 
 ```bash
-memmy-memory reload-config
+cuby-memory reload-config
 ```
 
 Retrieval, evolution, and model settings can be hot-reloaded. A `storage` change makes the reload response return `requiresRestart: true`, in which case the Memory service must be restarted. Algorithm settings are centralized in the service, so Agent Hooks and plugins usually do not need to be reinstalled.
@@ -288,7 +288,7 @@ Retrieval, evolution, and model settings can be hot-reloaded. A `storage` change
 ## Inspecting a Recall
 
 ```bash
-memmy-memory search "your query" --verbose
+cuby-memory search "your query" --verbose
 ```
 
 For debugging, inspect:
