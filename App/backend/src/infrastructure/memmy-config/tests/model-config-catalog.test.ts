@@ -556,4 +556,55 @@ describe("model config catalog", () => {
     }];
     await expect(writeModelConfigCatalog(file, input)).rejects.toBeInstanceOf(InvalidModelConfigError);
   });
+
+  it("lets a new endpoint at the same base inherit the provider's stored key", async () => {
+    const file = fixture();
+    const first = await writeModelConfigCatalog(file, {
+      configRevision: (await readModelConfigCatalog(file)).configRevision,
+      providers: [{
+        provider: "openai",
+        endpoints: [{
+          endpointId: "chat",
+          apiBase: "https://relay.example.test/v1",
+          protocol: "openai-chat-completions",
+          apiKey: "sk-relay-secret"
+        }],
+        models: [{
+          endpointId: "chat",
+          model: "chat-model",
+          source: "byok",
+          capabilities: ["agent"]
+        }]
+      }],
+      modelAssignments: emptyAssignments()
+    });
+
+    // The desktop's catalog view exposes credentials only as a mask, so a later write adds the
+    // image endpoint without a plaintext; the stored key at the same base has to carry over.
+    const second = await writeModelConfigCatalog(file, {
+      configRevision: first.configRevision,
+      providers: [{
+        provider: "openai",
+        endpoints: [
+          { endpointId: "chat", apiBase: "https://relay.example.test/v1", protocol: "openai-chat-completions" },
+          { endpointId: "images", apiBase: "https://relay.example.test/v1", protocol: "openai-images" }
+        ],
+        models: [
+          {
+            presetId: first.providers[0]!.models[0]!.presetId,
+            endpointId: "chat",
+            model: "chat-model",
+            source: "byok",
+            capabilities: ["agent"]
+          },
+          { endpointId: "images", model: "img-model", source: "byok", capabilities: ["image_generation"] }
+        ]
+      }],
+      modelAssignments: emptyAssignments()
+    });
+
+    const images = second.providers[0]!.endpoints.find((endpoint) => endpoint.endpointId === "images");
+    expect(images?.hasApiKey).toBe(true);
+    expect(images?.apiKeyMasked).toBe("sk-••••cret");
+  });
 });

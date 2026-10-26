@@ -417,9 +417,24 @@ function validateAccountInputs(
 
 function mergeProvider(previous: ConfigRecord, input: TextModelProviderInput): ConfigRecord {
   const previousEndpoints = record(previous.endpoints);
+  // A second endpoint at the same relay base serves the same line with the same credential.
+  // The desktop's catalog view never exposes the plaintext, so a new endpoint written later
+  // (an image endpoint beside the chat one, for example) inherits the stored key from its
+  // sibling instead of arriving without one.
+  const storedKeyByBase = new Map<string, string>();
+  for (const value of Object.values(previousEndpoints)) {
+    const endpoint = record(value);
+    const key = stringValue(endpoint.apiKey);
+    const keyBase = normalizeApiBase(stringValue(endpoint.apiBase) ?? "");
+    if (key && keyBase && !storedKeyByBase.has(keyBase)) storedKeyByBase.set(keyBase, key);
+  }
   const endpoints = Object.fromEntries(input.endpoints.map((endpoint) => {
     const previousEndpoint = record(previousEndpoints[endpoint.endpointId]);
-    return [endpoint.endpointId, mergeEndpoint(previousEndpoint, endpoint)];
+    return [endpoint.endpointId, mergeEndpoint(
+      previousEndpoint,
+      endpoint,
+      storedKeyByBase.get(normalizeApiBase(endpoint.apiBase))
+    )];
   }));
   const next: ConfigRecord = {
     ...previous,
@@ -434,13 +449,13 @@ function mergeProvider(previous: ConfigRecord, input: TextModelProviderInput): C
   return next;
 }
 
-function mergeEndpoint(previous: ConfigRecord, input: CatalogEndpointInput): ConfigRecord {
+function mergeEndpoint(previous: ConfigRecord, input: CatalogEndpointInput, inheritedApiKey?: string): ConfigRecord {
   const next: ConfigRecord = {
     ...previous,
     apiBase: input.apiBase,
     protocol: input.protocol
   };
-  setOptionalSecret(next, "apiKey", input.apiKey, previous.apiKey);
+  setOptionalSecret(next, "apiKey", input.apiKey, stringValue(previous.apiKey) ?? inheritedApiKey);
   setOptionalRecord(next, "extraHeaders", input.extraHeaders, previous.extraHeaders);
   setOptionalRecord(next, "extraBody", input.extraBody, previous.extraBody);
   return next;

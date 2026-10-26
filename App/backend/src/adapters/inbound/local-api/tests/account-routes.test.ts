@@ -335,7 +335,7 @@ describe("account local api routes", () => {
       cuberouterAccount: {
         async getKeyModels(input: { scope: string; id: number }) {
           calls.push(input);
-          return { models: ["gpt-4o"] };
+          return { models: ["gpt-4o"], imageModels: ["moss-image"] };
         }
       }
     });
@@ -346,7 +346,7 @@ describe("account local api routes", () => {
     });
 
     expect(response.statusCode).toBe(200);
-    expect(response.json()).toEqual({ models: ["gpt-4o"] });
+    expect(response.json()).toEqual({ models: ["gpt-4o"], imageModels: ["moss-image"] });
     expect(calls).toEqual([{ scope: "personal", id: 41 }]);
   });
 

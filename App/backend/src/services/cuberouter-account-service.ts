@@ -18,7 +18,7 @@ import type { AccountSessionRepository } from "../infrastructure/app-state-store
 import type { CuberouterAccountNodeRepository } from "../infrastructure/app-state-store/repositories/cuberouter-account-node-repo.js";
 import type { ApiErrorCode } from "./error-envelope.js";
 import { FALLBACK_NODE_ID, type CuberouterNodeRouter } from "./cuberouter-node-router.js";
-import { textChatModelIds } from "./cuberouter-model-kinds.js";
+import { imageGenerationModelIds, textChatModelIds } from "./cuberouter-model-kinds.js";
 
 /** Renew this long before the deadline, so a call in flight cannot outlive its token. */
 const ACCESS_TOKEN_RENEWAL_SKEW_SECONDS = 60;
@@ -132,7 +132,10 @@ export interface CuberouterAccountService {
   /** The desktop's model page data: my keys with their billing, the selectable models, balance. */
   readModelChoices(): Promise<CuberouterModelChoices>;
   /** The models one selected key may call, read through the instance's relay model list. */
-  getKeyModels(input: { scope: "organization" | "personal"; id: number }): Promise<{ models: string[] }>;
+  getKeyModels(input: { scope: "organization" | "personal"; id: number }): Promise<{
+    models: string[];
+    imageModels: string[];
+  }>;
   /** One personal key's plaintext, read at the moment the user selects it. */
   getPersonalKey(tokenId: number): Promise<{ key: string }>;
   /**
@@ -573,7 +576,7 @@ export function createCuberouterAccountService(
   async function getKeyModels(input: {
     scope: "organization" | "personal";
     id: number;
-  }): Promise<{ models: string[] }> {
+  }): Promise<{ models: string[]; imageModels: string[] }> {
     const session = options.accountSessionRepository.get();
     if (!session.authenticated) {
       throw Object.assign(new Error("尚未登录 cuberouter 账号"), { code: "rejected" as const });
@@ -607,7 +610,11 @@ export function createCuberouterAccountService(
       apiKey = token.key;
     }
 
-    return { models: textChatModelIds(await client.getKeyModels(apiKey)) };
+    const models = await client.getKeyModels(apiKey);
+    return {
+      models: textChatModelIds(models),
+      imageModels: imageGenerationModelIds(models)
+    };
   }
 
   /**

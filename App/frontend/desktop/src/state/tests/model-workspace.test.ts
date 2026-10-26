@@ -1240,13 +1240,132 @@ describe("cuberouter selection", () => {
     expect(readCuberouterSelection(workspace.catalog, API_BASE)).toEqual({
       agent: { models: ["a", "b"], default: "b" },
       memorySummary: "a",
-      memoryEvolution: "b"
+      memoryEvolution: "b",
+      imageGeneration: ""
     });
     expect(readCuberouterSelection(workspace.catalog, "https://other.example/v1")).toEqual({
       agent: { models: [], default: undefined },
       memorySummary: "",
-      memoryEvolution: ""
+      memoryEvolution: "",
+      imageGeneration: ""
     });
+  });
+
+  it("materializes the image model on its own openai-images endpoint", () => {
+    const workspace = createModelWorkspace(null);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: {
+        agent: { models: ["a"], default: "a" },
+        memorySummary: "a",
+        memoryEvolution: "a",
+        imageGeneration: "img-1"
+      }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    const chat = provider?.endpoints.find((endpoint) => endpoint.protocol === "openai-chat-completions");
+    const images = provider?.endpoints.find((endpoint) => endpoint.protocol === "openai-images");
+    expect(chat?.apiBase).toBe(API_BASE);
+    expect(images?.apiBase).toBe(API_BASE);
+    expect(images?.hasApiKey).toBe(true);
+    const imagePreset = provider?.models.find((preset) => preset.endpointId === images?.endpointId);
+    expect(imagePreset?.model).toBe("img-1");
+    expect(imagePreset?.capabilities).toEqual(["image_generation"]);
+    expect(imagePreset?.protocol).toBe("openai-images");
+    expect(next.catalog.modelAssignments.byok.imageGeneration).toBe(imagePreset?.presetId);
+    expect(readCuberouterSelection(next.catalog, API_BASE).imageGeneration).toBe("img-1");
+  });
+
+  it("keeps the image assignment written by another connection when this line selects none", () => {
+    const personal = upsertByokPreset(createModelWorkspace(null), {
+      provider: "openai",
+      endpoint: "https://img.example/v1",
+      protocol: "openai-images",
+      apiKey: "sk-2",
+      model: "img-2",
+      capabilities: ["image_generation"]
+    });
+    const workspace = setModelAssignment(personal.workspace, "byok", "image", personal.presetId);
+
+    const next = applyCuberouterSelection(workspace, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: { agent: { models: ["a"] }, memorySummary: "a", memoryEvolution: "a" }
+    });
+
+    expect(next.catalog.modelAssignments.byok.imageGeneration).toBe(personal.presetId);
+    const cuberouter = next.catalog.providers.find((item) => item.provider === "openai");
+    expect(cuberouter?.endpoints.some((endpoint) => (
+      endpoint.protocol === "openai-images" && endpoint.apiBase === API_BASE
+    ))).toBe(false);
+  });
+
+  it("clears this line's image model when the selection drops it", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: {
+        agent: { models: ["a"] },
+        memorySummary: "a",
+        memoryEvolution: "a",
+        imageGeneration: "img-1"
+      }
+    });
+    const imagePresetId = first.catalog.modelAssignments.byok.imageGeneration;
+    expect(imagePresetId).toBeTruthy();
+
+    const next = applyCuberouterSelection(first, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      selection: {
+        agent: { models: ["a"] },
+        memorySummary: "a",
+        memoryEvolution: "a",
+        imageGeneration: ""
+      }
+    });
+
+    const provider = next.catalog.providers.find((item) => item.provider === "openai");
+    expect(provider?.endpoints.some((endpoint) => endpoint.protocol === "openai-images")).toBe(false);
+    expect(provider?.models.some((preset) => preset.presetId === imagePresetId)).toBe(false);
+    expect(next.catalog.modelAssignments.byok.imageGeneration).toBeNull();
+  });
+
+  it("updates both endpoints' stored key when a new plaintext arrives", () => {
+    const first = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-1",
+      selection: {
+        agent: { models: ["a"] },
+        memorySummary: "a",
+        memoryEvolution: "a",
+        imageGeneration: "img-1"
+      }
+    });
+
+    const next = applyCuberouterSelection(first, {
+      apiBase: API_BASE,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-2",
+      selection: {
+        agent: { models: ["a"] },
+        memorySummary: "a",
+        memoryEvolution: "a",
+        imageGeneration: "img-1"
+      }
+    });
+
+    const endpoints = next.catalog.providers.find((item) => item.provider === "openai")?.endpoints ?? [];
+    expect(endpoints.map((endpoint) => endpoint.protocol).sort())
+      .toEqual(["openai-chat-completions", "openai-images"]);
+    expect(endpoints.every((endpoint) => endpoint.apiKey === "sk-2")).toBe(true);
   });
 
   it("keeps assignments that point at other endpoints and clears the dropped preset's references", () => {
@@ -1372,7 +1491,8 @@ describe("cuberouter selection", () => {
     expect(readCuberouterSelection(workspace.catalog, API_BASE)).toEqual({
       agent: { models: ["a"], default: "a" },
       memorySummary: "a",
-      memoryEvolution: "a"
+      memoryEvolution: "a",
+      imageGeneration: ""
     });
   });
 

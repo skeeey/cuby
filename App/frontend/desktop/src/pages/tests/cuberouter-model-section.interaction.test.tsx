@@ -1,7 +1,12 @@
 // @vitest-environment happy-dom
 
 /** Cuberouter model section tests. */
-import type { CuberouterModelChoicesView, ModelConfigInput, ModelConfigView } from "@memmy/local-api-contracts";
+import type {
+  CuberouterKeyModelsView,
+  CuberouterModelChoicesView,
+  ModelConfigInput,
+  ModelConfigView
+} from "@memmy/local-api-contracts";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -70,11 +75,16 @@ function catalogFromSave(input: ModelConfigInput, previous: ModelConfigView): Mo
   const providers = input.providers.map((provider) => {
     const previousProvider = previous.providers.find((item) => item.provider === provider.provider);
     const endpoints = provider.endpoints.map((endpoint) => {
-      // A write without a plaintext key keeps the stored one, so the mask carries over.
+      // A write without a plaintext key keeps the stored one, so the mask carries over. A new
+      // endpoint at a base its sibling already serves inherits that sibling's key, as the
+      // backend's merge does.
       const plaintext = endpoint.apiKey?.trim() ?? "";
       const previousEndpoint = previousProvider?.endpoints
         .find((item) => item.endpointId === endpoint.endpointId);
-      const apiKeyMasked = plaintext ? maskApiKey(plaintext) : previousEndpoint?.apiKeyMasked ?? "";
+      const inheritedMask = previousProvider?.endpoints
+        .find((item) => item.apiBase === endpoint.apiBase && item.endpointId !== endpoint.endpointId)
+        ?.apiKeyMasked ?? "";
+      const apiKeyMasked = plaintext ? maskApiKey(plaintext) : previousEndpoint?.apiKeyMasked ?? inheritedMask;
       return {
         endpointId: endpoint.endpointId,
         apiBase: endpoint.apiBase,
@@ -452,6 +462,7 @@ describe("cuberouter model section", () => {
     expect(assignmentCombobox("默认对话模型").disabled).toBe(true);
     expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
     expect(assignmentCombobox("技能进化").disabled).toBe(true);
+    expect(assignmentCombobox("生图模型").disabled).toBe(true);
 
     await act(async () => revealKey());
 
@@ -463,16 +474,69 @@ describe("cuberouter model section", () => {
     expect(assignmentCombobox("记忆摘要").disabled).toBe(false);
   });
 
-  it("renders the four model rows with the same assignment layout", async () => {
+  it("renders the five model rows with the same assignment layout", async () => {
     await renderSection();
 
     await vi.waitFor(() => expect(container.textContent).toContain("本地向量模型（内建）"));
     expect([...container.querySelectorAll(".model-assignment-label")].map((node) => node.textContent))
-      .toEqual(["默认对话模型", "记忆摘要", "技能进化", "Embedding 检索"]);
-    expect(container.querySelectorAll('[role="combobox"]')).toHaveLength(4);
+      .toEqual(["默认对话模型", "记忆摘要", "技能进化", "Embedding 检索", "生图模型"]);
+    expect(container.querySelectorAll('[role="combobox"]')).toHaveLength(5);
     expect(assignmentCombobox("Embedding 检索").disabled).toBe(true);
+    expect(assignmentCombobox("生图模型").disabled).toBe(true);
     expect(container.querySelector('button[aria-label*="ASR"]')).toBeNull();
-    expect(container.querySelector('button[aria-label*="生图"]')).toBeNull();
+  });
+
+  it("assigns the image model on its own openai-images endpoint", async () => {
+    const { configClient } = await renderSection({
+      seedConfig: storedConfigWithEndpoint(),
+      keyModels: async () => ({
+        models: ["deepseek-v4.1-flash", "gpt-oss-120b"],
+        imageModels: ["moss-image"]
+      })
+    });
+
+    await vi.waitFor(() => expect(radio("cuby-desktop-alice").disabled).toBe(false));
+    await vi.waitFor(() => expect(configClient.saveModelCatalog).toHaveBeenCalled());
+    await awaitIdle();
+    expect(assignmentCombobox("生图模型").disabled).toBe(false);
+    const savesBefore = configClient.saveModelCatalog.mock.calls.length;
+
+    await chooseRowModel(configClient, "生图模型", "moss-image", savesBefore + 1);
+
+    const written = configClient.saveModelCatalog.mock.calls.at(-1)![0] as ModelConfigInput;
+    const provider = written.providers[0]!;
+    const imageEndpoint = provider.endpoints.find((endpoint) => endpoint.protocol === "openai-images");
+    expect(imageEndpoint?.apiBase).toBe(CHOICES.apiBase);
+    const imagePreset = provider.models.find((preset) => preset.model === "moss-image");
+    expect(imagePreset?.endpointId).toBe(imageEndpoint?.endpointId);
+    expect([...imagePreset!.capabilities]).toEqual(["image_generation"]);
+    expect(written.modelAssignments.byok.imageGeneration).toBe(imagePreset?.presetId);
+  });
+
+  it("clears the image model when the selected key no longer allows it", async () => {
+    const seeded = applyCuberouterSelection(createModelWorkspace(null), {
+      apiBase: CHOICES.apiBase,
+      protocol: "openai-chat-completions",
+      apiKey: "sk-stored",
+      selection: {
+        agent: { models: ["deepseek-v4.1-flash"], default: "deepseek-v4.1-flash" },
+        memorySummary: "deepseek-v4.1-flash",
+        memoryEvolution: "deepseek-v4.1-flash",
+        imageGeneration: "moss-image"
+      }
+    });
+    const { configClient } = await renderSection({
+      seedConfig: { catalog: seeded.catalog, configRevision: "rev-1" },
+      keyModels: async () => ({ models: ["deepseek-v4.1-flash"], imageModels: [] })
+    });
+
+    await vi.waitFor(() => {
+      const written = configClient.saveModelCatalog.mock.calls.at(-1)?.[0] as ModelConfigInput | undefined;
+      expect(written?.modelAssignments.byok.imageGeneration).toBeNull();
+    });
+    const written = configClient.saveModelCatalog.mock.calls.at(-1)![0] as ModelConfigInput;
+    expect(written.providers[0]!.endpoints.some((endpoint) => endpoint.protocol === "openai-images"))
+      .toBe(false);
   });
 
   it("shows the instance message and disables the assignment controls when it offers no models", async () => {
@@ -485,6 +549,7 @@ describe("cuberouter model section", () => {
     expect(assignmentCombobox("默认对话模型").disabled).toBe(true);
     expect(assignmentCombobox("记忆摘要").disabled).toBe(true);
     expect(assignmentCombobox("技能进化").disabled).toBe(true);
+    expect(assignmentCombobox("生图模型").disabled).toBe(true);
   });
 
   it("removes models the selected key does not allow and falls back the default", async () => {
@@ -629,7 +694,7 @@ describe("cuberouter model section", () => {
 
   async function renderSection(input: {
     choices?: () => Promise<CuberouterModelChoicesView>;
-    keyModels?: (input: { scope: "organization" | "personal"; id: number }) => Promise<{ models: string[] }>;
+    keyModels?: (input: { scope: "organization" | "personal"; id: number }) => Promise<CuberouterKeyModelsView>;
     reveal?: (tokenId: number) => Promise<{ key: string }>;
     reprovision?: () => Promise<{ apiKey: string; apiBase: string; model: string }>;
     save?: (payload: ModelConfigInput, previous: ModelConfigView) => Promise<{ catalog: ModelConfigView; configRevision: string }>;
@@ -642,7 +707,7 @@ describe("cuberouter model section", () => {
     let stored = input.storedConfig?.catalog ?? input.seedConfig?.catalog ?? createModelWorkspace(null).catalog;
     const accountClient = {
       getModelChoices: vi.fn(input.choices ?? (async () => CHOICES)),
-      getKeyModels: vi.fn(input.keyModels ?? (async () => ({ models: CHOICES.models }))),
+      getKeyModels: vi.fn(input.keyModels ?? (async () => ({ models: CHOICES.models, imageModels: [] }))),
       revealPersonalKey: vi.fn(input.reveal ?? (async () => ({ key: "sk-personal" }))),
       reprovisionKey: vi.fn(input.reprovision ?? (async () => ({
         apiKey: "sk-fresh",
