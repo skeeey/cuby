@@ -1058,7 +1058,7 @@ describe("cuberouter key models", () => {
     const service = singleNodeService(client, authenticatedRepository());
 
     await expect(service.getKeyModels({ scope: "personal", id: 41 }))
-      .resolves.toEqual({ models: ["gpt-4o"] });
+      .resolves.toEqual({ models: ["gpt-4o"], imageModels: [] });
 
     expect(client.getPersonalTokenKey).toHaveBeenCalledWith("jwt-1", 41);
     expect(client.getKeyModels).toHaveBeenCalledWith("sk-personal");
@@ -1069,9 +1069,27 @@ describe("cuberouter key models", () => {
     const service = singleNodeService(client, authenticatedRepository());
 
     await expect(service.getKeyModels({ scope: "organization", id: 11 }))
-      .resolves.toEqual({ models: ["gpt-4o"] });
+      .resolves.toEqual({ models: ["gpt-4o"], imageModels: [] });
 
     expect(client.getKeyModels).toHaveBeenCalledWith("sk-org");
+  });
+
+  it("splits image-generation rows out of a key's model list", async () => {
+    const client = fakeClient({
+      getKeyModels: vi.fn(async () => [
+        { id: "gpt-4o", supportedEndpointTypes: ["openai"] },
+        { id: "moss-image", supportedEndpointTypes: ["image-generation", "openai"] },
+        { id: "gpt-image-2.5-flare", supportedEndpointTypes: ["openai", "openai-response", "image-generation"] },
+        { id: "qwen3-embedding-8b", supportedEndpointTypes: ["openai", "embeddings"] }
+      ])
+    });
+    const service = singleNodeService(client, authenticatedRepository());
+
+    await expect(service.getKeyModels({ scope: "personal", id: 41 }))
+      .resolves.toEqual({
+        models: ["gpt-4o"],
+        imageModels: ["moss-image", "gpt-image-2.5-flare"]
+      });
   });
 
   it("refuses to read key models without a session", async () => {

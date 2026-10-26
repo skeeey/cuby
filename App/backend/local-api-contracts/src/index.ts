@@ -1321,7 +1321,9 @@ export type CuberouterKeyModelsInput = z.infer<typeof CuberouterKeyModelsInputSc
 
 /** The models a specific API key may call, as the instance's relay reports them. */
 export const CuberouterKeyModelsViewSchema = z.object({
-    models: z.array(z.string())
+    models: z.array(z.string()),
+    /** Relay rows whose endpoint metadata says they generate images; optional for older backends. */
+    imageModels: z.array(z.string()).optional()
 });
 export type CuberouterKeyModelsView = z.infer<typeof CuberouterKeyModelsViewSchema>;
 

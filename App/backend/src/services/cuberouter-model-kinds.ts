@@ -5,6 +5,9 @@ import type { CuberouterModelInfo } from "../adapters/outbound/cuberouter-client
 /** Endpoint kinds that mean the model can answer a chat completion. */
 const TEXT_ENDPOINT_TYPES = new Set(["openai", "openai-response", "anthropic", "gemini"]);
 
+/** Endpoint kinds that mean the model generates images. */
+const IMAGE_GENERATION_ENDPOINT_TYPES = new Set(["image-generation"]);
+
 /** Endpoint kinds that rule a model out even when it also advertises a text kind. */
 const NON_TEXT_ENDPOINT_TYPES = new Set([
   "embeddings",
@@ -28,4 +31,20 @@ export function isTextChatModel(model: CuberouterModelInfo): boolean {
 /** The ids of the text-chat rows in a relay list. */
 export function textChatModelIds(models: CuberouterModelInfo[]): string[] {
   return models.filter(isTextChatModel).map((model) => model.id);
+}
+
+/**
+ * Whether a relay row can generate images. Only the endpoint metadata counts: an id is not
+ * evidence of a capability, so a row without `supported_endpoint_types` is not offered.
+ */
+export function isImageGenerationModel(model: CuberouterModelInfo): boolean {
+  return model.supportedEndpointTypes
+    .map((type) => type.trim().toLowerCase())
+    .filter(Boolean)
+    .some((type) => IMAGE_GENERATION_ENDPOINT_TYPES.has(type));
+}
+
+/** The ids of the image-generation rows in a relay list. */
+export function imageGenerationModelIds(models: CuberouterModelInfo[]): string[] {
+  return models.filter(isImageGenerationModel).map((model) => model.id);
 }

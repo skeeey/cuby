@@ -3,6 +3,7 @@ import { RefreshCw } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   BUILTIN_LOCAL_EMBEDDING_ASSIGNMENT_ID,
+  type CuberouterKeyModelsView,
   type CuberouterKeyOption,
   type CuberouterModelChoicesView,
   type ModelConfigView
@@ -64,10 +65,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     Partial<Record<"agent" | "memorySummary" | "memoryEvolution", ModelAssignmentTestStatus>>
   >({});
   const [testingAssignments, setTestingAssignments] = useState(false);
-  const [keyModels, setKeyModels] = useState<string[] | null>(null);
+  const [keyModels, setKeyModels] = useState<CuberouterKeyModelsView | null>(null);
   const [keyModelsStatus, setKeyModelsStatus] = useState<"idle" | "loading" | "ready" | "error">("idle");
   const [keyFallbackNotice, setKeyFallbackNotice] = useState(false);
-  const keyModelsCacheRef = useRef(new Map<string, string[]>());
+  const keyModelsCacheRef = useRef(new Map<string, CuberouterKeyModelsView>());
   const lastReconcileAttemptRef = useRef<string | null>(null);
   /** Guards the single save path before a render could re-disable its controls. */
   const saveInFlightRef = useRef(false);
@@ -139,10 +140,10 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     setKeyModels(null);
     setKeyModelsStatus("loading");
     void client.getKeyModels({ scope: selectedKey.scope, id: selectedKey.id })
-      .then(({ models }) => {
+      .then((result) => {
         if (!active) return;
-        keyModelsCacheRef.current.set(cacheKey, models);
-        setKeyModels(models);
+        keyModelsCacheRef.current.set(cacheKey, result);
+        setKeyModels(result);
         setKeyModelsStatus("ready");
       })
       .catch(() => {
@@ -162,15 +163,18 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
   useEffect(() => {
     if (!choices || !selection || savePending || saveInFlightRef.current) return;
     if (keyModelsStatus === "idle" || keyModelsStatus === "loading") return;
-    const allowed = keyModels ?? choices.models;
+    const allowed = keyModels?.models ?? choices.models;
+    // Images are only judged once the relay's metadata has been read; a failed read leaves the
+    // existing image choice alone instead of guessing it away.
+    const allowedImages = keyModelsStatus === "ready" ? keyModels?.imageModels ?? [] : null;
     if (allowed.length === 0) return;
     if (!catalogHasEndpoint(workspace.catalog, choices.apiBase)) return;
     // A failed save reseeds the same draft; without this guard the effect would immediately
     // retry the identical reconcile forever. A changed key list or selection is a new attempt.
-    const attempt = JSON.stringify([allowed, selection]);
+    const attempt = JSON.stringify([allowed, allowedImages, selection]);
     if (lastReconcileAttemptRef.current === attempt) return;
     lastReconcileAttemptRef.current = attempt;
-    const next = reconcileCuberouterSelection(selection, allowed);
+    const next = reconcileCuberouterSelection(selection, allowed, allowedImages);
     if (!next.changed) return;
     if (next.fellBack) setKeyFallbackNotice(true);
     setSelection(next.selection);
@@ -237,26 +241,30 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       const plaintext = key.secret ?? (await props.accountClient!.revealPersonalKey(key.id)).key;
       // The new key's relay list decides which models may stay selected. A failed read falls
       // back to the instance list and leaves the warning visible; the key still switches.
-      let allowed = keyModelsCacheRef.current.get(id);
-      if (!allowed && props.accountClient?.getKeyModels) {
+      let keyModelsView = keyModelsCacheRef.current.get(id);
+      if (!keyModelsView && props.accountClient?.getKeyModels) {
         try {
           const result = await props.accountClient.getKeyModels({ scope: key.scope, id: key.id });
-          allowed = result.models;
-          keyModelsCacheRef.current.set(id, result.models);
+          keyModelsView = result;
+          keyModelsCacheRef.current.set(id, result);
         } catch {
-          allowed = undefined;
+          keyModelsView = undefined;
         }
       }
-      const candidates = allowed ?? choices?.models ?? [];
+      const candidates = keyModelsView?.models ?? choices?.models ?? [];
       if (candidates.length === 0) {
         setSaveError(t("settings.cuberouterModel.noKeyModels"));
         return;
       }
-      const reconciled = reconcileCuberouterSelection(selection, candidates);
+      const reconciled = reconcileCuberouterSelection(
+        selection,
+        candidates,
+        keyModelsView?.imageModels ?? null
+      );
       setSelection(reconciled.selection);
       setKeyFallbackNotice(reconciled.fellBack);
-      setKeyModels(candidates);
-      setKeyModelsStatus(allowed ? "ready" : "error");
+      setKeyModels(keyModelsView ?? { models: candidates, imageModels: [] });
+      setKeyModelsStatus(keyModelsView ? "ready" : "error");
       const saved = await commit((current, apiBase) => applyCuberouterSelection(current, {
         apiBase,
         protocol: PROTOCOL,
@@ -296,7 +304,8 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
       const fresh: CuberouterSelection = {
         agent: { models: [seedModel], default: seedModel },
         memorySummary: seedModel,
-        memoryEvolution: seedModel
+        memoryEvolution: seedModel,
+        imageGeneration: selection?.imageGeneration ?? ""
       };
       setSelection(fresh);
       const saved = await commit((current) => applyCuberouterSelection(current, {
@@ -416,8 +425,14 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
 
   // The selected key's own list is authoritative once it has loaded; the instance list is the
   // provisional/fallback source while it loads or when the relay read fails.
-  const availableModels = keyModels ?? choices?.models ?? [];
+  const availableModels = keyModels?.models ?? choices?.models ?? [];
+  const availableImageModels = keyModels?.imageModels ?? [];
   const modelOptions = availableModels.map((model) => ({ value: model, label: model }));
+  const imageModelOptions = availableImageModels.map((model) => ({ value: model, label: model }));
+  const imageModel = selection?.imageGeneration ?? "";
+  const imageOptions = imageModel !== "" && !availableImageModels.includes(imageModel)
+    ? [...imageModelOptions, { value: imageModel, label: imageModel }]
+    : imageModelOptions;
   /** Draft agent models the selected key/instance no longer lists; kept visible while reconciling. */
   const staleAgentModels = (selection?.agent.models ?? []).filter((model) => !availableModels.includes(model));
   const conversationModels = [...availableModels, ...staleAgentModels];
@@ -425,6 +440,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
     staleAgentModels.length > 0
     || (selection.memorySummary !== "" && !availableModels.includes(selection.memorySummary))
     || (selection.memoryEvolution !== "" && !availableModels.includes(selection.memoryEvolution))
+    || (imageModel !== "" && !availableImageModels.includes(imageModel))
   );
 
   /** One memory row's options, appending a stored value the selected key no longer allows. */
@@ -524,7 +540,7 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
           {t("settings.cuberouterModel.keyFallback")}
         </p>
       )}
-      {choices && keyModelsStatus === "ready" && keyModels?.length === 0 && (
+      {choices && keyModelsStatus === "ready" && keyModels?.models.length === 0 && (
         <p className="mt-3 text-xs text-text-ink/60">
           {t("settings.cuberouterModel.noKeyModels")}
         </p>
@@ -581,11 +597,22 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
                   label: t("settings.cuberouterModel.embeddingBuiltin")
                 }],
                 disabled: true
+              },
+              {
+                kind: "image",
+                label: t("settings.model.imageGen"),
+                description: t("settings.model.imageGenDesc"),
+                badge: t("settings.modelWorkspace.optional"),
+                value: imageModel,
+                options: imageOptions,
+                searchable: true,
+                preserveUnassigned: true
               }
             ]}
             onRowChange={(kind, value) => {
               if (kind === "memorySummary") updateSelection({ memorySummary: value });
               else if (kind === "memoryEvolution") updateSelection({ memoryEvolution: value });
+              else if (kind === "image") updateSelection({ imageGeneration: value });
             }}
             disabled={busy || keyModelsStatus === "loading"}
           />
@@ -603,11 +630,14 @@ export function CuberouterModelSection(props: CuberouterModelSectionProps) {
 /**
  * Aligns one draft with the models a key may call. Every allowed model is enrolled so the
  * conversation picker can offer it; a default or memory model that is no longer allowed falls
- * back to the first allowed model, while an unset memory slot stays unset.
+ * back to the first allowed model, while an unset memory slot stays unset. The image slot has
+ * no fallback: a model the key no longer lists is cleared, and `null` means the relay did not
+ * provide image metadata, so the choice is left alone.
  */
 export function reconcileCuberouterSelection(
   selection: CuberouterSelection,
-  allowed: string[]
+  allowed: string[],
+  allowedImageModels: string[] | null = null
 ): { selection: CuberouterSelection; changed: boolean; fellBack: boolean } {
   const nextDefault = selection.agent.default && allowed.includes(selection.agent.default)
     ? selection.agent.default
@@ -618,19 +648,29 @@ export function reconcileCuberouterSelection(
   const nextMemoryEvolution = selection.memoryEvolution
     ? (allowed.includes(selection.memoryEvolution) ? selection.memoryEvolution : allowed[0]!)
     : "";
+  const imageGeneration = selection.imageGeneration ?? "";
+  const nextImageGeneration = allowedImageModels === null
+    ? imageGeneration
+    : (imageGeneration && allowedImageModels.includes(imageGeneration) ? imageGeneration : "");
   const next: CuberouterSelection = {
     agent: { models: allowed, default: nextDefault },
     memorySummary: nextMemorySummary,
-    memoryEvolution: nextMemoryEvolution
+    memoryEvolution: nextMemoryEvolution,
+    imageGeneration: nextImageGeneration
   };
+  const imageFellBack = allowedImageModels !== null
+    && imageGeneration !== ""
+    && !allowedImageModels.includes(imageGeneration);
   const fellBack = (selection.agent.default !== undefined && !allowed.includes(selection.agent.default))
     || selection.agent.models.some((model) => !allowed.includes(model))
     || (selection.memorySummary !== "" && !allowed.includes(selection.memorySummary))
-    || (selection.memoryEvolution !== "" && !allowed.includes(selection.memoryEvolution));
+    || (selection.memoryEvolution !== "" && !allowed.includes(selection.memoryEvolution))
+    || imageFellBack;
   const changed = !sameStringSet(selection.agent.models, allowed)
     || selection.agent.default !== nextDefault
     || selection.memorySummary !== nextMemorySummary
-    || selection.memoryEvolution !== nextMemoryEvolution;
+    || selection.memoryEvolution !== nextMemoryEvolution
+    || imageGeneration !== nextImageGeneration;
   return { selection: next, changed, fellBack };
 }
 

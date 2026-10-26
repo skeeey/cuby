@@ -336,6 +336,8 @@ export interface CuberouterSelection {
   agent: { models: string[]; default?: string };
   memorySummary: string;
   memoryEvolution: string;
+  /** The image model assigned on this line; empty when none is configured. */
+  imageGeneration?: string;
 }
 
 export interface CuberouterSelectionInput {
@@ -350,21 +352,34 @@ export interface CuberouterSelectionInput {
 export function readCuberouterSelection(catalog: ModelConfigView, apiBase: string): CuberouterSelection {
   const normalized = apiBase.trim().replace(/\/+$/, "");
   const provider = cuberouterProvider(catalog.providers);
-  const endpoint = provider?.endpoints.find((item) => item.apiBase.replace(/\/+$/, "") === normalized);
+  const lineEndpoints = (provider?.endpoints ?? []).filter(
+    (item) => item.apiBase.replace(/\/+$/, "") === normalized
+  );
+  // The line holds one chat endpoint and, once an image model is assigned, one image endpoint
+  // beside it; picking either by protocol keeps the two from shadowing each other.
+  const endpoint = lineEndpoints.find((item) => protocolSupportsCatalog(item.protocol, "agent"));
+  const imageEndpoint = lineEndpoints.find((item) => item.protocol === "openai-images");
   // Presets carry endpointId, not apiBase: the endpoint lookup is what pins them to this line.
-  const presets = (provider?.models ?? []).filter((preset) => (
-    preset.source === "byok" && endpoint !== undefined && preset.endpointId === endpoint.endpointId
+  const presetsOf = (target: typeof endpoint) => (provider?.models ?? []).filter((preset) => (
+    preset.source === "byok" && target !== undefined && preset.endpointId === target.endpointId
   ));
-  const modelOf = (presetId: string | undefined) => presets.find((preset) => preset.presetId === presetId)?.model ?? "";
+  const presets = presetsOf(endpoint);
+  const imagePresets = presetsOf(imageEndpoint);
+  const modelOf = (set: typeof presets) => (presetId: string | undefined) => (
+    set.find((preset) => preset.presetId === presetId)?.model ?? ""
+  );
+  const modelFor = modelOf(presets);
+  const imageModelFor = modelOf(imagePresets);
   const assignment = catalog.modelAssignments.byok;
   const agentModels = assignment.agent.candidates
-    .map((presetId) => modelOf(presetId))
+    .map((presetId) => modelFor(presetId))
     .filter(Boolean);
-  const agentDefault = modelOf(assignment.agent.default ?? undefined);
+  const agentDefault = modelFor(assignment.agent.default ?? undefined);
   return {
     agent: { models: agentModels, ...(agentDefault ? { default: agentDefault } : {}) },
-    memorySummary: modelOf(assignment.memorySummary ?? undefined),
-    memoryEvolution: modelOf(assignment.memoryEvolution ?? undefined)
+    memorySummary: modelFor(assignment.memorySummary ?? undefined),
+    memoryEvolution: modelFor(assignment.memoryEvolution ?? undefined),
+    imageGeneration: imageModelFor(assignment.imageGeneration ?? undefined)
   };
 }
 
@@ -401,7 +416,9 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
     };
     next.providers.push(provider);
   }
-  let endpoint = provider.endpoints.find((item) => item.apiBase.replace(/\/+$/, "") === apiBase);
+  let endpoint = provider.endpoints.find((item) => (
+    item.apiBase.replace(/\/+$/, "") === apiBase && protocolSupportsCatalog(item.protocol, "agent")
+  ));
   if (!endpoint) {
     if (!input.apiKey) throw new Error("cuberouter endpoint has no credential yet");
     endpoint = {
@@ -458,6 +475,61 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
     || keepPresetIds.has(item.presetId)
   ));
 
+  // An image model needs its own endpoint: the catalog validates every preset against its
+  // endpoint's protocol, and one endpoint carries one protocol. The catalog view never exposes
+  // the plaintext key, so a freshly created image endpoint is written without one; the backend
+  // copies the stored key from its sibling at the same relay base.
+  const imageModel = selection.imageGeneration?.trim() ?? "";
+  let imageEndpoint = provider.endpoints.find((item) => (
+    item.apiBase.replace(/\/+$/, "") === apiBase && item.protocol === "openai-images"
+  ));
+  let imagePresetId: string | null = null;
+  if (imageModel) {
+    if (!imageEndpoint) {
+      imageEndpoint = {
+        endpointId: newId("endpoint"),
+        apiBase,
+        protocol: "openai-images",
+        hasApiKey: Boolean(input.apiKey),
+        apiKeyMasked: input.apiKey ? maskApiKey(input.apiKey) : "",
+        apiKey: input.apiKey ?? ""
+      };
+      provider.endpoints.push(imageEndpoint);
+    } else if (input.apiKey) {
+      imageEndpoint.apiKey = input.apiKey;
+      imageEndpoint.apiKeyMasked = maskApiKey(input.apiKey);
+      imageEndpoint.hasApiKey = true;
+    }
+    const existing = provider.models.find((item) => (
+      item.source === "byok" && item.endpointId === imageEndpoint!.endpointId && item.model === imageModel
+    ));
+    imagePresetId = existing?.presetId ?? newClientPresetId();
+    const preset = {
+      presetId: imagePresetId,
+      provider: providerId,
+      endpointId: imageEndpoint.endpointId,
+      protocol: "openai-images" as const,
+      model: imageModel,
+      source: "byok" as const,
+      capabilities: ["image_generation"] as CatalogCapability[],
+      available: true
+    };
+    if (existing) Object.assign(existing, preset);
+    else provider.models.push(preset);
+    provider.models = provider.models.filter((item) => (
+      item.endpointId !== imageEndpoint!.endpointId
+      || item.source !== "byok"
+      || item.presetId === imagePresetId
+    ));
+  } else if (imageEndpoint) {
+    provider.models = provider.models.filter((item) => (
+      item.endpointId !== imageEndpoint!.endpointId || item.source !== "byok"
+    ));
+    if (!provider.models.some((item) => item.endpointId === imageEndpoint!.endpointId)) {
+      provider.endpoints = provider.endpoints.filter((item) => item !== imageEndpoint);
+    }
+  }
+
   // Every preset still in the catalog: the endpoint prune above removed only this endpoint's stale
   // presets, so these ids are exactly the ones assignments may still reference.
   const remainingIds = new Set(next.providers.flatMap((item) => item.models.map((model) => model.presetId)));
@@ -481,6 +553,9 @@ export function applyCuberouterSelection(workspace: ModelWorkspace, input: Cuber
     : agentIds[0] ?? null;
   assignment.memorySummary = presetIdByModel.get(selection.memorySummary.trim()) ?? null;
   assignment.memoryEvolution = presetIdByModel.get(selection.memoryEvolution.trim()) ?? null;
+  // An empty image slot leaves whatever assignment this line did not own in place; the prune
+  // below only clears references to the presets that actually left the catalog.
+  if (imagePresetId) assignment.imageGeneration = imagePresetId;
   // Prune against every preset still in the catalog (as `deleteModelConnection` does), not just this
   // selection's: assignments pointing at another endpoint's presets must survive, while references to
   // the presets the endpoint prune above just removed are cleared.

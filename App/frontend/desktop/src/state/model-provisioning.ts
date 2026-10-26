@@ -126,7 +126,8 @@ export async function provisionCuberouterKey(input: {
         selection = {
           agent: { models: listed, default: defaultModel },
           memorySummary,
-          memoryEvolution
+          memoryEvolution,
+          imageGeneration: current.imageGeneration ?? ""
         };
       } else if (hasSelection) {
         selection = current;
@@ -134,7 +135,8 @@ export async function provisionCuberouterKey(input: {
         selection = {
           agent: { models: [seedModel], default: seedModel },
           memorySummary: seedModel,
-          memoryEvolution: seedModel
+          memoryEvolution: seedModel,
+          imageGeneration: ""
         };
       }
       return applyCuberouterSelection(loginWorkspace, {
