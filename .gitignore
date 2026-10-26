@@ -32,3 +32,5 @@ Memory/src/agent-source/integration/workspace-bridge/cuby-workspace-bridge.mjs
 
 # Designer handoff drop: masters, previews and one-off PS scripts, not app content.
 /deliver/
+
+test.keys
