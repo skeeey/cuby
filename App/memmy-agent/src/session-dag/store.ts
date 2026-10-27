@@ -118,6 +118,13 @@ export class SessionDagStore {
     return this.db.prepare(`SELECT * FROM dag_turns WHERE dag_status IN (${placeholders}) ORDER BY message_start ASC`).all(...statuses) as DagTurn[];
   }
 
+  nextRetryAt(): string | null {
+    const row = this.db.prepare(
+      "SELECT next_retry_at FROM dag_turns WHERE dag_status = 'retry' AND next_retry_at IS NOT NULL ORDER BY next_retry_at ASC LIMIT 1",
+    ).get() as { next_retry_at: string } | undefined;
+    return row?.next_retry_at ?? null;
+  }
+
   claimNextTurn(now = new Date()): DagTurn | null {
     const iso = now.toISOString();
     const transaction = this.db.transaction(() => {

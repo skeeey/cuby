@@ -18,6 +18,10 @@ export type SessionDagRuntime = {
   model: string;
 };
 
+// setTimeout can fire just before the persisted next_retry_at when both land
+// in the same millisecond, so leave a small buffer and reschedule on a miss.
+const RETRY_TIMER_BUFFER_MS = 10;
+
 export class SessionDagQueueManager {
   private readonly config: SessionDagConfig;
   private readonly sessions: SessionManager;
@@ -146,11 +150,11 @@ class SessionDagQueue {
 
   wake(): void {
     if (this.closed) return;
+    if (this.running) return;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;
     }
-    if (this.running) return;
     this.running = true;
     void this.manager.runWithSlot(() => this.process()).finally(() => {
       this.running = false;
@@ -184,7 +188,10 @@ class SessionDagQueue {
   private async process(): Promise<void> {
     while (!this.closed) {
       const turn = this.store.claimNextTurn();
-      if (!turn) return;
+      if (!turn) {
+        this.scheduleNextRetry();
+        return;
+      }
       const builder = this.manager.createBuilder(
         this.sessionKey,
         this.store,
@@ -212,6 +219,14 @@ class SessionDagQueue {
         }
       }
     }
+  }
+
+  private scheduleNextRetry(): void {
+    const nextRetryAt = this.store.nextRetryAt();
+    if (!nextRetryAt) return;
+    const nextRetryMs = Date.parse(nextRetryAt);
+    if (!Number.isFinite(nextRetryMs)) return;
+    this.scheduleRetry(Math.max(0, nextRetryMs - Date.now()) + RETRY_TIMER_BUFFER_MS);
   }
 
   private scheduleRetry(delayMs: number): void {

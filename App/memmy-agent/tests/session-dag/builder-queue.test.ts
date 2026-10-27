@@ -13,6 +13,9 @@ import { SessionDagUsageReporter } from "../../src/session-dag/usage.js";
 
 const roots: string[] = [];
 let oldDagDir: string | undefined;
+// CI workers can be slow; stay below Vitest's 30s per-test timeout while
+// leaving enough headroom for a retry to finish.
+const WAIT_FOR_PROCESSING_TIMEOUT_MS = 20_000;
 
 function tmpRoot(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "memmy-session-dag-builder-"));
@@ -44,6 +47,17 @@ function readDebugRecords(sessionKey: string): any[] {
 
 async function waitForQueueDrain(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+function dagTurnWaitMessage(store: SessionDagStore, turnId: string): string {
+  const turn = store.getTurn(turnId);
+  return `DAG turn ${turnId} was not processed in time: ${JSON.stringify({
+    dag_status: turn?.dag_status ?? null,
+    attempt_count: turn?.attempt_count ?? null,
+    last_error: turn?.last_error ?? null,
+    next_retry_at: turn?.next_retry_at ?? null,
+    last_processed_turn_id: store.getMeta("last_processed_turn_id")
+  })}`;
 }
 
 afterEach(() => {
@@ -120,10 +134,10 @@ describe("Session DAG builder and queue", () => {
       assistant_text: "已验证。",
     });
 
-    const processed = await queue.waitUntilProcessed(sessionKey, "turn-zero-retry-backoff", 5000);
+    const processed = await queue.waitUntilProcessed(sessionKey, "turn-zero-retry-backoff", WAIT_FOR_PROCESSING_TIMEOUT_MS);
     const store = new SessionDagStore({ sessionKey });
     try {
-      expect(processed).toBe(true);
+      expect(processed, dagTurnWaitMessage(store, "turn-zero-retry-backoff")).toBe(true);
       expect(provider.chatWithRetry).toHaveBeenCalledTimes(2);
       expect(store.getTurn("turn-zero-retry-backoff")).toMatchObject({ dag_status: "done", build_mode: "llm_patch" });
     } finally {
@@ -601,11 +615,11 @@ describe("Session DAG builder and queue", () => {
       assistant_text: "已处理",
     });
 
-    const processed = await queue.waitUntilProcessed(sessionKey, "turn-conflict", 10000);
+    const processed = await queue.waitUntilProcessed(sessionKey, "turn-conflict", WAIT_FOR_PROCESSING_TIMEOUT_MS);
     const store = new SessionDagStore({ sessionKey });
     try {
       const graph = store.readGraphForHistoryDag();
-      expect(processed).toBe(true);
+      expect(processed, dagTurnWaitMessage(store, "turn-conflict")).toBe(true);
       expect(provider.chatWithRetry).toHaveBeenCalledTimes(2);
       expect(graph.nodes.filter((node) => node.kind === "task")).toHaveLength(1);
       expect(graph.nodes.find((node) => node.id === seed.old)).toMatchObject({ status: "active" });
@@ -726,11 +740,11 @@ describe("Session DAG builder and queue", () => {
       assistant_text: "已完成 DAG store。",
     });
 
-    const processed = await queue.waitUntilProcessed(sessionKey, "turn-retry", 10000);
+    const processed = await queue.waitUntilProcessed(sessionKey, "turn-retry", WAIT_FOR_PROCESSING_TIMEOUT_MS);
     const store = new SessionDagStore({ sessionKey });
     try {
       const graph = store.readGraphForHistoryDag();
-      expect(processed).toBe(true);
+      expect(processed, dagTurnWaitMessage(store, "turn-retry")).toBe(true);
       expect(provider.chatWithRetry).toHaveBeenCalledTimes(2);
       for (const [request] of provider.chatWithRetry.mock.calls) {
         expect(request.reasoningEffort).toBe("none");
@@ -738,6 +752,57 @@ describe("Session DAG builder and queue", () => {
       expect(store.getTurn("turn-retry")).toMatchObject({ dag_status: "done", build_mode: "llm_patch" });
       expect(graph.nodes.map((node) => node.title).sort()).toEqual(["完成 store 事务", "实现 DAG store"]);
       expect(graph.edges).toHaveLength(1);
+    } finally {
+      store.close();
+      await waitForQueueDrain();
+      queue.closeAll();
+    }
+  });
+
+  it("reschedules a retry whose timer fires before next_retry_at", async () => {
+    const root = tmpRoot();
+    oldDagDir = process.env.CUBY_AGENT_SESSION_DAG_DIR;
+    process.env.CUBY_AGENT_SESSION_DAG_DIR = path.join(root, "dag");
+    const sessionKey = "cli:seeded-retry";
+    const { sessions, session } = makeSession(root, sessionKey);
+    const turnId = "turn-seeded-retry";
+    const seedStore = new SessionDagStore({ sessionKey });
+    seedStore.upsertTurn({
+      turn_id: turnId,
+      message_start: 0,
+      message_end: session.messages.length,
+      user_text: "验证重试被重新调度",
+      assistant_text: "已验证。",
+    });
+    seedStore.markTurnRetry(turnId, "seeded retry", new Date(Date.now() + 50).toISOString());
+    seedStore.close();
+
+    const provider: any = {
+      chatWithRetry: vi.fn(async () => ({
+        content: JSON.stringify({
+          ops: [
+            { op: "add_node", temp_id: "n0", kind: "task", status: "active", title: "恢复重试", summary: "验证丢失的重试会被重新调度", importance: 80 },
+            { op: "add_node", temp_id: "n1", kind: "subtask", status: "done", title: "完成重试", summary: "完成重试", importance: 70 },
+            { op: "add_edge", source_id: "n0", target_id: "n1", type: "decomposes" },
+          ],
+        }),
+        usage: { prompt_tokens: 1, completion_tokens: 1 },
+      })),
+    };
+    const queue = new SessionDagQueueManager({
+      config: new SessionDagConfig({ maxUpdateAttempts: 2, retryBackoffMs: [50], maxConcurrentSessionQueues: 1 }),
+      sessions,
+      provider: () => provider,
+      model: () => "test-model",
+    });
+
+    queue.wakeSession(sessionKey);
+    const processed = await queue.waitUntilProcessed(sessionKey, turnId, 2000);
+    const store = new SessionDagStore({ sessionKey });
+    try {
+      expect(processed, dagTurnWaitMessage(store, turnId)).toBe(true);
+      expect(provider.chatWithRetry).toHaveBeenCalledTimes(1);
+      expect(store.getTurn(turnId)).toMatchObject({ dag_status: "done", build_mode: "llm_patch" });
     } finally {
       store.close();
       await waitForQueueDrain();
@@ -816,11 +881,11 @@ describe("Session DAG builder and queue", () => {
       assistant_text: "已完成 DAG store。",
     });
 
-    const processed = await queue.waitUntilProcessed(sessionKey, "turn-retry-dropped-edge", 10000);
+    const processed = await queue.waitUntilProcessed(sessionKey, "turn-retry-dropped-edge", WAIT_FOR_PROCESSING_TIMEOUT_MS);
     const store = new SessionDagStore({ sessionKey });
     try {
       const graph = store.readGraphForHistoryDag();
-      expect(processed).toBe(true);
+      expect(processed, dagTurnWaitMessage(store, "turn-retry-dropped-edge")).toBe(true);
       expect(provider.chatWithRetry).toHaveBeenCalledTimes(2);
       expect(store.getTurn("turn-retry-dropped-edge")).toMatchObject({ dag_status: "done", build_mode: "deterministic_fallback" });
       expect(graph.nodes).toHaveLength(2);
@@ -1033,11 +1098,11 @@ describe("Session DAG builder and queue", () => {
       assistant_text: "已完成 DAG store。",
     });
 
-    const processed = await queue.waitUntilProcessed(sessionKey, "turn-1", 5000);
+    const processed = await queue.waitUntilProcessed(sessionKey, "turn-1", WAIT_FOR_PROCESSING_TIMEOUT_MS);
     const store = new SessionDagStore({ sessionKey });
     try {
       const graph = store.readGraphForHistoryDag();
-      expect(processed).toBe(true);
+      expect(processed, dagTurnWaitMessage(store, "turn-1")).toBe(true);
       expect(provider.chatWithRetry).toHaveBeenCalledTimes(1);
       expect(store.getTurn("turn-1")).toMatchObject({ dag_status: "done", build_mode: "deterministic_fallback" });
       expect(graph.nodes).toHaveLength(2);
