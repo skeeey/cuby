@@ -8406,6 +8406,11 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack
   transform: translateY(-1px);
 }
 
+/* Two classes so the selected border wins over the status border rules below. */
+.integration-card.integration-card--selected {
+  border-color: color-mix(in srgb, var(--color-action-sky) 30%, transparent);
+}
+
 .integration-card:focus-visible {
   outline: none;
 }

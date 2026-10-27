@@ -19,6 +19,7 @@ import type { IntegrationConnection } from "../integrations/connection-state.js"
 import type { IntegrationMeta } from "../integrations/integration-meta.js";
 import type { AgentGoalControlAction, ChatModelPreset, MemmyAgentRunStatusSnapshot, MemmyAgentSessionSnapshot, MemmyAgentSessionSummary, MemmyAgentSidebarState, MemmyAgentWebuiThread, MemmyAgentWsEvent, WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import type { PendingAttachment } from "./agent-composer-state.js";
+import { nextNavigationRequestId, type MemoryReferencePage } from "./navigation-requests.js";
 import type {
   AgentAction,
   AgentChatMediaAttachment,
@@ -84,6 +85,9 @@ export type AppAction =
   | { type: "bootstrap/loaded"; bootstrap: AppBootstrapResponse; initialPath: AppRoutePath }
   | { type: "events/statusChanged"; status: EventConnectionStatus }
   | { type: "navigation/changed"; path: AppRoutePath }
+  | { type: "navigation/openMemoryReference"; id: string; fallbackPage: MemoryReferencePage; requestId: number }
+  | { type: "navigation/openToolSkill"; skillId: string | null; requestId: number }
+  | { type: "navigation/requestHandled"; requestId: number }
   | { type: "invitationToast/shown"; id: number; kind: InvitationToastKind }
   | { type: "invitationToast/cleared"; id: number }
   | { type: "settings/updated"; settings: Partial<AppSettingsDto> }
@@ -140,6 +144,21 @@ export const appActions = {
   /** Handles navigate. */
   navigate(path: AppRoutePath): AppAction {
     return { type: "navigation/changed", path };
+  },
+
+  /** Navigates to the memory page and asks it to open a referenced memory. */
+  openMemoryReference(id: string, fallbackPage: MemoryReferencePage): AppAction {
+    return { type: "navigation/openMemoryReference", id, fallbackPage, requestId: nextNavigationRequestId() };
+  },
+
+  /** Navigates to the tools page and asks the skills section to focus or open a skill. */
+  openToolSkill(skillId: string | null): AppAction {
+    return { type: "navigation/openToolSkill", skillId, requestId: nextNavigationRequestId() };
+  },
+
+  /** Clears a cross-page navigation request once the target page handled it. */
+  navigationRequestHandled(requestId: number): AppAction {
+    return { type: "navigation/requestHandled", requestId };
   },
 
   showInvitationToast(kind: InvitationToastKind): AppAction {

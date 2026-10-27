@@ -24,7 +24,8 @@ describe("MemoryPageView", () => {
     expect(html).toContain("记忆");
     expect(html).toContain("用户记忆");
     expect(html).toContain("任务");
-    expect(html).toContain("技能");
+    expect(html).not.toContain("技能");
+    expect(html).not.toContain('data-icon="wand-2"');
     expect(html).toContain("分析");
     expect(html).toContain("跨Agent接入");
     expect(html).not.toContain("导入导出");
@@ -69,6 +70,9 @@ describe("MemoryPageView", () => {
     expect(readMemorySubPage(storage)).toBe("user-memories");
 
     storage.setItem("memmy.memorySubPage", "unknown");
+    expect(readMemorySubPage(storage)).toBeNull();
+
+    storage.setItem("memmy.memorySubPage", "skills");
     expect(readMemorySubPage(storage)).toBeNull();
   });
 });

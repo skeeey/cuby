@@ -1,12 +1,13 @@
-/** Skills sub page tests. */
+/** Skills section tests. */
+import { readFileSync } from "node:fs";
 import { renderToString } from "react-dom/server";
 import { describe, expect, it, vi } from "vitest";
 import { I18nProvider } from "../../../i18n/i18n-provider.js";
-import { loadSkillDetail, loadSkillsData, loadSkillTimeline, SkillsSubPageView, skillStatusTone } from "../skills-sub-page.js";
-import { demoSkillDetail, demoSkillPanelItems, demoSkillTimeline, isSkillsDemoEnabled } from "../skill-demo-data.js";
-import { createMemoryRuntimeClientStub, panelItemsOutput, skillPanelDetailFixture, skillPanelItemsFixture } from "./fixtures.js";
+import { loadSkillDetail, loadSkillsData, loadSkillTimeline, SkillsSectionView, skillStatusTone } from "../skills-section.js";
+import { demoSkillDetail, demoSkillPanelItems, demoSkillTimeline, isSkillsDemoEnabled } from "../../memory/skill-demo-data.js";
+import { createMemoryRuntimeClientStub, panelItemsOutput, skillPanelDetailFixture, skillPanelItemsFixture } from "../../memory/tests/fixtures.js";
 
-describe("SkillsSubPage", () => {
+describe("SkillsSection", () => {
   it("从 panel items/detail 读取技能数据", async () => {
     const client = createMemoryRuntimeClientStub({
       listPanelItems: vi.fn(async () => skillPanelItemsFixture),
@@ -55,12 +56,18 @@ describe("SkillsSubPage", () => {
           timeline: skillTimelineEntries()
         }
       }
-    });
+    }, skillPanelItemsFixture.items[0]!.id);
     expect(html).toContain("根据仓库真实代码补齐中文文件级、函数级和字段含义注释。");
     expect(html).toContain("先读文件");
     expect(html).toContain("已启用");
     expect(html).toContain("价值评分");
-    expect(html).toContain("memory-pill--skill-active");
+    expect(html).toContain("data-tools-skills-section");
+    expect(html).toContain("tools-icon-grid");
+    expect(html).toContain("integration-card");
+    expect(html).toContain("integration-card-name");
+    expect(html).toContain("integration-card-status-connected");
+    expect(html).toContain("integration-card--selected");
+    expect(html).toContain("text-status-success");
     expect(html).toContain("memory-drawer");
     expect(html).toContain('memory-drawer__eyebrow">skill-memory-1');
     expect(html).toContain("memory-delete-button");
@@ -82,7 +89,7 @@ describe("SkillsSubPage", () => {
     expect(html).toContain("搜索技能");
     expect(html).toContain("记忆分页");
     expect(html).toContain("/ 1 页");
-    expect(html).not.toContain("memory-card__summary");
+    expect(html).not.toContain("memory-card");
     expect(html).not.toContain(">activated<");
   });
 
@@ -108,7 +115,8 @@ describe("SkillsSubPage", () => {
 
     expect(html).toContain("Brief Greeting for Salutations");
     expect(html).toContain("候选");
-    expect(html).toContain("memory-pill--skill-candidate");
+    expect(html).toContain("integration-card-status-connecting");
+    expect(html).toContain("text-amber-800");
     expect(html).not.toContain("Use this skill when");
     expect(html).not.toContain("skill_0f56cfb9815a96aa67d");
     expect(html).not.toContain(">resolving<");
@@ -161,9 +169,15 @@ describe("SkillsSubPage", () => {
     });
 
     expect(html).toContain("候选");
-    expect(html).toContain("memory-pill--skill-candidate");
+    expect(html).toContain("integration-card-status-connecting");
     expect(html).not.toContain(">candidate<");
     expect(html).not.toContain(">resolving<");
+  });
+
+  it("选中的技能卡片边框优先于状态边框", () => {
+    const styles = readFileSync(new URL("../../../styles.css", import.meta.url), "utf8");
+
+    expect(styles).toContain(".integration-card.integration-card--selected");
   });
 
   it("提供可截图的多版本 skill demo 数据", () => {
@@ -177,8 +191,8 @@ describe("SkillsSubPage", () => {
       detail: { status: "ready", data: { detail, timeline } }
     });
 
-    expect(isSkillsDemoEnabled("?memoryPage=skills&demoSkills=1")).toBe(true);
-    expect(isSkillsDemoEnabled("?memoryPage=skills")).toBe(false);
+    expect(isSkillsDemoEnabled("?preview=tools-skills&demoSkills=1")).toBe(true);
+    expect(isSkillsDemoEnabled("?preview=tools-skills")).toBe(false);
     expect(items.items).toHaveLength(4);
     expect(timeline.map((entry) => entry.summary).join("\n")).toContain("v6:");
     expect(timeline.map((entry) => entry.summary).join("\n")).toContain("v1:");
@@ -190,11 +204,15 @@ describe("SkillsSubPage", () => {
 });
 
 /** Renders render skills. */
-function renderSkills(state: Parameters<typeof SkillsSubPageView>[0]["state"]): string {
+function renderSkills(
+  state: Parameters<typeof SkillsSectionView>[0]["state"],
+  selectedSkillId?: string
+): string {
   return renderToString(
     <I18nProvider language="zh-CN">
-      <SkillsSubPageView
+      <SkillsSectionView
         state={state}
+        selectedSkillId={selectedSkillId}
         query="中文"
         onQueryChange={vi.fn()}
         onSearch={vi.fn()}

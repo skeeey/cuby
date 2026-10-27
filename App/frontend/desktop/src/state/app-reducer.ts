@@ -6,6 +6,7 @@ import type { ModelProviderConfig } from "../api/config-client.js";
 import type { AgentSourceScanCompletion, AgentSourceScanProgress, AppAction, EventConnectionStatus } from "./app-actions.js";
 import { agentReducer, initialAgentState, type AgentAction, type AgentState } from "./agent-chat-slice.js";
 import { initialToolsState, toolsReducer, type ToolsAction, type ToolsState } from "./tools-slice.js";
+import type { NavigationRequest } from "./navigation-requests.js";
 
 /** Contract for startup state. */
 export interface StartupState {
@@ -19,6 +20,7 @@ export interface NavigationState {
   currentPath: AppRoutePath;
   history: AppRoutePath[];
   preferredMode: PreferredMode | null;
+  pendingRequest: NavigationRequest | null;
 }
 
 /** Contract for agent sources state. */
@@ -122,7 +124,8 @@ export function createInitialAppState(): AppState {
     navigation: {
       currentPath: "/welcome",
       history: ["/welcome"],
-      preferredMode: null
+      preferredMode: null,
+      pendingRequest: null
     },
     agentSources: {
       items: [],
@@ -181,7 +184,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         navigation: {
           ...state.navigation,
           currentPath: action.initialPath,
-          history: [action.initialPath]
+          history: [action.initialPath],
+          pendingRequest: null
         },
         agentSources: {
           ...state.agentSources,
@@ -200,10 +204,50 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         navigation: {
           ...state.navigation,
           currentPath: action.path,
-          history: state.navigation.currentPath === action.path ? state.navigation.history : [...state.navigation.history, action.path]
+          history: state.navigation.currentPath === action.path ? state.navigation.history : [...state.navigation.history, action.path],
+          pendingRequest: null
         },
         agent: agentReducer(state.agent, { type: "agent/chatViewVisibilityChanged", visible: isAgentChatViewPath(action.path) })
       };
+    case "navigation/openMemoryReference":
+      return {
+        ...state,
+        navigation: {
+          ...state.navigation,
+          currentPath: "/memory",
+          history: state.navigation.currentPath === "/memory"
+            ? state.navigation.history
+            : [...state.navigation.history, "/memory"],
+          pendingRequest: {
+            kind: "memory-reference",
+            id: action.id,
+            fallbackPage: action.fallbackPage,
+            requestId: action.requestId
+          }
+        },
+        agent: agentReducer(state.agent, { type: "agent/chatViewVisibilityChanged", visible: false })
+      };
+    case "navigation/openToolSkill":
+      return {
+        ...state,
+        navigation: {
+          ...state.navigation,
+          currentPath: "/tools",
+          history: state.navigation.currentPath === "/tools"
+            ? state.navigation.history
+            : [...state.navigation.history, "/tools"],
+          pendingRequest: {
+            kind: "tool-skill",
+            skillId: action.skillId,
+            requestId: action.requestId
+          }
+        },
+        agent: agentReducer(state.agent, { type: "agent/chatViewVisibilityChanged", visible: false })
+      };
+    case "navigation/requestHandled":
+      return state.navigation.pendingRequest?.requestId === action.requestId
+        ? { ...state, navigation: { ...state.navigation, pendingRequest: null } }
+        : state;
     case "invitationToast/shown":
       return {
         ...state,

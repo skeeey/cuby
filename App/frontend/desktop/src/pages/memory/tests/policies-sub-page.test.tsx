@@ -11,13 +11,12 @@ import { panelItemsOutput } from "./fixtures.js";
 const memoryPagesDir = resolve(__dirname, "..");
 
 describe("PoliciesSubPage", () => {
-  it("记忆、任务、经验、场域认知和技能空态共用状态卡片样式", () => {
+  it("记忆、任务、经验、场域认知空态共用状态卡片样式", () => {
     const emptyStates = {
       "memories-sub-page.tsx": '<MemoryStateBox message={t("memory.memories.empty")} />',
       "tasks-sub-page.tsx": '<MemoryStateBox message={t("memory.tasks.empty")} />',
       "policies-sub-page.tsx": '<MemoryStateBox message={t("memory.policies.empty")} />',
-      "world-model-sub-page.tsx": '<MemoryStateBox message={t("memory.worldModel.empty")} />',
-      "skills-sub-page.tsx": '<MemoryStateBox message={t("memory.skills.empty")} />'
+      "world-model-sub-page.tsx": '<MemoryStateBox message={t("memory.worldModel.empty")} />'
     };
     const html = renderToString(<MemoryStateBox message="暂无经验" />);
 
@@ -29,6 +28,11 @@ describe("PoliciesSubPage", () => {
       expect(source).not.toContain("function StateBox");
       expect(source).not.toContain("rounded-card p-5 text-sm");
     });
+
+    const skillsSource = readFileSync(resolve(memoryPagesDir, "../tools/skills-section.tsx"), "utf8");
+    expect(skillsSource).toContain('import { MemoryStateBox } from "../memory/memory-state-box.js";');
+    expect(skillsSource).toContain('<MemoryStateBox message={t("memory.skills.empty")} />');
+
     expect(html).toContain("memory-state-box");
     expect(html).not.toContain("rounded-card p-5 text-sm");
   });
