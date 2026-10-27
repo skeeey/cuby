@@ -21,7 +21,7 @@ describe("OverviewSubPage interaction", () => {
     container.remove();
   });
 
-  it.each(["memories", "policies", "world-model", "skills", "user-memories"] as const)(
+  it.each(["memories", "policies", "world-model", "user-memories"] as const)(
     "点击数量卡片后跳转到 %s 页面",
     (targetPage) => {
       const onNavigate = vi.fn();
@@ -41,4 +41,25 @@ describe("OverviewSubPage interaction", () => {
       expect(onNavigate).toHaveBeenCalledWith(targetPage);
     }
   );
+
+  it("技能数量卡片跳转到连接与工具的技能分区", () => {
+    const onNavigate = vi.fn();
+    const onOpenToolsSkills = vi.fn();
+    act(() => {
+      root.render(
+        <I18nProvider language="zh-CN">
+          <OverviewSubPageView
+            state={{ status: "ready", data: panelOverviewFixture }}
+            onNavigate={onNavigate}
+            onOpenToolsSkills={onOpenToolsSkills}
+          />
+        </I18nProvider>
+      );
+    });
+
+    act(() => container.querySelector<HTMLButtonElement>('[data-overview-target="skills"]')?.click());
+
+    expect(onOpenToolsSkills).toHaveBeenCalledTimes(1);
+    expect(onNavigate).not.toHaveBeenCalled();
+  });
 });

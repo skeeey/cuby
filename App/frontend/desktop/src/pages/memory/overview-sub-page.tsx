@@ -13,16 +13,25 @@ import {
 } from "./memory-panel-cache.js";
 import { type RemoteData, toErrorMessage } from "./remote-state.js";
 
-interface OverviewCountCard {
-  id: "memories" | "userMemories" | "skills" | "experiences" | "worldModels";
-  targetPage: OverviewCountTargetPage;
+interface OverviewCountCardBase {
   labelKey: MessageKey;
   value: number;
   hintKey: MessageKey;
   icon: ReactNode;
 }
 
-type OverviewCountTargetPage = "memories" | "policies" | "world-model" | "skills" | "user-memories";
+type OverviewCountCard = OverviewCountCardBase & (
+  | {
+      id: "memories" | "userMemories" | "experiences" | "worldModels";
+      targetPage: OverviewCountTargetPage;
+    }
+  | {
+      id: "skills";
+      targetPage: "skills";
+    }
+);
+
+type OverviewCountTargetPage = "memories" | "policies" | "world-model" | "user-memories";
 
 interface DailyActivityCell {
   date: string;
@@ -60,6 +69,7 @@ interface ActivityGridLayout {
 export interface OverviewSubPageProps {
   client: MemoryRuntimeClient | null;
   onNavigate: (page: OverviewCountTargetPage) => void;
+  onOpenToolsSkills?: () => void;
 }
 
 export function loadOverviewData(client: MemoryRuntimeClient): Promise<PanelOverviewOutput> {
@@ -94,12 +104,13 @@ export function OverviewSubPage(props: OverviewSubPageProps) {
     };
   }, [props.client, t]);
 
-  return <OverviewSubPageView state={state} onNavigate={props.onNavigate} />;
+  return <OverviewSubPageView state={state} onNavigate={props.onNavigate} onOpenToolsSkills={props.onOpenToolsSkills} />;
 }
 
 export function OverviewSubPageView(props: {
   state: RemoteData<PanelOverviewOutput>;
   onNavigate: (page: OverviewCountTargetPage) => void;
+  onOpenToolsSkills?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -114,7 +125,13 @@ export function OverviewSubPageView(props: {
 
       {props.state.status === "loading" && <StateBox message={t("memory.overview.loading")} />}
       {props.state.status === "error" && <StateBox message={props.state.message} tone="error" />}
-      {props.state.status === "ready" && <OverviewContent data={props.state.data} onNavigate={props.onNavigate} />}
+      {props.state.status === "ready" && (
+        <OverviewContent
+          data={props.state.data}
+          onNavigate={props.onNavigate}
+          onOpenToolsSkills={props.onOpenToolsSkills}
+        />
+      )}
     </section>
   );
 }
@@ -122,6 +139,7 @@ export function OverviewSubPageView(props: {
 function OverviewContent(props: {
   data: PanelOverviewOutput;
   onNavigate: (page: OverviewCountTargetPage) => void;
+  onOpenToolsSkills?: () => void;
 }) {
   const countCards = buildCountCards(props.data);
 
@@ -133,7 +151,7 @@ function OverviewContent(props: {
         style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 150px), 1fr))" }}
       >
         {countCards.map((item) => (
-          <CountCard key={item.id} item={item} onNavigate={props.onNavigate} />
+          <CountCard key={item.id} item={item} onNavigate={props.onNavigate} onOpenToolsSkills={props.onOpenToolsSkills} />
         ))}
       </div>
 
@@ -156,6 +174,7 @@ function buildCountCards(data: PanelOverviewOutput): OverviewCountCard[] {
 function CountCard(props: {
   item: OverviewCountCard;
   onNavigate: (page: OverviewCountTargetPage) => void;
+  onOpenToolsSkills?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -163,7 +182,14 @@ function CountCard(props: {
     <button
       type="button"
       data-overview-target={props.item.targetPage}
-      onClick={() => props.onNavigate(props.item.targetPage)}
+      onClick={() => {
+        if (props.item.id === "skills") {
+          props.onOpenToolsSkills?.();
+          return;
+        }
+
+        props.onNavigate(props.item.targetPage);
+      }}
       className="w-full bg-background-paper border-content-panel rounded-card p-4 flex flex-col justify-between text-left transition-all cursor-pointer hover:bg-canvas-oat/25 hover:border-action-sky/30 active:scale-[0.99] outline-none focus-visible:ring-2 focus-visible:ring-action-sky/25"
       style={{ minHeight: 132 }}
     >

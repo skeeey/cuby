@@ -8,12 +8,12 @@ import { LogsSubPage } from "../logs-sub-page.js";
 import { MemoriesSubPage } from "../memories-sub-page.js";
 import { OverviewSubPage } from "../overview-sub-page.js";
 import { PoliciesSubPage } from "../policies-sub-page.js";
-import { SkillsSubPage } from "../skills-sub-page.js";
 import { TasksSubPage } from "../tasks-sub-page.js";
 import { UserMemoriesSubPage } from "../user-memories-sub-page.js";
 import { WorldModelSubPage } from "../world-model-sub-page.js";
+import { SkillsSection } from "../../tools/skills-section.js";
 
-describe("memory sub page cache hydration", () => {
+describe("panel sub page cache hydration", () => {
   afterEach(() => {
     vi.unstubAllGlobals();
   });
@@ -25,7 +25,7 @@ describe("memory sub page cache hydration", () => {
     ["tasks", () => <TasksSubPage client={null} />],
     ["policies", () => <PoliciesSubPage client={null} onOpenMemoryReference={() => undefined} />],
     ["world-model", () => <WorldModelSubPage client={null} onOpenMemoryReference={() => undefined} />],
-    ["skills", () => <SkillsSubPage client={null} onOpenMemoryReference={() => undefined} />],
+    ["skills", () => <SkillsSection client={null} onOpenMemoryReference={() => undefined} />],
     ["analytics", () => <AnalyticsSubPage client={null} />],
     ["logs", () => <LogsSubPage client={null} />]
   ] as Array<[string, () => ReactElement]>)("does not read sessionStorage during %s first render", (_name, renderSubPage) => {

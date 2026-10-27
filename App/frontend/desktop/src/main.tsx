@@ -6,9 +6,9 @@ import { initGtag } from "./analytics/gtag-init.js";
 import { NicknameModal } from "./components/nickname-modal.js";
 import { I18nProvider } from "./i18n/i18n-provider.js";
 import { randomNickname } from "./lib/nickname.js";
-import { MemoryPage } from "./pages/memory-page.js";
 import { MemoryPluginConflictModal } from "./pages/memory-plugin-conflict-modal.js";
 import { StartupScreen } from "./pages/startup-screen.js";
+import { ToolsPage } from "./pages/tools-page.js";
 import { applyWindowPlatformClass } from "./utils/window-fullscreen.js";
 import rendererLog from "electron-log/renderer";
 import "./styles.css";
@@ -65,10 +65,10 @@ function MemoryPluginConflictModalPreview() {
   );
 }
 
-function MemorySkillsPreview() {
+function ToolsSkillsPreview() {
   return (
     <AppProviders>
-      <MemoryPage initialSubPage="skills" />
+      <ToolsPage />
     </AppProviders>
   );
 }
@@ -99,8 +99,8 @@ reactRoot.render(
       </I18nProvider>
     ) : previewMode === "memory-plugin-conflict" ? (
       <MemoryPluginConflictModalPreview />
-    ) : previewMode === "memory-skills" ? (
-      <MemorySkillsPreview />
+    ) : previewMode === "tools-skills" || previewMode === "memory-skills" ? (
+      <ToolsSkillsPreview />
     ) : (
       <App />
     )}

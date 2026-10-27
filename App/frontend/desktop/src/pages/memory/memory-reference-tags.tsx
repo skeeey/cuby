@@ -1,4 +1,6 @@
-export type MemoryReferencePage = "memories" | "tasks" | "policies" | "world-model" | "skills";
+import type { MemoryReferencePage } from "../../state/navigation-requests.js";
+
+export type { MemoryReferencePage } from "../../state/navigation-requests.js";
 
 export interface MemoryReferenceOpenRequest {
   id: string;

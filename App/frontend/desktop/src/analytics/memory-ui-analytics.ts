@@ -24,7 +24,7 @@ export const MEMORY_UI_ANALYTICS_EVENTS = {
   sourceScanFailed: "memory_source_scan_failed"
 } as const;
 
-export type MemoryUiSubPage = MemorySubPageId | "onboarding";
+export type MemoryUiSubPage = MemorySubPageId | "onboarding" | "skills";
 
 export interface MemoryUiBaseParamsInput {
   subPage: MemoryUiSubPage;
@@ -68,6 +68,9 @@ export function buildLogsFilterLayer(
 export function resolveMemoryUiPagePath(subPage: MemoryUiSubPage): string {
   if (subPage === "onboarding") {
     return "/onboarding";
+  }
+  if (subPage === "skills") {
+    return "/tools";
   }
   return resolveMemorySubPagePath(subPage);
 }

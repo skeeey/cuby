@@ -93,6 +93,8 @@ describe("ToolsPageView", () => {
     const html = renderView(initialToolsState);
 
     expect(html).toContain("lucide-search");
+    expect(html).toContain('placeholder="Search integrations..."');
+    expect(html).toContain('placeholder="Search skills..."');
     expect(html).not.toContain(">S</span>");
   });
 
@@ -186,21 +188,25 @@ describe("ToolsPageView", () => {
     expect(html).not.toContain("border-sky-200 bg-sky-50");
   });
 
-  it("integrationsEnabled=false 时只渲染渠道和 MCP 分区", () => {
+  it("integrationsEnabled=false 时只渲染渠道、MCP 和技能分区", () => {
     const html = renderView(initialToolsState, { integrationsEnabled: false });
 
     expect(html).toContain("Channels");
     expect(html).toContain("MCP servers");
+    expect(html).toContain("Skills");
     expect(html).not.toContain("Integrations");
     expect(html).not.toContain("Tools &amp; Automation");
   });
 
-  it("默认渲染三个分区", () => {
+  it("默认渲染渠道、MCP、技能和集成四个分区", () => {
     const html = renderView(initialToolsState);
 
     expect(html).toContain("Channels");
     expect(html).toContain("MCP servers");
+    expect(html).toContain("Skills");
     expect(html).toContain("Integrations");
+    expect(html.indexOf("MCP servers")).toBeLessThan(html.indexOf("Skills"));
+    expect(html.indexOf("Skills")).toBeLessThan(html.indexOf("Integrations"));
   });
 
   it("integrationsEnabled=false 时渠道卡片仍显示已连接状态", () => {

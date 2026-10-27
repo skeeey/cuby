@@ -5,6 +5,7 @@ import { useApiClients } from "../app/providers.js";
 import { PRODUCT_TOUR_TOOLS_CONTENT_ANCHOR } from "../app/product-tour-layout.js";
 import type { ChannelsClient } from "../api/channels-client.js";
 import type { IntegrationsClient } from "../api/integrations-client.js";
+import type { MemoryRuntimeClient } from "../api/memory-runtime-client.js";
 import { Banner } from "../components/banner.js";
 import { ConnectChannelModal } from "../components/connect-channel-modal.js";
 import { ConnectIntegrationModal } from "../components/connect-integration-modal.js";
@@ -13,6 +14,8 @@ import { McpToolsSection, type McpPresetsClient } from "../components/mcp-tools-
 import { Cuby } from "../components/mascot/cuby.js";
 import { CATEGORY_TABS, getAllIntegrationMeta, type IntegrationCategoryTab, type IntegrationMeta } from "../integrations/integration-meta.js";
 import { useTranslation } from "../i18n/use-translation.js";
+import { resolveMemoryReferencePage, type OpenMemoryReference } from "./memory/memory-reference-tags.js";
+import { SkillsSection, type SkillsSectionRequest } from "./tools/skills-section.js";
 import { appActions, loadToolConnectionRecords, toolsActions } from "../state/app-actions.js";
 import { canUseCloudFeatures } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
@@ -27,6 +30,8 @@ export interface ToolsPageViewProps {
   client?: IntegrationsClient;
   channelsClient?: ChannelsClient;
   mcpClient?: McpPresetsClient | null;
+  skillsClient?: MemoryRuntimeClient | null;
+  skillRequest?: SkillsSectionRequest | null;
   integrationsEnabled?: boolean;
   search?: string;
   activeCategory?: IntegrationCategoryTab;
@@ -35,13 +40,14 @@ export interface ToolsPageViewProps {
   onOpenIntegration: (integration: IntegrationMeta) => void;
   onModalClose: () => void;
   onConnectionsChanged: () => void;
+  onSkillRequestHandled?: (requestId: number) => void;
+  onOpenMemoryReference?: OpenMemoryReference;
 }
 
 /** Handles tools page. */
 export function ToolsPage() {
   const { state, dispatch } = useAppState();
   const { clients } = useApiClients();
-  const { t } = useTranslation();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<IntegrationCategoryTab>("All");
   const integrationsEnabled = canUseCloudFeatures(state);
@@ -93,12 +99,23 @@ export function ToolsPage() {
     }
   }, [clients, dispatch, integrationsEnabled]);
 
+  const openMemoryReference = useCallback<OpenMemoryReference>((id, fallbackPage) => {
+    if (resolveMemoryReferencePage(id, fallbackPage) === "skills") {
+      dispatch(appActions.openToolSkill(id));
+      return;
+    }
+
+    dispatch(appActions.openMemoryReference(id, fallbackPage));
+  }, [dispatch]);
+
   return (
     <ToolsPageView
       tools={state.tools}
       client={clients?.integrations}
       channelsClient={clients?.channels}
       mcpClient={clients?.memmyAgent ?? null}
+      skillsClient={clients?.memoryRuntime ?? null}
+      skillRequest={state.navigation.pendingRequest?.kind === "tool-skill" ? state.navigation.pendingRequest : null}
       integrationsEnabled={integrationsEnabled}
       search={search}
       activeCategory={activeCategory}
@@ -107,6 +124,8 @@ export function ToolsPage() {
       onOpenIntegration={openIntegration}
       onModalClose={closeModal}
       onConnectionsChanged={refreshConnections}
+      onSkillRequestHandled={(requestId) => dispatch(appActions.navigationRequestHandled(requestId))}
+      onOpenMemoryReference={openMemoryReference}
     />
   );
 }
@@ -178,6 +197,13 @@ export function ToolsPageView(props: ToolsPageViewProps) {
           </section>
 
           <McpToolsSection client={props.mcpClient ?? null} />
+
+          <SkillsSection
+            client={props.skillsClient ?? null}
+            request={props.skillRequest ?? null}
+            onRequestHandled={props.onSkillRequestHandled}
+            onOpenMemoryReference={props.onOpenMemoryReference ?? (() => undefined)}
+          />
 
           {props.integrationsEnabled !== false && (
           <section>

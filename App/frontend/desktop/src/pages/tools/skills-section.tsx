@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type Ref } from "react";
 import type { GetMemoryOutput, MemoryApiLog, MemoryApiLogToolName, PanelItemsOutput } from "@memmy/local-api-contracts";
 import type { MemoryRuntimeClient } from "../../api/memory-runtime-client.js";
 import { formatUserDateTime } from "../../lib/user-time-zone.js";
@@ -11,29 +11,28 @@ import {
 import { useAnalytics } from "../../analytics/use-analytics.js";
 import type { MessageKey } from "../../i18n/messages.js";
 import { useTranslation } from "../../i18n/use-translation.js";
-import { ChevronRight, Search, Wand2, X } from "./memory-prototype-icons.js";
-import { MemoryDrawerDeleteAction } from "./memory-delete-action.js";
-import { toMemoryDetailErrorMessage } from "./memory-detail-error.js";
-import { cleanMemoryBody, cleanMemoryText, drawerEyebrow } from "./memory-display.js";
-import { displayMemoryId } from "./memory-id.js";
+import { Search, Wand2, X } from "../memory/memory-prototype-icons.js";
+import { MemoryDrawerDeleteAction } from "../memory/memory-delete-action.js";
+import { toMemoryDetailErrorMessage } from "../memory/memory-detail-error.js";
+import { cleanMemoryBody, cleanMemoryText, drawerEyebrow } from "../memory/memory-display.js";
+import { displayMemoryId } from "../memory/memory-id.js";
 import {
   MemoryReferenceTags,
-  type MemoryReferenceOpenRequest,
   type MemoryReferencePage,
   type OpenMemoryReference
-} from "./memory-reference-tags.js";
+} from "../memory/memory-reference-tags.js";
 import {
   clearMemoryPanelCache,
   memoryPanelCacheKey,
   memoryPanelLatestCacheKey,
   readMemoryPanelCacheFirst,
   writeMemoryPanelCaches
-} from "./memory-panel-cache.js";
-import { MemoryPagination, normalizePage } from "./memory-pagination.js";
-import { MemoryRefreshButton } from "./memory-refresh-button.js";
-import { MemoryStateBox } from "./memory-state-box.js";
-import { type RemoteData, toErrorMessage } from "./remote-state.js";
-import { demoSkillDetail, demoSkillPanelItems, demoSkillTimeline, isSkillsDemoEnabled } from "./skill-demo-data.js";
+} from "../memory/memory-panel-cache.js";
+import { MemoryPagination, normalizePage } from "../memory/memory-pagination.js";
+import { MemoryRefreshButton } from "../memory/memory-refresh-button.js";
+import { MemoryStateBox } from "../memory/memory-state-box.js";
+import { type RemoteData, toErrorMessage } from "../memory/remote-state.js";
+import { demoSkillDetail, demoSkillPanelItems, demoSkillTimeline, isSkillsDemoEnabled } from "../memory/skill-demo-data.js";
 
 type SkillDetailState = RemoteData<SkillDetailData> | null;
 const SKILLS_CACHE_SECTION = "skills";
@@ -80,9 +79,15 @@ interface SkillView {
   lastUsedAt?: string;
 }
 
-export interface SkillsSubPageProps {
+export interface SkillsSectionRequest {
+  skillId: string | null;
+  requestId: number;
+}
+
+export interface SkillsSectionProps {
   client: MemoryRuntimeClient | null;
-  openRequest?: MemoryReferenceOpenRequest;
+  request?: SkillsSectionRequest | null;
+  onRequestHandled?: (requestId: number) => void;
   onOpenMemoryReference: OpenMemoryReference;
 }
 
@@ -118,11 +123,12 @@ function skillsCacheKeys(query: string, page: number): string[] {
   ];
 }
 
-export function SkillsSubPage(props: SkillsSubPageProps) {
+export function SkillsSection(props: SkillsSectionProps) {
   const { t } = useTranslation();
   const { track } = useAnalytics();
   const skillsFilterLayer = "Skill";
   const demoEnabled = isSkillsDemoEnabled();
+  const sectionRef = useRef<HTMLElement | null>(null);
   const [query, setQuery] = useState("");
   const [page, setPage] = useState(1);
   const [state, setState] = useState<RemoteData<PanelItemsOutput>>({ status: "loading" });
@@ -268,14 +274,23 @@ export function SkillsSubPage(props: SkillsSubPageProps) {
   }, [props.client, t, demoEnabled]);
 
   useEffect(() => {
-    if (props.openRequest) {
-      openSkill(props.openRequest.id);
+    const request = props.request;
+    if (!request) {
+      return;
     }
+
+    if (request.skillId) {
+      openSkill(request.skillId);
+    } else {
+      sectionRef.current?.scrollIntoView?.({ block: "start" });
+    }
+    props.onRequestHandled?.(request.requestId);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [props.openRequest?.requestId]);
+  }, [props.request?.requestId]);
 
   return (
-    <SkillsSubPageView
+    <SkillsSectionView
+      sectionRef={sectionRef}
       state={state.status === "ready" ? { ...state, detail } : state}
       detail={detail}
       selectedSkillId={selectedSkillId}
@@ -301,7 +316,8 @@ export function SkillsSubPage(props: SkillsSubPageProps) {
   );
 }
 
-export interface SkillsSubPageViewProps {
+export interface SkillsSectionViewProps {
+  sectionRef?: Ref<HTMLElement>;
   state: RemoteData<PanelItemsOutput> | ({ status: "ready"; data: PanelItemsOutput; detail: SkillDetailState });
   detail?: SkillDetailState;
   selectedSkillId?: string | null;
@@ -316,64 +332,58 @@ export interface SkillsSubPageViewProps {
   onOpenMemoryReference: OpenMemoryReference;
 }
 
-export function SkillsSubPageView(props: SkillsSubPageViewProps) {
+export function SkillsSectionView(props: SkillsSectionViewProps) {
   const { t } = useTranslation();
 
   return (
-    <section className="memory-panel">
-      <div className="memory-panel__header">
-        <div className="memory-panel__header-main">
-          <h3 className="memory-panel__title">
-            <Wand2 size={18} className="text-text-ink/60" />
-            {t("memory.skills.title")}
-          </h3>
-          <p className="memory-panel__subtitle">{t("memory.skills.description")}</p>
+    <section className="mb-8" data-tools-skills-section="" ref={props.sectionRef}>
+      <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          <div className="text-base font-semibold text-text-ink">{t("memory.skills.title")}</div>
+          <p className="mt-1 text-xs text-text-ink/55">{t("memory.skills.description")}</p>
         </div>
-        <MemoryRefreshButton onClick={props.onRefresh} />
-      </div>
-      <div className="memory-toolbar">
-        <label className="memory-search">
-          <Search size={15} className="memory-search__icon" />
-          <input
-            type="search"
-            value={props.query}
-            placeholder={t("memory.skills.searchPlaceholder")}
-            onChange={(event) => props.onQueryChange(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                props.onSearch();
-              }
-            }}
-            className="memory-search__input"
-          />
-        </label>
+        <div className="flex min-w-0 items-center gap-2">
+          <label className="memory-search">
+            <Search size={15} className="memory-search__icon" />
+            <input
+              type="search"
+              value={props.query}
+              placeholder={t("memory.skills.searchPlaceholder")}
+              onChange={(event) => props.onQueryChange(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  props.onSearch();
+                }
+              }}
+              className="memory-search__input"
+            />
+          </label>
+          <MemoryRefreshButton onClick={props.onRefresh} />
+        </div>
       </div>
       {props.state.status === "loading" && <MemoryStateBox message={t("memory.skills.loading")} />}
       {props.state.status === "error" && <MemoryStateBox message={props.state.message} tone="error" />}
       {props.state.status === "ready" && props.state.data.items.length === 0 && <MemoryStateBox message={t("memory.skills.empty")} />}
       {props.state.status === "ready" && props.state.data.items.length > 0 && (
         <>
-          <div className="memory-list">
+          <div className="tools-icon-grid">
             {props.state.data.items.map((skill) => (
               <button
                 key={skill.id}
                 type="button"
+                title={displaySkillTitle(skill)}
                 onClick={() => props.onOpenSkill(skill.id)}
-                className={`memory-card${props.selectedSkillId === skill.id ? " memory-card--selected" : ""}`}
+                className={`integration-card rounded-card integration-card-integration ${skillCardStatusClass(skill.status)}${props.selectedSkillId === skill.id ? " integration-card--selected" : ""}`}
               >
-                <div className="memory-card__body">
-                  <div className="memory-card__title">{displaySkillTitle(skill)}</div>
-                  <div className="memory-card__meta">
-                    <SkillStatusPill status={skill.status} />
-                    <span>{t("memory.memories.updatedAt")}: {formatDateTime(skill.updatedAt)}</span>
-                    {skill.tags.slice(0, 4).map((tag) => (
-                      <span key={tag}>{tag}</span>
-                    ))}
-                  </div>
-                </div>
-                <div className="memory-card__tail">
-                  <ChevronRight size={16} />
-                </div>
+                <span className="integration-card-logo flex items-center justify-center text-text-ink/45">
+                  <Wand2 size={22} />
+                </span>
+                <span className="integration-card-content">
+                  <span className="integration-card-name">{displaySkillTitle(skill)}</span>
+                  <span className={`integration-card-state-label ${skillCardStateClass(skill.status)}`}>
+                    {skillStatusLabel(skill.status, t)}
+                  </span>
+                </span>
               </button>
             ))}
           </div>
@@ -601,12 +611,6 @@ function SkillTimelineSection(props: { entries: SkillTimelineEntry[] }) {
   );
 }
 
-function SkillStatusPill(props: { status?: string }) {
-  const { t } = useTranslation();
-
-  return <span className={`memory-pill memory-pill--skill-${skillStatusTone(props.status)}`}>{skillStatusLabel(props.status, t)}</span>;
-}
-
 export function skillStatusTone(status: string | undefined): SkillStatusTone {
   const toneByStatus: Record<string, SkillStatusTone> = {
     resolving: "candidate",
@@ -618,6 +622,30 @@ export function skillStatusTone(status: string | undefined): SkillStatusTone {
   };
 
   return toneByStatus[status ?? ""] ?? "unknown";
+}
+
+function skillCardStatusClass(status: string | undefined): string {
+  const tone = skillStatusTone(status);
+  if (tone === "active") {
+    return "integration-card-status-connected";
+  }
+  if (tone === "candidate") {
+    return "integration-card-status-connecting";
+  }
+
+  return "";
+}
+
+function skillCardStateClass(status: string | undefined): string {
+  const tone = skillStatusTone(status);
+  if (tone === "active") {
+    return "text-status-success";
+  }
+  if (tone === "candidate") {
+    return "text-amber-800";
+  }
+
+  return "text-text-ink/45";
 }
 
 function skillStatusLabel(status: string | undefined, t: (key: MessageKey) => string): string {
@@ -903,7 +931,7 @@ function parseJsonString(value: unknown): unknown {
   }
 
   const trimmed = value.trim();
-  if (!trimmed || !/^[\[{"]/.test(trimmed)) {
+  if (!trimmed || !/^[[{"]/.test(trimmed)) {
     return value;
   }
 
