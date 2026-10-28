@@ -28,11 +28,11 @@ import {
   readMemoryPanelCacheFirst,
   writeMemoryPanelCaches
 } from "../memory/memory-panel-cache.js";
-import { MemoryPagination, normalizePage } from "../memory/memory-pagination.js";
 import { MemoryRefreshButton } from "../memory/memory-refresh-button.js";
 import { MemoryStateBox } from "../memory/memory-state-box.js";
 import { type RemoteData, toErrorMessage } from "../memory/remote-state.js";
 import { demoSkillDetail, demoSkillPanelItems, demoSkillTimeline, isSkillsDemoEnabled } from "../memory/skill-demo-data.js";
+import { buildSkillTabs, cardsForTab, searchCards, skillSourceOf, sourceLabel, type SkillCard, type SkillTabId } from "./skill-groups.js";
 
 type SkillDetailState = RemoteData<SkillDetailData> | null;
 const SKILLS_CACHE_SECTION = "skills";
@@ -91,14 +91,23 @@ export interface SkillsSectionProps {
   onOpenMemoryReference: OpenMemoryReference;
 }
 
-export function loadSkillsData(client: MemoryRuntimeClient, query = ""): Promise<PanelItemsOutput> {
-  return loadSkillsDataPage(client, query, 1);
+export async function loadSkillsData(client: MemoryRuntimeClient, query = ""): Promise<PanelItemsOutput> {
+  const first = await loadSkillsDataPage(client, query, 1);
+  if (!first.hasNext) return first;
+
+  const items = [...first.items];
+  for (let page = 2; page <= first.totalPages; page += 1) {
+    const next = await loadSkillsDataPage(client, query, page);
+    items.push(...next.items);
+    if (!next.hasNext) break;
+  }
+  return { ...first, items, page: 1, total: items.length, totalPages: 1, hasNext: false, hasPrev: false };
 }
 
 export function loadSkillsDataPage(client: MemoryRuntimeClient, query = "", page = 1): Promise<PanelItemsOutput> {
   const keyword = query.trim();
   return client.listPanelItems(
-    keyword ? { layer: "Skill", q: keyword, page: normalizePage(page) } : { layer: "Skill", page: normalizePage(page) }
+    keyword ? { layer: "Skill", q: keyword, page } : { layer: "Skill", page }
   );
 }
 
@@ -116,9 +125,9 @@ export async function loadSkillTimeline(client: MemoryRuntimeClient, skillId: st
   return skillTimelineFromLogs(output.logs, skillId);
 }
 
-function skillsCacheKeys(query: string, page: number): string[] {
+function skillsCacheKeys(query: string): string[] {
   return [
-    memoryPanelCacheKey(SKILLS_CACHE_SECTION, query.trim(), normalizePage(page)),
+    memoryPanelCacheKey(SKILLS_CACHE_SECTION, query.trim(), 1),
     memoryPanelLatestCacheKey(SKILLS_CACHE_SECTION)
   ];
 }
@@ -130,7 +139,7 @@ export function SkillsSection(props: SkillsSectionProps) {
   const demoEnabled = isSkillsDemoEnabled();
   const sectionRef = useRef<HTMLElement | null>(null);
   const [query, setQuery] = useState("");
-  const [page, setPage] = useState(1);
+  const [submittedQuery, setSubmittedQuery] = useState("");
   const [state, setState] = useState<RemoteData<PanelItemsOutput>>({ status: "loading" });
   const [detail, setDetail] = useState<SkillDetailState>(null);
   const [selectedSkillId, setSelectedSkillId] = useState<string | null>(null);
@@ -166,11 +175,11 @@ export function SkillsSection(props: SkillsSectionProps) {
       .catch((error) => setDetail({ status: "error", message: toMemoryDetailErrorMessage(error, t("memory.detailUnavailable")) }));
   }
 
-  function refresh(nextPage = page, options: { useCache?: boolean } = {}): Promise<PanelItemsOutput | undefined> {
-    const normalizedPage = normalizePage(nextPage);
+  function refresh(options: { useCache?: boolean; query?: string } = {}): Promise<PanelItemsOutput | undefined> {
+    const keyword = options.query ?? submittedQuery;
 
     if (demoEnabled) {
-      const data = demoSkillPanelItems(query, normalizedPage);
+      const data = demoSkillPanelItems(keyword, 1);
       setState({ status: "ready", data });
       if (!selectedSkillId && !detail) {
         const firstSkill = data.items[0];
@@ -189,7 +198,7 @@ export function SkillsSection(props: SkillsSectionProps) {
       return Promise.reject(new Error(message));
     }
 
-    const cacheKeys = skillsCacheKeys(query, normalizedPage);
+    const cacheKeys = skillsCacheKeys(keyword);
     const cached = (options.useCache ?? true) ? readMemoryPanelCacheFirst<PanelItemsOutput>(cacheKeys) : null;
     if (cached) {
       setState({ status: "ready", data: cached });
@@ -197,7 +206,7 @@ export function SkillsSection(props: SkillsSectionProps) {
       setState((current) => current.status === "ready" ? current : { status: "loading" });
     }
 
-    return loadSkillsDataPage(props.client, query, normalizedPage)
+    return loadSkillsData(props.client, keyword)
       .then((data) => {
         writeMemoryPanelCaches(cacheKeys, data);
         setState({ status: "ready", data });
@@ -212,13 +221,17 @@ export function SkillsSection(props: SkillsSectionProps) {
   function changeQuery(value: string) {
     setQuery(value);
     closeSkill();
-    setPage(1);
+    if (!value.trim() && submittedQuery) {
+      setSubmittedQuery("");
+      void refresh({ query: "" }).catch(() => undefined);
+    }
   }
 
   function runSearch() {
+    const keyword = query.trim();
+    setSubmittedQuery(keyword);
     closeSkill();
-    setPage(1);
-    void refresh(1)
+    void refresh({ query: keyword })
       .then((data) => {
         if (!data) {
           return;
@@ -230,17 +243,6 @@ export function SkillsSection(props: SkillsSectionProps) {
         }));
       })
       .catch(() => undefined);
-  }
-
-  function changePage(nextPage: number) {
-    const normalizedPage = normalizePage(nextPage);
-    if (normalizedPage === page) {
-      return;
-    }
-
-    closeSkill();
-    setPage(normalizedPage);
-    void refresh(normalizedPage).catch(() => undefined);
   }
 
   function closeSkill() {
@@ -265,7 +267,7 @@ export function SkillsSection(props: SkillsSectionProps) {
     }));
     clearMemoryPanelCache();
     closeSkill();
-    void refresh(page, { useCache: false }).catch(() => undefined);
+    void refresh({ useCache: false }).catch(() => undefined);
   }
 
   useEffect(() => {
@@ -295,11 +297,13 @@ export function SkillsSection(props: SkillsSectionProps) {
       detail={detail}
       selectedSkillId={selectedSkillId}
       query={query}
+      searchActive={submittedQuery.trim().length > 0}
       onQueryChange={changeQuery}
       onSearch={runSearch}
-      onPageChange={changePage}
       onRefresh={async () => {
-        const data = await refresh(page, { useCache: false });
+        const keyword = query.trim();
+        setSubmittedQuery(keyword);
+        const data = await refresh({ query: keyword, useCache: false });
         if (data) {
           track(buildMemoryUiPanelRefreshedEvent({
             subPage: "skills",
@@ -322,9 +326,9 @@ export interface SkillsSectionViewProps {
   detail?: SkillDetailState;
   selectedSkillId?: string | null;
   query: string;
+  searchActive: boolean;
   onQueryChange: (value: string) => void;
   onSearch: () => void;
-  onPageChange: (page: number) => void;
   onRefresh: () => void | Promise<void>;
   onOpenSkill: (skillId: string) => void;
   onDeleteSkill: (id: string) => Promise<void>;
@@ -334,13 +338,24 @@ export interface SkillsSectionViewProps {
 
 export function SkillsSectionView(props: SkillsSectionViewProps) {
   const { t } = useTranslation();
+  const items = props.state.status === "ready" ? props.state.data.items : [];
+  const tabs = buildSkillTabs(items);
+  const [activeTabId, setActiveTabId] = useState<SkillTabId | null>(null);
+  const activeTab = tabs.find((tab) => tab.id === activeTabId) ?? tabs[0];
+  const cards = props.searchActive
+    ? searchCards(items)
+    : activeTab
+      ? cardsForTab(items, activeTab.id)
+      : [];
 
   return (
     <section className="mb-8" data-tools-skills-section="" ref={props.sectionRef}>
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <div className="text-base font-semibold text-text-ink">{t("memory.skills.title")}</div>
-          <p className="mt-1 text-xs text-text-ink/55">{t("memory.skills.description")}</p>
+          <div className="text-base font-semibold text-text-ink">
+            {props.searchActive ? t("memory.skills.searchResults") : t("memory.skills.title")}
+          </div>
+          {!props.searchActive && <p className="mt-1 text-xs text-text-ink/55">{t("memory.skills.description")}</p>}
         </div>
         <div className="flex min-w-0 items-center gap-2">
           <label className="memory-search">
@@ -363,32 +378,36 @@ export function SkillsSectionView(props: SkillsSectionViewProps) {
       </div>
       {props.state.status === "loading" && <MemoryStateBox message={t("memory.skills.loading")} />}
       {props.state.status === "error" && <MemoryStateBox message={props.state.message} tone="error" />}
-      {props.state.status === "ready" && props.state.data.items.length === 0 && <MemoryStateBox message={t("memory.skills.empty")} />}
-      {props.state.status === "ready" && props.state.data.items.length > 0 && (
-        <>
-          <div className="tools-icon-grid">
-            {props.state.data.items.map((skill) => (
-              <button
-                key={skill.id}
-                type="button"
-                title={displaySkillTitle(skill)}
-                onClick={() => props.onOpenSkill(skill.id)}
-                className={`integration-card rounded-card integration-card-integration ${skillCardStatusClass(skill.status)}${props.selectedSkillId === skill.id ? " integration-card--selected" : ""}`}
-              >
-                <span className="integration-card-logo flex items-center justify-center text-text-ink/45">
-                  <Wand2 size={22} />
-                </span>
-                <span className="integration-card-content">
-                  <span className="integration-card-name">{displaySkillTitle(skill)}</span>
-                  <span className={`integration-card-state-label ${skillCardStateClass(skill.status)}`}>
-                    {skillStatusLabel(skill.status, t)}
-                  </span>
-                </span>
-              </button>
-            ))}
-          </div>
-          <MemoryPagination data={props.state.data} onPageChange={props.onPageChange} />
-        </>
+      {props.state.status === "ready" && !props.searchActive && tabs.length > 0 && (
+        <div className="tools-skill-tabs" data-tools-skill-tabs="" role="tablist">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={tab.id === activeTab?.id}
+              onClick={() => setActiveTabId(tab.id)}
+              className={`tools-skill-tab${tab.id === activeTab?.id ? " tools-skill-tab--active" : ""}`}
+            >
+              {skillTabLabel(tab, t)}
+              <span className="tools-skill-tab__count">{tab.count}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      {props.state.status === "ready" && cards.length === 0 && <MemoryStateBox message={t("memory.skills.empty")} />}
+      {props.state.status === "ready" && cards.length > 0 && (
+        <div className="tools-icon-grid">
+          {cards.map((card) => (
+            <SkillGridCard
+              key={card.key}
+              card={card}
+              searchActive={props.searchActive}
+              selected={props.selectedSkillId === card.item.id}
+              onOpen={() => props.onOpenSkill(card.item.id)}
+            />
+          ))}
+        </div>
       )}
       <SkillDrawer
         detail={props.detail ?? ("detail" in props.state ? props.state.detail : null)}
@@ -398,6 +417,63 @@ export function SkillsSectionView(props: SkillsSectionViewProps) {
       />
     </section>
   );
+}
+
+function SkillGridCard(props: {
+  card: SkillCard;
+  searchActive: boolean;
+  selected: boolean;
+  onOpen: () => void;
+}) {
+  const { t } = useTranslation();
+  const item = props.card.item;
+  const title = displaySkillTitle(item);
+  const description = skillCardDescription(item);
+  const groupLabel = props.searchActive
+    ? props.card.group === "builtin"
+      ? t("memory.skills.tabs.builtin")
+      : props.card.group === "learned"
+        ? t("memory.skills.tabs.learned")
+        : sourceLabel(props.card.source ?? "")
+    : props.card.group === "builtin"
+      ? t("memory.skills.syncedTools", { count: new Set(props.card.mergedItems.map(skillSourceOf)).size })
+      : "";
+
+  return (
+    <button
+      type="button"
+      title={description ? `${title} — ${description}` : title}
+      onClick={props.onOpen}
+      className={`integration-card rounded-card integration-card-integration ${skillCardStatusClass(item.status)}${props.selected ? " integration-card--selected" : ""}`}
+    >
+      <span className="integration-card-logo flex items-center justify-center text-text-ink/45">
+        <Wand2 size={22} />
+      </span>
+      <span className="integration-card-content">
+        <span className="integration-card-name">{title}</span>
+        {description && <span className="integration-card-description">{description}</span>}
+        <span className="integration-card-meta">
+          {groupLabel && <span className="integration-card-source">{groupLabel}</span>}
+          <span className={`integration-card-state-label ${skillCardStateClass(item.status)}`}>
+            {skillStatusLabel(item.status, t)}
+          </span>
+        </span>
+      </span>
+    </button>
+  );
+}
+
+function skillTabLabel(tab: { group: "builtin" | "learned" | "source"; source?: string }, t: (key: MessageKey) => string): string {
+  if (tab.group === "builtin") return t("memory.skills.tabs.builtin");
+  if (tab.group === "learned") return t("memory.skills.tabs.learned");
+  return sourceLabel(tab.source ?? "");
+}
+
+function skillCardDescription(item: { summary?: string }): string {
+  return cleanMemoryText(item.summary ?? "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .find((line) => line && line !== "---") ?? "";
 }
 
 /**

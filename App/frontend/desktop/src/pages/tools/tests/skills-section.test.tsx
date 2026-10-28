@@ -87,8 +87,9 @@ describe("SkillsSection", () => {
     expect(html).not.toContain("耗时 8ms");
     expect(html).toContain('data-icon="search"');
     expect(html).toContain("搜索技能");
-    expect(html).toContain("记忆分页");
-    expect(html).toContain("/ 1 页");
+    expect(html).toContain("智能习得");
+    expect(html).not.toContain("记忆分页");
+    expect(html).not.toContain("/ 1 页");
     expect(html).not.toContain("memory-card");
     expect(html).not.toContain(">activated<");
   });
@@ -117,7 +118,7 @@ describe("SkillsSection", () => {
     expect(html).toContain("候选");
     expect(html).toContain("integration-card-status-connecting");
     expect(html).toContain("text-amber-800");
-    expect(html).not.toContain("Use this skill when");
+    expect(/integration-card-name">([^<]*)</.exec(html)?.[1]).toBe("Brief Greeting for Salutations");
     expect(html).not.toContain("skill_0f56cfb9815a96aa67d");
     expect(html).not.toContain(">resolving<");
   });
@@ -131,7 +132,6 @@ describe("SkillsSection", () => {
 
     expect(html).toContain("SKILL.md 内容");
     expect(html).not.toContain("适用场景");
-    expect(html).not.toContain("根据仓库真实代码补齐中文文件级、函数级和字段含义注释。");
   });
 
   it("技能列表生命周期和详情技能状态使用同一套展示状态", () => {
@@ -174,6 +174,74 @@ describe("SkillsSection", () => {
     expect(html).not.toContain(">resolving<");
   });
 
+  it("按来源分 tab，并把重复的内置 skill 合并成一张卡", () => {
+    const base = skillPanelItemsFixture.items[0]!;
+    const html = renderSkills({
+      status: "ready",
+      data: panelItemsOutput([
+        { ...base, id: "resume-codex", title: "memmy-resume", metadata: { source: "codex" }, updatedAt: "2026-06-02T18:00:00.000Z" },
+        { ...base, id: "resume-workbuddy", title: "memmy-resume", metadata: { source: "workbuddy" }, updatedAt: "2026-06-03T18:00:00.000Z" },
+        { ...base, id: "imagegen", title: "imagegen", metadata: { source: "codex" } }
+      ]),
+      detail: null
+    });
+
+    expect(html).toContain("data-tools-skill-tabs");
+    expect(html).toContain("Cuby 内置");
+    expect(html).toContain("Codex");
+    expect(html).not.toContain("智能习得");
+    expect((html.match(/integration-card-name">Memmy Resume</g) ?? []).length).toBe(1);
+    expect(html).toContain("2 个工具");
+  });
+
+  it("搜索时隐藏 tab 栏并展示带来源的混合结果", () => {
+    const base = skillPanelItemsFixture.items[0]!;
+    const html = renderSkills({
+      status: "ready",
+      data: panelItemsOutput([
+        { ...base, id: "resume-codex", title: "memmy-resume", metadata: { source: "codex" } },
+        { ...base, id: "resume-workbuddy", title: "memmy-resume", metadata: { source: "workbuddy" } },
+        { ...base, id: "imagegen", title: "imagegen", metadata: { source: "codex" } },
+        { ...base, id: "evolved", title: "archify_code_flow_diagram", summary: "把代码流程画成图。" }
+      ]),
+      detail: null
+    }, undefined, true);
+
+    expect(html).toContain("搜索结果");
+    expect(html).not.toContain("data-tools-skill-tabs");
+    expect(html).toContain("Cuby 内置");
+    expect(html).toContain("智能习得");
+    expect(html).toContain("Codex");
+    expect(html).toContain("把代码流程画成图。");
+    expect((html.match(/integration-card-name">Memmy Resume</g) ?? []).length).toBe(1);
+  });
+
+  it("一次加载全部技能页", async () => {
+    const base = skillPanelItemsFixture.items[0]!;
+    const calls: number[] = [];
+    const client = createMemoryRuntimeClientStub({
+      listPanelItems: vi.fn(async (input) => {
+        calls.push(input.page ?? 1);
+        const items = input.page === 2
+          ? [{ ...base, id: "skill-second", title: "第二个技能" }]
+          : [{ ...base, id: "skill-first", title: "第一个技能" }];
+        return {
+          ...panelItemsOutput(items),
+          page: input.page ?? 1,
+          total: 2,
+          totalPages: 2,
+          hasNext: (input.page ?? 1) < 2,
+          hasPrev: (input.page ?? 1) > 1
+        };
+      })
+    });
+
+    const data = await loadSkillsData(client, "");
+
+    expect(data.items.map((item) => item.id)).toEqual(["skill-first", "skill-second"]);
+    expect(calls).toEqual([1, 2]);
+  });
+
   it("选中的技能卡片边框优先于状态边框", () => {
     const styles = readFileSync(new URL("../../../styles.css", import.meta.url), "utf8");
 
@@ -206,17 +274,18 @@ describe("SkillsSection", () => {
 /** Renders render skills. */
 function renderSkills(
   state: Parameters<typeof SkillsSectionView>[0]["state"],
-  selectedSkillId?: string
+  selectedSkillId?: string,
+  searchActive = false
 ): string {
   return renderToString(
     <I18nProvider language="zh-CN">
       <SkillsSectionView
         state={state}
         selectedSkillId={selectedSkillId}
-        query="中文"
+        query={searchActive ? "中文" : ""}
+        searchActive={searchActive}
         onQueryChange={vi.fn()}
         onSearch={vi.fn()}
-        onPageChange={vi.fn()}
         onRefresh={vi.fn()}
         onOpenSkill={vi.fn()}
         onDeleteSkill={vi.fn(async () => undefined)}
