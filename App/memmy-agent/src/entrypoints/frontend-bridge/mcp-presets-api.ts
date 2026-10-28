@@ -9,7 +9,7 @@ import { MCPServerConfig } from "../../config/schema.js";
 import { resolveOpenComputerUseCommand } from "../../tools/computer-use/open-computer-use-binary.js";
 
 type QueryParams = Record<string, string[]>;
-type TargetKind = "env" | "url_param" | "arg" | "header";
+type TargetKind = "env" | "url" | "url_param" | "arg" | "header";
 
 export class McpPresetError extends Error {
   status: number;
@@ -28,6 +28,8 @@ class McpPresetField {
     public required = true,
     public envVar: string | null = null,
     public placeholder = "",
+    /** Prefix stored with the value, e.g. "Bearer " for Authorization headers. */
+    public prefix = "",
   ) {}
 }
 
@@ -57,6 +59,8 @@ const DEFAULT_TEST_TIMEOUT = 20;
 const DEFAULT_CUSTOM_TIMEOUT = 30;
 /** Presets that target developers; the desktop UI folds them into a collapsed group. */
 export const DEV_PRESET_NAMES = new Set(["figma", "firecrawl"]);
+/** Built-in servers the product no longer surfaces in Settings → MCP servers. */
+export const HIDDEN_MCP_SERVER_NAMES = new Set(["exa", "brave-search", "figma", "firecrawl", "composio"]);
 const CUSTOM_ACTIONS = new Set(["custom", "import", "import-cursor", "tools"]);
 
 class McpPresetTestTimeoutError extends Error {}
@@ -115,6 +119,25 @@ export const MCP_PRESETS = [
     [],
     "Figma desktop app with MCP enabled",
     "Requires Figma Desktop Dev Mode MCP to be running locally.",
+  ),
+  // TODO(weknora): bake the team instance URL into this preset and replace the
+  // manual token field once the key-provisioning API is decided.
+  new McpPreset(
+    "weknora",
+    "WeKnora",
+    "knowledge",
+    "Search and read the knowledge bases on your team's WeKnora instance.",
+    "https://github.com/Tencent/WeKnora",
+    "streamableHttp",
+    true,
+    "#0052D9",
+    { type: "streamableHttp", url: "", tool_timeout: 60 },
+    [
+      new McpPresetField("weknora_url", "MCP endpoint URL", ["url", ""], false, true, null, "https://<host>/mcp/<endpoint_id>"),
+      new McpPresetField("weknora_token", "MCP endpoint token", ["header", "Authorization"], true, true, null, "mcp_...", "Bearer "),
+    ],
+    "A WeKnora MCP Server endpoint (URL and token)",
+    "Create an endpoint in WeKnora under Settings → Publish & Integrations → MCP Server.",
   ),
 ];
 
@@ -228,6 +251,7 @@ function fieldValueFromConfig(field: McpPresetField, cfg: MCPServerConfig | unde
   if (kind === "env") return cfg.env?.[key] || null;
   if (kind === "header") return (cfg as any).headers?.[key] || null;
   if (kind === "arg") return argValue(cfg.args ?? [], key);
+  if (kind === "url") return cfg.url || null;
   if (kind === "url_param" && cfg.url) {
     try {
       return new URL(cfg.url).searchParams.get(key);
@@ -264,8 +288,10 @@ function materializeServer(preset: McpPreset, query: QueryParams, existing?: MCP
       continue;
     }
     const [kind, key] = field.target;
-    if (kind === "env") cfg.env[key] = value;
-    else if (kind === "header") (cfg as any).headers[key] = value;
+    const stored = field.prefix && !value.startsWith(field.prefix) ? `${field.prefix}${value}` : value;
+    if (kind === "env") cfg.env[key] = stored;
+    else if (kind === "header") (cfg as any).headers[key] = stored;
+    else if (kind === "url") cfg.url = stored;
     else if (kind === "url_param") cfg.url = urlWithParam(cfg.url ?? "", key, value);
     else if (kind === "arg") cfg.args = withArgValue(cfg.args ?? [], key, value);
   }
@@ -456,6 +482,7 @@ function presetPayload(preset: McpPreset, configuredServers: Record<string, MCPS
     display_name: preset.displayName,
     category: preset.category,
     group: DEV_PRESET_NAMES.has(preset.name) ? "dev" : "",
+    hidden: HIDDEN_MCP_SERVER_NAMES.has(preset.name),
     description: preset.description,
     docs_url: preset.docsUrl,
     transport: preset.transport,
@@ -484,6 +511,7 @@ function customPayload(name: string, cfg: MCPServerConfig, toolNames: string[] =
     display_name: name,
     source: "custom",
     category: "custom",
+    hidden: HIDDEN_MCP_SERVER_NAMES.has(name),
     description: "Custom MCP server from memmy-agent config.",
     docs_url: "",
     transport,

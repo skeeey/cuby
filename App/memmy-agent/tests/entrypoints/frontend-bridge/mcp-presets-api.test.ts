@@ -108,6 +108,7 @@ describe("mcp presets api", () => {
       ["exa", "#101010"],
       ["brave-search", "#FB542B"],
       ["figma", "#F24E1E"],
+      ["weknora", "#0052D9"],
     ]);
   });
 
@@ -122,12 +123,74 @@ describe("mcp presets api", () => {
       "exa",
       "brave-search",
       "figma",
+      "weknora",
       "open_computer_use",
     ]);
     expect(presets.find((preset) => preset.name === "figma")?.group).toBe("dev");
     expect(presets.find((preset) => preset.name === "firecrawl")?.group).toBe("dev");
     expect(presets.find((preset) => preset.name === "exa")?.group).toBe("");
     expect(presets.find((preset) => preset.name === "brave-search")?.group).toBe("");
+  });
+
+  it("marks retired MCP servers hidden and keeps WeKnora installable", () => {
+    useConfig();
+    saveConfig(new Config({ tools: { mcpServers: {
+      open_computer_use: { type: "stdio", command: "open-computer-use", args: ["mcp"] },
+      exa: { type: "streamableHttp", url: "https://mcp.exa.ai/mcp" },
+      composio: { type: "streamableHttp", url: "http://127.0.0.1:1/mcp/composio", headers: { "x-cuby-mcp-token": "t" } },
+    } } }));
+
+    const payload = mcpPresetsPayload();
+    const byName = new Map(payload.presets.map((preset: any) => [preset.name, preset]));
+
+    for (const name of ["exa", "brave-search", "figma", "firecrawl", "composio"]) {
+      expect((byName.get(name) as any)?.hidden, name).toBe(true);
+    }
+    expect((byName.get("open_computer_use") as any)?.hidden).toBe(false);
+
+    const weknora = byName.get("weknora") as any;
+    expect(weknora).toMatchObject({
+      hidden: false,
+      installed: false,
+      install_supported: true,
+      transport: "streamableHttp",
+      status: "not_installed",
+    });
+    expect(weknora.required_fields.map((field: any) => field.name)).toEqual(["weknora_url", "weknora_token"]);
+  });
+
+  it("enables WeKnora with an endpoint URL and a Bearer token header", () => {
+    useConfig();
+
+    const payload = mcpPresetsAction("enable", {
+      name: ["weknora"],
+      weknora_url: ["https://kn.example.com/mcp/endpoint-1"],
+      weknora_token: ["mcp_secret_token"],
+    });
+
+    const cfg = loadConfig().tools.mcpServers.weknora as any;
+    expect(cfg.url).toBe("https://kn.example.com/mcp/endpoint-1");
+    expect(cfg.headers.Authorization).toBe("Bearer mcp_secret_token");
+    expect(JSON.stringify(payload)).not.toContain("mcp_secret_token");
+    expect(payload.presets.find((preset: any) => preset.name === "weknora")).toMatchObject({
+      status: "configured",
+      installed: true,
+    });
+
+    // Re-enabling from the stored config must not stack a second Bearer prefix.
+    mcpPresetsAction("enable", { name: ["weknora"] });
+    expect((loadConfig().tools.mcpServers.weknora as any).headers.Authorization).toBe("Bearer mcp_secret_token");
+  });
+
+  it("requires both WeKnora URL and token", () => {
+    useConfig();
+
+    expect(() =>
+      mcpPresetsAction("enable", { name: ["weknora"], weknora_url: ["https://kn.example.com/mcp/endpoint-1"] }),
+    ).toThrow(/token/i);
+    expect(() =>
+      mcpPresetsAction("enable", { name: ["weknora"], weknora_token: ["mcp_secret_token"] }),
+    ).toThrow(/URL/i);
   });
 
   it("enables brave-search and scrubs the returned payload", () => {

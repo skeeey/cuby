@@ -73,8 +73,9 @@ export interface McpToolsSectionViewProps {
 export function McpToolsSectionView(props: McpToolsSectionViewProps) {
   const { t } = useTranslation();
   const [devOpen, setDevOpen] = useState(false);
-  const general = props.presets.filter((preset) => preset.group !== "dev");
-  const dev = props.presets.filter((preset) => preset.group === "dev");
+  const visible = props.presets.filter((preset) => !preset.hidden);
+  const general = visible.filter((preset) => preset.group !== "dev");
+  const dev = visible.filter((preset) => preset.group === "dev");
 
   return (
     <section className="mb-8">
