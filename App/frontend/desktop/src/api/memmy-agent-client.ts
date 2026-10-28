@@ -265,6 +265,7 @@ export const McpPresetSchema = z
     requires: z.string().optional(),
     note: z.string().optional(),
     group: z.string().optional(),
+    hidden: z.boolean().optional(),
     required_fields: z.array(McpPresetFieldSchema).default([]),
     connection_summary: z.string().optional(),
     enabled_tools: z.array(z.string()).optional(),

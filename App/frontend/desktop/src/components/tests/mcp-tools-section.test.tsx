@@ -53,7 +53,7 @@ describe("McpToolsSectionView", () => {
     expect(html).toContain("Exa");
     expect(html).toContain("Brave Search");
     expect(html).toContain("Configured");
-    expect(html).toContain("Not installed");
+    expect(html).toContain("Not configured");
     expect(html).toContain("Missing dependency");
   });
 
@@ -62,6 +62,22 @@ describe("McpToolsSectionView", () => {
 
     expect(html).toContain("Developer tools");
     expect(html).not.toContain("Figma");
+  });
+
+  it("hides retired MCP servers from the grid", () => {
+    const html = renderView({
+      presets: [
+        preset({ name: "weknora", display_name: "WeKnora", status: "not_installed" }),
+        preset({ name: "exa", display_name: "Exa", status: "not_installed", hidden: true }),
+        preset({ name: "composio", display_name: "Composio", status: "configured", hidden: true }),
+        preset({ name: "figma", display_name: "Figma", status: "not_installed", group: "dev", hidden: true })
+      ]
+    });
+
+    expect(html).toContain("WeKnora");
+    expect(html).not.toContain("Exa");
+    expect(html).not.toContain("Composio");
+    expect(html).not.toContain("Developer tools");
   });
 
   it("shows the load failure message instead of the grid", () => {
