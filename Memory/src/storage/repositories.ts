@@ -10,7 +10,7 @@ import {
   type WorkspaceUri
 } from "../contracts/index.js";
 import { retrievalDocumentForMemory } from "../algorithm/plugin-algorithms.js";
-import { displayFieldsForMemory } from "../service/read-model/display-fields.js";
+import { displayFieldsForMemory, skillSummaryFromContent } from "../service/read-model/display-fields.js";
 import type {
   ProjectEnvironmentKind,
   ProjectEnvironmentStateRecord
@@ -6488,7 +6488,9 @@ function listSummaryForMemory(memory: MemoryRow): string {
   const policy = recordValue(internal.policy);
   const world = recordValue(internal.world_model);
   const skill = recordValue(internal.skill);
+  const skillSummary = memory.memoryLayer === "Skill" ? skillSummaryFromContent(memory.memoryValue) : undefined;
   return firstNonEmptyString(
+    skillSummary,
     stringLike(memory.info.summary),
     stringLike(internal.summary),
     stringLike(policy.procedure),

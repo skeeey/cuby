@@ -8578,6 +8578,84 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack
   overflow-wrap: anywhere;
 }
 
+/* Skill cards carry a one-line summary so same-shaped cards stay distinguishable. */
+.integration-card-description {
+  display: -webkit-box;
+  overflow: hidden;
+  max-width: 100%;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+  color: var(--color-text-ink);
+  opacity: 0.55;
+  font-size: 10px;
+  font-weight: 400;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.integration-card-meta {
+  display: flex;
+  min-width: 0;
+  max-width: 100%;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.integration-card-source {
+  overflow: hidden;
+  flex: 0 1 auto;
+  padding: 1px 5px;
+  border-radius: 999px;
+  background: var(--color-canvas-oat);
+  color: var(--color-text-ink);
+  opacity: 0.7;
+  font-size: 9px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Skill category tabs. */
+.tools-skill-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.tools-skill-tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 1px solid var(--border-content-panel);
+  border-radius: 999px;
+  background: var(--color-background-paper);
+  color: var(--color-text-ink);
+  opacity: 0.65;
+  font-size: 11px;
+  line-height: 1.2;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.tools-skill-tab:hover {
+  opacity: 0.9;
+}
+
+.tools-skill-tab--active {
+  border-color: color-mix(in srgb, var(--color-action-sky) 45%, transparent);
+  background: color-mix(in srgb, var(--color-action-sky) 8%, var(--color-background-paper));
+  opacity: 1;
+  font-weight: 600;
+}
+
+.tools-skill-tab__count {
+  opacity: 0.6;
+  font-weight: 400;
+}
+
 .integration-card-status-connecting {
   border-color: color-mix(in srgb, #f59e0b 58%, transparent);
   background: color-mix(in srgb, #f59e0b 8%, var(--color-background-paper));

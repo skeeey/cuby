@@ -50,8 +50,48 @@ export function waitingSourceText(memory: MemoryRow, evidence: readonly MemoryRo
   return undefined;
 }
 
-export function displayFieldsForMemory(
-  memory: MemoryRow,
+/**
+ * A one-line summary taken from the skill document itself. Imported skills
+ * carry a YAML frontmatter description; evolved skills fall back to the first
+ * paragraph line after the heading.
+ */
+export function skillSummaryFromContent(value: string): string | undefined {
+  const lines = value.split(/\r?\n/);
+  let bodyStart = 0;
+  if (lines[0]?.trim() === "---") {
+    for (let index = 1; index < lines.length; index += 1) {
+      const line = lines[index]!.trim();
+      if (line === "---") {
+        bodyStart = index + 1;
+        break;
+      }
+      const match = /^description:\s*(.+)$/.exec(line);
+      if (match) return unquoteYamlScalar(match[1]!.trim());
+    }
+  }
+  for (let index = bodyStart; index < lines.length; index += 1) {
+    const line = lines[index]!.trim();
+    if (!line || line.startsWith("#") || line === "---") continue;
+    return line;
+  }
+  return undefined;
+}
+
+function unquoteYamlScalar(value: string): string {
+  if (value.length >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+    try {
+      return JSON.parse(value) as string;
+    } catch {
+      return value.slice(1, -1);
+    }
+  }
+  if (value.length >= 2 && value.startsWith("'") && value.endsWith("'")) {
+    return value.slice(1, -1);
+  }
+  return value;
+}
+
+export function displayFieldsForMemory(  memory: MemoryRow,
   evidence: readonly MemoryRow[] = []
 ): { sourceText?: string; generatedTitle?: string; experienceDraft?: boolean } {
   const generatedTitle = storedGeneratedTitle(memory);
