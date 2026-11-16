@@ -3402,16 +3402,6 @@ export class WebSocketChannel extends BaseChannel {
         return;
       }
     }
-    if (existing && envelope.target != null) {
-      await this.sendWebuiRequestError(connection, {
-        chatId,
-        clientRequestId,
-        detail: "session_binding_rejected",
-        reason: "session_target_invalid",
-      });
-      return;
-    }
-
     const requestKey = clientRequestId
       ? this.webuiRequestKey(sessionKey, clientRequestId)
       : null;
@@ -3444,6 +3434,18 @@ export class WebSocketChannel extends BaseChannel {
         }
         return;
       }
+    }
+
+    // A first request can materialize the binding before its user message is
+    // persisted. Coalesce its identical retry above before rejecting retargets.
+    if (existing && envelope.target != null) {
+      await this.sendWebuiRequestError(connection, {
+        chatId,
+        clientRequestId,
+        detail: "session_binding_rejected",
+        reason: "session_target_invalid",
+      });
+      return;
     }
 
     let createdReservation = false;
