@@ -23,6 +23,10 @@ jobs:
       # The agent's browser tests use mocked Playwright launchers, so the
       # browser binaries are not needed here.
       PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: "1"
+      # The Memory embedder runs ONNX on CPU, so onnxruntime-node's optional
+      # CUDA binaries are never used and their download only adds a dependency
+      # on an upstream release asset.
+      ONNXRUNTIME_NODE_INSTALL_CUDA: "skip"
     steps:
       - uses: actions/checkout@v4
         with:

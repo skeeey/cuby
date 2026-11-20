@@ -15,6 +15,7 @@ App/memmy-agent/package-lock.json
 sessions/
 .*
 !.gitattributes
+!.npmrc
 !.github/
 !.github/workflows/
 !.github/workflows/*.yml
