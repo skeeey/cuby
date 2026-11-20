@@ -84,7 +84,7 @@ jobs:
             windows+=('{"runner":"windows-latest"}')
           fi
           if [ "$platforms" != "windows" ]; then
-            macos+=('{"runner":"macos-14","arch":"arm64"}')
+            macos+=('{"runner":"macos-15","arch":"arm64"}')
             macos+=('{"runner":"macos-15-intel","arch":"x64"}')
           fi
 
