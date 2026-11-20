@@ -92,6 +92,26 @@ describe("account-client", () => {
     expect(fetchMock).toHaveBeenCalledTimes(1);
   });
 
+  it("登录发送不符合注册规则的密码，由实例裁决", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      expect(input.toString()).toBe("http://127.0.0.1:18100/api/account/login");
+      expect(init?.method).toBe("POST");
+      expect(JSON.parse(String(init?.body))).toEqual({ username: "grace", password: "short" });
+      return jsonResponse({
+        session: {
+          authenticated: true,
+          isNewUser: false,
+          profile: profilePayload({ nickname: "Grace" })
+        },
+        provisioning: provisioningPayload()
+      });
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await expect(createHttpAccountClient(config).login({ username: "grace", password: "short" }))
+      .resolves.toMatchObject({ session: { authenticated: true } });
+  });
+
   it("通过真实本地 API 完成注册、登录和昵称更新", async () => {
     const fetchMock = vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = input.toString();
