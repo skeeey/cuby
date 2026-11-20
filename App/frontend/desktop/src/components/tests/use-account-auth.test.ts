@@ -1,7 +1,7 @@
 import { CuberouterAuthInputSchema } from "@memmy/local-api-contracts";
 import { describe, expect, it } from "vitest";
 import { ApiRequestError } from "../../api/http.js";
-import { EMAIL_CODE_COOLDOWN_SECONDS, toFeedbackText, validateCredentials } from "../use-account-auth.js";
+import { EMAIL_CODE_COOLDOWN_SECONDS, toFeedbackText, validateCredentials, validateLogin } from "../use-account-auth.js";
 
 const translate = (key: string) => `translated:${key}`;
 
@@ -110,6 +110,69 @@ describe("validateCredentials", () => {
       ok: true,
       username: "alice",
       password: "Passw0rd1"
+    });
+  });
+});
+
+describe("validateLogin", () => {
+  it("accepts passwords the registration rules reject", () => {
+    const long = `Pa0${"x".repeat(20)}`;
+
+    expect(validateLogin({ username: "alice", password: "short" })).toEqual({
+      ok: true,
+      username: "alice",
+      password: "short"
+    });
+    expect(validateLogin({ username: "alice", password: "alllowercase" })).toEqual({
+      ok: true,
+      username: "alice",
+      password: "alllowercase"
+    });
+    expect(validateLogin({ username: "alice", password: long })).toEqual({
+      ok: true,
+      username: "alice",
+      password: long
+    });
+  });
+
+  it("trims the username but passes the password through untouched", () => {
+    expect(validateLogin({ username: " alice ", password: " Passw0rd1 " })).toEqual({
+      ok: true,
+      username: "alice",
+      password: " Passw0rd1 "
+    });
+  });
+
+  it("rejects an empty username or password", () => {
+    expect(validateLogin({ username: "   ", password: "short" })).toEqual({
+      ok: false,
+      reason: "username"
+    });
+    expect(validateLogin({ username: "alice", password: "" })).toEqual({
+      ok: false,
+      reason: "passwordRequired"
+    });
+  });
+
+  it("ignores registration-only fields", () => {
+    expect(
+      validateLogin({
+        username: "alice",
+        password: "short",
+        confirmPassword: "different",
+        email: "alice@example.com",
+        verificationCode: "123456",
+        emailVerificationRequired: true
+      })
+    ).toEqual({ ok: true, username: "alice", password: "short" });
+  });
+
+  it("carries the picked line through", () => {
+    expect(validateLogin({ username: "alice", password: "short", nodeId: "cn" })).toEqual({
+      ok: true,
+      username: "alice",
+      password: "short",
+      nodeId: "cn"
     });
   });
 });

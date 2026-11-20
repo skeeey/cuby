@@ -281,15 +281,58 @@ describe("account local api routes", () => {
     expect(response.statusCode).toBe(401);
   });
 
-  it("rejects credentials that violate the shared schema", async () => {
-    app = createServer();
+  it("forwards a login whose password breaks the registration rules to the instance", async () => {
+    const calls: Array<{ username: string; password: string }> = [];
+    app = createServer({
+      cuberouterAccount: {
+        async login(input: { username: string; password: string }) {
+          calls.push(input);
+          return {
+            session: {
+              authenticated: true,
+              isNewUser: false,
+              profile: {
+                userId: "7",
+                email: null,
+                phoneNumber: null,
+                nickname: "Alice",
+                avatarUrl: null,
+                planType: null,
+                hasFinishedGuide: null,
+                region: null,
+                registeredAt: null,
+                identityProvider: "cuberouter"
+              }
+            },
+            provisioning: {
+              apiKey: "sk-plain",
+              apiBase: "http://127.0.0.1:3000/v1",
+              model: "deepseek-flash"
+            }
+          };
+        }
+      }
+    });
 
     const response = await injectJson("POST", "/api/account/login", {
       username: "alice",
       password: "short"
     });
 
+    expect(response.statusCode).toBe(200);
+    expect(calls).toEqual([{ username: "alice", password: "short" }]);
+  });
+
+  it("rejects an empty login password before it reaches the instance", async () => {
+    app = createServer();
+
+    const response = await injectJson("POST", "/api/account/login", {
+      username: "alice",
+      password: ""
+    });
+
     expect(response.statusCode).toBe(400);
+    expect(response.json().error.code).toBe("invalid_argument");
   });
 
   it("changes the cuberouter password through the account service", async () => {

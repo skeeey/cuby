@@ -25,7 +25,7 @@ export interface CredentialsInput {
 
 export type CredentialsValidationResult =
   | { ok: true; username: string; password: string; email?: string; verificationCode?: string; nodeId?: string }
-  | { ok: false; reason: "username" | "password" | "confirm" | "email" | "verificationCode" };
+  | { ok: false; reason: "username" | "password" | "passwordRequired" | "confirm" | "email" | "verificationCode" };
 
 /**
  * A shape check only: the instance is the authority on what it accepts, and over-strict
@@ -79,12 +79,34 @@ export function validateCredentials(input: CredentialsInput): CredentialsValidat
   };
 }
 
+/**
+ * Login only rejects an empty form: the instance is the authority on whether the
+ * password is right, so registration rules must not block an older or externally
+ * created account here. The password is passed through untrimmed.
+ */
+export function validateLogin(input: CredentialsInput): CredentialsValidationResult {
+  const username = input.username.trim();
+  if (!username || username.length > 50) {
+    return { ok: false, reason: "username" };
+  }
+  if (!input.password) {
+    return { ok: false, reason: "passwordRequired" };
+  }
+  return {
+    ok: true,
+    username,
+    password: input.password,
+    ...(input.nodeId ? { nodeId: input.nodeId } : {})
+  };
+}
+
 const validationMessageKeys: Record<
-  "username" | "password" | "confirm" | "email" | "verificationCode",
+  "username" | "password" | "passwordRequired" | "confirm" | "email" | "verificationCode",
   MessageKey
 > = {
   username: "account.error.username",
   password: "account.error.password",
+  passwordRequired: "account.error.passwordRequired",
   confirm: "account.error.confirm",
   email: "account.error.email",
   verificationCode: "account.error.verificationCode"
@@ -185,7 +207,7 @@ export function useAccountAuth(): UseAccountAuthResult {
 
   const authenticate = useCallback(
     async (mode: "register" | "login", input: CredentialsInput): Promise<CuberouterAuthResult | null> => {
-      const validation = validateCredentials(input);
+      const validation = mode === "login" ? validateLogin(input) : validateCredentials(input);
       if (!validation.ok) {
         setFeedback({ text: t(validationMessageKeys[validation.reason]), tone: "error" });
         return null;

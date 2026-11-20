@@ -578,6 +578,28 @@ describe("AccountAuthPanel auth error copy", () => {
     await vi.waitFor(() => expect(login).toHaveBeenCalledWith({ username: "alice", password: "Passw0rd1" }));
   });
 
+  it("submits a login password the registration rules would reject", async () => {
+    const login = vi.fn(async () => authResult({ isNewUser: false }));
+    renderPanel({ login });
+
+    await setInput("account.usernamePlaceholder", "alice");
+    await setInput("account.passwordPlaceholder", "short");
+    await clickButton("account.login");
+
+    await vi.waitFor(() => expect(login).toHaveBeenCalledWith({ username: "alice", password: "short" }));
+  });
+
+  it("keeps blocking an empty login password", async () => {
+    const login = vi.fn(async () => authResult({ isNewUser: false }));
+    renderPanel({ login });
+
+    await setInput("account.usernamePlaceholder", "alice");
+    await clickButton("account.login");
+
+    await vi.waitFor(() => expect(alertText()).toBe("account.error.passwordRequired"));
+    expect(login).not.toHaveBeenCalled();
+  });
+
   /** Moves the card from its login default to the register form. */
   async function switchToRegister() {
     await clickButton("account.switchToRegister");

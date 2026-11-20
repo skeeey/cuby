@@ -1248,6 +1248,14 @@ export const CuberouterAuthInputSchema = z.object({
 });
 export type CuberouterAuthInput = z.infer<typeof CuberouterAuthInputSchema>;
 
+/** 定义 cuberouter 登录入参：password 只要求非空，正确性由实例判定。 */
+export const CuberouterLoginInputSchema = z.object({
+    username: z.string().trim().min(1).max(50),
+    password: z.string().min(1).max(128),
+    nodeId: z.string().trim().min(1).max(32).optional()
+});
+export type CuberouterLoginInput = z.infer<typeof CuberouterLoginInputSchema>;
+
 /** 修改 cuberouter 账号密码的入参：当前密码用于服务端二次验证。 */
 export const CuberouterPasswordChangeInputSchema = z.object({
     originalPassword: z.string().min(1),

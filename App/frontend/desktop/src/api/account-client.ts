@@ -7,6 +7,7 @@ import {
   CuberouterEmailCodeInputSchema,
   CuberouterKeyModelsInputSchema,
   CuberouterKeyModelsViewSchema,
+  CuberouterLoginInputSchema,
   CuberouterModelChoicesViewSchema,
   CuberouterNodeProbeViewSchema,
   CuberouterNodesViewSchema,
@@ -24,6 +25,7 @@ import {
   type CuberouterEmailCodeInput,
   type CuberouterKeyModelsInput,
   type CuberouterKeyModelsView,
+  type CuberouterLoginInput,
   type CuberouterModelChoicesView,
   type CuberouterNodeProbeView,
   type CuberouterNodesView,
@@ -39,7 +41,7 @@ import { requestJson } from "./http.js";
 
 export interface AccountClient {
   register(input: CuberouterAuthInput): Promise<CuberouterAuthResult>;
-  login(input: CuberouterAuthInput): Promise<CuberouterAuthResult>;
+  login(input: CuberouterLoginInput): Promise<CuberouterAuthResult>;
   /** Asks the instance what its registration form must collect. */
   getRegistrationRequirements(nodeId?: string): Promise<CuberouterRegistrationRequirements>;
   /** The configured lines and the one currently in effect. */
@@ -80,7 +82,7 @@ export function createHttpAccountClient(config: RuntimeConfig): AccountClient {
         config,
         path: "/api/account/login",
         schema: CuberouterAuthResultSchema,
-        body: CuberouterAuthInputSchema.parse(input)
+        body: CuberouterLoginInputSchema.parse(input)
       });
     },
 
