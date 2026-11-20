@@ -12,6 +12,8 @@ import { dirname, join, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { createPackage } from "@electron/asar";
+import { validateConfiguration } from "app-builder-lib/out/util/config/config.js";
+import { parse } from "yaml";
 import { afterEach, describe, expect, it } from "vitest";
 import {
   normalizePublicCloudService,
@@ -546,6 +548,22 @@ describe("packaged desktop runtime configuration", () => {
         "    filter:",
         '      - "**/*"',
       ].join("\n"));
+    }
+  });
+
+  it("keeps every electron-builder config valid for the installed electron-builder", async () => {
+    const debugLogger = { isEnabled: false, add() {} };
+    for (const configName of [
+      "electron-builder.yml",
+      "electron-builder.unsigned.yml",
+      "electron-builder.win.yml",
+      "electron-builder.win.unsigned.yml",
+    ]) {
+      const config = parse(readFileSync(join(
+        dirname(fileURLToPath(import.meta.url)),
+        "..", "App", "shell", "desktop", configName,
+      ), "utf8"));
+      await expect(validateConfiguration(config, debugLogger), configName).resolves.toBeUndefined();
     }
   });
 
