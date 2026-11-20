@@ -45,6 +45,10 @@ try {
     dependencies: runtimeDependencies
   };
   await writeJson(join(runtimeRoot, "package.json"), runtimePackage);
+  // The runtime bundles run ONNX on CPU, so onnxruntime-node's optional CUDA
+  // binaries are never used. This install happens in a temp directory, where
+  // the repo-root .npmrc cannot reach it.
+  process.env.ONNXRUNTIME_NODE_INSTALL_CUDA ??= "skip";
   const platformFlags = npmPlatformFlags(platform, arch);
   run("npm", ["install", "--package-lock-only", "--ignore-scripts", ...platformFlags], runtimeRoot);
   run("npm", ["ci", "--omit=dev", "--no-audit", "--no-fund", ...platformFlags], runtimeRoot);

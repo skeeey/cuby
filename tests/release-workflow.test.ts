@@ -89,7 +89,7 @@ describe("Memmy release workflow metadata", () => {
       "utf8",
     );
 
-    expect(notes.split(/\r?\n/, 1)[0]).toBe(`# Memmy v${version}`);
+    expect(notes.split(/\r?\n/, 1)[0]).toBe(`# Cuby v${version}`);
   });
 
   it("allows versioned manual release notes to be tracked", () => {

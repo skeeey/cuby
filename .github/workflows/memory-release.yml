@@ -17,6 +17,10 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
+    env:
+      # The Memory embedder runs ONNX on CPU, so onnxruntime-node's optional
+      # CUDA binaries are never used.
+      ONNXRUNTIME_NODE_INSTALL_CUDA: "skip"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -49,6 +53,10 @@ jobs:
           - target: windows-x64
             os: windows-2025
     runs-on: ${{ matrix.os }}
+    env:
+      # The runtime bundles embeddings on CPU, so onnxruntime-node's optional
+      # CUDA binaries are never used.
+      ONNXRUNTIME_NODE_INSTALL_CUDA: "skip"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

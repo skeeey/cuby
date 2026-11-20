@@ -11,7 +11,7 @@ describe("project version", () => {
     );
 
     expect(CUBY_VERSION).toBe(rootManifest.version);
-    expect(CUBY_VERSION).toBe("1.2.2");
+    expect(CUBY_VERSION).toBe("2.0.0");
     expect(CUBY_VERSION).toMatch(/^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$/);
     expect(readFileSync(resolve(repoRoot, "App/backend/src/project-version.ts"), "utf8"))
       .toContain(`CUBY_VERSION = ${JSON.stringify(rootManifest.version)}`);
