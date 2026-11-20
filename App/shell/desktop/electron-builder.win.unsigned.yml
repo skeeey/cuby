@@ -61,6 +61,7 @@ extraResources:
 
 win:
   icon: build/icon.ico
+  legalCopyright: "Copyright © 2026 上海算丰信息有限公司"
   target:
     - target: nsis
       arch:
