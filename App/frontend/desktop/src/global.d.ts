@@ -43,6 +43,7 @@ declare global {
       openMailto(mailtoUrl: string): Promise<void>;
       copyImageToClipboard(request: DesktopImageActionRequest): Promise<void>;
       saveImage(request: DesktopImageActionRequest): Promise<DesktopImageSaveResult>;
+      saveAppFile(request: import("@memmy/desktop-interface").DesktopAppFileSaveRequest): Promise<import("@memmy/desktop-interface").DesktopAppFileSaveResult>;
       exportMemoryDatabase(): Promise<{ canceled: true } | { canceled: false; exportPath: string; bytes: number }>;
       installCliTools(): Promise<MemmyCliInstallResult>;
       restartMemoryService(): Promise<DesktopMemoryServiceRestartResult>;

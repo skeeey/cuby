@@ -105,6 +105,9 @@ export async function handleAppRuntimeControl(input: {
       case "tools/call": {
         const tool = typeof params.name === "string" ? params.name : "";
         if (!tool) throw new Error("tools/call requires a tool name");
+        if (typeof apps.canAppCallTool === "function" && !apps.canAppCallTool(appId, tool)) {
+          throw new Error("this tool is not allowed for the app");
+        }
         const args = params.arguments && typeof params.arguments === "object" && !Array.isArray(params.arguments)
           ? params.arguments as Record<string, any>
           : {};

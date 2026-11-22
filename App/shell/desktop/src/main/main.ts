@@ -1,9 +1,12 @@
 import { createDesktopScreenCapture } from './desktop-screen-capture.js';
+import { MAX_APP_DOWNLOAD_BYTES, sanitizeAppFileName } from './app-download.js';
 import { createComputerUseOnboarding } from './computer-use-onboarding.js';
 import { isComputerUsePermissionPanelFocused, showComputerUsePermissionPanel } from './computer-use-permission-panel.js';
 import { createHttpMemmyAgentAdminClient, createLocalBackend, loadCloudServiceEnv, syncRuntimeConfigForStartup, trackAnalyticsEvent, type BootstrapScenario, type LocalBackend } from "@memmy/backend";
 import { resolveCloudServiceBaseUrl, type AccountChannel } from "@memmy/local-api-contracts";
 import type {
+  DesktopAppFileSaveRequest,
+  DesktopAppFileSaveResult,
   DesktopAppInfo,
   DesktopImageActionRequest,
   DesktopImageSaveResult,
@@ -932,6 +935,26 @@ function registerIpcHandlers(): void {
   ipcMain.handle("memmy:save-image", async (event, request: DesktopImageActionRequest) => (
     saveDesktopImage(request, event.sender.getURL(), BrowserWindow.fromWebContents(event.sender))
   ));
+
+  ipcMain.handle("memmy:saveAppFile", async (event, request: DesktopAppFileSaveRequest): Promise<DesktopAppFileSaveResult> => {
+    if (!request || typeof request.name !== "string" || typeof request.mime !== "string") {
+      throw new Error("invalid app file save request");
+    }
+    const data = request.data instanceof Uint8Array
+      ? request.data
+      : new Uint8Array(request.data as unknown as ArrayBuffer);
+    if (data.byteLength > MAX_APP_DOWNLOAD_BYTES) {
+      throw new Error("app file is too large");
+    }
+    const owner = BrowserWindow.fromWebContents(event.sender);
+    const options = { defaultPath: sanitizeAppFileName(request.name) };
+    const selected = owner
+      ? await dialog.showSaveDialog(owner, options)
+      : await dialog.showSaveDialog(options);
+    if (selected.canceled || !selected.filePath) return { canceled: true };
+    await writeFile(selected.filePath, data);
+    return { canceled: false, path: selected.filePath };
+  });
 
   ipcMain.handle("memmy:notify-task-done", (_event, payload: { title: string; body: string; silent: boolean }) => {
     showTaskDoneNotification(payload);

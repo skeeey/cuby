@@ -168,6 +168,15 @@ export class AppManager {
     return Boolean(runtime) && runtime!.entry.manifest.capabilities.appMessages !== false;
   }
 
+  canAppCallTool(appId: string, toolName: string): boolean {
+    const runtime = this.apps.get(appId);
+    if (!runtime) return false;
+    const allowlist = runtime.entry.manifest.capabilities.appToolCalls;
+    if (!allowlist.length) return false;
+    const wrapped = sanitizeName(`mcp_${appId}_${toolName}`);
+    return allowlist.includes(toolName) || allowlist.includes(wrapped);
+  }
+
   async stop(): Promise<void> {
     for (const runtime of this.apps.values()) {
       for (const timer of runtime.idleTimers.values()) clearTimeout(timer);

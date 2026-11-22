@@ -32,3 +32,22 @@ it("rejects ui/message when the app has no message capability", async () => {
   await handleAppRuntimeControl({ apps: { callTool: vi.fn(), canAppMessage: () => false } as any, msg, publishInbound: vi.fn() });
   expect(ack).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
 });
+
+it("rejects tools outside the app allowlist", async () => {
+  const callTool = vi.fn();
+  const ack = vi.fn();
+  const msg = new InboundMessage({
+    channel: "system", chatId: "runtime", content: "appBridge",
+    metadata: {
+      runtimeControl: "appBridge", ack, appId: "demo", viewId: "v1", chatId: "chat-1", method: "tools/call",
+      params: { name: "secret_tool", arguments: {} }
+    }
+  });
+  await handleAppRuntimeControl({
+    apps: { callTool, canAppMessage: vi.fn(), canAppCallTool: () => false } as any,
+    msg,
+    publishInbound: vi.fn()
+  });
+  expect(callTool).not.toHaveBeenCalled();
+  expect(ack).toHaveBeenCalledWith(expect.objectContaining({ ok: false }));
+});

@@ -76,4 +76,20 @@ describe("AppManager", () => {
     await manager.sessionFor("stateful", { sessionKey: "websocket:b" });
     expect(connect).toHaveBeenCalledTimes(2);
   });
+
+  it("gates app-initiated tools by the manifest allowlist", async () => {
+    const manager = new AppManager({
+      entries: [entry("demo", { capabilities: { appToolCalls: ["echo"], appMessages: false, workspace: "none" } })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name, session: { callTool: vi.fn() }, tools: [], resources: [], prompts: [], close: vi.fn()
+      }))
+    });
+    await manager.initialize();
+    expect(manager.canAppCallTool("demo", "echo")).toBe(true);
+    expect(manager.canAppCallTool("demo", "hello")).toBe(false);
+    expect(manager.canAppCallTool("unknown", "echo")).toBe(false);
+  });
 });

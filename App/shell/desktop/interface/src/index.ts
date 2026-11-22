@@ -71,6 +71,16 @@ export type DesktopImageSaveResult =
   | { canceled: true }
   | { canceled: false; filePath: string; bytes: number };
 
+export interface DesktopAppFileSaveRequest {
+  name: string;
+  mime: string;
+  data: Uint8Array;
+}
+
+export type DesktopAppFileSaveResult =
+  | { canceled: true }
+  | { canceled: false; path: string };
+
 export type DesktopProjectDirectorySelection =
   | { canceled: true }
   | { canceled: false; path: string };

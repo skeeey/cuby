@@ -14,6 +14,22 @@ function hostContextFor(displayMode: "inline" | "fullscreen"): Record<string, un
   });
 }
 
+function decodeDownloadItem(item: any): { name: string; mime: string; data: Uint8Array } {
+  const resource = item?.type === "resource" ? item.resource : null;
+  if (!resource || typeof resource.blob !== "string") {
+    throw new Error("unsupported download content");
+  }
+  const mime = typeof resource.mimeType === "string" ? resource.mimeType : "application/octet-stream";
+  const uri = typeof resource.uri === "string" ? resource.uri : "";
+  const baseName = uri ? decodeURIComponent(uri.split("/").pop() || "download") : "download";
+  const binary = atob(resource.blob);
+  const data = new Uint8Array(binary.length);
+  for (let index = 0; index < binary.length; index += 1) {
+    data[index] = binary.charCodeAt(index);
+  }
+  return { name: baseName, mime, data };
+}
+
 export function AppViewHost(props: {
   view: AgentAppView;
   chatId: string;
@@ -83,6 +99,41 @@ export function AppViewHost(props: {
         if (typeof size.height === "number" && size.height > 0) setHeight(size.height);
       },
       onError: (message) => setError(message),
+      openLink: async (url) => {
+        if (typeof window === "undefined" || !window.memmy?.openExternal) {
+          throw new Error("open-link is unavailable");
+        }
+        await window.memmy.openExternal(url);
+      },
+      downloadFile: async (contents) => {
+        if (typeof window === "undefined" || !window.memmy?.saveAppFile) {
+          throw new Error("file save is unavailable");
+        }
+        const resolved: unknown[] = [];
+        for (const item of contents) {
+          if (
+            item && typeof item === "object"
+            && (item as any).type === "resource_link"
+            && typeof (item as any).uri === "string"
+          ) {
+            const resource = await props.client.readResource({
+              appId: props.view.appId,
+              viewId: props.view.viewId,
+              uri: (item as any).uri,
+            });
+            const resourceContents = Array.isArray(resource?.contents) ? resource.contents : [];
+            for (const entry of resourceContents) {
+              resolved.push({ type: "resource", resource: entry });
+            }
+          } else {
+            resolved.push(item);
+          }
+        }
+        for (const item of resolved) {
+          await window.memmy.saveAppFile(decodeDownloadItem(item));
+        }
+        return {};
+      },
     });
     bridgeRef.current = bridge;
     bridge.start();
