@@ -77,6 +77,29 @@ describe("AppManager", () => {
     expect(connect).toHaveBeenCalledTimes(2);
   });
 
+  it("starts session-scoped app tools for a turn", async () => {
+    const tools: any[] = [];
+    const connect = vi.fn(async (name: string) => ({
+      name,
+      session: { callTool: vi.fn() },
+      tools: [{ name: "hello", inputSchema: { type: "object" } }],
+      resources: [],
+      prompts: [],
+      close: vi.fn(),
+    }));
+    const manager = new AppManager({
+      entries: [entry("stateful", { server: { scope: "session", transport: "stdio", command: "node", args: ["server.mjs"] } })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: (tool) => tools.push(tool),
+      unregisterTool: vi.fn(),
+      connect,
+    });
+    await manager.initialize();
+    await manager.ensureSessionTools({ sessionKey: "websocket:a" });
+    expect(connect).toHaveBeenCalledTimes(1);
+    expect(tools.map((tool) => tool.name)).toContain("mcp_stateful_hello");
+  });
+
   it("gates app-initiated tools by the manifest allowlist", async () => {
     const manager = new AppManager({
       entries: [entry("demo", { capabilities: { appToolCalls: ["echo"], appMessages: false, workspace: "none" } })],

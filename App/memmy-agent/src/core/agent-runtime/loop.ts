@@ -110,7 +110,9 @@ import { MessageTool, type MessageSendCallback } from "./tools/message.js";
 import { FileStateStore } from "./tools/file-state.js";
 import { connectMissingServers, handleRuntimeControl, reloadLock, runtimeLines as mcpRuntimeLines, sessionExtra as mcpSessionExtra } from "./tools/mcp.js";
 import { handleAppRuntimeControl } from "../../apps/bridge.js";
-import type { AppManager } from "../../apps/manager.js";
+import { AppManager } from "../../apps/manager.js";
+import { loadAppRegistry } from "../../apps/registry.js";
+import { resolveAppRoots } from "../../apps/roots.js";
 import { BrowserSessionManager, type BrowserScope } from "./tools/browser.js";
 import { ContextBuilder } from "./context.js";
 import { BUILTIN_SKILLS_DIR } from "./skills.js";
@@ -1138,6 +1140,19 @@ export class AgentLoop {
   async initializeRuntimeTools(): Promise<void> {
     await initializeDesktopScreenCapture();
     await this.connectMcp();
+    if (!this.apps) {
+      const roots = resolveAppRoots();
+      const { entries, errors } = loadAppRegistry(roots);
+      for (const error of errors) console.warn(`[apps] ${error.path}: ${error.message}`);
+      this.apps = new AppManager({
+        entries,
+        roots,
+        registerTool: (tool) => this.tools.register(tool),
+        unregisterTool: (name) => this.tools.unregister(name),
+        logger: console,
+      });
+      await this.apps.initialize();
+    }
     await this.browserSessionManager.initialize();
     if (!this.browserRegistryInitialized) {
       this.tools = this.createToolRegistry("runtime-init", this.workspace, {
@@ -1148,6 +1163,8 @@ export class AgentLoop {
   }
 
   async closeRuntimeTools(): Promise<void> {
+    await this.apps?.stop();
+    this.apps = null;
     await this.browserSessionManager.close();
     await this.closeMcp();
     await this.memmyMemoryIntegration.dispose?.();
@@ -3928,6 +3945,7 @@ export class AgentLoop {
       compactionOptions,
     );
     await initializeDesktopScreenCapture();
+    await this.apps?.ensureSessionTools({ sessionKey: ctx.sessionKey, workspace: sessionWorkspace });
     ctx.tools = this.createToolRegistry("turn", sessionWorkspace, {
       includeConnectedMcp: true,
       messageSendCallback: ctx.messageSendCallback,
@@ -4346,6 +4364,7 @@ export class AgentLoop {
     await scopedConsolidator.maybeConsolidateByTokens(session, {
       replayMaxMessages: this.maxMessages,
     });
+    await this.apps?.ensureSessionTools({ sessionKey: key, workspace: sessionWorkspace });
     const tools = this.createToolRegistry(
       "system-turn",
       sessionWorkspace,

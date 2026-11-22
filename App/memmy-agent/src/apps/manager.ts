@@ -125,13 +125,24 @@ export class AppManager {
     return connection;
   }
 
+  async ensureSessionTools(context: AppSessionContext): Promise<void> {
+    for (const runtime of this.apps.values()) {
+      if (runtime.entry.manifest.server.scope !== "session") continue;
+      if (runtime.status.state !== "ready") continue;
+      try {
+        await this.sessionFor(runtime.entry.id, context);
+      } catch (error) {
+        this.logger.warn(`[apps] ${runtime.entry.id} failed to start session: ${errorMessage(error)}`);
+      }
+    }
+  }
+
   async callTool(
     appId: string,
     toolName: string,
     args: Record<string, any>,
     context: AppSessionContext,
-  ): Promise<any> {
-    const runtime = this.requireRuntime(appId);
+  ): Promise<any> {    const runtime = this.requireRuntime(appId);
     const connection = await this.sessionFor(appId, context);
     return connection.session.callTool(
       toolName,
