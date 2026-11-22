@@ -10,6 +10,7 @@ import {
 } from "../core/agent-runtime/tools/mcp.js";
 import type { AppRegistryEntry } from "./registry.js";
 import type { AppRoots } from "./roots.js";
+import { AppViewStore } from "./view.js";
 
 export type AppState =
   | "discovered"
@@ -49,6 +50,7 @@ export type AppManagerOptions = {
 type AppRuntime = {
   entry: AppRegistryEntry;
   status: AppStatus;
+  store: AppViewStore;
   global: McpServerConnection | null;
   sessions: Map<string, McpServerConnection>;
   idleTimers: Map<string, NodeJS.Timeout>;
@@ -200,6 +202,7 @@ export class AppManager {
     const runtime: AppRuntime = {
       entry,
       status,
+      store: new AppViewStore(path.join(this.roots.data, entry.id)),
       global: null,
       sessions: new Map(),
       idleTimers: new Map(),
@@ -250,6 +253,13 @@ export class AppManager {
     const enabledTools = new Set(entry.manifest.server.enabledTools ?? ["*"]);
     const allowAll = enabledTools.has("*");
     const timeout = entry.manifest.server.toolTimeout ?? 30;
+    const appView = { appId: entry.id, store: runtime.store };
+    const resolveSession = entry.manifest.server.scope === "session"
+      ? (context: any) => this.sessionFor(entry.id, {
+          sessionKey: context?.sessionKey,
+          workspace: context?.workspace,
+        }).then((session) => session.session)
+      : undefined;
     for (const toolDef of connection.tools) {
       const wrapped = sanitizeName(`mcp_${entry.id}_${toolDef.name}`);
       if (!allowAll && !enabledTools.has(toolDef.name) && !enabledTools.has(wrapped)) continue;
@@ -260,6 +270,8 @@ export class AppManager {
         timeout,
         undefined,
         connection.managed,
+        appView,
+        resolveSession,
       );
       this.registerTool(wrapper);
       status.toolNames.push(wrapper.name);

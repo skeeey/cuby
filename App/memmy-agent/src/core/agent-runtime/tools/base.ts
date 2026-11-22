@@ -1,3 +1,5 @@
+import type { AppViewEvent } from "../../../apps/view.js";
+
 export type JsonSchema = Record<string, any>;
 
 export type FileMutationOutcome = {
@@ -12,6 +14,7 @@ export type ToolExecutionContext = {
   /** Stop this run without asking the model to select another executor. */
   stopTurn?: (message: string) => void;
   reportFileMutation?: (outcome: FileMutationOutcome) => void;
+  reportAppView?: (view: AppViewEvent) => void;
 };
 
 const JSON_TYPE_MAP: Record<string, (value: any) => boolean> = {

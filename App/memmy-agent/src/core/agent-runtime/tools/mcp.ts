@@ -21,6 +21,7 @@ import { probeNativePermissions, guideNativePermissions } from "../../../tools/c
 import { stopOwnedNativeAgent } from "../../../tools/computer-use/native-agent-lifecycle.js";
 import { ToolRegistry } from "./registry.js";
 import { storeToolImageArtifact } from "../../../utils/artifacts.js";
+import { readUiResourceUri, type AppViewStore } from "../../../apps/view.js";
 import { isManagedOcuConfig, managedOcuEnvironment, openComputerUseEnvironment, resolveOpenComputerUseCommand } from "../../../tools/computer-use/open-computer-use-binary.js";
 
 import { computerUsePermissionError } from "../../../tools/computer-use/mac-permission-settings.js";
@@ -446,8 +447,18 @@ export class MCPToolWrapper extends Tool {
   private toolDescription: string;
   private toolParameters: Record<string, any>;
   private toolTimeout: number;
+  private readonly uiResourceUri: string | null;
 
-  constructor(session: any, serverName: string, toolDef: any, toolTimeout = 30, private readonly permissionPreflight?: MacPermissionPreflight, private readonly managed?: ManagedOcuSession) {
+  constructor(
+    session: any,
+    serverName: string,
+    toolDef: any,
+    toolTimeout = 30,
+    private readonly permissionPreflight?: MacPermissionPreflight,
+    private readonly managed?: ManagedOcuSession,
+    private readonly appView?: { appId: string; store: AppViewStore },
+    private readonly resolveSession?: (context: RequestContext | null) => Promise<any>,
+  ) {
     super();
     this.session = session;
     this.serverName = serverName;
@@ -456,6 +467,7 @@ export class MCPToolWrapper extends Tool {
     this.toolDescription = toolDef.description || toolDef.name;
     this.toolParameters = normalizeSchemaForOpenAI(toolDef.inputSchema ?? { type: "object", properties: {} });
     this.toolTimeout = toolTimeout;
+    this.uiResourceUri = readUiResourceUri(toolDef._meta);
   }
 
   get exclusive(): boolean { return Boolean(this.managed || this.permissionPreflight); }
@@ -488,6 +500,7 @@ export class MCPToolWrapper extends Tool {
         if (permission) {
           context?.stopTurn?.(ocuPermissionMessage({ state: 'missing', permission }));
         }
+        await this.reportView(result, params, context);
         return convertMcpToolContent(result, 'auto');
       } catch (error) {
         if (error instanceof OcuUncertain) {
@@ -515,14 +528,18 @@ export class MCPToolWrapper extends Tool {
     if (context?.abortSignal?.aborted) return "(MCP tool call was cancelled)";
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
+        const session = this.resolveSession
+          ? await this.resolveSession(this.requestContext.get())
+          : this.session;
         const result: any = await timeoutPromise(
-          this.session.callTool(this.originalName, params, this.toolTimeout),
+          session.callTool(this.originalName, params, this.toolTimeout),
           this.toolTimeout,
           "timeout",
         );
         const permission = computerUsePermissionError(this.serverName, result);
         if (permission) this.permissionPreflight?.deny(this.requestContext.get(), permission);
         if (permission && this.permissionPreflight) context?.stopTurn?.(ocuPermissionMessage({ state: 'missing', permission }));
+        await this.reportView(result, params, context);
         return convertMcpToolContent(result, "auto");
       } catch (error) {
         if (this.permissionPreflight) {
@@ -538,6 +555,24 @@ export class MCPToolWrapper extends Tool {
       }
     }
     return "(MCP tool call failed)";
+  }
+
+  private async reportView(
+    result: any,
+    params: Record<string, any>,
+    context?: ToolExecutionContext,
+  ): Promise<void> {
+    if (!this.uiResourceUri || !this.appView || !context?.reportAppView) return;
+    if (result?.isError === true) return;
+    context.reportAppView(await this.appView.store.create({
+      appId: this.appView.appId,
+      resourceUri: this.uiResourceUri,
+      toolName: this.originalName,
+      title: this.toolDescription,
+      toolCallId: context.callId ?? undefined,
+      arguments: params,
+      result,
+    }));
   }
 }
 
