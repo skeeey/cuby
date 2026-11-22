@@ -89,6 +89,7 @@ function AppViewList(props: {
   client?: AppBridgeTransport | null;
   chatId: string;
 }) {
+  const { t } = useTranslation();
   const views = useMemo(() => {
     const byId = new Map<string, AgentAppView>();
     for (const message of props.messages) {
@@ -105,7 +106,7 @@ function AppViewList(props: {
   if (!props.client) {
     return (
       <div className="cuby-app-view cuby-app-view--unavailable text-[12px] text-text-ink/45">
-        app 宿主不可用
+        {t("app.view.hostUnavailable")}
       </div>
     );
   }

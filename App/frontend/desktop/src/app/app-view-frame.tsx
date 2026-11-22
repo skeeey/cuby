@@ -1,5 +1,6 @@
 import { useEffect, type ReactNode } from "react";
 import { Maximize2, Minimize2, RotateCw } from "lucide-react";
+import { useTranslation } from "../i18n/use-translation.js";
 import type { AgentAppView } from "../state/agent-tool-traces.js";
 
 function LoadingSkeleton() {
@@ -25,6 +26,7 @@ export function AppViewFrame(props: {
   onToggleExpanded?: () => void;
   expanded: boolean;
 }) {
+  const { t } = useTranslation();
   useEffect(() => {
     if (!props.expanded) return;
     const onKeyDown = (event: KeyboardEvent) => {
@@ -63,8 +65,8 @@ export function AppViewFrame(props: {
           {props.state === "error" && props.onRetry ? (
             <button
               type="button"
-              aria-label="重试"
-              title="重试"
+              aria-label={t("app.view.retry")}
+              title={t("app.view.retry")}
               onClick={props.onRetry}
               className="inline-flex h-7 w-7 items-center justify-center rounded-btn text-text-ink/55 hover:bg-canvas-oat"
             >
@@ -74,8 +76,8 @@ export function AppViewFrame(props: {
           {props.onToggleExpanded ? (
             <button
               type="button"
-              aria-label={props.expanded ? "退出全屏" : "全屏"}
-              title={props.expanded ? "退出全屏" : "全屏"}
+              aria-label={t(props.expanded ? "app.view.exitFullscreen" : "app.view.fullscreen")}
+              title={t(props.expanded ? "app.view.exitFullscreen" : "app.view.fullscreen")}
               onClick={props.onToggleExpanded}
               className="inline-flex h-7 w-7 items-center justify-center rounded-btn text-text-ink/55 hover:bg-canvas-oat"
             >
@@ -88,7 +90,7 @@ export function AppViewFrame(props: {
         {props.state === "loading" ? <LoadingSkeleton /> : null}
         {props.state === "error" ? (
           <div className="cuby-app-view-frame__error px-3 py-4 text-[13px] text-status-error">
-            {props.error ?? "app 载入失败"}
+            {props.error ?? t("app.view.loadFailed")}
           </div>
         ) : null}
         {props.state === "ready" ? props.children : null}
