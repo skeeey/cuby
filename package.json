@@ -13,7 +13,8 @@
     "App/backend",
     "App/frontend/*",
     "App/shell/desktop/interface",
-    "App/shell/*"
+    "App/shell/*",
+    "apps/*"
   ],
   "scripts": {
     "version:sync": "node scripts/sync-project-version.mjs",
@@ -59,6 +60,8 @@
     "workspace:test": "npm run test --workspaces --if-present",
     "db:migrate": "npm run db:migrate -w @memmy/backend",
     "test:contracts": "vitest run tests/computer-history-contract.test.ts",
+    "apps:build": "node scripts/apps/build-apps.mjs --out dist/apps",
+    "apps:list": "node scripts/apps/build-apps.mjs --list",
     "package:mac": "bash scripts/internal/mac/build-dmg.sh",
     "package:mac:unsigned": "CUBY_SKIP_CODESIGN=1 bash scripts/internal/mac/build-dmg.sh",
     "package:mac:arm64:unsigned": "bash scripts/package-mac.sh --version $npm_package_version --arch arm64 --sign unsigned",
