@@ -109,6 +109,8 @@ import { ExecSessionManager } from "./tools/exec-session.js";
 import { MessageTool, type MessageSendCallback } from "./tools/message.js";
 import { FileStateStore } from "./tools/file-state.js";
 import { connectMissingServers, handleRuntimeControl, reloadLock, runtimeLines as mcpRuntimeLines, sessionExtra as mcpSessionExtra } from "./tools/mcp.js";
+import { handleAppRuntimeControl } from "../../apps/bridge.js";
+import type { AppManager } from "../../apps/manager.js";
 import { BrowserSessionManager, type BrowserScope } from "./tools/browser.js";
 import { ContextBuilder } from "./context.js";
 import { BUILTIN_SKILLS_DIR } from "./skills.js";
@@ -713,6 +715,7 @@ export class AgentLoop {
   browserSessionManager: BrowserSessionManager;
   subagents: SubagentManager;
   runner: AgentRunner;
+  apps: AppManager | null = null;
   context: ContextBuilder;
   tools: ReturnType<ToolLoader["loadRegistry"]>;
   commands: CommandRouter;
@@ -5241,6 +5244,11 @@ export class AgentLoop {
       const msg = buffered;
       const canReloadMcp = this.activeTasks.size === 0 && this.pendingQueues.size === 0 && this.turnSlots.size === 0;
       if (await handleRuntimeControl(this, msg, this.tools, canReloadMcp)) continue;
+      if (await handleAppRuntimeControl({
+        apps: this.apps,
+        msg,
+        publishInbound: (message) => this.bus.publishInbound(message),
+      })) continue;
       const raw = msg.content.trim();
       const effectiveKey = this.effectiveSessionKey(msg);
       const deletionQueue = this.sessionDeletionQueues.get(effectiveKey);

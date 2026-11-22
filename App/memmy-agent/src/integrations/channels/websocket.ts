@@ -14,8 +14,12 @@ import {
 import { requestMcpReload } from "../../core/agent-runtime/tools/mcp.js";
 import { BaseChannel, type ChannelHandleMessageOptions } from "./base.js";
 import {
+  INBOUND_META_RUNTIME_CONTROL,
+  InboundMessage,
   OUTBOUND_META_AGENT_UI,
   OutboundMessage,
+  RUNTIME_CONTROL_ACK,
+  RUNTIME_CONTROL_APP_BRIDGE,
   parseTurnSource,
   type TurnSource,
 } from "../../core/runtime-messages/index.js";
@@ -295,6 +299,27 @@ const MAX_ISSUED_TOKENS = 10_000;
 const MAX_HTTP_JSON_BODY_BYTES = 64 * 1024;
 const MAX_ARTIFACT_STAGING_BYTES = 100 * 1024 * 1024;
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const APP_BRIDGE_METHODS = new Set([
+  "tools/call",
+  "resources/read",
+  "ui/message",
+  "ui/update-model-context",
+  "view/result",
+]);
+const APP_BRIDGE_TIMEOUT_MS = 30_000;
+
+type AppBridgeAck = {
+  promise: Promise<Record<string, any>>;
+  resolve(value: Record<string, any>): void;
+};
+
+function createAppBridgeAck(): AppBridgeAck {
+  let resolveFn!: (value: Record<string, any>) => void;
+  const promise = new Promise<Record<string, any>>((resolve) => {
+    resolveFn = resolve;
+  });
+  return { promise, resolve: resolveFn };
+}
 
 export function stripTrailingSlash(value: string): string {
   if (!value) return "/";
@@ -3508,6 +3533,85 @@ export class WebSocketChannel extends BaseChannel {
 
   async dispatchEnvelope(connection: any, clientId: string, envelope: Record<string, any>): Promise<void> {
     const type = envelope.type;
+    if (type === "app_bridge") {
+      const requestId = typeof envelope.request_id === "string" && UUID_RE.test(envelope.request_id)
+        ? envelope.request_id
+        : "";
+      const chatId = typeof envelope.chat_id === "string" && isValidGuiChatId(envelope.chat_id)
+        ? envelope.chat_id
+        : "";
+      const appId = typeof envelope.app_id === "string" ? envelope.app_id.trim() : "";
+      const viewId = typeof envelope.view_id === "string" ? envelope.view_id.trim() : "";
+      const method = typeof envelope.method === "string" ? envelope.method : "";
+      const params = envelope.params && typeof envelope.params === "object" && !Array.isArray(envelope.params)
+        ? envelope.params
+        : {};
+      if (!requestId || !chatId || !appId || !viewId || !APP_BRIDGE_METHODS.has(method)) {
+        await this.safeSendTo(connection, {
+          event: "app_bridge_result",
+          request_id: requestId,
+          ok: false,
+          error: "invalid_request",
+        });
+        return;
+      }
+      if (!this.connectionChats.get(connection)?.has(chatId)) {
+        await this.safeSendTo(connection, {
+          event: "app_bridge_result",
+          request_id: requestId,
+          ok: false,
+          error: "chat_not_subscribed",
+        });
+        return;
+      }
+
+      let sessionKey = typeof envelope.session_key === "string" && envelope.session_key
+        ? envelope.session_key
+        : "";
+      if (!sessionKey) {
+        try {
+          sessionKey = this.canonicalSessionKeyForChatId(chatId) ?? `websocket:${chatId}`;
+        } catch {
+          sessionKey = `websocket:${chatId}`;
+        }
+      }
+
+      const ack = createAppBridgeAck();
+      await this.bus.publishInbound(new InboundMessage({
+        channel: "system",
+        chatId: "runtime",
+        senderId: "mcp-app-bridge",
+        content: "appBridge",
+        metadata: {
+          [INBOUND_META_RUNTIME_CONTROL]: RUNTIME_CONTROL_APP_BRIDGE,
+          [RUNTIME_CONTROL_ACK]: ack,
+          requestId,
+          appId,
+          viewId,
+          chatId,
+          sessionKey,
+          method,
+          params,
+        },
+      }));
+
+      const result = await Promise.race([
+        ack.promise,
+        new Promise<Record<string, any>>((resolve) => {
+          const timer = setTimeout(
+            () => resolve({ ok: false, error: "timeout" }),
+            APP_BRIDGE_TIMEOUT_MS,
+          );
+          timer.unref?.();
+        }),
+      ]);
+      await this.safeSendTo(connection, {
+        event: "app_bridge_result",
+        request_id: requestId,
+        ...result,
+      });
+      return;
+    }
     if (type === "queue_snapshot_request") {
       const chatId = typeof envelope.chat_id === "string" && isValidGuiChatId(envelope.chat_id)
         ? envelope.chat_id
