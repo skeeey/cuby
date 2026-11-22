@@ -11,7 +11,8 @@ import {
   normalizeToolProgressEvents,
   normalizeFileEdits,
   summarizeToolCall,
-  toolTraceLinesFromEvents
+  toolTraceLinesFromEvents,
+  type AgentAppView
 } from "../agent-tool-traces.js";
 
 describe("agent tool trace helpers", () => {
@@ -320,5 +321,26 @@ describe("agent tool trace helpers", () => {
     for (const name of ["applypatch", "patch", "mcp_server_apply_patch"]) {
       expect(formatToolCallTrace({ name, arguments: { path: "src/legacy.ts" } })).toBe("Edited legacy.ts");
     }
+  });
+});
+
+describe("app view metadata", () => {
+  it("preserves app metadata when normalizing and merging tool events", () => {
+    const app: AgentAppView = {
+      viewId: "v1",
+      appId: "demo",
+      resourceUri: "ui://demo/x",
+      toolName: "hello",
+      title: "Hello",
+      displayMode: "inline",
+      protocol: "mcp-apps/2026-01-26"
+    };
+    const events = normalizeToolProgressEvents([
+      { phase: "start", call_id: "1", name: "mcp_demo_hello" },
+      { phase: "end", call_id: "1", name: "mcp_demo_hello", app }
+    ]);
+    const merged = mergeToolProgressEvents([events[0]!], [events[1]!]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]?.app).toEqual(app);
   });
 });

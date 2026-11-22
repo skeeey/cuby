@@ -6,6 +6,22 @@
  * make live WebSocket events match the persisted /webui-thread shape.
  */
 
+export type AgentAppView = {
+  viewId: string;
+  appId: string;
+  resourceUri: string;
+  toolCallId?: string;
+  toolName: string;
+  title: string;
+  displayMode: "inline" | "fullscreen";
+  protocol: "mcp-apps/2026-01-26";
+  arguments?: Record<string, unknown>;
+  prefersBorder?: boolean;
+  initialResult?: { content: unknown[]; structuredContent?: unknown } | null;
+  artifacts?: Array<{ path: string; mimeType: string }>;
+  resultRef?: string;
+};
+
 export interface AgentToolProgressEvent {
   version?: number;
   phase?: "start" | "end" | "error" | string;
@@ -17,6 +33,7 @@ export interface AgentToolProgressEvent {
   error?: unknown;
   files?: unknown[];
   embeds?: unknown[];
+  app?: AgentAppView | null;
   function?: {
     name?: unknown;
     arguments?: unknown;
