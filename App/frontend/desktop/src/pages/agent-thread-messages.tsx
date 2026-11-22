@@ -503,6 +503,14 @@ const SingleMessage = memo(function SingleMessage(props: SingleMessageProps) {
     return (
       <div className="agent-user-turn flex min-w-0 justify-end">
         <div className="flex min-w-0 max-w-[75%] flex-col items-end gap-2 w-full">
+          {message.appId ? (
+            <span
+              className="agent-user-turn__app-source text-[11px] text-text-ink/45"
+              data-app-id={message.appId}
+            >
+              app · {message.appId}
+            </span>
+          ) : null}
           {message.media?.length ? (
             <UserMediaPreviewGrid media={message.media} artifactClient={props.artifactClient} />
           ) : null}

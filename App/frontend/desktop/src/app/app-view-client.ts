@@ -8,6 +8,7 @@ export type AppBridgeRequester = {
     viewId: string;
     method: "tools/call" | "resources/read" | "ui/message" | "view/result";
     params: Record<string, unknown>;
+    timeoutMs?: number;
   }): Promise<any>;
 };
 
@@ -23,7 +24,7 @@ export function createAppBridgeTransport(
   chatId: string,
 ): AppBridgeTransport {
   return {
-    async callTool({ appId, viewId, tool, arguments: args }) {
+    async callTool({ appId, viewId, tool, arguments: args, timeoutMs }) {
       return unwrap(await connection.requestAppBridge({
         requestId: crypto.randomUUID(),
         chatId,
@@ -31,9 +32,10 @@ export function createAppBridgeTransport(
         viewId,
         method: "tools/call",
         params: { name: tool, arguments: args },
+        timeoutMs,
       }));
     },
-    async readResource({ appId, viewId, uri }) {
+    async readResource({ appId, viewId, uri, timeoutMs }) {
       return unwrap(await connection.requestAppBridge({
         requestId: crypto.randomUUID(),
         chatId,
@@ -41,6 +43,7 @@ export function createAppBridgeTransport(
         viewId,
         method: "resources/read",
         params: { uri },
+        timeoutMs,
       }));
     },
     async sendMessage({ appId, viewId, content }) {

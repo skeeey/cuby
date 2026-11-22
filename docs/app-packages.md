@@ -120,10 +120,17 @@ The host sends:
 - `ui/resource-teardown`
 
 `ui/message` enters the chat as a user message only when
-`capabilities.appMessages` is `"allow"` or `"ask"`; the message carries
-`source: "mcp-app"`, `appId`, `viewId`, and `appControlled: true`. Reverse
-`tools/call` requests are restricted to this app's server and to
+`capabilities.appMessages` is `"allow"`; `"ask"` is treated as denied in v1
+because the confirmation UI is not implemented. The message carries
+`source: "mcp-app"`, `appId`, `viewId`, and `appControlled: true`, is rate
+limited to 10 messages per minute per view, and is rendered with its app id.
+Reverse `tools/call` requests are restricted to this app's server and to
 `capabilities.appToolCalls`.
+
+`ui/open-link` and `ui/download-file` are advertised only when
+`capabilities.openLinks` / `capabilities.downloads` are `true`. Downloads go
+through the native save dialog; links require confirmation. The iframe CSP is
+`default-src 'none'` unless `ui.csp` declares domains.
 
 Tool results larger than 256 KiB, or containing images, are externalized under
 `${APP_DATA}/views/<viewId>/`; the transcript stores a reference and the UI
@@ -165,11 +172,13 @@ current platform are skipped; set `CUBY_APPS_STRICT=1` to fail instead.
 - The app server is trusted build-time code in v1. Do not install third-party
   app packages without an OS sandbox.
 - The UI iframe is sandboxed with scripts only; no same-origin access.
-- Network access is denied unless `ui.csp` declares it.
+- Network access is denied by default through a CSP meta tag; only `ui.csp`
+  domains are allowed.
 - Reverse tool calls are allowlisted per app; cross-app calls are not possible.
-- `ui/message` requires the app-message capability and is marked as app-originated.
-- `ui/download-file` and `ui/open-link` are host-mediated; downloads are size
-  limited and saved through the desktop save dialog.
+- `ui/message` requires the `"allow"` capability, is rate limited, and is
+  marked as app-originated in the transcript.
+- `ui/download-file` and `ui/open-link` require the matching capability;
+  downloads are size limited and saved through the desktop save dialog.
 
 ## Not in v1
 

@@ -1,5 +1,3 @@
-import type { AgentAppView } from "../state/agent-tool-traces.js";
-
 export type { AgentAppView } from "../state/agent-tool-traces.js";
 
 export type AppBridgeTransport = {
@@ -8,8 +6,9 @@ export type AppBridgeTransport = {
     viewId: string;
     tool: string;
     arguments: Record<string, unknown>;
+    timeoutMs?: number;
   }): Promise<any>;
-  readResource(input: { appId: string; viewId: string; uri: string }): Promise<any>;
+  readResource(input: { appId: string; viewId: string; uri: string; timeoutMs?: number }): Promise<any>;
   sendMessage(input: {
     appId: string;
     viewId: string;
@@ -17,5 +16,3 @@ export type AppBridgeTransport = {
   }): Promise<any>;
   readViewResult(input: { appId: string; viewId: string }): Promise<any>;
 };
-
-export type AppViewLike = AgentAppView;

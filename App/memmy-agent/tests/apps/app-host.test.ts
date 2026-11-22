@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AppManager } from "../../src/apps/manager.js";
 import { loadAppRegistry } from "../../src/apps/registry.js";
 import { AgentLoop } from "../../src/core/agent-runtime/loop.js";
-import { MessageBus } from "../../src/core/runtime-messages/index.js";
+import { InboundMessage, MessageBus } from "../../src/core/runtime-messages/index.js";
 
 function provider() {
   return {
@@ -75,7 +75,8 @@ describe("app host", () => {
     await manager.stop();
   });
 
-  it("initializes app discovery in AgentLoop", async () => {    const previous = process.env.CUBY_DEV_APPS;
+  it("initializes app discovery in AgentLoop", async () => {
+    const previous = process.env.CUBY_DEV_APPS;
     process.env.CUBY_DEV_APPS = path.resolve("../../apps/fixture");
     const loop = new AgentLoop({
       bus: new MessageBus(),
@@ -90,6 +91,38 @@ describe("app host", () => {
       await loop.closeRuntimeTools();
       if (previous === undefined) delete process.env.CUBY_DEV_APPS;
       else process.env.CUBY_DEV_APPS = previous;
+    }
+  });
+
+  it("persists app message provenance", async () => {
+    const loop = new AgentLoop({
+      bus: new MessageBus(),
+      provider: provider(),
+      workspace: mkdtempSync(path.join(tmpdir(), "cuby-loop-")),
+      model: "test-model",
+    });
+    try {
+      const session = loop.sessions.getOrCreate("websocket:provenance");
+      loop.persistUserMessageEarly(new InboundMessage({
+        channel: "websocket",
+        chatId: "provenance",
+        content: "hello from an app",
+        sessionKey: "websocket:provenance",
+        metadata: {
+          source: "mcp-app",
+          appId: "fixture",
+          viewId: "view-1",
+          appControlled: true,
+        },
+      }), session);
+      expect(session.messages.at(-1)).toMatchObject({
+        app_source: "mcp-app",
+        appId: "fixture",
+        viewId: "view-1",
+        appControlled: true,
+      });
+    } finally {
+      await loop.closeRuntimeTools();
     }
   });
 });

@@ -36,6 +36,15 @@ describe("AppViewStore", () => {
       appId: "demo", resourceUri: "ui://demo/x", toolName: "hello", title: "Hello",
       arguments: {}, result: { content: [{ type: "image", data: Buffer.from("png").toString("base64"), mimeType: "image/png" }] }
     });
-    expect(view.artifacts?.[0]?.path).toMatch(/artifacts\//);
+    expect(view.artifacts?.[0]?.path).toContain(`artifacts${path.sep}`);
+  });
+
+  it("externalizes results by UTF-8 byte size", async () => {
+    const store = new AppViewStore(mkdtempSync(path.join(tmpdir(), "cuby-view-")));
+    const view = await store.create({
+      appId: "demo", resourceUri: "ui://demo/x", toolName: "hello", title: "Hello",
+      arguments: {}, result: { content: [{ type: "text", text: "漢".repeat(100_000) }] }
+    });
+    expect(view.resultRef).toMatch(/result\.json$/);
   });
 });

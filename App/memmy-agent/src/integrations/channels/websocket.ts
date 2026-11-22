@@ -1082,6 +1082,10 @@ export class WebSocketChannel extends BaseChannel {
     };
     const source = parseTurnSource(message.turn_source);
     if (source) wire.source = source;
+    if (message.app_source === "mcp-app") wire.app_source = "mcp-app";
+    if (typeof message.appId === "string") wire.app_id = message.appId;
+    if (typeof message.viewId === "string") wire.view_id = message.viewId;
+    if (message.appControlled === true) wire.app_controlled = true;
     if (turnId) wire.turn_id = turnId;
     if (Array.isArray(message.media) && message.media.length) {
       wire.media_paths = [...message.media];
@@ -3565,14 +3569,32 @@ export class WebSocketChannel extends BaseChannel {
         return;
       }
 
-      let sessionKey = typeof envelope.session_key === "string" && envelope.session_key
+      let sessionKey: string;
+      try {
+        sessionKey = this.canonicalSessionKeyForChatId(chatId) ?? `websocket:${chatId}`;
+      } catch {
+        sessionKey = `websocket:${chatId}`;
+      }
+      const requestedSessionKey = typeof envelope.session_key === "string" && envelope.session_key
         ? envelope.session_key
         : "";
-      if (!sessionKey) {
+      if (requestedSessionKey && requestedSessionKey !== sessionKey) {
+        await this.safeSendTo(connection, {
+          event: "app_bridge_result",
+          request_id: requestId,
+          ok: false,
+          error: "session_key_mismatch",
+        });
+        return;
+      }
+
+      let workspace: string | null = null;
+      const session = this.sessionManager?.get?.(sessionKey) as Session | null;
+      if (session) {
         try {
-          sessionKey = this.canonicalSessionKeyForChatId(chatId) ?? `websocket:${chatId}`;
+          workspace = readWebuiSessionBinding(session).cwd;
         } catch {
-          sessionKey = `websocket:${chatId}`;
+          workspace = null;
         }
       }
 
@@ -3590,17 +3612,22 @@ export class WebSocketChannel extends BaseChannel {
           viewId,
           chatId,
           sessionKey,
+          workspace,
           method,
           params,
         },
       }));
 
+      const requestedTimeout = Number(envelope.timeout_ms);
+      const bridgeTimeoutMs = Number.isFinite(requestedTimeout) && requestedTimeout > 0
+        ? Math.min(Math.max(requestedTimeout, 30_000), 300_000)
+        : APP_BRIDGE_TIMEOUT_MS;
       const result = await Promise.race([
         ack.promise,
         new Promise<Record<string, any>>((resolve) => {
           const timer = setTimeout(
             () => resolve({ ok: false, error: "timeout" }),
-            APP_BRIDGE_TIMEOUT_MS,
+            bridgeTimeoutMs,
           );
           timer.unref?.();
         }),

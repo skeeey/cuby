@@ -36,6 +36,10 @@ const APP_BRIDGE_METHODS = new Set<AppBridgeMethod>([
   "view/result",
 ]);
 
+const MESSAGE_WINDOW_MS = 60_000;
+const MESSAGE_LIMIT = 10;
+const appMessageTimes = new Map<string, number[]>();
+
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -105,7 +109,7 @@ export async function handleAppRuntimeControl(input: {
       case "tools/call": {
         const tool = typeof params.name === "string" ? params.name : "";
         if (!tool) throw new Error("tools/call requires a tool name");
-        if (typeof apps.canAppCallTool === "function" && !apps.canAppCallTool(appId, tool)) {
+        if (typeof apps.canAppCallTool !== "function" || !apps.canAppCallTool(appId, tool)) {
           throw new Error("this tool is not allowed for the app");
         }
         const args = params.arguments && typeof params.arguments === "object" && !Array.isArray(params.arguments)
@@ -126,11 +130,21 @@ export async function handleAppRuntimeControl(input: {
         }
         const text = textFromContent(params.content);
         if (!text) throw new Error("ui/message requires text content");
+        const now = Date.now();
+        const rateKey = `${appId}:${viewId}`;
+        const recent = (appMessageTimes.get(rateKey) ?? [])
+          .filter((timestamp) => now - timestamp < MESSAGE_WINDOW_MS);
+        if (recent.length >= MESSAGE_LIMIT) {
+          throw new Error("this app is sending messages too quickly");
+        }
+        recent.push(now);
+        appMessageTimes.set(rateKey, recent);
         await input.publishInbound(new InboundMessage({
           channel: "websocket",
           chatId,
           senderId: "mcp-app",
           content: text,
+          sessionKey: sessionContext.sessionKey ?? undefined,
           metadata: {
             webui: true,
             client_request_id: randomUUID(),

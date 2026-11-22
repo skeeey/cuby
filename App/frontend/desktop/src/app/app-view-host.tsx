@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { AgentAppView } from "../state/agent-tool-traces.js";
-import { cubyHostContext, detectCubyLocale, detectCubyTheme } from "./app-theme.js";
+import { cubyHostContext, detectCubyLocale, detectCubyTheme, injectAppCsp, watchCubyTheme } from "./app-theme.js";
 import { AppViewBridge } from "./app-view-bridge.js";
 import type { AppBridgeTransport } from "./app-view-types.js";
 import { AppViewFrame } from "./app-view-frame.js";
@@ -72,7 +72,7 @@ export function AppViewHost(props: {
           if (restored) initialResult = restored;
         }
         if (cancelled) return;
-        setFrame({ html, view: { ...props.view, initialResult } });
+        setFrame({ html: injectAppCsp(html, props.view.csp), view: { ...props.view, initialResult } });
       } catch (loadError) {
         if (!cancelled) {
           setError(loadError instanceof Error ? loadError.message : String(loadError));
@@ -83,12 +83,55 @@ export function AppViewHost(props: {
     return () => {
       cancelled = true;
     };
-  }, [props.view.viewId, props.view.resourceUri, props.view.resultRef, props.view.appId, reloadKey]);
+  }, [props.view.viewId, props.view.resourceUri, props.view.resultRef, props.view.appId, props.view.initialResult, props.client, reloadKey]);
 
   useEffect(() => {
     if (!frame) return;
     const iframe = iframeRef.current;
     if (!iframe) return;
+    const capabilities = props.view.capabilities;
+    const openLink = capabilities?.openLinks === true
+      ? async (url: string) => {
+          if (typeof window === "undefined" || !window.memmy?.openExternal) {
+            throw new Error("open-link is unavailable");
+          }
+          if (typeof window.confirm === "function" && !window.confirm(`Open ${url}?`)) {
+            throw new Error("open-link cancelled");
+          }
+          await window.memmy.openExternal(url);
+        }
+      : undefined;
+    const downloadFile = capabilities?.downloads === true
+      ? async (contents: unknown[]) => {
+          if (typeof window === "undefined" || !window.memmy?.saveAppFile) {
+            throw new Error("file save is unavailable");
+          }
+          const resolved: unknown[] = [];
+          for (const item of contents) {
+            if (
+              item && typeof item === "object"
+              && (item as any).type === "resource_link"
+              && typeof (item as any).uri === "string"
+            ) {
+              const resource = await props.client.readResource({
+                appId: props.view.appId,
+                viewId: props.view.viewId,
+                uri: (item as any).uri,
+              });
+              const resourceContents = Array.isArray(resource?.contents) ? resource.contents : [];
+              for (const entry of resourceContents) {
+                resolved.push({ type: "resource", resource: entry });
+              }
+            } else {
+              resolved.push(item);
+            }
+          }
+          for (const item of resolved) {
+            await window.memmy.saveAppFile(decodeDownloadItem(item));
+          }
+          return {};
+        }
+      : undefined;
     const bridge = new AppViewBridge({
       iframe,
       view: frame.view,
@@ -99,41 +142,8 @@ export function AppViewHost(props: {
         if (typeof size.height === "number" && size.height > 0) setHeight(size.height);
       },
       onError: (message) => setError(message),
-      openLink: async (url) => {
-        if (typeof window === "undefined" || !window.memmy?.openExternal) {
-          throw new Error("open-link is unavailable");
-        }
-        await window.memmy.openExternal(url);
-      },
-      downloadFile: async (contents) => {
-        if (typeof window === "undefined" || !window.memmy?.saveAppFile) {
-          throw new Error("file save is unavailable");
-        }
-        const resolved: unknown[] = [];
-        for (const item of contents) {
-          if (
-            item && typeof item === "object"
-            && (item as any).type === "resource_link"
-            && typeof (item as any).uri === "string"
-          ) {
-            const resource = await props.client.readResource({
-              appId: props.view.appId,
-              viewId: props.view.viewId,
-              uri: (item as any).uri,
-            });
-            const resourceContents = Array.isArray(resource?.contents) ? resource.contents : [];
-            for (const entry of resourceContents) {
-              resolved.push({ type: "resource", resource: entry });
-            }
-          } else {
-            resolved.push(item);
-          }
-        }
-        for (const item of resolved) {
-          await window.memmy.saveAppFile(decodeDownloadItem(item));
-        }
-        return {};
-      },
+      ...(openLink ? { openLink } : {}),
+      ...(downloadFile ? { downloadFile } : {}),
     });
     bridgeRef.current = bridge;
     bridge.start();
@@ -141,12 +151,19 @@ export function AppViewHost(props: {
       bridgeRef.current = null;
       void bridge.teardown();
     };
-  }, [frame, props.client]);
+  }, [frame, props.client, props.view.appId, props.view.viewId, props.view.capabilities]);
 
   useEffect(() => {
     if (!frame) return;
     bridgeRef.current?.sendHostContextChanged(hostContextFor(displayMode));
   }, [displayMode, frame]);
+
+  useEffect(() => {
+    if (!frame) return;
+    return watchCubyTheme(() => {
+      bridgeRef.current?.sendHostContextChanged(hostContextFor(displayModeRef.current));
+    });
+  }, [frame]);
 
   const expanded = displayMode === "fullscreen";
 

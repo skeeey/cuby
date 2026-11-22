@@ -1192,6 +1192,9 @@ export function replayTranscriptToUiMessages(lines: Dict[], options: ReplayTrans
       const clientRequestId = stringValue(rec.client_request_id)
         ?? stringValue(rec.clientRequestId);
       if (clientRequestId) row.client_request_id = clientRequestId;
+      const appId = stringValue(rec.app_id) ?? stringValue(rec.appId);
+      if (appId) row.appId = appId;
+      if (rec.app_source === "mcp-app" || rec.app_controlled === true) row.appControlled = true;
       if (mediaAttachments?.length) {
         row.media = mediaAttachments;
         if (mediaAttachments.every((item) => item.kind === "image")) {

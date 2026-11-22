@@ -21,7 +21,7 @@ import { probeNativePermissions, guideNativePermissions } from "../../../tools/c
 import { stopOwnedNativeAgent } from "../../../tools/computer-use/native-agent-lifecycle.js";
 import { ToolRegistry } from "./registry.js";
 import { storeToolImageArtifact } from "../../../utils/artifacts.js";
-import { readUiResourceUri, type AppViewStore } from "../../../apps/view.js";
+import { readUiResourceUri, type AppViewCapabilities, type AppViewCsp, type AppViewStore } from "../../../apps/view.js";
 import { isManagedOcuConfig, managedOcuEnvironment, openComputerUseEnvironment, resolveOpenComputerUseCommand } from "../../../tools/computer-use/open-computer-use-binary.js";
 
 import { computerUsePermissionError } from "../../../tools/computer-use/mac-permission-settings.js";
@@ -456,7 +456,14 @@ export class MCPToolWrapper extends Tool {
     toolTimeout = 30,
     private readonly permissionPreflight?: MacPermissionPreflight,
     private readonly managed?: ManagedOcuSession,
-    private readonly appView?: { appId: string; store: AppViewStore },
+    private readonly appView?: {
+      appId: string;
+      store: AppViewStore;
+      prefersBorder?: boolean;
+      csp?: AppViewCsp;
+      capabilities?: AppViewCapabilities;
+      toolTimeout?: number;
+    },
     private readonly resolveSession?: (context: RequestContext | null) => Promise<any>,
   ) {
     super();
@@ -572,6 +579,10 @@ export class MCPToolWrapper extends Tool {
       toolCallId: context.callId ?? undefined,
       arguments: params,
       result,
+      prefersBorder: this.appView.prefersBorder,
+      csp: this.appView.csp,
+      capabilities: this.appView.capabilities,
+      toolTimeout: this.appView.toolTimeout ?? this.toolTimeout,
     }));
   }
 }

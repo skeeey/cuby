@@ -17,6 +17,17 @@ export type AgentAppView = {
   protocol: "mcp-apps/2026-01-26";
   arguments?: Record<string, unknown>;
   prefersBorder?: boolean;
+  csp?: {
+    connectDomains?: string[];
+    resourceDomains?: string[];
+    frameDomains?: string[];
+    baseUriDomains?: string[];
+  };
+  capabilities?: {
+    openLinks?: boolean;
+    downloads?: boolean;
+  };
+  toolTimeout?: number;
   initialResult?: { content: unknown[]; structuredContent?: unknown } | null;
   artifacts?: Array<{ path: string; mimeType: string }>;
   resultRef?: string;

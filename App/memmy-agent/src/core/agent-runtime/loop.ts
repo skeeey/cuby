@@ -2747,6 +2747,10 @@ export class AgentLoop {
           : {}
       ),
       ...(sharedTurnSource(msg) ? { turn_source: sharedTurnSource(msg) } : {}),
+      ...(msg.metadata?.source === "mcp-app" ? { app_source: "mcp-app" } : {}),
+      ...(typeof msg.metadata?.appId === "string" ? { appId: msg.metadata.appId } : {}),
+      ...(typeof msg.metadata?.viewId === "string" ? { viewId: msg.metadata.viewId } : {}),
+      ...(msg.metadata?.appControlled === true ? { appControlled: true } : {}),
       ...(typeof msg.metadata?.model_preset === "string"
         ? {
             model_preset: msg.metadata.model_preset,

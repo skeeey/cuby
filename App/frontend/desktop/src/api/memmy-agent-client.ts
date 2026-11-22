@@ -733,6 +733,7 @@ export type MemmyAgentAppBridgeRequest = {
   viewId: string;
   method: MemmyAgentAppBridgeMethod;
   params: Record<string, unknown>;
+  timeoutMs?: number;
 };
 
 export type MemmyAgentAppBridgeResult =
@@ -2038,6 +2039,9 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     if (generation === null) {
       return Promise.reject(new Error("Agent gateway is not ready"));
     }
+    const effectiveTimeout = request.timeoutMs && request.timeoutMs > 0
+      ? Math.min(Math.max(request.timeoutMs, 30_000), 300_000)
+      : timeoutMs;
     return new Promise<MemmyAgentAppBridgeResult>((resolve, reject) => {
       const pending: PendingAppBridge = {
         resolve,
@@ -2047,7 +2051,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
             this.pendingAppBridges.delete(request.requestId);
           }
           resolve({ ok: false, error: "app bridge request timed out" });
-        }, timeoutMs),
+        }, effectiveTimeout),
       };
       this.pendingAppBridges.set(request.requestId, pending);
       try {
@@ -2060,6 +2064,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
           view_id: request.viewId,
           method: request.method,
           params: request.params,
+          timeout_ms: effectiveTimeout,
         }, generation);
       } catch (error) {
         this.pendingAppBridges.delete(request.requestId);

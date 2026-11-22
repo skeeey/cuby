@@ -53,13 +53,26 @@ type AppRuntime = {
   store: AppViewStore;
   global: McpServerConnection | null;
   sessions: Map<string, McpServerConnection>;
+  sessionStarts: Map<string, Promise<McpServerConnection>>;
+  sessionWorkspaces: Map<string, string | null>;
   idleTimers: Map<string, NodeJS.Timeout>;
+  failures: number;
+  nextRetryAt: number;
 };
 
 const SESSION_IDLE_MS = 10 * 60 * 1000;
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+async function closeConnection(connection: McpServerConnection | null | undefined): Promise<void> {
+  if (!connection) return;
+  try {
+    await connection.close();
+  } catch {
+    // A closing app server may already have exited.
+  }
 }
 
 export class AppManager {
@@ -69,6 +82,7 @@ export class AppManager {
   private readonly unregisterTool: (name: string) => void;
   private readonly connect: (name: string, cfg: any) => Promise<McpServerConnection>;
   private readonly logger: Pick<Console, "info" | "warn" | "error">;
+  private readonly now: () => number;
   private readonly apps = new Map<string, AppRuntime>();
   private initialized = false;
 
@@ -79,6 +93,7 @@ export class AppManager {
     this.unregisterTool = options.unregisterTool;
     this.connect = options.connect ?? connectMcpServer;
     this.logger = options.logger ?? console;
+    this.now = options.now ?? Date.now;
   }
 
   async initialize(): Promise<void> {
@@ -104,35 +119,87 @@ export class AppManager {
       return runtime.global;
     }
 
-    const key = context.sessionKey ?? "default";
-    const existing = runtime.sessions.get(key);
-    if (existing) {
-      this.touchSession(runtime, key);
-      return existing;
+    if (
+      runtime.status.state === "missing_credentials"
+      || runtime.status.state === "disabled"
+      || (runtime.status.state === "failed" && (runtime.failures >= 3 || this.now() < runtime.nextRetryAt))
+    ) {
+      throw new Error(runtime.status.error ?? `App ${appId} is not available`);
     }
 
-    const appDataDir = path.join(this.roots.data, appId);
-    await mkdir(appDataDir, { recursive: true });
-    const connection = await this.connect(
-      appId,
-      this.buildServerConfig(runtime.entry, appDataDir, context.workspace ?? null),
-    );
-    runtime.sessions.set(key, connection);
-    this.touchSession(runtime, key);
-    if (!runtime.status.toolNames.length) {
-      this.registerConnectionTools(runtime, connection);
+    const key = context.sessionKey ?? "default";
+    const workspace = context.workspace ?? null;
+    const existing = runtime.sessions.get(key);
+    if (existing) {
+      const existingWorkspace = runtime.sessionWorkspaces.get(key) ?? null;
+      if (workspace && workspace !== existingWorkspace) {
+        const timer = runtime.idleTimers.get(key);
+        if (timer) clearTimeout(timer);
+        runtime.idleTimers.delete(key);
+        runtime.sessions.delete(key);
+        runtime.sessionWorkspaces.delete(key);
+        await closeConnection(existing);
+      } else {
+        this.touchSession(runtime, key);
+        return existing;
+      }
     }
-    return connection;
+
+    const inFlight = runtime.sessionStarts.get(key);
+    if (inFlight) return inFlight;
+
+    const start = (async () => {
+      const appDataDir = path.join(this.roots.data, appId);
+      await mkdir(appDataDir, { recursive: true });
+      const connection = await this.connect(
+        appId,
+        this.buildServerConfig(runtime.entry, appDataDir, workspace),
+      );
+      const raced = runtime.sessions.get(key);
+      if (raced) {
+        await closeConnection(connection);
+        return raced;
+      }
+      runtime.sessions.set(key, connection);
+      runtime.sessionWorkspaces.set(key, workspace);
+      this.touchSession(runtime, key);
+      if (!runtime.status.toolNames.length) {
+        this.registerConnectionTools(runtime, connection);
+      }
+      runtime.status.state = "ready";
+      runtime.status.error = null;
+      runtime.failures = 0;
+      runtime.nextRetryAt = 0;
+      return connection;
+    })();
+    runtime.sessionStarts.set(key, start);
+    try {
+      return await start;
+    } finally {
+      runtime.sessionStarts.delete(key);
+    }
   }
 
   async ensureSessionTools(context: AppSessionContext): Promise<void> {
     for (const runtime of this.apps.values()) {
       if (runtime.entry.manifest.server.scope !== "session") continue;
-      if (runtime.status.state !== "ready") continue;
+      if (
+        runtime.status.state === "missing_credentials"
+        || runtime.status.state === "disabled"
+        || runtime.failures >= 3
+        || (runtime.status.state === "failed" && this.now() < runtime.nextRetryAt)
+      ) {
+        continue;
+      }
       try {
         await this.sessionFor(runtime.entry.id, context);
       } catch (error) {
-        this.logger.warn(`[apps] ${runtime.entry.id} failed to start session: ${errorMessage(error)}`);
+        runtime.failures += 1;
+        runtime.nextRetryAt = this.now() + Math.min(60_000, 1000 * 2 ** runtime.failures);
+        runtime.status.state = "failed";
+        runtime.status.error = errorMessage(error);
+        this.unregisterRuntimeTools(runtime);
+        this.logger.warn(`[apps] ${runtime.entry.id} failed to start session: ${runtime.status.error}`);
       }
     }
   }
@@ -142,7 +209,8 @@ export class AppManager {
     toolName: string,
     args: Record<string, any>,
     context: AppSessionContext,
-  ): Promise<any> {    const runtime = this.requireRuntime(appId);
+  ): Promise<any> {
+    const runtime = this.requireRuntime(appId);
     const connection = await this.sessionFor(appId, context);
     return connection.session.callTool(
       toolName,
@@ -161,11 +229,13 @@ export class AppManager {
   }
 
   async readViewResult(appId: string, viewId: string): Promise<any | null> {
-    const safeViewId = path.basename(viewId);
-    if (!safeViewId || safeViewId !== viewId) return null;
+    this.requireRuntime(appId);
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(viewId)) {
+      return null;
+    }
     try {
       const raw = await readFile(
-        path.join(this.roots.data, appId, "views", safeViewId, "result.json"),
+        path.join(this.roots.data, appId, "views", viewId, "result.json"),
         "utf8",
       );
       return JSON.parse(raw);
@@ -176,7 +246,7 @@ export class AppManager {
 
   canAppMessage(appId: string): boolean {
     const runtime = this.apps.get(appId);
-    return Boolean(runtime) && runtime!.entry.manifest.capabilities.appMessages !== false;
+    return Boolean(runtime) && runtime!.entry.manifest.capabilities.appMessages === "allow";
   }
 
   canAppCallTool(appId: string, toolName: string): boolean {
@@ -193,11 +263,11 @@ export class AppManager {
       for (const timer of runtime.idleTimers.values()) clearTimeout(timer);
       runtime.idleTimers.clear();
       if (runtime.global) {
-        await runtime.global.close().catch(() => undefined);
+        await closeConnection(runtime.global);
         runtime.global = null;
       }
       for (const connection of runtime.sessions.values()) {
-        await connection.close().catch(() => undefined);
+        await closeConnection(connection);
       }
       runtime.sessions.clear();
     }
@@ -225,7 +295,11 @@ export class AppManager {
       store: new AppViewStore(path.join(this.roots.data, entry.id)),
       global: null,
       sessions: new Map(),
+      sessionStarts: new Map(),
+      sessionWorkspaces: new Map(),
       idleTimers: new Map(),
+      failures: 0,
+      nextRetryAt: 0,
     };
     this.apps.set(entry.id, runtime);
 
@@ -273,7 +347,17 @@ export class AppManager {
     const enabledTools = new Set(entry.manifest.server.enabledTools ?? ["*"]);
     const allowAll = enabledTools.has("*");
     const timeout = entry.manifest.server.toolTimeout ?? 30;
-    const appView = { appId: entry.id, store: runtime.store };
+    const appView = {
+      appId: entry.id,
+      store: runtime.store,
+      prefersBorder: entry.manifest.ui?.prefersBorder,
+      csp: entry.manifest.ui?.csp,
+      capabilities: {
+        openLinks: entry.manifest.capabilities.openLinks === true,
+        downloads: entry.manifest.capabilities.downloads === true,
+      },
+      toolTimeout: timeout,
+    };
     const resolveSession = entry.manifest.server.scope === "session"
       ? (context: any) => this.sessionFor(entry.id, {
           sessionKey: context?.sessionKey,
@@ -298,6 +382,13 @@ export class AppManager {
     }
   }
 
+  private unregisterRuntimeTools(runtime: AppRuntime): void {
+    for (const name of runtime.status.toolNames) {
+      this.unregisterTool(name);
+    }
+    runtime.status.toolNames = [];
+  }
+
   private buildServerConfig(
     entry: AppRegistryEntry,
     appDataDir: string,
@@ -308,6 +399,7 @@ export class AppManager {
       APP_DATA: appDataDir,
       CUBY_USER_DATA: process.env.CUBY_USER_DATA?.trim() || path.dirname(this.roots.data),
       ...(entry.manifest.server.scope === "session"
+        && entry.manifest.capabilities.workspace !== "none"
         ? { SESSION_WORKSPACE: sessionWorkspace ?? "" }
         : {}),
     };
@@ -347,7 +439,7 @@ export class AppManager {
       runtime.idleTimers.delete(key);
       const connection = runtime.sessions.get(key);
       runtime.sessions.delete(key);
-      void connection?.close().catch(() => undefined);
+      void closeConnection(connection);
     }, SESSION_IDLE_MS);
     timer.unref?.();
     runtime.idleTimers.set(key, timer);

@@ -2,6 +2,18 @@ import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+export type AppViewCsp = {
+  connectDomains?: string[];
+  resourceDomains?: string[];
+  frameDomains?: string[];
+  baseUriDomains?: string[];
+};
+
+export type AppViewCapabilities = {
+  openLinks?: boolean;
+  downloads?: boolean;
+};
+
 export type AppViewEvent = {
   viewId: string;
   appId: string;
@@ -13,6 +25,9 @@ export type AppViewEvent = {
   protocol: "mcp-apps/2026-01-26";
   arguments: Record<string, unknown>;
   prefersBorder?: boolean;
+  csp?: AppViewCsp;
+  capabilities?: AppViewCapabilities;
+  toolTimeout?: number;
   initialResult: { content: unknown[]; structuredContent?: unknown };
   artifacts?: Array<{ path: string; mimeType: string }>;
   resultRef?: string;
@@ -51,6 +66,10 @@ export class AppViewStore {
     toolCallId?: string;
     arguments: Record<string, unknown>;
     result: any;
+    prefersBorder?: boolean;
+    csp?: AppViewCsp;
+    capabilities?: AppViewCapabilities;
+    toolTimeout?: number;
   }): Promise<AppViewEvent> {
     const viewId = randomUUID();
     const viewDir = path.join(this.appDataDir, "views", viewId);
@@ -88,7 +107,7 @@ export class AppViewStore {
 
     let visibleResult = initialResult;
     let resultRef: string | undefined;
-    if (JSON.stringify(initialResult).length > MAX_INLINE_RESULT_BYTES) {
+    if (Buffer.byteLength(JSON.stringify(initialResult), "utf8") > MAX_INLINE_RESULT_BYTES) {
       await mkdir(viewDir, { recursive: true });
       const resultPath = path.join(viewDir, "result.json");
       await writeFile(resultPath, JSON.stringify(initialResult));
@@ -109,7 +128,10 @@ export class AppViewStore {
       displayMode: "inline",
       protocol: "mcp-apps/2026-01-26",
       arguments: input.arguments ?? {},
-      prefersBorder: true,
+      prefersBorder: input.prefersBorder ?? true,
+      ...(input.csp ? { csp: input.csp } : {}),
+      ...(input.capabilities ? { capabilities: input.capabilities } : {}),
+      ...(typeof input.toolTimeout === "number" ? { toolTimeout: input.toolTimeout } : {}),
       initialResult: visibleResult,
       ...(artifacts.length ? { artifacts } : {}),
       ...(resultRef ? { resultRef } : {}),

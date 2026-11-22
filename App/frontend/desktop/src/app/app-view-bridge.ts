@@ -118,8 +118,8 @@ export class AppViewBridge {
             protocolVersion: PROTOCOL_VERSION,
             hostInfo: { name: "Cuby", version: "0.0.0" },
             hostCapabilities: {
-              openLinks: {},
-              downloadFile: {},
+              ...(this.openLink ? { openLinks: {} } : {}),
+              ...(this.downloadFile ? { downloadFile: {} } : {}),
               serverTools: {},
               serverResources: {},
             },
@@ -133,6 +133,7 @@ export class AppViewBridge {
             viewId: this.view.viewId,
             tool: String(params.name ?? ""),
             arguments: params.arguments ?? {},
+            timeoutMs: (this.view.toolTimeout ?? 30) * 1000,
           });
           this.respond(message.id, result);
           return;
@@ -143,6 +144,7 @@ export class AppViewBridge {
             appId: this.view.appId,
             viewId: this.view.viewId,
             uri: String(params.uri ?? ""),
+            timeoutMs: (this.view.toolTimeout ?? 30) * 1000,
           });
           this.respond(message.id, result);
           return;

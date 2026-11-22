@@ -35,6 +35,16 @@
       window.parent.postMessage(message, "*");
     }
 
+    function applyHostStyles(context) {
+      const variables = context && context.styles && context.styles.variables;
+      if (!variables || typeof variables !== "object") return;
+      for (const [name, value] of Object.entries(variables)) {
+        if (typeof value === "string" && name.startsWith("--")) {
+          document.documentElement.style.setProperty(name, value);
+        }
+      }
+    }
+
     function request(method, params) {
       const id = nextId++;
       send({ jsonrpc: "2.0", id, method, params });
@@ -46,6 +56,7 @@
       if (!message || typeof message !== "object" || message.jsonrpc !== "2.0") return;
       if (message.id === 1 && message.result) {
         statusEl.textContent = "Connected";
+        applyHostStyles(message.result.hostContext);
         send({ jsonrpc: "2.0", method: "ui/notifications/initialized" });
         return;
       }
@@ -71,6 +82,7 @@
       if (message.method === "ui/notifications/host-context-changed") {
         const context = message.params || {};
         if (context.theme) document.documentElement.dataset.theme = context.theme;
+        applyHostStyles(context);
         return;
       }
     });

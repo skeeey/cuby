@@ -35,3 +35,42 @@ it("skips an app whose platform command is missing", async () => {
   expect(result.apps).toEqual([]);
   expect(result.skipped[0]).toMatchObject({ id: "demo" });
 });
+
+it("treats an explicitly empty CUBY_APPS as no apps", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "cuby-build-"));
+  const app = path.join(root, "apps", "demo");
+  mkdirSync(app, { recursive: true });
+  writeFileSync(path.join(app, "app.json"), JSON.stringify({
+    schemaVersion: 1, id: "demo", name: "Demo", version: "1.0.0",
+    engines: { cuby: ">=0.0.1" },
+    server: { transport: "stdio", command: "node" },
+    capabilities: { appToolCalls: [], appMessages: false }
+  }));
+  writeFileSync(path.join(root, "cuby.apps.json"), JSON.stringify({ schemaVersion: 1, apps: ["demo"] }));
+  const result = await buildApps({
+    rootDir: root,
+    outDir: path.join(root, "dist", "apps"),
+    selection: undefined,
+    env: { CUBY_APPS: "" },
+  });
+  expect(result.apps).toEqual([]);
+});
+
+it("skips an app whose directory id differs from the manifest id", async () => {
+  const root = mkdtempSync(path.join(tmpdir(), "cuby-build-"));
+  const app = path.join(root, "apps", "directory-name");
+  mkdirSync(app, { recursive: true });
+  writeFileSync(path.join(app, "app.json"), JSON.stringify({
+    schemaVersion: 1, id: "manifest-id", name: "Demo", version: "1.0.0",
+    engines: { cuby: ">=0.0.1" },
+    server: { transport: "stdio", command: "node" },
+    capabilities: { appToolCalls: [], appMessages: false }
+  }));
+  const result = await buildApps({
+    rootDir: root,
+    outDir: path.join(root, "dist", "apps"),
+    selection: ["directory-name"],
+  });
+  expect(result.apps).toEqual([]);
+  expect(result.skipped[0]?.reason).toContain("must match");
+});

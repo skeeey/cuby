@@ -20,9 +20,10 @@ const EXCLUDED_SUFFIXES = [".pyc"];
 
 function readSelection(rootDir, selection, env) {
   if (Array.isArray(selection)) return selection;
-  const fromEnv = env.CUBY_APPS;
-  if (typeof fromEnv === "string" && fromEnv.trim()) {
-    return fromEnv.split(",").map((value) => value.trim()).filter(Boolean);
+  if (Object.prototype.hasOwnProperty.call(env, "CUBY_APPS")) {
+    const value = env.CUBY_APPS;
+    if (typeof value !== "string") return [];
+    return value.split(",").map((entry) => entry.trim()).filter(Boolean);
   }
   const configPath = path.join(rootDir, "cuby.apps.json");
   if (existsSync(configPath)) {
@@ -128,6 +129,14 @@ export async function buildApps({ rootDir, outDir, selection, env = process.env 
         throw new Error("dev-only apps cannot be bundled");
       }
       const manifest = parseAppManifest(raw);
+      if (manifest.id !== app.id) {
+        throw new Error(`directory id ${app.id} must match manifest id ${manifest.id}`);
+      }
+      for (const resource of manifest.ui?.resources ?? []) {
+        if (!existsSync(path.join(app.dir, resource.entry))) {
+          throw new Error(`UI entry is missing: ${resource.entry}`);
+        }
+      }
       if (!commandForPlatform(manifest.server.command)) {
         throw new Error(`no server command for ${process.platform}-${process.arch}`);
       }
@@ -189,17 +198,26 @@ if (isMain) {
   } else {
     const outIndex = args.indexOf("--out");
     const appsIndex = args.indexOf("--apps");
-    const outDir = outIndex >= 0
-      ? path.resolve(args[outIndex + 1])
-      : path.join(process.cwd(), "dist", "apps");
-    const selection = appsIndex >= 0
-      ? args[appsIndex + 1].split(",").map((value) => value.trim()).filter(Boolean)
-      : undefined;
-    const result = await buildApps({ rootDir: process.cwd(), outDir, selection });
-    console.log(JSON.stringify(result, null, 2));
-    if (result.skipped.length) {
-      for (const skipped of result.skipped) {
-        console.error(`skipped ${skipped.id}: ${skipped.reason}`);
+    const invalidOut = outIndex >= 0 && (!args[outIndex + 1] || args[outIndex + 1].startsWith("--"));
+    const invalidApps = appsIndex >= 0 && (!args[appsIndex + 1] || args[appsIndex + 1].startsWith("--"));
+    if (invalidOut || invalidApps) {
+      console.error(invalidOut
+        ? "--out requires a directory path"
+        : "--apps requires a comma-separated app id list");
+      process.exitCode = 1;
+    } else {
+      const outDir = outIndex >= 0
+        ? path.resolve(args[outIndex + 1])
+        : path.join(process.cwd(), "dist", "apps");
+      const selection = appsIndex >= 0
+        ? args[appsIndex + 1].split(",").map((value) => value.trim()).filter(Boolean)
+        : undefined;
+      const result = await buildApps({ rootDir: process.cwd(), outDir, selection });
+      console.log(JSON.stringify(result, null, 2));
+      if (result.skipped.length) {
+        for (const skipped of result.skipped) {
+          console.error(`skipped ${skipped.id}: ${skipped.reason}`);
+        }
       }
     }
   }

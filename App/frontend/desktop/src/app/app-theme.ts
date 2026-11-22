@@ -12,6 +12,45 @@ const TOKEN_MAP: Record<string, string> = {
   "--shadow-md": "--shadow-card",
 };
 
+export type AppCsp = {
+  connectDomains?: string[];
+  resourceDomains?: string[];
+  frameDomains?: string[];
+  baseUriDomains?: string[];
+};
+
+function cspDomains(values: string[] | undefined): string {
+  return (values ?? []).filter((value) => typeof value === "string" && value.trim()).join(" ");
+}
+
+export function buildAppCsp(csp?: AppCsp): string {
+  const resource = cspDomains(csp?.resourceDomains);
+  const connect = cspDomains(csp?.connectDomains);
+  const frame = cspDomains(csp?.frameDomains);
+  const base = cspDomains(csp?.baseUriDomains);
+  return [
+    "default-src 'none'",
+    `script-src 'unsafe-inline'${resource ? ` ${resource}` : ""}`,
+    `style-src 'unsafe-inline'${resource ? ` ${resource}` : ""}`,
+    `img-src data:${resource ? ` ${resource}` : ""}`,
+    ...(resource ? [`font-src ${resource}`, `media-src ${resource}`] : []),
+    ...(connect ? [`connect-src ${connect}`] : []),
+    ...(frame ? [`frame-src ${frame}`] : []),
+    `base-uri ${base || "'none'"}`,
+    "object-src 'none'",
+    "form-action 'none'",
+  ].join("; ");
+}
+
+export function injectAppCsp(html: string, csp?: AppCsp): string {
+  const content = buildAppCsp(csp).replace(/"/g, "&quot;");
+  const meta = `<meta http-equiv="Content-Security-Policy" content="${content}">`;
+  if (/<head[^>]*>/i.test(html)) {
+    return html.replace(/<head[^>]*>/i, (match) => `${match}${meta}`);
+  }
+  return `${meta}${html}`;
+}
+
 export function detectCubyTheme(): "light" | "dark" {
   if (typeof document === "undefined") return "light";
   const root = document.documentElement;
@@ -20,6 +59,28 @@ export function detectCubyTheme(): "light" | "dark" {
 
 export function detectCubyLocale(): string {
   return typeof navigator !== "undefined" && navigator.language ? navigator.language : "en-US";
+}
+
+export function watchCubyTheme(callback: () => void): () => void {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return () => undefined;
+  }
+  const observer = typeof MutationObserver === "function"
+    ? new MutationObserver(() => callback())
+    : null;
+  observer?.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme", "class"],
+  });
+  const media = typeof window.matchMedia === "function"
+    ? window.matchMedia("(prefers-color-scheme: dark)")
+    : null;
+  const onChange = () => callback();
+  media?.addEventListener?.("change", onChange);
+  return () => {
+    observer?.disconnect();
+    media?.removeEventListener?.("change", onChange);
+  };
 }
 
 export function cubyHostContext(input: {

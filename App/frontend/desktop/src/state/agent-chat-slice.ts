@@ -129,6 +129,8 @@ export interface AgentChatMessage {
   stoppedByUser?: boolean;
   modelError?: MemmyAgentModelError;
   clientRequestId?: string;
+  appId?: string;
+  appControlled?: boolean;
   queueSteerPending?: boolean;
 }
 
@@ -2889,11 +2891,14 @@ function appendExternalUserMessage(
       ? event.content
       : "";
   const normalizedMedia = Array.isArray(event.media_urls) ? normalizeMedia(event.media_urls) : [];
+  const appId = typeof event.app_id === "string" && event.app_id.trim() ? event.app_id.trim() : undefined;
   const message: AgentChatMessage = {
     id: nextMessageId(state.messages, "user"),
     role: "user",
     content,
     ...(turnId ? { turnId } : {}),
+    ...(appId ? { appId } : {}),
+    ...(event.app_controlled === true ? { appControlled: true } : {}),
     ...(normalizedMedia.length ? { media: normalizedMedia } : {})
   };
   const messages = [...state.messages, message];
@@ -4521,6 +4526,11 @@ function normalizeThreadMessage(message: Record<string, unknown>, index: number)
         : undefined;
     const fileEdits = Array.isArray(message.fileEdits) ? normalizeFileEdits(message.fileEdits) : undefined;
     const modelError = normalizeModelError(message.modelError ?? message.model_error);
+    const appId = typeof message.appId === "string" && message.appId.trim()
+      ? message.appId.trim()
+      : typeof message.app_id === "string" && message.app_id.trim()
+        ? message.app_id.trim()
+        : undefined;
     const content = kind === "context_compaction"
       ? String(message.content ?? "") || contextCompactionFallbackText(compactionStatus)
       : String(message.content ?? "");
@@ -4530,6 +4540,8 @@ function normalizeThreadMessage(message: Record<string, unknown>, index: number)
       content,
       ...(turnId ? { turnId } : {}),
       ...(clientRequestId ? { clientRequestId } : {}),
+      ...(appId ? { appId } : {}),
+      ...(message.appControlled === true || message.app_controlled === true ? { appControlled: true } : {}),
       ...(kind ? { kind } : {}),
       ...(typeof message.reasoning === "string" ? { reasoning: message.reasoning } : {}),
       ...(typeof message.reasoningStreaming === "boolean" ? { reasoningStreaming: message.reasoningStreaming } : {}),
