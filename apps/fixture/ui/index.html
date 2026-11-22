@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Fixture app</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: var(--color-background-primary, #ffffff);
+      --fg: var(--color-text-primary, #1d1d1f);
+      --muted: var(--color-text-secondary, #6e6e73);
+      --accent: var(--color-ring-primary, #0a84ff);
+      font-family: var(--font-sans, system-ui, sans-serif);
+    }
+    body { margin: 0; padding: 16px; background: var(--bg); color: var(--fg); }
+    h1 { font-size: 16px; margin: 0 0 8px; }
+    p { margin: 0 0 8px; color: var(--muted); }
+    button { border: 1px solid var(--accent); color: var(--accent); background: transparent; border-radius: 8px; padding: 6px 10px; margin-right: 8px; cursor: pointer; }
+    pre { white-space: pre-wrap; word-break: break-word; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>Fixture app</h1>
+  <p id="status">Connecting…</p>
+  <pre id="output"></pre>
+  <button id="echo" type="button">Call echo</button>
+  <button id="message" type="button">Send message</button>
+  <script>
+    const statusEl = document.getElementById("status");
+    const outputEl = document.getElementById("output");
+    let nextId = 1;
+
+    function send(message) {
+      window.parent.postMessage(message, "*");
+    }
+
+    function request(method, params) {
+      const id = nextId++;
+      send({ jsonrpc: "2.0", id, method, params });
+      return id;
+    }
+
+    window.addEventListener("message", (event) => {
+      const message = event.data;
+      if (!message || typeof message !== "object" || message.jsonrpc !== "2.0") return;
+      if (message.id === 1 && message.result) {
+        statusEl.textContent = "Connected";
+        send({ jsonrpc: "2.0", method: "ui/notifications/initialized" });
+        return;
+      }
+      if (message.method === "ui/notifications/tool-input") {
+        outputEl.textContent = `input: ${JSON.stringify(message.params && message.params.arguments)}`;
+        return;
+      }
+      if (message.method === "ui/notifications/tool-result") {
+        const content = message.params && Array.isArray(message.params.content) ? message.params.content : [];
+        const text = content.map((block) => block.text || "").join("\n");
+        statusEl.textContent = text || "tool result received";
+        return;
+      }
+      if (message.id === 2) {
+        const content = message.result && Array.isArray(message.result.content) ? message.result.content : [];
+        outputEl.textContent = content.map((block) => block.text || "").join("\n");
+        return;
+      }
+      if (message.id === 3) {
+        outputEl.textContent = message.error ? `message error: ${message.error.message}` : "message sent";
+        return;
+      }
+      if (message.method === "ui/notifications/host-context-changed") {
+        const context = message.params || {};
+        if (context.theme) document.documentElement.dataset.theme = context.theme;
+        return;
+      }
+    });
+
+    document.getElementById("echo").addEventListener("click", () => {
+      request("tools/call", { name: "echo", arguments: { text: "from fixture app" } });
+    });
+
+    document.getElementById("message").addEventListener("click", () => {
+      request("ui/message", {
+        role: "user",
+        content: [{ type: "text", text: "hello from fixture app" }]
+      });
+    });
+
+    request("ui/initialize", {
+      protocolVersion: "2026-01-26",
+      appCapabilities: {},
+      appInfo: { name: "fixture", version: "0.0.1" }
+    });
+  </script>
+</body>
+</html>
