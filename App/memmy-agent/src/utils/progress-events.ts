@@ -141,6 +141,7 @@ export function buildToolEventStartPayload(toolCall: any): Record<string, any> {
     error: null,
     files: [],
     embeds: [],
+    app: null,
   };
 }
 
@@ -205,7 +206,9 @@ export function buildToolEventFinishPayloads(context: any): Array<Record<string,
       error: null,
       files: eventFiles,
       embeds,
+      app: null,
     };
+    if (event.app) payload.app = event.app;
     if (phase === "error")
       payload.error =
         typeof result === "string" && result.trim()
