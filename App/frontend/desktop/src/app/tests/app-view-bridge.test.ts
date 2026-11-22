@@ -39,7 +39,7 @@ describe("AppViewBridge", () => {
       source: (bridge as any).iframeWindow,
       data: { jsonrpc: "2.0", id: 2, method: "tools/call", params: { name: "read_consistency_page", arguments: { page: 1 } } }
     });
-    expect(callTool).toHaveBeenCalledWith({ viewId: "v1", tool: "read_consistency_page", arguments: { page: 1 } });
+    expect(callTool).toHaveBeenCalledWith({ appId: "demo", viewId: "v1", tool: "read_consistency_page", arguments: { page: 1 } });
     expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ id: 2, result: expect.anything() }), "*");
   });
 

@@ -2681,6 +2681,42 @@ describe("AgentThreadMessages", () => {
     expect(html).toContain("<table");
     expect(html).toContain("report.md");
   });
+
+  it("renders app views outside the collapsed activity cluster", () => {
+    const html = renderToString(
+      <I18nProvider language="zh-CN">
+        <AgentThreadMessages
+          chatScopeKey="chat-app-view"
+          messages={[
+            { id: "app-user", role: "user", content: "hello" },
+            {
+              id: "app-trace",
+              role: "assistant",
+              kind: "trace",
+              content: "",
+              toolEvents: [{
+                phase: "end",
+                call_id: "call-app",
+                name: "mcp_fixture_hello",
+                app: {
+                  viewId: "view-app",
+                  appId: "fixture",
+                  resourceUri: "ui://fixture/hello",
+                  toolName: "hello",
+                  title: "Fixture",
+                  displayMode: "inline",
+                  protocol: "mcp-apps/2026-01-26"
+                }
+              }]
+            }
+          ]}
+        />
+      </I18nProvider>
+    );
+
+    expect(html).toContain("app 宿主不可用");
+    expect(html.indexOf("agent-activity-cluster__toggle")).toBeLessThan(html.indexOf("app 宿主不可用"));
+  });
 });
 
 function fileArtifact(path: string, name = "deck.pptx", mediaUrl?: string) {

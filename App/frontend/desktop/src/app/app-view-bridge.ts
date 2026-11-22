@@ -129,6 +129,7 @@ export class AppViewBridge {
         case "tools/call": {
           const params = message.params ?? {};
           const result = await this.transport.callTool({
+            appId: this.view.appId,
             viewId: this.view.viewId,
             tool: String(params.name ?? ""),
             arguments: params.arguments ?? {},
@@ -139,6 +140,7 @@ export class AppViewBridge {
         case "resources/read": {
           const params = message.params ?? {};
           const result = await this.transport.readResource({
+            appId: this.view.appId,
             viewId: this.view.viewId,
             uri: String(params.uri ?? ""),
           });
@@ -148,6 +150,7 @@ export class AppViewBridge {
         case "ui/message": {
           const params = message.params ?? {};
           const result = await this.transport.sendMessage({
+            appId: this.view.appId,
             viewId: this.view.viewId,
             content: Array.isArray(params.content) ? params.content : [],
           });
