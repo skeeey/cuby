@@ -185,6 +185,8 @@ current platform are skipped; set `CUBY_APPS_STRICT=1` to fail instead.
 - Runtime installation, signing, and updates
 - OS-level sandboxing of app servers
 - Skills, home/settings entry points, and a shared UI kit
+- Manifest `dev` overrides (use `CUBY_DEV_APPS` to point at source directories)
+- A visible app-status panel (failures are reported in agent logs for now)
 - Python/Node runtime bundling inside app packages
 - electron-builder packaging of `dist/apps`
 - The FinanceBuddy migration
