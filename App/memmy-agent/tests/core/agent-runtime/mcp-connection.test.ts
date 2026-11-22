@@ -12,6 +12,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import { AgentLoop } from "../../../src/core/agent-runtime/loop.js";
 import {
   sanitizeName,
+  connectMcpServer,
   connectMcpServers,
   reloadServers,
   requestMcpReload,
@@ -600,5 +601,20 @@ describe("MCP connection helpers", () => {
     await task;
 
     expect(connect).toHaveBeenCalledOnce();
+  });
+});
+
+describe("connectMcpServer", () => {
+  it("returns a live session, tools and resources for one server", async () => {
+    const connection = await connectMcpServer("fixture", {
+      transport: "stdio",
+      command: process.execPath,
+      args: [path.resolve("tests/fixtures/mcp-echo-server.mjs")]
+    });
+    expect(connection.name).toBe("fixture");
+    expect(connection.tools.map((tool) => tool.name)).toContain("echo");
+    expect(connection.resources.map((resource) => resource.uri)).toContain("ui://fixture/echo");
+    expect(typeof connection.session.callTool).toBe("function");
+    await connection.close();
   });
 });
