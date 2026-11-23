@@ -8716,7 +8716,7 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack
   flex-direction: column;
 }
 
-.legal-document-modal__body {
+.modal-body.legal-document-modal__body {
   min-height: 0;
   overflow-y: auto;
   padding: 0 32px 32px;
@@ -8782,7 +8782,7 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack
     width: calc(100vw - 32px);
   }
 
-  .legal-document-modal__body {
+  .modal-body.legal-document-modal__body {
     padding: 0 20px 24px;
   }
 }
