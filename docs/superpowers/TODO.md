@@ -15,5 +15,6 @@ language. The remaining work to remove Memmy infrastructure dependencies:
   `/api/memmy/desktop/latest` and the `platformType` keys to a Cuby namespace,
   and plan the transition for already-installed clients (keep publishing under
   the old keys, or force an update with `minSupportedVersion`).
-- [ ] **Legal and docs** — legal agreement pages and Memory documentation still
-  link to `memmy.cn` / `memmy.bot`. Point them at the Cuby domains.
+- [ ] **Docs** — Memory documentation still links to `memmy.cn` / `memmy.bot`.
+  Point it at the Cuby domains. The service and data agreements now ship as
+  bundled local Markdown and no longer depend on remote URLs.

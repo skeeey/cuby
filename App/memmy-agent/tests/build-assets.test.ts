@@ -8,8 +8,6 @@ const npmBin = process.platform === "win32" ? "npm.cmd" : "npm";
 const root = path.resolve(import.meta.dirname, "..");
 const buildEnv = {
   ...process.env,
-  CUBY_LEGAL_CN_BASE_URL: "https://memmy.cn",
-  CUBY_LEGAL_INTL_BASE_URL: "https://memmy.bot",
 };
 
 describe("build runtime assets", () => {

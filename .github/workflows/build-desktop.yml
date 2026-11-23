@@ -111,8 +111,6 @@ jobs:
     env:
       # The values the packaging chain reads from the repo-root .env. It refuses
       # to run without them, and they are public endpoint origins, not secrets.
-      CUBY_LEGAL_CN_BASE_URL: https://memmy.cn
-      CUBY_LEGAL_INTL_BASE_URL: https://memmy.bot
       CUBY_CLOUD_SERVICE: https://api.memmy.cn
       # package-win-local.sh defaults this to cn, so a developer machine and CI
       # have been downloading their packaging binaries from different places.
@@ -189,8 +187,6 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
-      CUBY_LEGAL_CN_BASE_URL: https://memmy.cn
-      CUBY_LEGAL_INTL_BASE_URL: https://memmy.bot
       CUBY_CLOUD_SERVICE: https://api.memmy.cn
       CUBY_PACKAGE_MIRROR: ${{ needs.resolve.outputs.mirror }}
     steps:

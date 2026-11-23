@@ -41,7 +41,6 @@ describe("packaged desktop runtime configuration", () => {
     writeFileSync(envFile, [
       "CUBY_CLOUD_SERVICE=https://manifest.example.test/",
       "CUBY_PRIVATE_TOKEN=must-not-be-packaged",
-      "CUBY_LEGAL_CN_BASE_URL=https://legal.example.test",
     ].join("\n"));
 
     await writeDesktopEditionManifest({
@@ -63,7 +62,6 @@ describe("packaged desktop runtime configuration", () => {
     });
     expect(manifestText).not.toContain("CUBY_PRIVATE_TOKEN");
     expect(manifestText).not.toContain("must-not-be-packaged");
-    expect(manifestText).not.toContain("CUBY_LEGAL_CN_BASE_URL");
   });
 
   it("uses an explicit environment origin before the root env file", async () => {
