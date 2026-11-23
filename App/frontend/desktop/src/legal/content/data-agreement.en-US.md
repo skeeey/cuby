@@ -88,7 +88,7 @@ This Data Agreement explains how the Cuby desktop client ("Cuby") collects, uses
 
 7.2 You may view, manage, export, delete, or request deletion of memory data in Cuby.
 
-7.3 You may delete locally stored conversations, configuration, and credential data, or clear local data by uninstalling the application.
+7.3 You may delete locally stored conversations, configuration, and credential data using the delete or clear controls provided in Cuby, or by manually removing the data from your device. Uninstalling the application may not delete locally stored data.
 
 7.4 You may access and correct your account information in accordance with CubeRouter platform rules.
 
@@ -106,7 +106,7 @@ This Data Agreement explains how the Cuby desktop client ("Cuby") collects, uses
 
 ## 9. Retention
 
-9.1 Local data remains on your device until you delete it or uninstall the application.
+9.1 Local data remains on your device until you delete it using the delete or clear controls provided in Cuby, or manually remove it from your device.
 
 9.2 Cloud data (including CubeRouter account data and data processed by cloud service providers engaged by us) is retained for the shortest period necessary to achieve the purposes described in this Agreement, unless otherwise required by law or necessary for handling disputes.
 
