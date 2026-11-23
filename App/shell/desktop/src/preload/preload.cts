@@ -8,6 +8,8 @@ type DesktopUpdateInstallResult = import("@memmy/desktop-interface").DesktopUpda
 type DesktopMenuBarIconResult = import("@memmy/desktop-interface").DesktopMenuBarIconResult;
 type DesktopImageActionRequest = import("@memmy/desktop-interface").DesktopImageActionRequest;
 type DesktopImageSaveResult = import("@memmy/desktop-interface").DesktopImageSaveResult;
+type DesktopAppFileSaveRequest = import("@memmy/desktop-interface").DesktopAppFileSaveRequest;
+type DesktopAppFileSaveResult = import("@memmy/desktop-interface").DesktopAppFileSaveResult;
 type DesktopMemoryServiceRestartResult = import("@memmy/desktop-interface").DesktopMemoryServiceRestartResult;
 type DesktopProjectDirectorySelection = import("@memmy/desktop-interface").DesktopProjectDirectorySelection;
 type MicrophoneAccessStatus = import("@memmy/desktop-interface").MicrophoneAccessStatus;
@@ -39,6 +41,7 @@ interface MemmyPreloadApi {
   openMailto(mailtoUrl: string): Promise<void>;
   copyImageToClipboard(request: DesktopImageActionRequest): Promise<void>;
   saveImage(request: DesktopImageActionRequest): Promise<DesktopImageSaveResult>;
+  saveAppFile(request: DesktopAppFileSaveRequest): Promise<DesktopAppFileSaveResult>;
   exportMemoryDatabase(): Promise<unknown>;
   installCliTools(): Promise<unknown>;
   restartMemoryService(): Promise<DesktopMemoryServiceRestartResult>;
@@ -183,6 +186,10 @@ const memmyPreloadApi: MemmyPreloadApi = {
 
   async saveImage(request: DesktopImageActionRequest): Promise<DesktopImageSaveResult> {
     return ipcRenderer.invoke("memmy:save-image", request);
+  },
+
+  async saveAppFile(request: DesktopAppFileSaveRequest): Promise<DesktopAppFileSaveResult> {
+    return ipcRenderer.invoke("memmy:saveAppFile", request);
   },
 
   async notifyTaskDone(payload: { title: string; body: string; silent: boolean }): Promise<void> {

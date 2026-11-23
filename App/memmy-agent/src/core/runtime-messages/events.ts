@@ -2,6 +2,7 @@ export const OUTBOUND_META_AGENT_UI = "agentUi";
 export const INBOUND_META_RUNTIME_CONTROL = "runtimeControl";
 export const RUNTIME_CONTROL_ACK = "ack";
 export const RUNTIME_CONTROL_MCP_RELOAD = "mcpReload";
+export const RUNTIME_CONTROL_APP_BRIDGE = "appBridge";
 
 type TimestampInput = Date | string | number;
 

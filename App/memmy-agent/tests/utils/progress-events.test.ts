@@ -91,3 +91,29 @@ describe("tool progress result sanitization", () => {
     expect(original[0].image_url.url).toContain("base64,abc");
   });
 });
+
+describe("app view progress", () => {
+  it("preserves an app view in the finish payload", () => {
+    const app = {
+      viewId: "v1",
+      appId: "demo",
+      resourceUri: "ui://demo/x",
+      toolName: "hello",
+      title: "Hello",
+      displayMode: "inline",
+      protocol: "mcp-apps/2026-01-26",
+      initialResult: { content: [] },
+    };
+    const [payload] = buildToolEventFinishPayloads({
+      toolCalls: [{ id: "c1", name: "mcp_demo_hello", arguments: {} }],
+      toolResults: ["ok"],
+      toolEvents: [{ status: "ok", app }],
+    });
+    expect(payload.app).toEqual(app);
+  });
+
+  it("does not put an app view in the start payload", () => {
+    const start = buildToolEventStartPayload({ id: "c1", name: "mcp_demo_hello", arguments: {} });
+    expect(start.app).toBeNull();
+  });
+});

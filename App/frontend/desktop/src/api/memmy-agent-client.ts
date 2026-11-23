@@ -718,6 +718,28 @@ export type MemmyAgentQueueSteerResult = {
   turnId: string | null;
 };
 
+export type MemmyAgentAppBridgeMethod =
+  | "tools/call"
+  | "resources/read"
+  | "ui/message"
+  | "ui/update-model-context"
+  | "view/result";
+
+export type MemmyAgentAppBridgeRequest = {
+  requestId: string;
+  chatId: string;
+  sessionKey?: string;
+  appId: string;
+  viewId: string;
+  method: MemmyAgentAppBridgeMethod;
+  params: Record<string, unknown>;
+  timeoutMs?: number;
+};
+
+export type MemmyAgentAppBridgeResult =
+  | { ok: true; result?: unknown }
+  | { ok: false; error: string };
+
 export type WebuiSessionTarget =
   | { kind: "standalone" }
   | { kind: "project"; projectId: string };
@@ -910,6 +932,10 @@ export interface MemmyAgentWebSocketConnection {
     expectedGeneration: number,
     timeoutMs?: number
   ): Promise<AgentGoalControlResult>;
+  requestAppBridge(
+    request: MemmyAgentAppBridgeRequest,
+    timeoutMs?: number
+  ): Promise<MemmyAgentAppBridgeResult>;
   stop(chatId: string): void;
   restart(chatId: string): void;
   status(chatId: string): void;
@@ -1571,6 +1597,7 @@ const MESSAGE_ACK_TIMEOUT_MS = 10_000;
 const MESSAGE_RESULT_TIMEOUT_MS = 30_000;
 const MAX_AUTOMATIC_MESSAGE_CONFIRMATIONS = 3;
 const GOAL_CONTROL_TIMEOUT_MS = 15_000;
+const APP_BRIDGE_TIMEOUT_MS = 30_000;
 const GOAL_CONTROL_HYDRATE_TIMEOUT_MS = 5_000;
 const QUEUE_REMOVE_TIMEOUT_MS = 15_000;
 const QUEUE_STEER_TIMEOUT_MS = 15_000;
@@ -1641,6 +1668,12 @@ interface PendingQueueSteer {
   timer: ReturnType<typeof setTimeout>;
 }
 
+interface PendingAppBridge {
+  resolve: (result: MemmyAgentAppBridgeResult) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 interface PendingInitialReady {
   resolve: () => void;
   reject: (error: Error) => void;
@@ -1658,6 +1691,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
   private readonly pendingQueueRemovals = new Map<string, PendingQueueRemoval>();
   private readonly pendingQueueSteers = new Map<string, PendingQueueSteer>();
   private readonly pendingGoalControls = new Map<string, PendingGoalControl>();
+  private readonly pendingAppBridges = new Map<string, PendingAppBridge>();
   private connectionGeneration = 0;
   private transportOpenGeneration: number | null = null;
   private readyGeneration: number | null = null;
@@ -1997,6 +2031,49 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     return promise;
   }
 
+  requestAppBridge(
+    request: MemmyAgentAppBridgeRequest,
+    timeoutMs = APP_BRIDGE_TIMEOUT_MS
+  ): Promise<MemmyAgentAppBridgeResult> {
+    const generation = this.readyGeneration;
+    if (generation === null) {
+      return Promise.reject(new Error("Agent gateway is not ready"));
+    }
+    const effectiveTimeout = request.timeoutMs && request.timeoutMs > 0
+      ? Math.min(Math.max(request.timeoutMs, 30_000), 300_000)
+      : timeoutMs;
+    return new Promise<MemmyAgentAppBridgeResult>((resolve, reject) => {
+      const pending: PendingAppBridge = {
+        resolve,
+        reject,
+        timer: setTimeout(() => {
+          if (this.pendingAppBridges.get(request.requestId) === pending) {
+            this.pendingAppBridges.delete(request.requestId);
+          }
+          resolve({ ok: false, error: "app bridge request timed out" });
+        }, effectiveTimeout),
+      };
+      this.pendingAppBridges.set(request.requestId, pending);
+      try {
+        this.sendOrdinaryFrame({
+          type: "app_bridge",
+          request_id: request.requestId,
+          chat_id: request.chatId,
+          ...(request.sessionKey ? { session_key: request.sessionKey } : {}),
+          app_id: request.appId,
+          view_id: request.viewId,
+          method: request.method,
+          params: request.params,
+          timeout_ms: effectiveTimeout,
+        }, generation);
+      } catch (error) {
+        this.pendingAppBridges.delete(request.requestId);
+        clearTimeout(pending.timer);
+        reject(asError(error, "Unable to send app bridge request"));
+      }
+    });
+  }
+
   stop(chatId: string): void {
     if (!chatId) {
       return;
@@ -2163,6 +2240,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     this.rejectPendingQueueRemovals(new Error("queue removal cancelled"));
     this.rejectPendingQueueSteers(new Error("queue steer cancelled"));
     this.rejectPendingGoalControls(new Error("Goal control cancelled"));
+    this.rejectPendingAppBridges(new Error("app bridge cancelled"));
     this.rejectInitialReady(new Error("Agent gateway connection cancelled"));
     this.clearReadyHandshakeTimer();
     if (this.reconnectTimer) {
@@ -2264,6 +2342,8 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
       this.resolvePendingQueueRemoval(normalized);
     } else if (normalized.event === "queue_steer_result") {
       this.resolvePendingQueueSteer(normalized);
+    } else if (normalized.event === "app_bridge_result") {
+      this.resolvePendingAppBridge(normalized);
     }
 
     if (normalized.event === "attached") {
@@ -2355,6 +2435,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     this.rejectPendingRunStatusSnapshots(new Error("run status snapshot failed because websocket closed"), generation);
     this.rejectPendingQueueRemovals(new Error("queue removal failed because websocket closed"));
     this.rejectPendingQueueSteers(new Error("queue steer failed because websocket closed"));
+    this.rejectPendingAppBridges(new Error("app bridge failed because websocket closed"));
     if (this.intentionallyClosed) {
       return;
     }
@@ -2871,6 +2952,31 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
       clearTimeout(pending.timer);
       pending.reject(error);
     }
+  }
+
+  private rejectPendingAppBridges(error: Error): void {
+    for (const [requestId, pending] of this.pendingAppBridges) {
+      this.pendingAppBridges.delete(requestId);
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
+  }
+
+  private resolvePendingAppBridge(event: MemmyAgentWsEvent): void {
+    const requestId = typeof event.request_id === "string" ? event.request_id : null;
+    if (!requestId) return;
+    const pending = this.pendingAppBridges.get(requestId);
+    if (!pending) return;
+    this.pendingAppBridges.delete(requestId);
+    clearTimeout(pending.timer);
+    if (event.ok === false) {
+      pending.resolve({
+        ok: false,
+        error: typeof event.error === "string" ? event.error : "app bridge request failed",
+      });
+      return;
+    }
+    pending.resolve({ ok: true, result: event.result });
   }
 
   private resolvePendingQueueSteer(event: MemmyAgentWsEvent): void {

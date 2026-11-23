@@ -11,6 +11,7 @@ import type { ActualModelContext } from "@memmy/local-api-contracts";
 import { CONTEXT_SAFETY_BUFFER_TOKENS } from "../../token-budget.js";
 import { ToolRegistry } from "./tools/registry.js";
 import type { FileMutationOutcome, ToolExecutionContext } from "./tools/base.js";
+import type { AppViewEvent } from "../../apps/view.js";
 import { AgentHook, AgentHookContext } from "./hook.js";
 import {
   buildFinalizationRetryMessage,
@@ -1096,6 +1097,7 @@ export class AgentRunner {
     try {
       let raw: any;
       const fileMutationOutcomes = new Map<string, FileMutationOutcome>();
+      let appView: AppViewEvent | null = null;
       await spec.hook?.beforeToolCall(new AgentHookContext({ spec, toolCalls: [call] }), call);
       const toolContext: ToolExecutionContext = {
         abortSignal: spec.abortSignal ?? null,
@@ -1108,6 +1110,7 @@ export class AgentRunner {
             changed: outcome.changed,
           });
         },
+        reportAppView: (view) => { appView = view; },
       };
       const run = tool && typeof tool.execute === "function"
         ? tool.execute(params, toolContext)
@@ -1134,6 +1137,7 @@ export class AgentRunner {
       } else {
         const detail = toolEventDetail(raw);
         event = { name: call.name, status: "ok", detail };
+        if (appView) event.app = appView;
       }
       if (spec.abortSignal?.aborted) throw createAbortError();
       if (progressCallback && fileEditTrackers.length) {

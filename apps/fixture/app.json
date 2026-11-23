@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "id": "fixture",
+  "name": "Fixture",
+  "version": "0.0.1",
+  "engines": { "cuby": ">=0.0.1" },
+  "server": {
+    "scope": "session",
+    "transport": "stdio",
+    "command": "node",
+    "args": ["server.mjs"],
+    "cwd": "${APP_ROOT}"
+  },
+  "ui": {
+    "resources": [
+      { "uri": "ui://fixture/hello", "entry": "ui/index.html" },
+      { "uri": "ui://fixture/extra", "entry": "ui/index.html" }
+    ],
+    "defaultResourceUri": "ui://fixture/hello",
+    "prefersBorder": true,
+    "csp": {}
+  },
+  "capabilities": {
+    "appToolCalls": ["echo"],
+    "appMessages": "allow",
+    "workspace": "none"
+  },
+  "build": {
+    "include": ["app.json", "server.mjs", "ui/**"]
+  }
+}

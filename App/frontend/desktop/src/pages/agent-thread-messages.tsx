@@ -50,11 +50,14 @@ import type { MemoryRuntimeClient } from "../api/memory-runtime-client.js";
 import {
   formatToolCallTrace,
   summarizeToolCall,
+  type AgentAppView,
   type AgentFileEdit,
   type AgentToolProgressEvent,
   type ToolTraceSummary,
   type ToolTraceCategory,
 } from "../state/agent-tool-traces.js";
+import { AppViewHost } from "../app/app-view-host.js";
+import type { AppBridgeTransport } from "../app/app-view-types.js";
 import { AgentAttachmentCard, splitAgentAttachmentName } from "./agent-file-attachment-chip.js";
 import { ErrorNoticeDetail } from "./error-notice-detail.js";
 import {
@@ -77,6 +80,43 @@ interface AgentThreadMessagesProps {
   isSending?: boolean;
   sanitizePlatformApiErrors?: boolean;
   memoryRuntimeClient?: Pick<MemoryRuntimeClient, "recallEvidence" | "deleteMemory"> | null;
+  appBridgeClient?: AppBridgeTransport | null;
+  chatId?: string | null;
+}
+
+function AppViewList(props: {
+  messages: AgentChatMessage[];
+  client?: AppBridgeTransport | null;
+  chatId: string;
+}) {
+  const { t } = useTranslation();
+  const views = useMemo(() => {
+    const byId = new Map<string, AgentAppView>();
+    for (const message of props.messages) {
+      for (const event of message.toolEvents ?? []) {
+        if (event.phase === "end" && event.app) {
+          byId.set(event.app.viewId, event.app);
+        }
+      }
+    }
+    return [...byId.values()];
+  }, [props.messages]);
+
+  if (!views.length) return null;
+  if (!props.client) {
+    return (
+      <div className="cuby-app-view cuby-app-view--unavailable text-[12px] text-text-ink/45">
+        {t("app.view.hostUnavailable")}
+      </div>
+    );
+  }
+  return (
+    <>
+      {views.map((view) => (
+        <AppViewHost key={view.viewId} view={view} chatId={props.chatId} client={props.client!} />
+      ))}
+    </>
+  );
 }
 
 export type AgentDisplayUnit =
@@ -205,6 +245,11 @@ export const AgentThreadMessages = memo(function AgentThreadMessages(props: Agen
                 onToggle={() => setManualOpenByActivityKey((current) => ({ ...current, [unit.activityKey]: !open }))}
                 artifactClient={props.artifactClient}
               />
+              <AppViewList
+                messages={unit.messages}
+                client={props.appBridgeClient}
+                chatId={props.chatId ?? props.chatScopeKey}
+              />
               {unit.messages.some((message) => message.id === props.afterMessageId) ? props.afterMessageContent : null}
             </Fragment>
           );
@@ -224,6 +269,11 @@ export const AgentThreadMessages = memo(function AgentThreadMessages(props: Agen
               sanitizePlatformApiErrors={props.sanitizePlatformApiErrors === true}
               memoryRuntimeClient={props.memoryRuntimeClient}
               recallEvidenceTurnId={recallEvidenceAnchors.get(index)}
+            />
+            <AppViewList
+              messages={[unit.message]}
+              client={props.appBridgeClient}
+              chatId={props.chatId ?? props.chatScopeKey}
             />
             {unit.message.id === props.afterMessageId ? props.afterMessageContent : null}
           </Fragment>
@@ -247,7 +297,9 @@ function areAgentThreadMessagesPropsEqual(previous: AgentThreadMessagesProps, ne
     && previous.isSending === next.isSending
     && previous.retryWaitStatus === next.retryWaitStatus
     && previous.sanitizePlatformApiErrors === next.sanitizePlatformApiErrors
-    && previous.memoryRuntimeClient === next.memoryRuntimeClient;
+    && previous.memoryRuntimeClient === next.memoryRuntimeClient
+    && previous.appBridgeClient === next.appBridgeClient
+    && previous.chatId === next.chatId;
 }
 
 export function buildAgentDisplayUnits(messages: AgentChatMessage[], options: { chatScopeKey: string; retryWaitStatus?: AgentRetryWaitStatus | null }): AgentDisplayUnit[] {
@@ -452,6 +504,14 @@ const SingleMessage = memo(function SingleMessage(props: SingleMessageProps) {
     return (
       <div className="agent-user-turn flex min-w-0 justify-end">
         <div className="flex min-w-0 max-w-[75%] flex-col items-end gap-2 w-full">
+          {message.appId ? (
+            <span
+              className="agent-user-turn__app-source text-[11px] text-text-ink/45"
+              data-app-id={message.appId}
+            >
+              app · {message.appId}
+            </span>
+          ) : null}
           {message.media?.length ? (
             <UserMediaPreviewGrid media={message.media} artifactClient={props.artifactClient} />
           ) : null}

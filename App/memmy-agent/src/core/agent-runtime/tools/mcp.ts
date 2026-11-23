@@ -21,6 +21,7 @@ import { probeNativePermissions, guideNativePermissions } from "../../../tools/c
 import { stopOwnedNativeAgent } from "../../../tools/computer-use/native-agent-lifecycle.js";
 import { ToolRegistry } from "./registry.js";
 import { storeToolImageArtifact } from "../../../utils/artifacts.js";
+import { readUiResourceUri, type AppViewCapabilities, type AppViewCsp, type AppViewStore } from "../../../apps/view.js";
 import { isManagedOcuConfig, managedOcuEnvironment, openComputerUseEnvironment, resolveOpenComputerUseCommand } from "../../../tools/computer-use/open-computer-use-binary.js";
 
 import { computerUsePermissionError } from "../../../tools/computer-use/mac-permission-settings.js";
@@ -446,8 +447,25 @@ export class MCPToolWrapper extends Tool {
   private toolDescription: string;
   private toolParameters: Record<string, any>;
   private toolTimeout: number;
+  private readonly uiResourceUri: string | null;
 
-  constructor(session: any, serverName: string, toolDef: any, toolTimeout = 30, private readonly permissionPreflight?: MacPermissionPreflight, private readonly managed?: ManagedOcuSession) {
+  constructor(
+    session: any,
+    serverName: string,
+    toolDef: any,
+    toolTimeout = 30,
+    private readonly permissionPreflight?: MacPermissionPreflight,
+    private readonly managed?: ManagedOcuSession,
+    private readonly appView?: {
+      appId: string;
+      store: AppViewStore;
+      prefersBorder?: boolean;
+      csp?: AppViewCsp;
+      capabilities?: AppViewCapabilities;
+      toolTimeout?: number;
+    },
+    private readonly resolveSession?: (context: RequestContext | null) => Promise<any>,
+  ) {
     super();
     this.session = session;
     this.serverName = serverName;
@@ -456,6 +474,7 @@ export class MCPToolWrapper extends Tool {
     this.toolDescription = toolDef.description || toolDef.name;
     this.toolParameters = normalizeSchemaForOpenAI(toolDef.inputSchema ?? { type: "object", properties: {} });
     this.toolTimeout = toolTimeout;
+    this.uiResourceUri = readUiResourceUri(toolDef._meta);
   }
 
   get exclusive(): boolean { return Boolean(this.managed || this.permissionPreflight); }
@@ -488,6 +507,7 @@ export class MCPToolWrapper extends Tool {
         if (permission) {
           context?.stopTurn?.(ocuPermissionMessage({ state: 'missing', permission }));
         }
+        await this.reportView(result, params, context);
         return convertMcpToolContent(result, 'auto');
       } catch (error) {
         if (error instanceof OcuUncertain) {
@@ -515,14 +535,18 @@ export class MCPToolWrapper extends Tool {
     if (context?.abortSignal?.aborted) return "(MCP tool call was cancelled)";
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
+        const session = this.resolveSession
+          ? await this.resolveSession(this.requestContext.get())
+          : this.session;
         const result: any = await timeoutPromise(
-          this.session.callTool(this.originalName, params, this.toolTimeout),
+          session.callTool(this.originalName, params, this.toolTimeout),
           this.toolTimeout,
           "timeout",
         );
         const permission = computerUsePermissionError(this.serverName, result);
         if (permission) this.permissionPreflight?.deny(this.requestContext.get(), permission);
         if (permission && this.permissionPreflight) context?.stopTurn?.(ocuPermissionMessage({ state: 'missing', permission }));
+        await this.reportView(result, params, context);
         return convertMcpToolContent(result, "auto");
       } catch (error) {
         if (this.permissionPreflight) {
@@ -538,6 +562,28 @@ export class MCPToolWrapper extends Tool {
       }
     }
     return "(MCP tool call failed)";
+  }
+
+  private async reportView(
+    result: any,
+    params: Record<string, any>,
+    context?: ToolExecutionContext,
+  ): Promise<void> {
+    if (!this.uiResourceUri || !this.appView || !context?.reportAppView) return;
+    if (result?.isError === true) return;
+    context.reportAppView(await this.appView.store.create({
+      appId: this.appView.appId,
+      resourceUri: this.uiResourceUri,
+      toolName: this.originalName,
+      title: this.toolDescription,
+      toolCallId: context.callId ?? undefined,
+      arguments: params,
+      result,
+      prefersBorder: this.appView.prefersBorder,
+      csp: this.appView.csp,
+      capabilities: this.appView.capabilities,
+      toolTimeout: this.appView.toolTimeout ?? this.toolTimeout,
+    }));
   }
 }
 
@@ -700,13 +746,120 @@ function cfgValue(cfg: any, ...names: string[]): any {
   return undefined;
 }
 
+export type McpServerConnection = {
+  name: string;
+  session: any;
+  tools: any[];
+  resources: any[];
+  prompts: any[];
+  managed?: ManagedOcuSession;
+  close(): Promise<void>;
+};
+
+export async function connectMcpServer(name: string, cfg: any): Promise<McpServerConnection> {
+  const runtime = await loadRuntime();
+  const closers: Array<() => Promise<void>> = [];
+  let managed: ManagedOcuSession | undefined;
+  try {
+    let transport = cfgValue(cfg, "type", "transport");
+    const command = cfgValue(cfg, "command");
+    const url = cfgValue(cfg, "url");
+    if (!transport) transport = command ? "stdio" : url?.replace(/\/+$/g, "").endsWith("/sse") ? "sse" : "streamableHttp";
+    let read: any;
+    let write: any;
+    if (transport === "stdio") {
+      const [normalizedCommand, args, configuredEnv] = normalizeWindowsStdioCommand(
+        resolveOpenComputerUseCommand(command),
+        cfgValue(cfg, "args") ?? [],
+        openComputerUseEnvironment(command, cfgValue(cfg, "env") ?? null),
+        cfgValue(cfg, "platform"),
+      );
+      const managedConfig = isManagedOcuConfig(name, cfg);
+      const env = managedConfig ? managedOcuEnvironment(normalizedCommand, configuredEnv) : configuredEnv;
+      const params = new runtime.StdioServerParameters({
+        command: normalizedCommand,
+        args,
+        env,
+        cwd: cfgValue(cfg, "cwd") ?? null,
+      });
+      if (managedConfig) {
+        const desktop = process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1';
+        const helperApp = path.dirname(path.dirname(path.dirname(normalizedCommand)));
+        managed = new ManagedOcuSession(async () => {
+          const owned: Array<() => Promise<void>> = [];
+          try {
+            const [input, output] = await enterMaybe(runtime.stdioClient(params), owned);
+            const candidate = new runtime.ClientSession(input, output);
+            const live = typeof candidate.enter === 'function' ? await enterMaybe(candidate, owned) : candidate;
+            const close = async () => { for (const fn of owned.splice(0).reverse()) await fn().catch(() => undefined); };
+            await timeoutPromise(live.initialize(), 15, 'Computer Use initialization timed out');
+            return { session: live, close };
+          } catch (error) {
+            for (const fn of owned.reverse()) await fn().catch(() => undefined);
+            throw error;
+          }
+        }, desktop ? probeNativePermissions : nativePermissionDoctor({ command: normalizedCommand, args, env, cwd: cfgValue(cfg, 'cwd') ?? null }),
+        desktop ? (status, signal, check, canContinue) => guideNativePermissions(status, helperApp, signal, check, canContinue) : undefined,
+        desktop ? () => stopOwnedNativeAgent(normalizedCommand, env!.OPEN_COMPUTER_USE_AGENT_SOCKET_NAMESPACE) : undefined);
+        closers.push(() => managed!.close());
+      } else {
+        [read, write] = await enterMaybe(runtime.stdioClient(params), closers);
+      }
+    } else if (transport === "sse" || transport === "streamableHttp") {
+      if (!url || !(await probeHttpUrl(url))) throw new Error(`MCP server '${name}' is unreachable`);
+      if (transport === "sse") {
+        [read, write] = await enterMaybe(runtime.sseClient(url, { headers: cfgValue(cfg, "headers") ?? null }), closers);
+      } else {
+        const entered = await enterMaybe(runtime.streamableHttpClient(url, { headers: cfgValue(cfg, "headers") ?? null }), closers);
+        [read, write] = entered;
+      }
+    } else {
+      throw new Error(`MCP server '${name}' uses an unsupported transport`);
+    }
+
+    const session = managed ?? new runtime.ClientSession(read, write);
+    const liveSession = typeof session.enter === "function" ? await enterMaybe(session, closers) : session;
+    const discovered = await timeoutPromise((async () => {
+      await liveSession.initialize?.();
+      const tools = await liveSession.listTools?.();
+      let resources: any[] = [];
+      let prompts: any[] = [];
+      try {
+        resources = (await liveSession.listResources?.())?.resources ?? [];
+      } catch {
+        // Resource discovery is optional for MCP servers that do not implement it.
+      }
+      try {
+        prompts = (await liveSession.listPrompts?.())?.prompts ?? [];
+      } catch {
+        // Prompt discovery is optional for MCP servers that do not implement it.
+      }
+      return { tools, resources, prompts };
+    })(), 15, `MCP server '${name}' discovery timed out`);
+
+    return {
+      name,
+      session: liveSession,
+      tools: discovered.tools?.tools ?? [],
+      resources: discovered.resources,
+      prompts: discovered.prompts,
+      ...(managed ? { managed } : {}),
+      close: async () => {
+        for (const close of closers.splice(0).reverse()) await close().catch(() => undefined);
+      },
+    };
+  } catch (error) {
+    for (const close of closers.splice(0).reverse()) await close().catch(() => undefined);
+    throw error;
+  }
+}
+
 export async function connectMcpServers(
   servers: Record<string, any>,
   registry: ToolRegistry,
 ): Promise<Record<string, Stack>> {
-  let runtime: Runtime;
   try {
-    runtime = await loadRuntime();
+    await loadRuntime();
   } catch (error) {
     console.error(`MCP runtime unavailable: ${(error as Error).message}`);
     return {};
@@ -714,100 +867,23 @@ export async function connectMcpServers(
   const stacks: Record<string, Stack> = {};
 
   for (const [name, cfg] of Object.entries(servers)) {
-    const closers: Array<() => Promise<void>> = [];
     try {
-      let transport = cfgValue(cfg, "type", "transport");
-      const command = cfgValue(cfg, "command");
-      const url = cfgValue(cfg, "url");
-      if (!transport) transport = command ? "stdio" : url?.replace(/\/+$/g, "").endsWith("/sse") ? "sse" : "streamableHttp";
-      let read: any;
-      let write: any;
-      let managed: ManagedOcuSession | undefined;
-      if (transport === "stdio") {
-        const [normalizedCommand, args, configuredEnv] = normalizeWindowsStdioCommand(
-          resolveOpenComputerUseCommand(command),
-          cfgValue(cfg, "args") ?? [],
-          openComputerUseEnvironment(command, cfgValue(cfg, "env") ?? null),
-          cfgValue(cfg, "platform"),
-        );
-        const managedConfig = isManagedOcuConfig(name, cfg);
-        const env = managedConfig ? managedOcuEnvironment(normalizedCommand, configuredEnv) : configuredEnv;
-        const params = new runtime.StdioServerParameters({
-          command: normalizedCommand,
-          args,
-          env,
-          cwd: cfgValue(cfg, "cwd") ?? null,
-        });
-        if (managedConfig) {
-          const desktop = process.env.CUBY_DESKTOP_MANAGED_GATEWAY === '1';
-          const helperApp = path.dirname(path.dirname(path.dirname(normalizedCommand)));
-          managed = new ManagedOcuSession(async () => {
-            const owned: Array<() => Promise<void>> = [];
-            try {
-              const [input, output] = await enterMaybe(runtime.stdioClient(params), owned);
-              const candidate = new runtime.ClientSession(input, output);
-              const live = typeof candidate.enter === 'function' ? await enterMaybe(candidate, owned) : candidate;
-              const close = async () => { for (const fn of owned.splice(0).reverse()) await fn().catch(() => undefined); };
-              await timeoutPromise(live.initialize(), 15, 'Computer Use initialization timed out');
-              return { session: live, close };
-            } catch (error) {
-              for (const fn of owned.reverse()) await fn().catch(() => undefined);
-              throw error;
-            }
-          }, desktop ? probeNativePermissions : nativePermissionDoctor({ command: normalizedCommand, args, env, cwd: cfgValue(cfg, 'cwd') ?? null }),
-          desktop ? (status, signal, check, canContinue) => guideNativePermissions(status, helperApp, signal, check, canContinue) : undefined,
-          desktop ? () => stopOwnedNativeAgent(normalizedCommand, env!.OPEN_COMPUTER_USE_AGENT_SOCKET_NAMESPACE) : undefined);
-          closers.push(() => managed!.close());
-        } else {
-          [read, write] = await enterMaybe(runtime.stdioClient(params), closers);
-        }
-      } else if (transport === "sse" || transport === "streamableHttp") {
-        if (!url || !(await probeHttpUrl(url))) continue;
-        if (transport === "sse") {
-          [read, write] = await enterMaybe(runtime.sseClient(url, { headers: cfgValue(cfg, "headers") ?? null }), closers);
-        } else {
-          const entered = await enterMaybe(runtime.streamableHttpClient(url, { headers: cfgValue(cfg, "headers") ?? null }), closers);
-          [read, write] = entered;
-        }
-      } else {
-        continue;
-      }
-
-      const session = managed ?? new runtime.ClientSession(read, write);
-      const liveSession = typeof session.enter === "function" ? await enterMaybe(session, closers) : session;
-      const discovered = await timeoutPromise((async () => {
-        await liveSession.initialize?.();
-        const tools = await liveSession.listTools?.();
-        let resources: any[] = [];
-        let prompts: any[] = [];
-        try {
-          resources = (await liveSession.listResources?.())?.resources ?? [];
-        } catch {
-          // Resource discovery is optional for MCP servers that do not implement it.
-        }
-        try {
-          prompts = (await liveSession.listPrompts?.())?.prompts ?? [];
-        } catch {
-          // Prompt discovery is optional for MCP servers that do not implement it.
-        }
-        return { tools, resources, prompts };
-      })(), 15, `MCP server '${name}' discovery timed out`);
-      const tools = discovered.tools;
+      const connection = await connectMcpServer(name, cfg);
       const enabledTools = new Set(cfgValue(cfg, "enabled_tools", "enabledTools") ?? ["*"]);
       const allowAll = enabledTools.has("*");
       const matched = new Set<string>();
-      const availableRaw = (tools?.tools ?? []).map((tool: any) => tool.name);
-      const availableWrapped = (tools?.tools ?? []).map((tool: any) => sanitizeName(`mcp_${name}_${tool.name}`));
-      for (const toolDef of tools?.tools ?? []) {
+      const availableRaw = connection.tools.map((tool: any) => tool.name);
+      const availableWrapped = connection.tools.map((tool: any) => sanitizeName(`mcp_${name}_${tool.name}`));
+      for (const toolDef of connection.tools) {
         const wrapped = sanitizeName(`mcp_${name}_${toolDef.name}`);
         if (!allowAll && !enabledTools.has(toolDef.name) && !enabledTools.has(wrapped)) continue;
-        registry.register(new MCPToolWrapper(liveSession, name, toolDef, cfgValue(cfg, "tool_timeout", "toolTimeout") ?? 30, undefined, managed));
+        registry.register(new MCPToolWrapper(connection.session, name, toolDef, cfgValue(cfg, "tool_timeout", "toolTimeout") ?? 30, undefined, connection.managed));
         if (enabledTools.has(toolDef.name)) matched.add(toolDef.name);
         if (enabledTools.has(wrapped)) matched.add(wrapped);
       }
       if (enabledTools.size && !allowAll) {
         const unknown = [...enabledTools].map(String).filter((entry) => !matched.has(entry)
-          && !(managed && ["get_screen_state", "mcp_open_computer_use_get_screen_state"].includes(entry)));
+          && !(connection.managed && ["get_screen_state", "mcp_open_computer_use_get_screen_state"].includes(entry)));
         if (unknown.length) {
           console.warn(
             `MCP server '${name}': enabledTools entries not found: ${unknown.join(", ")}. ` +
@@ -816,19 +892,15 @@ export async function connectMcpServers(
           );
         }
       }
-      for (const resource of discovered.resources) {
-        registry.register(new MCPResourceWrapper(liveSession, name, resource, cfgValue(cfg, "tool_timeout", "toolTimeout") ?? 30));
+      for (const resource of connection.resources) {
+        registry.register(new MCPResourceWrapper(connection.session, name, resource, cfgValue(cfg, "tool_timeout", "toolTimeout") ?? 30));
       }
-      for (const prompt of discovered.prompts) {
-        registry.register(new MCPPromptWrapper(liveSession, name, prompt, cfgValue(cfg, "tool_timeout", "toolTimeout") ?? 30));
+      for (const prompt of connection.prompts) {
+        registry.register(new MCPPromptWrapper(connection.session, name, prompt, cfgValue(cfg, "tool_timeout", "toolTimeout") ?? 30));
       }
       stacks[name] = {
-        close: async () => {
-          for (const close of closers.reverse()) await close().catch(() => undefined);
-        },
-        aclose: async () => {
-          for (const close of closers.reverse()) await close().catch(() => undefined);
-        },
+        close: connection.close,
+        aclose: connection.close,
       };
     } catch (error) {
       const text = String((error as Error).message ?? error).toLowerCase();
@@ -844,7 +916,6 @@ export async function connectMcpServers(
         // an extra log line that can hide the actionable pollution hint.
         console.error(String((error as Error).message ?? error));
       }
-      for (const close of closers.reverse()) await close().catch(() => undefined);
     }
   }
 

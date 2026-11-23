@@ -1,6 +1,7 @@
 /** Memmy local API contract. */
 import { z } from "zod";
 
+export * from "./app-manifest.js";
 export * from "./model-catalog-resolver.js";
 export * from "./model-kinds.js";
 

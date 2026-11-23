@@ -2972,4 +2972,40 @@ describe("WebSocketChannel memmy parity cases", () => {
   it("detects typed frames when parsing envelopes", () => {
     expect(parseEnvelope(JSON.stringify({ type: "message", chat_id: "chat-1" }))).toEqual({ type: "message", chat_id: "chat-1" });
   });
+
+  it("forwards app_bridge envelopes through the runtime and replies with the ack result", async () => {
+    const bus = new MessageBus();
+    const channel = new WebSocketChannel({}, bus);
+    const ws = connection();
+    channel.attachConnection(ws, "chat-1");
+    const requestId = "22222222-2222-4222-8222-222222222222";
+    const dispatch = channel.dispatchEnvelope(ws, "client-1", {
+      type: "app_bridge",
+      request_id: requestId,
+      chat_id: "chat-1",
+      app_id: "demo",
+      view_id: "view-1",
+      method: "tools/call",
+      params: { name: "hello", arguments: { x: 1 } },
+    });
+
+    const inbound = await bus.nextInbound();
+    expect(inbound.metadata).toMatchObject({
+      runtimeControl: "appBridge",
+      appId: "demo",
+      viewId: "view-1",
+      chatId: "chat-1",
+      method: "tools/call",
+      params: { name: "hello", arguments: { x: 1 } },
+    });
+    (inbound.metadata.ack as any).resolve({ ok: true, result: { content: [] } });
+    await dispatch;
+
+    expect(sent(ws)).toMatchObject({
+      event: "app_bridge_result",
+      request_id: requestId,
+      ok: true,
+      result: { content: [] },
+    });
+  });
 });

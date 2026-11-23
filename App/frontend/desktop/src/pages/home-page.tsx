@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ChangeEvent, type ClipboardEvent, type DragEvent, type KeyboardEvent, type PointerEvent as ReactPointerEvent, type SetStateAction, type UIEvent } from "react";
 import type { AgentGatewayStartupIssue } from "@memmy/local-api-contracts";
 import { hydrateAgentThreadInBackground, refreshAgentTaskList, useAgentRuntimeBridge, type AgentTaskStateCoordinator } from "../app/agent-runtime-bridge.js";
+import { createAppBridgeTransport } from "../app/app-view-client.js";
 import { useApiClients } from "../app/providers.js";
 import { FOCUSED_AGENT_CHAT_STORAGE_KEY, clearFocusedAgentTarget, isAccountTokenQuotaExhausted, normalizeAgentChatId, readLaunchAgentChatId, removeLaunchAgentChatIdFromUrl } from "../app/routes.js";
 import {
@@ -986,6 +987,14 @@ export function HomePage() {
       openArtifact: (path: string) => client.openArtifact(path, sessionKey)
     };
   }, [clients?.memmyAgent, state.agent.currentSessionKey]);
+  const appBridgeClient = useMemo(() => {
+    if (!connection || !state.agent.currentChatId) return null;
+    if (typeof (connection as any).requestAppBridge !== "function") return null;
+    return createAppBridgeTransport(
+      connection as unknown as Parameters<typeof createAppBridgeTransport>[0],
+      state.agent.currentChatId,
+    );
+  }, [connection, state.agent.currentChatId]);
   const isCurrentAgentRunning = Boolean(
     state.agent.currentChatId &&
     (
@@ -2839,6 +2848,8 @@ export function HomePage() {
                 sanitizePlatformApiErrors={sanitizePlatformApiErrors}
                 artifactClient={sessionArtifactClient}
                 memoryRuntimeClient={clients?.memoryRuntime ?? null}
+                appBridgeClient={appBridgeClient}
+                chatId={state.agent.currentChatId}
               />
             </div>
           </div>
