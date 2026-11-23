@@ -281,6 +281,22 @@ describe("app reducer", () => {
     expect(completed.agent.blankDraftActive).toBe(true);
     expect(completed.agent.composerDraftsByScope[draftScope]).toBe("帮我整理最近的项目上下文");
   });
+
+  it("opens and closes a legal document without changing the route", () => {
+    const initial = createInitialAppState();
+    const opened = appReducer(initial, appActions.openLegalDocument("terms"));
+
+    expect(opened.legalDocument).toBe("terms");
+    expect(opened.navigation).toEqual(initial.navigation);
+
+    const switched = appReducer(opened, appActions.openLegalDocument("data"));
+    expect(switched.legalDocument).toBe("data");
+    expect(switched.navigation).toEqual(initial.navigation);
+
+    const closed = appReducer(switched, appActions.closeLegalDocument());
+    expect(closed.legalDocument).toBeNull();
+    expect(closed.navigation).toEqual(initial.navigation);
+  });
 });
 
 describe("account identity provider", () => {

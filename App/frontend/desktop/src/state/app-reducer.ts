@@ -3,6 +3,7 @@ import { ASR_DEFAULT_BASE_URL, QWEN_ASR_MODEL_ID, type AgentSourceView, type App
 import type { AppRoutePath, PreferredMode } from "../app/routes.js";
 import type { InvitationToastKind } from "../app/invitation-result.js";
 import type { ModelProviderConfig } from "../api/config-client.js";
+import type { LegalDocumentKind } from "../legal/legal-content.js";
 import type { AgentSourceScanCompletion, AgentSourceScanProgress, AppAction, EventConnectionStatus } from "./app-actions.js";
 import { agentReducer, initialAgentState, type AgentAction, type AgentState } from "./agent-chat-slice.js";
 import { initialToolsState, toolsReducer, type ToolsAction, type ToolsState } from "./tools-slice.js";
@@ -77,6 +78,8 @@ export interface AppState {
   modelConfig: ModelProviderConfig;
   agent: AgentState;
   modals: ModalState;
+  /** Currently open bundled legal document, or null. */
+  legalDocument: LegalDocumentKind | null;
   invitationToast: InvitationToastState | null;
   tools: ToolsState;
 }
@@ -159,6 +162,7 @@ export function createInitialAppState(): AppState {
       manualSource: false
     },
     invitationToast: null,
+    legalDocument: null,
     tools: initialToolsState
   };
 }
@@ -424,6 +428,10 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         modals: { ...state.modals, [action.modal]: action.open }
       };
+    case "legal/opened":
+      return { ...state, legalDocument: action.document };
+    case "legal/closed":
+      return { ...state, legalDocument: null };
     default:
       if (typeof action.type === "string" && action.type.startsWith("agent/")) {
         return {

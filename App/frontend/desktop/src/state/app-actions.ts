@@ -17,6 +17,7 @@ import { isIntegrationSetupDiagnosticError, logHiddenIntegrationSetupDiagnosticE
 import type { IntegrationsClient } from "../api/integrations-client.js";
 import type { IntegrationConnection } from "../integrations/connection-state.js";
 import type { IntegrationMeta } from "../integrations/integration-meta.js";
+import type { LegalDocumentKind } from "../legal/legal-content.js";
 import type { AgentGoalControlAction, ChatModelPreset, MemmyAgentRunStatusSnapshot, MemmyAgentSessionSnapshot, MemmyAgentSessionSummary, MemmyAgentSidebarState, MemmyAgentWebuiThread, MemmyAgentWsEvent, WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import type { PendingAttachment } from "./agent-composer-state.js";
 import { nextNavigationRequestId, type MemoryReferencePage } from "./navigation-requests.js";
@@ -117,7 +118,9 @@ export type AppAction =
     }
   | { type: "account/cleared" }
   | { type: "modelConfig/updated"; config: Partial<ModelProviderConfig> }
-  | { type: "modal/changed"; modal: "nickname" | "scanPermission" | "improvement" | "modelConfig" | "manualSource"; open: boolean };
+  | { type: "modal/changed"; modal: "nickname" | "scanPermission" | "improvement" | "modelConfig" | "manualSource"; open: boolean }
+  | { type: "legal/opened"; document: LegalDocumentKind }
+  | { type: "legal/closed" };
 
 /** Definition for app actions. */
 export const appActions = {
@@ -265,6 +268,16 @@ export const appActions = {
   /** Handles modal changed. */
   modalChanged(modal: "nickname" | "scanPermission" | "improvement" | "modelConfig" | "manualSource", open: boolean): AppAction {
     return { type: "modal/changed", modal, open };
+  },
+
+  /** Opens a bundled legal document overlay. */
+  openLegalDocument(document: LegalDocumentKind): AppAction {
+    return { type: "legal/opened", document };
+  },
+
+  /** Closes the bundled legal document overlay. */
+  closeLegalDocument(): AppAction {
+    return { type: "legal/closed" };
   },
 
   /** Handles open tool connect modal. */
