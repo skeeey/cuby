@@ -67,8 +67,14 @@ describe("LegalMarkdown external links", () => {
     });
 
     const anchor = container.querySelector<HTMLAnchorElement>("a")!;
-    await act(async () => anchor.click());
+    const event = new MouseEvent("click", { bubbles: true, cancelable: true });
+    let dispatched = true;
+    await act(async () => {
+      dispatched = anchor.dispatchEvent(event);
+    });
 
+    expect(event.defaultPrevented).toBe(true);
+    expect(dispatched).toBe(false);
     expect(openExternal).toHaveBeenCalledWith("https://cuberouter.cn");
   });
 

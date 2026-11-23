@@ -109,8 +109,8 @@ jobs:
     runs-on: ${{ matrix.runner }}
     timeout-minutes: 60
     env:
-      # The values the packaging chain reads from the repo-root .env. It refuses
-      # to run without them, and they are public endpoint origins, not secrets.
+      # The value the packaging chain reads from the repo-root .env. It refuses
+      # to run without it, and it is a public endpoint origin, not a secret.
       CUBY_CLOUD_SERVICE: https://api.memmy.cn
       # package-win-local.sh defaults this to cn, so a developer machine and CI
       # have been downloading their packaging binaries from different places.

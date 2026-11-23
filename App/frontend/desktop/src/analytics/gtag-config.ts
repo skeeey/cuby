@@ -5,7 +5,7 @@ export function resolveAnalyticsAppEnv(isProd = import.meta.env.PROD): Analytics
   return isProd ? "prod" : "dev";
 }
 
-/** Derives the analytics edition from the UI language, matching legal-links. */
+/** Derives the analytics edition from the UI language: zh* → cn, otherwise intl. */
 export function resolveAnalyticsAppEdition(
   language = typeof navigator === "undefined" ? "" : navigator.language
 ): AnalyticsAppEdition {

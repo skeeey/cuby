@@ -112,7 +112,7 @@ Welcome to Cuby. These Terms of Service (these "Terms") are an agreement between
 
 11.2 The Cuby name, marks, interface designs, documentation, and other materials provided by us are owned by us or the respective rights holders. You must not remove, conceal, or modify related rights notices without permission.
 
-11.3 Content that you input, upload, or generate through the Service belongs to you or the respective rights holders. You grant us a limited license to use it as necessary to provide, maintain, and improve the Service.
+11.3 Content that you input, upload, or generate through the Service belongs to you or the respective rights holders. You grant us a limited license to use it as necessary to provide and maintain the Service.
 
 11.4 You must ensure that you have lawful rights in User Content and that User Content does not infringe third-party intellectual property rights.
 
