@@ -26,20 +26,13 @@ describe("vite workspace resolution", () => {
     });
   });
 
-  it("isolates test validation without mutating process env", () => {
-    vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "http://invalid.test");
-    vi.stubEnv("CUBY_LEGAL_INTL_BASE_URL", "https://invalid.test/path");
-
-    expect(() => resolveConfig("test")).not.toThrow();
-    expect(process.env.CUBY_LEGAL_CN_BASE_URL).toBe("http://invalid.test");
-    expect(process.env.CUBY_LEGAL_INTL_BASE_URL).toBe("https://invalid.test/path");
+  it("builds without legal URL environment variables", () => {
+    expect(() => resolveConfig("development")).not.toThrow();
   });
 
-  it("keeps development validation strict", () => {
-    vi.stubEnv("CUBY_LEGAL_CN_BASE_URL", "http://invalid.test");
-    vi.stubEnv("CUBY_LEGAL_INTL_BASE_URL", "https://valid.test");
-
-    expect(() => resolveConfig("development")).toThrow(/CUBY_LEGAL_CN_BASE_URL/);
+  it("does not expose legal URL variables to the renderer", () => {
+    expect(PUBLIC_MEMMY_RENDERER_ENV_KEYS).not.toContain("CUBY_LEGAL_CN_BASE_URL");
+    expect(PUBLIC_MEMMY_RENDERER_ENV_KEYS).not.toContain("CUBY_LEGAL_INTL_BASE_URL");
   });
 
   it("exposes only the explicit public MEMMY allowlist to renderer code", () => {

@@ -10,51 +10,26 @@ import { defineConfig, loadEnv, type Plugin } from "vite";
 const DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL = "http://127.0.0.1:28980";
 const RUNTIME_CONFIG_ENDPOINT = "/__memmy_runtime_config";
 const LOCAL_API_CONTRACTS_SOURCE = fileURLToPath(new URL("../../backend/local-api-contracts/src/index.ts", import.meta.url));
-const LEGAL_BASE_URL_ENV_KEYS = ["CUBY_LEGAL_CN_BASE_URL", "CUBY_LEGAL_INTL_BASE_URL"] as const;
 export const PUBLIC_MEMMY_RENDERER_ENV_KEYS = [
   "CUBY_ACCOUNT_BACKEND",
   "CUBY_APP_EDITION",
   "CUBY_CLOUD_SERVICE",
   "CUBY_GA4_MEASUREMENT_ID",
-  "CUBY_LEGAL_CN_BASE_URL",
-  "CUBY_LEGAL_INTL_BASE_URL",
   "CUBY_PACKAGE_SIGNING",
 ] as const;
 // Definition for repo root dir.
 const REPO_ROOT_DIR = fileURLToPath(new URL("../../../", import.meta.url));
 
-/** Validates legal website configuration before Vite starts. */
-export const validateLegalEnv = (env: Record<string, string | undefined>): void => {
-  for (const key of LEGAL_BASE_URL_ENV_KEYS) {
-    try {
-      const url = new URL(env[key]?.trim() ?? "");
-      if (url.protocol !== "https:" || url.href !== `${url.origin}/`) {
-        throw new Error();
-      }
-    } catch {
-      throw new Error(`${key} must be an HTTPS origin without a path.`);
-    }
-  }
-};
-
 /** Vite configuration. */
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, REPO_ROOT_DIR, "");
   const stableElectronDemo = process.env.CUBY_STABLE_ELECTRON_DEMO?.trim() === "1";
-  const validationEnv = mode === "test"
-    ? {
-        ...env,
-        CUBY_LEGAL_CN_BASE_URL: "https://test.memmy.cn",
-        CUBY_LEGAL_INTL_BASE_URL: "https://test.memmy.bot"
-      }
-    : env;
-  validateLegalEnv(validationEnv);
   const memmyAgentTarget = env.VITE_MEMMY_AGENT_WEBUI_URL?.trim() || DEFAULT_MEMMY_AGENT_WEBUI_BASE_URL;
   const memmyAgentWsTarget = memmyAgentTarget.replace(/^http/, "ws");
   const publicMemmyEnv = Object.fromEntries(
     PUBLIC_MEMMY_RENDERER_ENV_KEYS.map((key) => [
       `import.meta.env.${key}`,
-      validationEnv[key] === undefined ? "undefined" : JSON.stringify(validationEnv[key]?.trim()),
+      env[key] === undefined ? "undefined" : JSON.stringify(env[key]?.trim()),
     ]),
   );
 

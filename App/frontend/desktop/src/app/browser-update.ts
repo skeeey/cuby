@@ -102,7 +102,7 @@ export function compareUpdateVersions(left: string, right: string): number {
   return 0;
 }
 
-/** Matches legal-links: CUBY_APP_EDITION=intl → intl, otherwise cn. */
+/** Resolves the package edition: CUBY_APP_EDITION=intl → intl, otherwise cn. */
 function resolveBrowserUpdateEdition(): "cn" | "intl" {
   return import.meta.env.CUBY_APP_EDITION === "intl" ? "intl" : "cn";
 }

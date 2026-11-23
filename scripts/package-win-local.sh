@@ -7,11 +7,9 @@
 # fresh Windows clone failed four separate times, each failure only surfacing
 # after several minutes of work:
 #
-#   1. vite.config.ts and the edition-manifest writer both read three CUBY_*
-#      values from the repo-root .env. That file is gitignored, so a clone
-#      never has it, and the build dies at whichever of the two reads it
-#      reaches first (`CUBY_LEGAL_CN_BASE_URL ... must be an HTTPS origin`,
-#      then `CUBY_CLOUD_SERVICE must be a non-empty HTTPS origin`).
+#   1. the edition-manifest writer reads CUBY_CLOUD_SERVICE from the repo-root
+#      .env. That file is gitignored, so a clone never has it, and the build
+#      dies with `CUBY_CLOUD_SERVICE must be a non-empty HTTPS origin`.
 #   2. Electron, electron-builder's toolchain and better-sqlite3's prebuilt
 #      binding all download from GitHub. On a network that resets those
 #      connections the build dies during dependency installation
@@ -36,9 +34,9 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-# The three values the packaging chain refuses to run without. They are read
-# from the root .env by vite and by the edition-manifest writer.
-REQUIRED_ENV_KEYS=(CUBY_LEGAL_CN_BASE_URL CUBY_LEGAL_INTL_BASE_URL CUBY_CLOUD_SERVICE)
+# The one value the packaging chain refuses to run without. It is read from
+# the root .env by the edition-manifest writer.
+REQUIRED_ENV_KEYS=(CUBY_CLOUD_SERVICE)
 
 PREPARE_ONLY=0
 PACKAGE_ARGS=()

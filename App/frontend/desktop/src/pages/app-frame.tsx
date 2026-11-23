@@ -24,7 +24,6 @@ import type { MessageKey, MessageValues } from "../i18n/messages.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { useOptionalUpdateCoordinator, type UpdateCoordinatorValue } from "../app/update-coordinator.js";
 import type { MemmyAgentProject, WebuiSessionTarget } from "../api/memmy-agent-client.js";
-import { getLegalLinkUrl } from "../legal/legal-links.js";
 import { useTaskBus } from "../lib/task-bus.js";
 import { agentActions, appActions, createAgentOperationError } from "../state/app-actions.js";
 import type { AppState } from "../state/app-reducer.js";
@@ -34,7 +33,6 @@ import { agentChatScopeKey } from "../state/agent-composer-state.js";
 import type { AgentTaskView } from "../state/agent-chat-slice.js";
 import { decideTaskDoneNotification } from "../state/task-done-notification.js";
 import { maskAccountIdentifier } from "../utils/mask-account-identifier.js";
-import { openExternalUrl } from "../utils/open-url.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
 import { ImChannelTitleIcon, imChannelTitleDisplay } from "../integrations/integration-meta.js";
 import { ImprovementProgramModal } from "./improvement-program-modal.js";
@@ -281,7 +279,7 @@ export function AppFrame(props: AppFrameProps) {
     ? navItems
     : navItems.filter((item) => item.path !== "/knowledge");
   const { clients } = useOptionalApiClients();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const update = useOptionalUpdateCoordinator();
   const { track } = useAnalytics();
   const taskStateCoordinator = useOptionalAgentRuntimeBridge()?.taskStateCoordinator
@@ -1591,7 +1589,7 @@ export function AppFrame(props: AppFrameProps) {
       {deferredGuidanceStep === "improvement" && state.bootstrap?.app.userMode !== "byok" && state.bootstrap?.onboarding.improvementProgram === "unset" && (
         <ImprovementProgramModal
           onChoice={chooseDeferredImprovementProgram}
-          onLearnMore={() => void openExternalUrl(getLegalLinkUrl("data", language, state.bootstrap?.legal))}
+          onLearnMore={() => dispatch(appActions.openLegalDocument("data"))}
           showGift={
             state.bootstrap?.promotions?.improvementGift === true
             && (state.bootstrap?.promotions?.improvementGiftRewardTokens ?? 0) > 0

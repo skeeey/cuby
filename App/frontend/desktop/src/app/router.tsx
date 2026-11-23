@@ -49,6 +49,7 @@ import {
 import { buildRoutePageViewEvent, shouldDeferRoutePageView } from "../analytics/page-view.js";
 import { appActions } from "../state/app-actions.js";
 import { NicknameModal } from "../components/nickname-modal.js";
+import { LegalDocumentModal } from "../legal/LegalDocumentModal.js";
 import { randomNickname } from "../lib/nickname.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { ApiKeyPage } from "../pages/api-key-page.js";
@@ -304,6 +305,10 @@ export function AppRouter(props: { onRetry: () => void }) {
           || workspaceGuidanceStep === "product_tour"
           || workspaceGuidanceStep === "nickname"
         }
+      />
+      <LegalDocumentModal
+        kind={state.legalDocument}
+        onClose={() => dispatch(appActions.closeLegalDocument())}
       />
     </>
   );
