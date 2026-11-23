@@ -18,10 +18,8 @@ import {
   type CloseMainWindowAction
 } from "../app/pet-guide.js";
 import { consumeTokenExhaustedApplyMoreRequest, TOKEN_EXHAUSTED_APPLY_MORE_EVENT } from "../app/token-exhausted-apply-more.js";
-import { getLegalLinkUrl } from "../legal/legal-links.js";
 import { maskAccountIdentifier } from "../utils/mask-account-identifier.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
-import { openExternalUrl } from "../utils/open-url.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { appActions, type AppAction } from "../state/app-actions.js";
 import type { AppState } from "../state/app-reducer.js";
@@ -1664,7 +1662,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
             </div>
             <button
               type="button"
-              onClick={() => void openExternalUrl(getLegalLinkUrl("data", language, bootstrap?.legal))}
+              onClick={() => dispatch(appActions.openLegalDocument("data"))}
               className="inline-flex items-center gap-1 text-xs text-action-sky/70 hover:text-action-sky transition-colors cursor-pointer"
             >
               {t("settings.privacy.learnMore")}
@@ -1953,7 +1951,7 @@ export function SettingsPageView(props: SettingsPageViewProps) {
                 {isUpdateBusy(update.phase) && <Loader2 size={12} className="animate-spin" />}
                 {resolveUpdateButtonLabel(update.phase, t)}
               </button>
-              <LinkButton label={t("settings.about.terms")} onClick={() => void openExternalUrl(getLegalLinkUrl("terms", language, bootstrap?.legal))} />
+              <LinkButton label={t("settings.about.terms")} onClick={() => dispatch(appActions.openLegalDocument("terms"))} />
             </div>
             {update.feedback && (
               <div className={`text-xs ${update.phase === "error" ? "text-status-error" : "text-text-ink/45"}`}>

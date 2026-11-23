@@ -469,7 +469,7 @@ describe("AppFrame", () => {
     expect(appFrameSource).toContain("productTourIncludesLogs");
     expect(appFrameSource).toContain("productTourStartRoute(includeLogs)");
     expect(appFrameSource).toContain("<ImprovementProgramModal");
-    expect(appFrameSource).toContain('openExternalUrl(getLegalLinkUrl("data", language, state.bootstrap?.legal))');
+    expect(appFrameSource).toContain('appActions.openLegalDocument("data")');
     expect(appFrameSource).toContain("function chooseDeferredImprovementProgram(accepted: boolean)");
     expect(appFrameSource).toContain(".setImprovementProgram(accepted)");
     expect(appFrameSource).not.toContain("setShowGuide(true)");

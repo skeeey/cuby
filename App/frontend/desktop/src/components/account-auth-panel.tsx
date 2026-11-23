@@ -9,7 +9,6 @@ import { persistLoginModeSelection } from "../app/login-mode.js";
 import { useApiClients } from "../app/providers.js";
 import { buildAccountOnboardingStartPatch, readGuidanceCompleted, resolvePostLoginRoute } from "../app/routes.js";
 import { useTranslation } from "../i18n/use-translation.js";
-import { getLegalLinkUrl } from "../legal/legal-links.js";
 import { appActions } from "../state/app-actions.js";
 import { useAppState } from "../state/app-state.js";
 import {
@@ -24,7 +23,6 @@ import {
   resolveCuberouterLoginKey
 } from "../state/model-provisioning.js";
 import { createModelWorkspace } from "../state/model-workspace.js";
-import { openExternalUrl } from "../utils/open-url.js";
 import { AuthCredentialsForm } from "./auth-credentials-form.js";
 import { toFeedbackText, useAccountAuth, useEmailVerificationCode } from "./use-account-auth.js";
 
@@ -33,7 +31,7 @@ export function AccountAuthPanel() {
   const { state, dispatch } = useAppState();
   const { clients } = useApiClients();
   const { track } = useAnalytics();
-  const { t, language } = useTranslation();
+  const { t } = useTranslation();
   const auth = useAccountAuth();
   const code = useEmailVerificationCode();
   // Login first: a returning user opens this card far more often than a new one, and the
@@ -366,8 +364,8 @@ export function AccountAuthPanel() {
         onSendCode={() => void sendVerificationCode()}
         onModeChange={(next) => { auth.clearFeedback(); clearPendingAuthResult(); setMode(next); }}
         onSubmit={() => void submit()}
-        onOpenTerms={() => void openExternalUrl(getLegalLinkUrl("terms", language, state.bootstrap?.legal))}
-        onOpenDataAgreement={() => void openExternalUrl(getLegalLinkUrl("data", language, state.bootstrap?.legal))}
+        onOpenTerms={() => dispatch(appActions.openLegalDocument("terms"))}
+        onOpenDataAgreement={() => dispatch(appActions.openLegalDocument("data"))}
       />
     </div>
   );

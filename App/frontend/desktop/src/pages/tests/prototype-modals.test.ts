@@ -20,7 +20,7 @@ describe("2026-06-04 prototype modals", () => {
     expect(modalSource).toContain('<Gift size={16} className="text-action-sky" />');
     expect(modalSource).toContain("<ExternalLink size={10} />");
     expect(pageSource).toContain("<ImprovementProgramModal");
-    expect(pageSource).toContain('openExternalUrl(getLegalLinkUrl("data", language, state.bootstrap?.legal))');
+    expect(pageSource).toContain('appActions.openLegalDocument("data")');
     expect(pageSource).toContain(".setImprovementProgram(accepted)");
   });
 

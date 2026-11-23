@@ -353,11 +353,12 @@ describe("SettingsPageView", () => {
     expect(html).not.toContain('class="settings-card-icon">P</span>');
   });
 
-  it("隐私与改进计划的了解更多跳系统浏览器打开数据协议外链", () => {
+  it("隐私与改进计划的了解更多打开应用内本地数据协议", () => {
     const source = readFileSync(settingsPageSourcePath, "utf8");
 
     expect(source).toContain('t("settings.privacy.learnMore")');
-    expect(source).toContain('openExternalUrl(getLegalLinkUrl("data", language, bootstrap?.legal))');
+    expect(source).toContain('appActions.openLegalDocument("data")');
+    expect(source).not.toContain("getLegalLinkUrl");
     expect(source).not.toContain('appActions.navigate("/data-use")');
   });
 
@@ -379,11 +380,12 @@ describe("SettingsPageView", () => {
     expect(source).not.toContain('{improvementPlan ? t("settings.privacy.turnOff") : t("settings.privacy.turnOn")}');
   });
 
-  it("关于区服务协议入口跳系统浏览器打开服务协议外链", () => {
+  it("关于区服务协议入口打开应用内本地服务协议", () => {
     const source = readFileSync(settingsPageSourcePath, "utf8");
 
     expect(source).toContain('t("settings.about.terms")');
-    expect(source).toContain('openExternalUrl(getLegalLinkUrl("terms", language, bootstrap?.legal))');
+    expect(source).toContain('appActions.openLegalDocument("terms")');
+    expect(source).not.toContain("getLegalLinkUrl");
     expect(source).not.toContain('appActions.navigate("/terms")');
     expect(source).not.toContain('<LinkButton label={t("settings.about.terms")} href="#" />');
   });
