@@ -85,7 +85,12 @@ jobs:
           fi
           if [ "$platforms" != "windows" ]; then
             macos+=('{"runner":"macos-15","arch":"arm64"}')
-            macos+=('{"runner":"macos-15-intel","arch":"x64"}')
+            # Intel Macs are rare now, so the x64 installer is no longer built on
+            # every merge; it stays available to manual dispatch when someone
+            # needs to produce one.
+            if [ "${GITHUB_EVENT_NAME:-}" = "workflow_dispatch" ]; then
+              macos+=('{"runner":"macos-15-intel","arch":"x64"}')
+            fi
           fi
 
           json_array() {
