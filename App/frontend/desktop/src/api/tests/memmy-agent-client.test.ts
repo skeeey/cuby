@@ -59,6 +59,37 @@ const sidebarState: MemmyAgentSidebarState = {
   updated_at: null
 };
 
+const appSummary = {
+  id: "demo",
+  name: "Demo",
+  version: "1.0.0",
+  source: "dev",
+  state: "ready",
+  error: null,
+  ui: {
+    defaultResourceUri: "ui://demo/home",
+    resources: [{ uri: "ui://demo/home" }],
+    displayModes: ["inline", "fullscreen"],
+    prefersBorder: true,
+    csp: {}
+  },
+  capabilities: { openLinks: false, downloads: false, appMessages: "allow" },
+  entryPoints: [{ surface: "home", title: "Demo" }],
+  hasUi: true
+};
+
+const appView = {
+  viewId: "11111111-1111-4111-8111-111111111111",
+  appId: "demo",
+  resourceUri: "ui://demo/home",
+  toolName: "hello",
+  title: "Demo",
+  displayMode: "inline",
+  protocol: "mcp-apps/2026-01-26",
+  arguments: {},
+  initialResult: { content: [] }
+};
+
 const goalId = "8f59f58a-7295-4c34-8e03-55e7035a5a8d";
 
 function goalState(status: "active" | "paused" | "completed" = "active") {
@@ -928,6 +959,74 @@ describe("memmy-agent client", () => {
       modelPreset: "desktop-openai-gpt-5",
       modelSelection
     });
+  });
+
+  it("lists apps over HTTP", async () => {
+    const fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.includes("/webui/bootstrap")) return json(bootstrap);
+      if (url.endsWith("/api/apps")) return json({ apps: [appSummary] });
+      throw new Error(`unexpected request ${url}`);
+    });
+    const client = createMemmyAgentClient({
+      baseUrl: "https://agent.local:28980",
+      clientId: "frontend-test",
+      fetchFn: fetchMock as typeof fetch
+    });
+    await expect(client.listApps()).resolves.toEqual([appSummary]);
+  });
+
+  it("openApp sends apps_open and resolves the returned view", async () => {
+    const sockets: FakeSocket[] = [];
+    const client = createMemmyAgentClient({
+      baseUrl: "https://agent.local:28980",
+      clientId: "frontend-test",
+      fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
+      webSocketFactory: (url) => {
+        const socket = new FakeSocket(url);
+        sockets.push(socket);
+        return socket;
+      }
+    });
+    const connection = await connectReady(client, sockets);
+    const pending = connection.openApp({ appId: "demo", target: { kind: "standalone" } });
+    const request = JSON.parse(sockets[0]!.sent.at(-1)!);
+    expect(request).toMatchObject({ type: "apps_open", app_id: "demo", target: { kind: "standalone" } });
+
+    sockets[0]?.emit({
+      event: "apps_open_result",
+      request_id: request.request_id,
+      ok: true,
+      bridge_chat_id: "app-1",
+      view: appView
+    });
+
+    await expect(pending).resolves.toEqual({ bridge_chat_id: "app-1", view: appView });
+  });
+
+  it("openApp rejects a failed result", async () => {
+    const sockets: FakeSocket[] = [];
+    const client = createMemmyAgentClient({
+      baseUrl: "https://agent.local:28980",
+      clientId: "frontend-test",
+      fetchFn: vi.fn(async () => json(bootstrap)) as typeof fetch,
+      webSocketFactory: (url) => {
+        const socket = new FakeSocket(url);
+        sockets.push(socket);
+        return socket;
+      }
+    });
+    const connection = await connectReady(client, sockets);
+    const pending = connection.openApp({ appId: "demo" });
+    const request = JSON.parse(sockets[0]!.sent.at(-1)!);
+    sockets[0]?.emit({
+      event: "apps_open_result",
+      request_id: request.request_id,
+      ok: false,
+      error: "boom",
+      reason: "entry_failed"
+    });
+    await expect(pending).rejects.toThrow("boom");
   });
 
   it("newChat preserves a structured unavailable-model rejection and clears pending state", async () => {

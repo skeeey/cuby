@@ -7,6 +7,12 @@
  */
 import { z } from "zod";
 import {
+  AppHostListResponseSchema,
+  AppOpenResultSchema,
+  type AppHostSummary,
+  type AppOpenResult
+} from "@memmy/local-api-contracts";
+import {
   ApplicationIconSchema,
   ComputerHistorySnapshotSchema,
   ComputerHistoryPermissionsSchema,
@@ -740,6 +746,12 @@ export type MemmyAgentAppBridgeResult =
   | { ok: true; result?: unknown }
   | { ok: false; error: string };
 
+export type MemmyAgentOpenAppInput = {
+  appId: string;
+  chatId?: string;
+  target?: WebuiSessionTarget;
+};
+
 export type WebuiSessionTarget =
   | { kind: "standalone" }
   | { kind: "project"; projectId: string };
@@ -825,6 +837,7 @@ export interface MemmyAgentClient {
   bootstrap(options?: { force?: boolean }): Promise<MemmyAgentBootstrap>;
   getSettings(): Promise<MemmyAgentSettings>;
   listMcpPresets(): Promise<McpPresetsPayload>;
+  listApps(): Promise<AppHostSummary[]>;
   enableMcpPreset(name: string, values?: Record<string, string>): Promise<McpPresetsPayload>;
   removeMcpServer(name: string): Promise<McpPresetsPayload>;
   testMcpServer(name: string): Promise<McpPresetsPayload>;
@@ -907,6 +920,7 @@ export interface MemmyAgentWebSocketConnection {
     modelPreset?: string | null,
     clientRequestId?: string
   ): Promise<MemmyAgentNewChatResult>;
+  openApp(input: MemmyAgentOpenAppInput, timeoutMs?: number): Promise<AppOpenResult>;
   attach(chatId: string): void;
   sendMessage(input: MemmyAgentSendMessageInput, expectedGeneration: number): Promise<void>;
   submitMessage(
@@ -1188,6 +1202,11 @@ class HttpMemmyAgentClient implements MemmyAgentClient {
 
   async listMcpPresets(): Promise<McpPresetsPayload> {
     return this.request("/api/settings/mcp-presets", McpPresetsPayloadSchema);
+  }
+
+  async listApps(): Promise<AppHostSummary[]> {
+    const result = await this.request("/api/apps", AppHostListResponseSchema);
+    return result.apps;
   }
 
   async enableMcpPreset(name: string, values: Record<string, string> = {}): Promise<McpPresetsPayload> {
@@ -1674,6 +1693,12 @@ interface PendingAppBridge {
   timer: ReturnType<typeof setTimeout>;
 }
 
+interface PendingAppOpen {
+  resolve: (result: AppOpenResult) => void;
+  reject: (error: Error) => void;
+  timer: ReturnType<typeof setTimeout>;
+}
+
 interface PendingInitialReady {
   resolve: () => void;
   reject: (error: Error) => void;
@@ -1692,6 +1717,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
   private readonly pendingQueueSteers = new Map<string, PendingQueueSteer>();
   private readonly pendingGoalControls = new Map<string, PendingGoalControl>();
   private readonly pendingAppBridges = new Map<string, PendingAppBridge>();
+  private readonly pendingAppOpens = new Map<string, PendingAppOpen>();
   private connectionGeneration = 0;
   private transportOpenGeneration: number | null = null;
   private readyGeneration: number | null = null;
@@ -1773,6 +1799,41 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
         this.pendingNewChat = null;
         clearTimeout(pending.timer);
         reject(asError(error, "Unable to create chat"));
+      }
+    });
+  }
+
+  openApp(input: MemmyAgentOpenAppInput, timeoutMs = 30_000): Promise<AppOpenResult> {
+    const generation = this.readyGeneration;
+    if (generation === null) {
+      return Promise.reject(new Error("Agent gateway is not ready"));
+    }
+
+    return new Promise<AppOpenResult>((resolve, reject) => {
+      const requestId = crypto.randomUUID();
+      const pending: PendingAppOpen = {
+        resolve,
+        reject,
+        timer: setTimeout(() => {
+          if (this.pendingAppOpens.get(requestId) === pending) {
+            this.pendingAppOpens.delete(requestId);
+          }
+          reject(new Error("openApp timed out"));
+        }, timeoutMs)
+      };
+      this.pendingAppOpens.set(requestId, pending);
+      try {
+        this.sendOrdinaryFrame({
+          type: "apps_open",
+          request_id: requestId,
+          app_id: input.appId,
+          ...(input.chatId ? { chat_id: input.chatId } : {}),
+          ...(input.target ? { target: input.target } : {})
+        }, generation);
+      } catch (error) {
+        this.pendingAppOpens.delete(requestId);
+        clearTimeout(pending.timer);
+        reject(asError(error, "Unable to open app"));
       }
     });
   }
@@ -2241,6 +2302,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     this.rejectPendingQueueSteers(new Error("queue steer cancelled"));
     this.rejectPendingGoalControls(new Error("Goal control cancelled"));
     this.rejectPendingAppBridges(new Error("app bridge cancelled"));
+    this.rejectPendingAppOpens(new Error("app open cancelled"));
     this.rejectInitialReady(new Error("Agent gateway connection cancelled"));
     this.clearReadyHandshakeTimer();
     if (this.reconnectTimer) {
@@ -2344,6 +2406,8 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
       this.resolvePendingQueueSteer(normalized);
     } else if (normalized.event === "app_bridge_result") {
       this.resolvePendingAppBridge(normalized);
+    } else if (normalized.event === "apps_open_result") {
+      this.resolvePendingAppOpen(normalized);
     }
 
     if (normalized.event === "attached") {
@@ -2436,6 +2500,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     this.rejectPendingQueueRemovals(new Error("queue removal failed because websocket closed"));
     this.rejectPendingQueueSteers(new Error("queue steer failed because websocket closed"));
     this.rejectPendingAppBridges(new Error("app bridge failed because websocket closed"));
+    this.rejectPendingAppOpens(new Error("app open failed because websocket closed"));
     if (this.intentionallyClosed) {
       return;
     }
@@ -2962,6 +3027,14 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
     }
   }
 
+  private rejectPendingAppOpens(error: Error): void {
+    for (const [requestId, pending] of this.pendingAppOpens) {
+      this.pendingAppOpens.delete(requestId);
+      clearTimeout(pending.timer);
+      pending.reject(error);
+    }
+  }
+
   private resolvePendingAppBridge(event: MemmyAgentWsEvent): void {
     const requestId = typeof event.request_id === "string" ? event.request_id : null;
     if (!requestId) return;
@@ -2977,6 +3050,28 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
       return;
     }
     pending.resolve({ ok: true, result: event.result });
+  }
+
+  private resolvePendingAppOpen(event: MemmyAgentWsEvent): void {
+    const requestId = typeof event.request_id === "string" ? event.request_id : null;
+    if (!requestId) return;
+    const pending = this.pendingAppOpens.get(requestId);
+    if (!pending) return;
+    this.pendingAppOpens.delete(requestId);
+    clearTimeout(pending.timer);
+    if (event.ok === false) {
+      pending.reject(new Error(typeof event.error === "string" ? event.error : "Unable to open app"));
+      return;
+    }
+    const parsed = AppOpenResultSchema.safeParse({
+      view: event.view,
+      bridge_chat_id: event.bridge_chat_id
+    });
+    if (!parsed.success) {
+      pending.reject(new Error("Invalid app open response"));
+      return;
+    }
+    pending.resolve(parsed.data);
   }
 
   private resolvePendingQueueSteer(event: MemmyAgentWsEvent): void {
