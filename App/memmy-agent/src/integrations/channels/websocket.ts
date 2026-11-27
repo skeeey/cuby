@@ -1188,6 +1188,28 @@ export class WebSocketChannel extends BaseChannel {
     };
   }
 
+  private resolveAppsOpenWorkspace(chatId: string | null, targetValue: unknown): string {
+    if (chatId) {
+      const sessionKey = this.canonicalSessionKeyForChatId(chatId) ?? `websocket:${chatId}`;
+      const session = this.sessionManager?.get?.(sessionKey) as Session | null;
+      if (session) {
+        try {
+          return readWebuiSessionBinding(session).cwd;
+        } catch {
+          // Fall through to the explicit target or the default workspace.
+        }
+      }
+    }
+    const target = this.parseWebuiSessionTarget(targetValue);
+    if (target?.kind === "project") {
+      const store = this.requireProjectStore();
+      const project = store.getActive(target.projectId);
+      if (!project) throw new WebuiProjectError("project_not_found", 404);
+      return assertWebuiWorkspaceAvailable(project.rootPath);
+    }
+    return assertWebuiWorkspaceAvailable(this.workspacePath);
+  }
+
   async maybePushActiveGoalState(chatId: string): Promise<void> {
     if (!this.sessionManager) return;
     const sessionKey = this.canonicalSessionKeyForChatId(chatId);
@@ -3667,6 +3689,105 @@ export class WebSocketChannel extends BaseChannel {
         event: "app_bridge_result",
         request_id: requestId,
         ...result,
+      });
+      return;
+    }
+    if (type === "apps_open") {
+      const requestId = typeof envelope.request_id === "string" && UUID_RE.test(envelope.request_id)
+        ? envelope.request_id
+        : "";
+      const appId = typeof envelope.app_id === "string" ? envelope.app_id.trim() : "";
+      const rawChatId = envelope.chat_id;
+      const chatId = typeof rawChatId === "string" && isValidGuiChatId(rawChatId) ? rawChatId : "";
+      const targetValue = envelope.target;
+      if (
+        !requestId
+        || !appId
+        || (rawChatId != null && !chatId)
+        || (targetValue != null && !this.parseWebuiSessionTarget(targetValue))
+      ) {
+        await this.safeSendTo(connection, {
+          event: "apps_open_result",
+          request_id: requestId,
+          ok: false,
+          error: "invalid_request",
+          reason: "invalid_request",
+        });
+        return;
+      }
+
+      const reuseChat = Boolean(chatId) && !isExternalGuiChatId(chatId);
+      let bridgeChatId: string;
+      let workspace: string;
+      try {
+        bridgeChatId = reuseChat ? chatId : crypto.randomUUID();
+        this.attachConnection(connection, bridgeChatId);
+        workspace = this.resolveAppsOpenWorkspace(reuseChat ? chatId : null, targetValue);
+      } catch (error) {
+        await this.safeSendTo(connection, {
+          event: "apps_open_result",
+          request_id: requestId,
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+          reason: "invalid_request",
+        });
+        return;
+      }
+
+      const ack = createAppBridgeAck();
+      await this.bus.publishInbound(new InboundMessage({
+        channel: "system",
+        chatId: "runtime",
+        senderId: "app-host",
+        content: "apps",
+        metadata: {
+          [INBOUND_META_RUNTIME_CONTROL]: RUNTIME_CONTROL_APPS,
+          action: "open",
+          [RUNTIME_CONTROL_ACK]: ack,
+          appId,
+          sessionKey: `websocket:${bridgeChatId}`,
+          workspace,
+          chatId: bridgeChatId,
+        },
+      }));
+
+      const result = await Promise.race([
+        ack.promise,
+        new Promise<Record<string, any>>((resolve) => {
+          const timer = setTimeout(() => resolve({ ok: false, error: "timeout" }), 60_000);
+          timer.unref?.();
+        }),
+      ]);
+      if (!result?.ok) {
+        const error = typeof result?.error === "string" ? result.error : "app open failed";
+        const reason = error.includes("not found")
+          ? "app_not_found"
+          : error.includes("has no ui")
+            ? "no_ui"
+            : error.includes("entry tool")
+              ? "entry_failed"
+              : error.includes("disabled")
+                || error.includes("credentials")
+                || error.includes("not running")
+                || error.includes("not available")
+                ? "app_not_ready"
+                : "entry_failed";
+        await this.safeSendTo(connection, {
+          event: "apps_open_result",
+          request_id: requestId,
+          ok: false,
+          error,
+          reason,
+        });
+        return;
+      }
+
+      await this.safeSendTo(connection, {
+        event: "apps_open_result",
+        request_id: requestId,
+        ok: true,
+        bridge_chat_id: bridgeChatId,
+        view: result.result?.view,
       });
       return;
     }

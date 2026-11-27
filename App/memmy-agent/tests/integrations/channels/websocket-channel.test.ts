@@ -3052,4 +3052,72 @@ describe("WebSocketChannel memmy parity cases", () => {
     const response = await channel.dispatchHttp({}, { path: "/api/apps", headers: {} });
     expect(response?.status).toBe(401);
   });
+
+  it("opens an app with a hidden bridge chat and writes no transcript", async () => {
+    const bus = new MessageBus();
+    const channel = webuiChannel(bus);
+    const ws = connection();
+    const requestId = "22222222-2222-4222-8222-222222222222";
+    const dispatch = channel.dispatchEnvelope(ws, "client-1", {
+      type: "apps_open",
+      request_id: requestId,
+      app_id: "demo",
+    });
+
+    const inbound = await bus.nextInbound();
+    expect(inbound.metadata).toMatchObject({ runtimeControl: "apps", action: "open", appId: "demo" });
+    const bridgeChatId = String(inbound.metadata.sessionKey).replace("websocket:", "");
+    (inbound.metadata.ack as any).resolve({ ok: true, result: { view: { viewId: "v1" } } });
+    await dispatch;
+
+    expect(sent(ws)).toMatchObject({
+      event: "apps_open_result",
+      request_id: requestId,
+      ok: true,
+      bridge_chat_id: bridgeChatId,
+      view: { viewId: "v1" },
+    });
+    expect(((channel as any).connectionChats.get(ws) as Set<string>).has(bridgeChatId)).toBe(true);
+    expect(fs.existsSync(webuiTranscriptPath(`websocket:${bridgeChatId}`))).toBe(false);
+  });
+
+  it("reuses a native chat id for the app bridge", async () => {
+    const bus = new MessageBus();
+    const channel = webuiChannel(bus);
+    const ws = connection();
+    const nativeChatId = "11111111-1111-4111-8111-111111111111";
+    const dispatch = channel.dispatchEnvelope(ws, "client-1", {
+      type: "apps_open",
+      request_id: "33333333-3333-4333-8333-333333333333",
+      app_id: "demo",
+      chat_id: nativeChatId,
+    });
+
+    const inbound = await bus.nextInbound();
+    (inbound.metadata.ack as any).resolve({ ok: true, result: { view: { viewId: "v1" } } });
+    await dispatch;
+
+    expect(sent(ws)).toMatchObject({ ok: true, bridge_chat_id: nativeChatId });
+  });
+
+  it("does not reuse an external chat id for the app bridge", async () => {
+    const bus = new MessageBus();
+    const channel = webuiChannel(bus);
+    const ws = connection();
+    const externalChatId = "ext_external_chat";
+    const dispatch = channel.dispatchEnvelope(ws, "client-1", {
+      type: "apps_open",
+      request_id: "44444444-4444-4444-8444-444444444444",
+      app_id: "demo",
+      chat_id: externalChatId,
+    });
+
+    const inbound = await bus.nextInbound();
+    (inbound.metadata.ack as any).resolve({ ok: true, result: { view: { viewId: "v1" } } });
+    await dispatch;
+
+    const result = sent(ws);
+    expect(result).toMatchObject({ ok: true });
+    expect(result.bridge_chat_id).not.toBe(externalChatId);
+  });
 });
