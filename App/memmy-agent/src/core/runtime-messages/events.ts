@@ -3,6 +3,7 @@ export const INBOUND_META_RUNTIME_CONTROL = "runtimeControl";
 export const RUNTIME_CONTROL_ACK = "ack";
 export const RUNTIME_CONTROL_MCP_RELOAD = "mcpReload";
 export const RUNTIME_CONTROL_APP_BRIDGE = "appBridge";
+export const RUNTIME_CONTROL_APPS = "apps";
 
 type TimestampInput = Date | string | number;
 

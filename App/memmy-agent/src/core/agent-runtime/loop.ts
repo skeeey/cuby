@@ -110,6 +110,7 @@ import { MessageTool, type MessageSendCallback } from "./tools/message.js";
 import { FileStateStore } from "./tools/file-state.js";
 import { connectMissingServers, handleRuntimeControl, reloadLock, runtimeLines as mcpRuntimeLines, sessionExtra as mcpSessionExtra } from "./tools/mcp.js";
 import { handleAppRuntimeControl } from "../../apps/bridge.js";
+import { handleAppHostRuntimeControl } from "../../apps/host-control.js";
 import { AppManager } from "../../apps/manager.js";
 import { loadAppRegistry } from "../../apps/registry.js";
 import { resolveAppRoots } from "../../apps/roots.js";
@@ -5272,6 +5273,7 @@ export class AgentLoop {
         msg,
         publishInbound: (message) => this.bus.publishInbound(message),
       })) continue;
+      if (await handleAppHostRuntimeControl({ apps: this.apps, msg })) continue;
       const raw = msg.content.trim();
       const effectiveKey = this.effectiveSessionKey(msg);
       const deletionQueue = this.sessionDeletionQueues.get(effectiveKey);
