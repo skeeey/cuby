@@ -122,7 +122,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
 
   return (
     <aside
-      className="cuby-app-chat-panel absolute right-0 top-0 z-20 flex h-full w-[380px] max-w-full flex-col border-l border-border-stone bg-background-paper shadow-xl"
+      className="cuby-app-chat-panel flex h-full w-[380px] max-w-[48%] min-w-0 shrink-0 flex-col border-l border-border-stone bg-background-paper"
       aria-label={`${props.appName} ${t("app.chat.panelTitle")}`}
     >
       <header className="flex items-center gap-2 border-b border-border-stone px-3 py-2">
