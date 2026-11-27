@@ -1,11 +1,16 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { RotateCw } from "lucide-react";
 import type { WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import { useOptionalAgentRuntimeBridge } from "../app/agent-runtime-bridge.js";
+import {
+  clearStoredAppPageTarget,
+  readStoredAppPageTarget,
+  writeStoredAppPageTarget
+} from "../app/app-page-storage.js";
 import { createAppBridgeTransport } from "../app/app-view-client.js";
 import { AppViewHost } from "../app/app-view-host.js";
 import { useTranslation } from "../i18n/use-translation.js";
-import { appsActions } from "../state/app-actions.js";
+import { appActions, appsActions } from "../state/app-actions.js";
 import type { AppPageTarget } from "../state/apps-slice.js";
 import { useAppState } from "../state/app-state.js";
 import { AppChatPanel, ensurePanelChat } from "./app-chat-panel.js";
@@ -62,6 +67,28 @@ export function AppPage() {
     setPanelChatId(null);
     setPendingAppMessage(null);
   }, [target?.view.viewId]);
+
+  const storage = typeof window === "undefined" ? undefined : window.sessionStorage;
+  const restoredStorageRef = useRef(false);
+  useEffect(() => {
+    if (target) {
+      writeStoredAppPageTarget(storage, target);
+      return;
+    }
+    if (restoredStorageRef.current) return;
+    restoredStorageRef.current = true;
+    const stored = readStoredAppPageTarget(storage);
+    if (stored) dispatch(appActions.openAppPage(stored));
+  }, [target, dispatch, storage]);
+
+  useEffect(() => {
+    if (!target || state.apps.status !== "ready") return;
+    const summary = state.apps.items.find((app) => app.id === target.appId);
+    if (!summary || summary.state === "disabled") {
+      clearStoredAppPageTarget(storage);
+      dispatch(appActions.clearAppPage());
+    }
+  }, [target, state.apps, dispatch, storage]);
 
   const reload = useCallback(() => {
     if (!target) return;
