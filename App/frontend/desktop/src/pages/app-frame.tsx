@@ -1,5 +1,5 @@
 import { BookOpen } from "lucide-react";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type MouseEvent, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import {
   productTourIncludesLogs,
@@ -25,7 +25,7 @@ import { useTranslation } from "../i18n/use-translation.js";
 import { useOptionalUpdateCoordinator, type UpdateCoordinatorValue } from "../app/update-coordinator.js";
 import type { MemmyAgentProject, WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import { useTaskBus } from "../lib/task-bus.js";
-import { agentActions, appActions, createAgentOperationError } from "../state/app-actions.js";
+import { agentActions, appActions, appsActions, createAgentOperationError } from "../state/app-actions.js";
 import type { AppState } from "../state/app-reducer.js";
 import { useAppState } from "../state/app-state.js";
 import { canUseCloudFeatures } from "../state/app-reducer.js";
@@ -38,6 +38,7 @@ import { ImChannelTitleIcon, imChannelTitleDisplay } from "../integrations/integ
 import { ImprovementProgramModal } from "./improvement-program-modal.js";
 import { writeMemorySubPage } from "./memory-page.js";
 import { SearchPalette } from "../components/search-palette.js";
+import { AppsSidebarSection } from "./apps-sidebar-section.js";
 import { SidebarResizeHandle, useCodexResizableSidebar } from "./sidebar-resize.js";
 import {
   Archive,
@@ -282,7 +283,8 @@ export function AppFrame(props: AppFrameProps) {
   const { t } = useTranslation();
   const update = useOptionalUpdateCoordinator();
   const { track } = useAnalytics();
-  const taskStateCoordinator = useOptionalAgentRuntimeBridge()?.taskStateCoordinator
+  const agentRuntimeBridge = useOptionalAgentRuntimeBridge();
+  const taskStateCoordinator = agentRuntimeBridge?.taskStateCoordinator
     ?? standaloneRenderTaskStateCoordinator;
   const taskBus = useTaskBus();
   const { syncAgentTaskStatuses } = taskBus;
@@ -338,6 +340,20 @@ export function AppFrame(props: AppFrameProps) {
   );
   const highlightedSessionKey = state.navigation.currentPath === "/main" ? state.agent.currentSessionKey : null;
   const selectedSidebarProjectId = resolveSelectedSidebarProjectId(state.agent, state.navigation.currentPath);
+
+  const openApp = useCallback((appId: string) => {
+    const connection = agentRuntimeBridge?.connection;
+    if (!connection) return;
+    const target: WebuiSessionTarget = selectedSidebarProjectId
+      ? { kind: "project", projectId: selectedSidebarProjectId }
+      : { kind: "standalone" };
+    void appsActions.openApp(connection, dispatch, { appId, target });
+  }, [agentRuntimeBridge?.connection, dispatch, selectedSidebarProjectId]);
+
+  useEffect(() => {
+    if (!clients?.memmyAgent || state.apps.status !== "idle") return;
+    void appsActions.loadApps(clients.memmyAgent, dispatch);
+  }, [clients?.memmyAgent, dispatch, state.apps.status]);
 
   const removeProject = state.agent.projects.find((project) => project.id === removeProjectId) ?? null;
   const archiveProject = state.agent.projects.find((project) => project.id === archiveProjectId) ?? null;
@@ -1148,6 +1164,19 @@ export function AppFrame(props: AppFrameProps) {
             );
           })}
         </nav>
+        )}
+
+        {props.settingsNav ? null : (
+          <AppsSidebarSection
+            apps={state.apps.items}
+            activeAppId={state.navigation.currentPath === "/apps" ? state.navigation.appPage?.appId ?? null : null}
+            loading={state.apps.status === "loading"}
+            error={state.apps.status === "error" ? state.apps.error : null}
+            onOpen={openApp}
+            onRetry={() => {
+              if (clients?.memmyAgent) void appsActions.loadApps(clients.memmyAgent, dispatch);
+            }}
+          />
         )}
 
         {props.settingsNav ? null : (
