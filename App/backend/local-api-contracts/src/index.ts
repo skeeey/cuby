@@ -2,6 +2,7 @@
 import { z } from "zod";
 
 export * from "./app-manifest.js";
+export * from "./app-host.js";
 export * from "./model-catalog-resolver.js";
 export * from "./model-kinds.js";
 
