@@ -19,7 +19,8 @@ export type AppRoutePath =
   | "/memory"
   | "/knowledge"
   | "/memory-sources"
-  | "/settings";
+  | "/settings"
+  | "/apps";
 
 const CURRENT_ROUTE_STORAGE_KEY = "memmy.currentRoute";
 export const FOCUSED_AGENT_CHAT_STORAGE_KEY = "memmy.focusSessionId";
@@ -56,7 +57,8 @@ export const routeTable: Record<AppRoutePath, AppRouteDefinition> = {
   "/memory": { path: "/memory", navKey: "nav.memory", requiresBootstrap: true },
   "/knowledge": { path: "/knowledge", navKey: "nav.knowledge", requiresBootstrap: true },
   "/memory-sources": { path: "/memory-sources", navKey: "nav.memory", requiresBootstrap: true },
-  "/settings": { path: "/settings", navKey: "nav.settings", requiresBootstrap: true }
+  "/settings": { path: "/settings", navKey: "nav.settings", requiresBootstrap: true },
+  "/apps": { path: "/apps", navKey: "nav.apps", requiresBootstrap: true }
 };
 
 /** Contract for resolve initial view input. */

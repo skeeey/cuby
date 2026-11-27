@@ -2,6 +2,7 @@
 import type {
   AgentSourceView,
   AppBootstrapResponse,
+  AppHostSummary,
   AppSettingsDto,
   OnboardingStateDto,
   PrivacySettingsDto,
@@ -18,9 +19,10 @@ import type { IntegrationsClient } from "../api/integrations-client.js";
 import type { IntegrationConnection } from "../integrations/connection-state.js";
 import type { IntegrationMeta } from "../integrations/integration-meta.js";
 import type { LegalDocumentKind } from "../legal/legal-content.js";
-import type { AgentGoalControlAction, ChatModelPreset, MemmyAgentRunStatusSnapshot, MemmyAgentSessionSnapshot, MemmyAgentSessionSummary, MemmyAgentSidebarState, MemmyAgentWebuiThread, MemmyAgentWsEvent, WebuiSessionTarget } from "../api/memmy-agent-client.js";
+import type { AgentGoalControlAction, ChatModelPreset, MemmyAgentClient, MemmyAgentRunStatusSnapshot, MemmyAgentSessionSnapshot, MemmyAgentSessionSummary, MemmyAgentSidebarState, MemmyAgentWebSocketConnection, MemmyAgentWebuiThread, MemmyAgentWsEvent, WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import type { PendingAttachment } from "./agent-composer-state.js";
 import { nextNavigationRequestId, type MemoryReferencePage } from "./navigation-requests.js";
+import type { AppPageTarget, AppsAction } from "./apps-slice.js";
 import type {
   AgentAction,
   AgentChatMediaAttachment,
@@ -80,12 +82,15 @@ export function createAgentOperationError(input: {
 /** Type definition for app action. */
 export type AppAction =
   | ToolsAction
+  | AppsAction
   | AgentAction
   | { type: "startup/loading" }
   | { type: "startup/error"; message: string }
   | { type: "bootstrap/loaded"; bootstrap: AppBootstrapResponse; initialPath: AppRoutePath }
   | { type: "events/statusChanged"; status: EventConnectionStatus }
   | { type: "navigation/changed"; path: AppRoutePath }
+  | { type: "navigation/appPageOpened"; target: AppPageTarget }
+  | { type: "navigation/appPageCleared" }
   | { type: "navigation/openMemoryReference"; id: string; fallbackPage: MemoryReferencePage; requestId: number }
   | { type: "navigation/openToolSkill"; skillId: string | null; requestId: number }
   | { type: "navigation/requestHandled"; requestId: number }
@@ -147,6 +152,26 @@ export const appActions = {
   /** Handles navigate. */
   navigate(path: AppRoutePath): AppAction {
     return { type: "navigation/changed", path };
+  },
+
+  loadAppsStarted(): AppAction {
+    return { type: "apps/loadStarted" };
+  },
+
+  loadAppsSucceeded(items: AppHostSummary[]): AppAction {
+    return { type: "apps/loadSucceeded", items };
+  },
+
+  loadAppsFailed(error: string): AppAction {
+    return { type: "apps/loadFailed", error };
+  },
+
+  openAppPage(target: AppPageTarget): AppAction {
+    return { type: "navigation/appPageOpened", target };
+  },
+
+  clearAppPage(): AppAction {
+    return { type: "navigation/appPageCleared" };
   },
 
   /** Navigates to the memory page and asks it to open a referenced memory. */
@@ -681,3 +706,40 @@ function mapChannelStatus(status: string): string | null {
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
+
+export const appsActions = {
+  async loadApps(
+    client: Pick<MemmyAgentClient, "listApps">,
+    dispatch: (action: AppAction) => void
+  ): Promise<void> {
+    dispatch(appActions.loadAppsStarted());
+    try {
+      const items = await client.listApps();
+      dispatch(appActions.loadAppsSucceeded(items));
+    } catch (error) {
+      dispatch(appActions.loadAppsFailed(toErrorMessage(error)));
+    }
+  },
+
+  async openApp(
+    connection: Pick<MemmyAgentWebSocketConnection, "openApp">,
+    dispatch: (action: AppAction) => void,
+    input: { appId: string; chatId?: string; target?: WebuiSessionTarget }
+  ): Promise<AppPageTarget | null> {
+    try {
+      const result = await connection.openApp(input);
+      const target: AppPageTarget = {
+        appId: input.appId,
+        bridgeChatId: result.bridge_chat_id,
+        origin: input.chatId ? "chat" : "entry",
+        ...(input.chatId ? { chatId: input.chatId } : {}),
+        view: result.view
+      };
+      dispatch(appActions.openAppPage(target));
+      return target;
+    } catch (error) {
+      dispatch(appActions.loadAppsFailed(toErrorMessage(error)));
+      return null;
+    }
+  }
+};

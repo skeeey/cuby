@@ -17,7 +17,8 @@ const ROUTE_PAGE_TITLES: Record<AppRoutePath, string> = {
   "/memory": "Memory",
   "/knowledge": "Knowledge",
   "/memory-sources": "Memory Sources",
-  "/settings": "Settings"
+  "/settings": "Settings",
+  "/apps": "App"
 };
 
 const MEMORY_SUB_PAGE_TITLES: Record<MemorySubPageId, string> = {
