@@ -3120,4 +3120,36 @@ describe("WebSocketChannel memmy parity cases", () => {
     expect(result).toMatchObject({ ok: true });
     expect(result.bridge_chat_id).not.toBe(externalChatId);
   });
+
+  it("keeps the app page workspace for reverse calls", async () => {
+    const bus = new MessageBus();
+    const channel = webuiChannel(bus);
+    const workspace = channel.workspacePath;
+    const ws = connection();
+
+    const open = channel.dispatchEnvelope(ws, "client-1", {
+      type: "apps_open",
+      request_id: "55555555-5555-4555-8555-555555555555",
+      app_id: "demo",
+      target: { kind: "standalone" },
+    });
+    const openInbound = await bus.nextInbound();
+    const bridgeChatId = String(openInbound.metadata.sessionKey).replace("websocket:", "");
+    (openInbound.metadata.ack as any).resolve({ ok: true, result: { view: { viewId: "v1" } } });
+    await open;
+
+    const call = channel.dispatchEnvelope(ws, "client-1", {
+      type: "app_bridge",
+      request_id: "66666666-6666-4666-8666-666666666666",
+      chat_id: bridgeChatId,
+      app_id: "demo",
+      view_id: "v1",
+      method: "tools/call",
+      params: { name: "hello", arguments: {} },
+    });
+    const callInbound = await bus.nextInbound();
+    expect(callInbound.metadata.workspace).toBe(workspace);
+    (callInbound.metadata.ack as any).resolve({ ok: true, result: {} });
+    await call;
+  });
 });

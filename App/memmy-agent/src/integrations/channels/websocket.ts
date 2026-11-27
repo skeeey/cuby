@@ -689,6 +689,7 @@ export class WebSocketChannel extends BaseChannel {
   subscriptions = new Map<string, Set<any>>();
   connectionChats = new Map<any, Set<string>>();
   connectionDefaultChats = new Map<any, string>();
+  private readonly appBridgeWorkspaces = new WeakMap<any, Map<string, string>>();
   issuedTokens = new Map<string, number>();
   apiTokens = new Map<string, number>();
   streamTextBuffers = new Map<string, string[]>();
@@ -852,6 +853,7 @@ export class WebSocketChannel extends BaseChannel {
     this.connectionChats.delete(connection);
     this.connectionDefaultChats.delete(connection);
     this.connectionSurface.delete(connection);
+    this.appBridgeWorkspaces.delete(connection);
   }
 
   safeCleanupConnection(connection: any): void {
@@ -3641,13 +3643,15 @@ export class WebSocketChannel extends BaseChannel {
         return;
       }
 
-      let workspace: string | null = null;
-      const session = this.sessionManager?.get?.(sessionKey) as Session | null;
-      if (session) {
-        try {
-          workspace = readWebuiSessionBinding(session).cwd;
-        } catch {
-          workspace = null;
+      let workspace: string | null = this.appBridgeWorkspaces.get(connection)?.get(chatId) ?? null;
+      if (workspace == null) {
+        const session = this.sessionManager?.get?.(sessionKey) as Session | null;
+        if (session) {
+          try {
+            workspace = readWebuiSessionBinding(session).cwd;
+          } catch {
+            workspace = null;
+          }
         }
       }
 
@@ -3734,6 +3738,10 @@ export class WebSocketChannel extends BaseChannel {
         return;
       }
 
+      const bridgeWorkspaces = this.appBridgeWorkspaces.get(connection) ?? new Map<string, string>();
+      bridgeWorkspaces.set(bridgeChatId, workspace);
+      this.appBridgeWorkspaces.set(connection, bridgeWorkspaces);
+
       const ack = createAppBridgeAck();
       await this.bus.publishInbound(new InboundMessage({
         channel: "system",
@@ -3750,7 +3758,6 @@ export class WebSocketChannel extends BaseChannel {
           chatId: bridgeChatId,
         },
       }));
-
       const result = await Promise.race([
         ack.promise,
         new Promise<Record<string, any>>((resolve) => {
