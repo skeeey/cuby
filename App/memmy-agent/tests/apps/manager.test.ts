@@ -254,4 +254,55 @@ describe("AppManager", () => {
     writeFileSync(path.join(data, "demo", "views", viewId, "result.json"), JSON.stringify({ content: [] }));
     await expect(manager.readViewResult("demo", viewId)).resolves.toEqual({ content: [] });
   });
+
+  it("summarizes app UI metadata without exposing server config", async () => {
+    const manager = new AppManager({
+      entries: [entry("demo", {
+        name: "Demo",
+        description: "Demo app",
+        ui: {
+          resources: [{ uri: "ui://demo/home", entry: "ui/index.html" }],
+          defaultResourceUri: "ui://demo/home",
+          prefersBorder: false,
+        },
+        capabilities: { appToolCalls: ["hello"], appMessages: "allow", openLinks: true },
+        entryPoints: [{ surface: "home", title: "Open Demo" }],
+      })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name, session: { callTool: vi.fn() }, tools: [], resources: [], prompts: [], close: vi.fn()
+      })),
+    });
+    await manager.initialize();
+
+    const [summary] = manager.summaries();
+    expect(summary).toMatchObject({
+      id: "demo",
+      name: "Demo",
+      description: "Demo app",
+      state: "ready",
+      hasUi: true,
+      ui: { defaultResourceUri: "ui://demo/home", prefersBorder: false },
+      capabilities: { openLinks: true, appMessages: "allow" },
+      entryPoints: [{ surface: "home", title: "Open Demo" }],
+    });
+    expect(JSON.stringify(summary)).not.toContain("server.mjs");
+    expect(JSON.stringify(summary)).not.toContain("command");
+  });
+
+  it("marks no-UI apps with hasUi false", async () => {
+    const manager = new AppManager({
+      entries: [entry("plain")],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name, session: { callTool: vi.fn() }, tools: [], resources: [], prompts: [], close: vi.fn()
+      })),
+    });
+    await manager.initialize();
+    expect(manager.summaries()[0]).toMatchObject({ id: "plain", hasUi: false });
+  });
 });

@@ -1,5 +1,6 @@
 import { mkdir, readFile } from "node:fs/promises";
 import path from "node:path";
+import type { AppHostSummary } from "@memmy/local-api-contracts";
 import semver from "semver";
 import { VERSION } from "../version.js";
 import {
@@ -109,6 +110,43 @@ export class AppManager {
   getStatus(id: string): AppStatus | undefined {
     const status = this.apps.get(id)?.status;
     return status ? { ...status, toolNames: [...status.toolNames], viewUris: [...status.viewUris] } : undefined;
+  }
+
+  summaries(): AppHostSummary[] {
+    return [...this.apps.values()].map((runtime) => {
+      const { entry, status } = runtime;
+      const manifest = entry.manifest;
+      const ui = manifest.ui;
+      const resources = (ui?.resources ?? []).map((resource) => ({ uri: resource.uri }));
+      return {
+        id: status.id,
+        name: manifest.name,
+        ...(manifest.description ? { description: manifest.description } : {}),
+        version: status.version,
+        source: status.source,
+        state: status.state,
+        error: status.error,
+        ui: {
+          defaultResourceUri: ui?.defaultResourceUri ?? null,
+          resources,
+          displayModes: ui?.displayModes ?? ["inline", "fullscreen"],
+          prefersBorder: ui?.prefersBorder ?? true,
+          csp: ui?.csp ?? {},
+        },
+        capabilities: {
+          openLinks: manifest.capabilities.openLinks === true,
+          downloads: manifest.capabilities.downloads === true,
+          appMessages: manifest.capabilities.appMessages,
+        },
+        entryPoints: (manifest.entryPoints ?? []).map((entryPoint) => ({
+          surface: entryPoint.surface,
+          title: entryPoint.title,
+          ...(entryPoint.description ? { description: entryPoint.description } : {}),
+          ...(entryPoint.icon ? { icon: entryPoint.icon } : {}),
+        })),
+        hasUi: resources.length > 0,
+      };
+    });
   }
 
   async sessionFor(appId: string, context: AppSessionContext): Promise<McpServerConnection> {
