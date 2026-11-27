@@ -5,10 +5,19 @@ import { AppViewBridge } from "./app-view-bridge.js";
 import type { AppBridgeTransport } from "./app-view-types.js";
 import { AppViewFrame } from "./app-view-frame.js";
 
-function hostContextFor(displayMode: "inline" | "fullscreen"): Record<string, unknown> {
+function hostContextFor(
+  displayMode: "inline" | "fullscreen",
+  layout: "inline" | "page" = "inline",
+): Record<string, unknown> {
+  const page = layout === "page";
   return cubyHostContext({
-    displayMode,
-    container: { width: 800, maxHeight: 640 },
+    displayMode: page ? "fullscreen" : displayMode,
+    container: page
+      ? {
+          width: typeof window !== "undefined" ? window.innerWidth : 1200,
+          height: typeof window !== "undefined" ? window.innerHeight : 800,
+        }
+      : { width: 800, maxHeight: 640 },
     locale: detectCubyLocale(),
     theme: detectCubyTheme(),
   });
@@ -34,6 +43,7 @@ export function AppViewHost(props: {
   view: AgentAppView;
   chatId: string;
   client: AppBridgeTransport;
+  layout?: "inline" | "page";
 }) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<AppViewBridge | null>(null);
@@ -135,8 +145,9 @@ export function AppViewHost(props: {
     const bridge = new AppViewBridge({
       iframe,
       view: frame.view,
-      hostContext: () => hostContextFor(displayModeRef.current),
+      hostContext: () => hostContextFor(displayModeRef.current, props.layout ?? "inline"),
       transport: props.client,
+      layout: props.layout ?? "inline",
       onDisplayModeChange: (mode) => setDisplayMode(mode),
       onSizeChange: (size) => {
         if (typeof size.height === "number" && size.height > 0) setHeight(size.height);
@@ -151,45 +162,51 @@ export function AppViewHost(props: {
       bridgeRef.current = null;
       void bridge.teardown();
     };
-  }, [frame, props.client, props.view.appId, props.view.viewId, props.view.capabilities]);
+  }, [frame, props.client, props.view.appId, props.view.viewId, props.view.capabilities, props.layout]);
 
   useEffect(() => {
     if (!frame) return;
-    bridgeRef.current?.sendHostContextChanged(hostContextFor(displayMode));
-  }, [displayMode, frame]);
+    bridgeRef.current?.sendHostContextChanged(hostContextFor(displayMode, props.layout ?? "inline"));
+  }, [displayMode, frame, props.layout]);
 
   useEffect(() => {
     if (!frame) return;
     return watchCubyTheme(() => {
-      bridgeRef.current?.sendHostContextChanged(hostContextFor(displayModeRef.current));
+      bridgeRef.current?.sendHostContextChanged(hostContextFor(displayModeRef.current, props.layout ?? "inline"));
     });
-  }, [frame]);
+  }, [frame, props.layout]);
 
   const expanded = displayMode === "fullscreen";
+  const page = props.layout === "page";
 
   return (
-    <AppViewFrame
-      view={props.view}
-      state={error ? "error" : frame ? "ready" : "loading"}
-      error={error ?? undefined}
-      onRetry={() => {
-        setError(null);
-        setFrame(null);
-        setReloadKey((value) => value + 1);
-      }}
-      onToggleExpanded={() => setDisplayMode(expanded ? "inline" : "fullscreen")}
-      expanded={expanded}
-    >
-      {frame ? (
-        <iframe
-          ref={iframeRef}
-          srcDoc={frame.html}
-          sandbox="allow-scripts"
-          title={props.view.title}
-          className="cuby-app-view__iframe"
-          style={{ width: "100%", height, border: 0 }}
-        />
-      ) : null}
-    </AppViewFrame>
+    <div className={`cuby-app-view-host${page ? " cuby-app-view-host--page h-full min-h-0 w-full" : ""}`}>
+      <AppViewFrame
+        view={props.view}
+        state={error ? "error" : frame ? "ready" : "loading"}
+        error={error ?? undefined}
+        onRetry={() => {
+          setError(null);
+          setFrame(null);
+          setReloadKey((value) => value + 1);
+        }}
+        onToggleExpanded={page ? undefined : () => setDisplayMode(expanded ? "inline" : "fullscreen")}
+        expanded={page ? false : expanded}
+        variant={page ? "page" : "inline"}
+      >
+        {frame ? (
+          <iframe
+            ref={iframeRef}
+            srcDoc={frame.html}
+            sandbox="allow-scripts"
+            title={props.view.title}
+            className="cuby-app-view__iframe"
+            style={page
+              ? { width: "100%", height: "100%", border: 0 }
+              : { width: "100%", height, border: 0 }}
+          />
+        ) : null}
+      </AppViewFrame>
+    </div>
   );
 }

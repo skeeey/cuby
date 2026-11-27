@@ -54,6 +54,7 @@ import { randomNickname } from "../lib/nickname.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { ApiKeyPage } from "../pages/api-key-page.js";
 import { ApiKeyOptionalPage } from "../pages/api-key-optional-page.js";
+import { AppPage } from "../pages/app-page.js";
 import { ModelPage } from "../pages/model-page.js";
 import { HomePage } from "../pages/home-page.js";
 import { LoginPage } from "../pages/login-page.js";
@@ -375,6 +376,8 @@ function renderRoute(path: AppRoutePath) {
       return <MemoryPage initialSubPage="sources" />;
     case "/settings":
       return <SettingsPage />;
+    case "/apps":
+      return <AppPage />;
     case "/pet":
       return <PetPage />;
     case "/main":

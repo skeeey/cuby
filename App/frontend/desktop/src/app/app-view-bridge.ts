@@ -22,6 +22,7 @@ export class AppViewBridge {
   private readonly onDisplayModeChange?: (mode: "inline" | "fullscreen") => void;
   private readonly onSizeChange?: (size: { width?: number; height?: number }) => void;
   private readonly onError?: (message: string) => void;
+  private readonly layout: "inline" | "page";
   private listening = false;
   private initialized = false;
   private initTimer: ReturnType<typeof setTimeout> | null = null;
@@ -39,6 +40,7 @@ export class AppViewBridge {
     onDisplayModeChange?: (mode: "inline" | "fullscreen") => void;
     onSizeChange?: (size: { width?: number; height?: number }) => void;
     onError?: (message: string) => void;
+    layout?: "inline" | "page";
   }) {
     this.iframeWindow = input.iframe.contentWindow;
     this.view = input.view;
@@ -49,6 +51,7 @@ export class AppViewBridge {
     this.onDisplayModeChange = input.onDisplayModeChange;
     this.onSizeChange = input.onSizeChange;
     this.onError = input.onError;
+    this.layout = input.layout ?? "inline";
   }
 
   start(): void {
@@ -177,6 +180,10 @@ export class AppViewBridge {
           return;
         }
         case "ui/request-display-mode": {
+          if (this.layout === "page") {
+            this.respond(message.id, { mode: "fullscreen" });
+            return;
+          }
           const mode = message.params?.mode;
           if (mode !== "inline" && mode !== "fullscreen") {
             throw new Error("unsupported display mode");
