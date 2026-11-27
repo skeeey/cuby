@@ -25,6 +25,13 @@
     "appMessages": "allow",
     "workspace": "none"
   },
+  "entryPoints": [
+    {
+      "surface": "home",
+      "title": "Fixture",
+      "action": { "kind": "tool", "tool": "hello", "arguments": { "name": "Cuby" } }
+    }
+  ],
   "build": {
     "include": ["app.json", "server.mjs", "ui/**"]
   }

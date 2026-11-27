@@ -11,7 +11,7 @@ import {
 } from "../core/agent-runtime/tools/mcp.js";
 import type { AppRegistryEntry } from "./registry.js";
 import type { AppRoots } from "./roots.js";
-import { AppViewStore } from "./view.js";
+import { AppViewStore, readUiResourceUri, type AppViewEvent } from "./view.js";
 
 export type AppState =
   | "discovered"
@@ -147,6 +147,110 @@ export class AppManager {
         hasUi: resources.length > 0,
       };
     });
+  }
+
+  async openEntryPoint(
+    appId: string,
+    context: AppSessionContext,
+    options?: { entryPointIndex?: number },
+  ): Promise<AppViewEvent> {
+    const runtime = this.requireRuntime(appId);
+    const manifest = runtime.entry.manifest;
+    if (runtime.status.state === "disabled") {
+      throw new Error(`App ${appId} is disabled`);
+    }
+    if (runtime.status.state === "missing_credentials") {
+      throw new Error(runtime.status.error ?? `App ${appId} is missing credentials`);
+    }
+    if (manifest.server.scope === "global" && runtime.status.state === "failed") {
+      await this.retryApp(appId);
+    }
+
+    const connection = await this.sessionFor(appId, context);
+    const entryPoints = (manifest.entryPoints ?? []).filter((entryPoint) => entryPoint.surface === "home");
+    const entryPoint = entryPoints[options?.entryPointIndex ?? 0];
+    const action = entryPoint?.action;
+    const toolTimeout = manifest.server.toolTimeout ?? 30;
+    const capabilities = {
+      openLinks: manifest.capabilities.openLinks === true,
+      downloads: manifest.capabilities.downloads === true,
+      appMessages: manifest.capabilities.appMessages,
+    };
+
+    if (action?.kind === "tool") {
+      const toolDef = connection.tools.find((tool: any) => tool.name === action.tool);
+      if (!toolDef) {
+        throw new Error(`App ${appId} entry tool not found: ${action.tool}`);
+      }
+      const args = action.arguments ?? {};
+      const result = await connection.session.callTool(action.tool, args, toolTimeout);
+      if (result?.isError === true) {
+        throw new Error(`App ${appId} entry tool failed`);
+      }
+      const resourceUri = readUiResourceUri(toolDef._meta) ?? manifest.ui?.defaultResourceUri;
+      if (!resourceUri) {
+        throw new Error(`App ${appId} entry has no ui resource`);
+      }
+      return runtime.store.create({
+        appId,
+        resourceUri,
+        toolName: action.tool,
+        title: entryPoint?.title ?? manifest.name,
+        arguments: args,
+        result,
+        prefersBorder: manifest.ui?.prefersBorder,
+        csp: manifest.ui?.csp,
+        capabilities,
+        toolTimeout,
+      });
+    }
+
+    const resourceUri = manifest.ui?.defaultResourceUri ?? manifest.ui?.resources[0]?.uri;
+    if (!resourceUri) {
+      throw new Error(`App ${appId} has no ui`);
+    }
+    return runtime.store.create({
+      appId,
+      resourceUri,
+      toolName: "app_home",
+      title: entryPoint?.title ?? manifest.name,
+      arguments: {},
+      result: { content: [] },
+      prefersBorder: manifest.ui?.prefersBorder,
+      csp: manifest.ui?.csp,
+      capabilities,
+      toolTimeout,
+    });
+  }
+
+  async retryApp(appId: string): Promise<void> {
+    const runtime = this.requireRuntime(appId);
+    if (runtime.entry.manifest.server.scope !== "global") return;
+    if (runtime.status.state !== "failed") return;
+    if (runtime.failures >= 3 || this.now() < runtime.nextRetryAt) return;
+
+    runtime.status.state = "starting";
+    try {
+      const appDataDir = path.join(this.roots.data, appId);
+      await mkdir(appDataDir, { recursive: true });
+      const connection = await this.connect(
+        appId,
+        this.buildServerConfig(runtime.entry, appDataDir, null),
+      );
+      runtime.global = connection;
+      this.registerConnectionTools(runtime, connection);
+      runtime.status.state = "ready";
+      runtime.status.error = null;
+      runtime.failures = 0;
+      runtime.nextRetryAt = 0;
+    } catch (error) {
+      runtime.failures += 1;
+      runtime.nextRetryAt = this.now() + Math.min(60_000, 1000 * 2 ** runtime.failures);
+      runtime.status.state = "failed";
+      runtime.status.error = errorMessage(error);
+      this.unregisterRuntimeTools(runtime);
+      throw error;
+    }
   }
 
   async sessionFor(appId: string, context: AppSessionContext): Promise<McpServerConnection> {
@@ -393,6 +497,7 @@ export class AppManager {
       capabilities: {
         openLinks: entry.manifest.capabilities.openLinks === true,
         downloads: entry.manifest.capabilities.downloads === true,
+        appMessages: entry.manifest.capabilities.appMessages,
       },
       toolTimeout: timeout,
     };

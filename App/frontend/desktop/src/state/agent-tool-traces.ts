@@ -26,6 +26,7 @@ export type AgentAppView = {
   capabilities?: {
     openLinks?: boolean;
     downloads?: boolean;
+    appMessages?: false | "ask" | "allow";
   };
   toolTimeout?: number;
   initialResult?: { content: unknown[]; structuredContent?: unknown } | null;

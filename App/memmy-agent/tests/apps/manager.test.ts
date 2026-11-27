@@ -265,7 +265,7 @@ describe("AppManager", () => {
           defaultResourceUri: "ui://demo/home",
           prefersBorder: false,
         },
-        capabilities: { appToolCalls: ["hello"], appMessages: "allow", openLinks: true },
+        capabilities: { appToolCalls: ["hello"], appMessages: "allow", openLinks: true, workspace: "none" },
         entryPoints: [{ surface: "home", title: "Open Demo" }],
       })],
       roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
@@ -304,5 +304,129 @@ describe("AppManager", () => {
     });
     await manager.initialize();
     expect(manager.summaries()[0]).toMatchObject({ id: "plain", hasUi: false });
+  });
+
+  it("opens the home entry point tool and returns an app view", async () => {
+    const manager = new AppManager({
+      entries: [entry("demo", {
+        ui: { resources: [{ uri: "ui://demo/home", entry: "ui/index.html" }], defaultResourceUri: "ui://demo/home" },
+        capabilities: { appToolCalls: ["hello"], appMessages: "allow", workspace: "none" },
+        entryPoints: [{ surface: "home", title: "Demo", action: { kind: "tool", tool: "hello", arguments: { name: "Cuby" } } }],
+      })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name,
+        session: { callTool: vi.fn(async () => ({ content: [{ type: "text", text: "Hello, Cuby" }] })) },
+        tools: [{ name: "hello", description: "Say hello", inputSchema: { type: "object" }, _meta: { ui: { resourceUri: "ui://demo/home" } } }],
+        resources: [], prompts: [], close: vi.fn(),
+      })),
+    });
+    await manager.initialize();
+
+    const view = await manager.openEntryPoint("demo", { sessionKey: "websocket:app-1", workspace: null });
+    expect(view.appId).toBe("demo");
+    expect(view.resourceUri).toBe("ui://demo/home");
+    expect(view.toolName).toBe("hello");
+    expect(view.capabilities?.appMessages).toBe("allow");
+    expect(view.initialResult.content[0]).toMatchObject({ type: "text", text: "Hello, Cuby" });
+  });
+
+  it("falls back to defaultResourceUri when the app has no entry point", async () => {
+    const manager = new AppManager({
+      entries: [entry("demo", {
+        ui: { resources: [{ uri: "ui://demo/home", entry: "ui/index.html" }], defaultResourceUri: "ui://demo/home" },
+      })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name, session: { callTool: vi.fn() }, tools: [], resources: [], prompts: [], close: vi.fn()
+      })),
+    });
+    await manager.initialize();
+
+    const view = await manager.openEntryPoint("demo", { sessionKey: "websocket:app-1" });
+    expect(view.resourceUri).toBe("ui://demo/home");
+    expect(view.toolName).toBe("app_home");
+    expect(view.initialResult.content).toEqual([]);
+  });
+
+  it("fails with a readable error when the app has no UI", async () => {
+    const manager = new AppManager({
+      entries: [entry("plain")],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name, session: { callTool: vi.fn() }, tools: [], resources: [], prompts: [], close: vi.fn()
+      })),
+    });
+    await manager.initialize();
+    await expect(manager.openEntryPoint("plain", { sessionKey: "websocket:app-1" }))
+      .rejects.toThrow("has no ui");
+  });
+
+  it("fails when the entry tool returns an error", async () => {
+    const manager = new AppManager({
+      entries: [entry("demo", {
+        ui: { resources: [{ uri: "ui://demo/home", entry: "ui/index.html" }], defaultResourceUri: "ui://demo/home" },
+        entryPoints: [{ surface: "home", title: "Demo", action: { kind: "tool", tool: "hello", arguments: {} } }],
+      })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name,
+        session: { callTool: vi.fn(async () => ({ isError: true, content: [] })) },
+        tools: [{ name: "hello", inputSchema: { type: "object" }, _meta: { ui: { resourceUri: "ui://demo/home" } } }],
+        resources: [], prompts: [], close: vi.fn(),
+      })),
+    });
+    await manager.initialize();
+    await expect(manager.openEntryPoint("demo", { sessionKey: "websocket:app-1" }))
+      .rejects.toThrow("entry tool failed");
+  });
+
+  it("fails when the entry tool is not declared", async () => {
+    const manager = new AppManager({
+      entries: [entry("demo", {
+        ui: { resources: [{ uri: "ui://demo/home", entry: "ui/index.html" }], defaultResourceUri: "ui://demo/home" },
+        entryPoints: [{ surface: "home", title: "Demo", action: { kind: "tool", tool: "missing", arguments: {} } }],
+      })],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect: vi.fn(async (name: string) => ({
+        name,
+        session: { callTool: vi.fn() },
+        tools: [{ name: "hello", inputSchema: { type: "object" } }],
+        resources: [], prompts: [], close: vi.fn(),
+      })),
+    });
+    await manager.initialize();
+    await expect(manager.openEntryPoint("demo", { sessionKey: "websocket:app-1" }))
+      .rejects.toThrow("entry tool not found");
+  });
+
+  it("retries a failed global app", async () => {
+    let attempts = 0;
+    const connect = vi.fn(async (name: string) => {
+      attempts += 1;
+      if (attempts === 1) throw new Error("boom");
+      return { name, session: { callTool: vi.fn() }, tools: [], resources: [], prompts: [], close: vi.fn() };
+    });
+    const manager = new AppManager({
+      entries: [entry("demo")],
+      roots: { bundled: null, user: "/tmp/user", data: mkdtempSync(path.join(tmpdir(), "cuby-data-")), dev: [] },
+      registerTool: vi.fn(),
+      unregisterTool: vi.fn(),
+      connect,
+    });
+    await manager.initialize();
+    expect(manager.getStatus("demo")?.state).toBe("failed");
+    await manager.retryApp("demo");
+    expect(manager.getStatus("demo")?.state).toBe("ready");
   });
 });

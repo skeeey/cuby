@@ -12,6 +12,7 @@ export type AppViewCsp = {
 export type AppViewCapabilities = {
   openLinks?: boolean;
   downloads?: boolean;
+  appMessages?: false | "ask" | "allow";
 };
 
 export type AppViewEvent = {
