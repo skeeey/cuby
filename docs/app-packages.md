@@ -41,6 +41,28 @@ CUBY_DEV_APPS=apps/my-app npm run dev:desktop
 `CUBY_DEV_APPS` accepts a comma-separated list of app directories. Dev entries
 override bundled/user apps with the same `id`; this is the fastest edit loop.
 
+## Example app
+
+[`apps/example-notes`](../apps/example-notes/README.md) is a complete,
+dependency-free walkthrough of the same contract:
+
+- `app.json` with a home entry point, UI resource, tool allowlist, and build
+  selection;
+- a hand-written stdio MCP server (`server.mjs`) with `list_notes` /
+  `add_note` / `delete_note`;
+- a single-file full-page UI that reads host theme tokens, calls tools through
+  the bridge, and uses `ui/open-chat` to open the host AI panel;
+- a README that explains how to run it, how each file works, and how to
+  configure/build it.
+
+```sh
+CUBY_DEV_APPS=apps/example-notes npm run dev:desktop
+CUBY_APPS=example-notes npm run apps:build
+```
+
+Use the fixture for conformance-style tests and the notes example when you
+want a copyable starting point.
+
 ## How it works
 
 ```text
@@ -462,6 +484,6 @@ assistant's reply, and v1 has no `chat/send` or `chat/subscribe` API.
 ## Reference
 
 - Full design: `docs/superpowers/specs/2026-11-21-cuby-app-packages-design.md`
-- Working app: `apps/fixture`
+- Runnable examples: `apps/fixture` (test fixture) and `apps/example-notes` (guided walkthrough)
 - Build script: `scripts/apps/build-apps.mjs`
 - MCP Apps spec: `2026-01-26` (SEP-1865)

@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Example Notes</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --bg: var(--color-background-primary, #ffffff);
+      --canvas: var(--color-background-secondary, #f5f2ea);
+      --fg: var(--color-text-primary, #1d1d1f);
+      --muted: var(--color-text-secondary, #6e6e73);
+      --border: var(--color-border-primary, #e5e0d8);
+      --accent: var(--color-ring-primary, #0a84ff);
+      --radius: var(--border-radius-md, 12px);
+      --shadow: var(--shadow-md, 0 6px 24px rgba(0, 0, 0, 0.08));
+      --font: var(--font-sans, system-ui, sans-serif);
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; background: var(--canvas); color: var(--fg); font-family: var(--font); }
+    main { max-width: 860px; margin: 0 auto; padding: 40px 24px 64px; }
+    header { display: flex; gap: 16px; align-items: flex-start; justify-content: space-between; }
+    .eyebrow { text-transform: uppercase; letter-spacing: 0.12em; font-size: 11px; color: var(--muted); margin: 0 0 6px; }
+    h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.02em; }
+    .subtitle { margin: 0; color: var(--muted); font-size: 14px; }
+    .actions { display: flex; gap: 8px; align-items: center; }
+    .pill { font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 999px; padding: 5px 10px; background: var(--bg); }
+    button { font: inherit; cursor: pointer; border-radius: var(--radius); border: 1px solid var(--border); background: var(--bg); color: var(--fg); padding: 9px 14px; }
+    button.primary { background: var(--accent); border-color: var(--accent); color: #ffffff; }
+    button.ghost { background: transparent; }
+    button.link { border: none; background: transparent; color: var(--accent); padding: 0; }
+    button.danger { border-color: transparent; color: var(--muted); padding: 4px 8px; }
+    button.danger:hover { color: #d93025; background: var(--canvas); }
+    .composer { display: flex; gap: 8px; margin: 28px 0 16px; padding: 8px; background: var(--bg); border: 1px solid var(--border); border-radius: calc(var(--radius) + 4px); box-shadow: var(--shadow); }
+    .composer input { flex: 1; min-width: 0; border: none; outline: none; background: transparent; color: var(--fg); font: inherit; padding: 8px 10px; }
+    .error { color: #d93025; font-size: 13px; margin: 0 0 12px; }
+    .notes { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
+    .note { display: flex; gap: 12px; align-items: flex-start; padding: 14px 16px; background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius); }
+    .note__body { flex: 1; min-width: 0; }
+    .note__text { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .note__meta { margin-top: 6px; font-size: 11px; color: var(--muted); }
+    .empty { padding: 28px; text-align: center; color: var(--muted); background: var(--bg); border: 1px dashed var(--border); border-radius: var(--radius); }
+    footer { display: flex; justify-content: space-between; gap: 12px; margin-top: 28px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 560px) {
+      header { flex-direction: column; }
+      main { padding: 24px 16px 48px; }
+      h1 { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <div>
+        <p class="eyebrow">Cuby example app</p>
+        <h1>Notes</h1>
+        <p class="subtitle">A tiny MCP app: tool calls go through the host bridge, and the page can ask Cuby for help.</p>
+      </div>
+      <div class="actions">
+        <span id="status" class="pill">Connecting…</span>
+        <button id="ask" class="ghost" type="button">Ask Cuby</button>
+      </div>
+    </header>
+
+    <section class="composer">
+      <input id="note-text" type="text" placeholder="Write a note…" autocomplete="off" />
+      <button id="add" class="primary" type="button">Add</button>
+    </section>
+
+    <p id="error" class="error" hidden></p>
+    <ul id="notes" class="notes"></ul>
+
+    <footer>
+      <span>Tools: list_notes · add_note · delete_note</span>
+      <button id="refresh" class="link" type="button">Refresh</button>
+    </footer>
+  </main>
+
+  <script>
+    const state = { notes: [], nextId: 1 };
+    const pending = new Map();
+    const statusEl = document.getElementById("status");
+    const errorEl = document.getElementById("error");
+    const notesEl = document.getElementById("notes");
+    const inputEl = document.getElementById("note-text");
+
+    function send(message) {
+      window.parent.postMessage(message, "*");
+    }
+
+    function request(method, params) {
+      const id = state.nextId++;
+      pending.set(id, method);
+      send({ jsonrpc: "2.0", id, method, params });
+      return id;
+    }
+
+    function applyHostStyles(context) {
+      if (!context || typeof context !== "object") return;
+      if (context.theme) document.documentElement.dataset.theme = context.theme;
+      const variables = context.styles && context.styles.variables;
+      if (!variables || typeof variables !== "object") return;
+      for (const [name, value] of Object.entries(variables)) {
+        if (typeof value === "string" && name.startsWith("--")) {
+          document.documentElement.style.setProperty(name, value);
+        }
+      }
+    }
+
+    function setStatus(text) {
+      statusEl.textContent = text;
+    }
+
+    function setError(text) {
+      errorEl.textContent = text || "";
+      errorEl.hidden = !text;
+    }
+
+    function renderNotes() {
+      notesEl.replaceChildren();
+      if (!state.notes.length) {
+        const empty = document.createElement("li");
+        empty.className = "empty";
+        empty.textContent = "No notes yet. Add one above.";
+        notesEl.append(empty);
+        return;
+      }
+      for (const note of state.notes) {
+        const item = document.createElement("li");
+        item.className = "note";
+        const body = document.createElement("div");
+        body.className = "note__body";
+        const text = document.createElement("div");
+        text.className = "note__text";
+        text.textContent = note.text;
+        const meta = document.createElement("div");
+        meta.className = "note__meta";
+        meta.textContent = `#${note.id} · ${new Date(note.createdAt).toLocaleString()}`;
+        body.append(text, meta);
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.className = "danger";
+        remove.dataset.id = note.id;
+        remove.textContent = "Delete";
+        item.append(body, remove);
+        notesEl.append(item);
+      }
+    }
+
+    function applyNotes(result) {
+      if (result && result.isError) {
+        const message = Array.isArray(result.content) ? result.content[0]?.text : "";
+        setError(message || "The app server returned an error");
+        return;
+      }
+      const notes = result?.structuredContent?.notes;
+      if (Array.isArray(notes)) {
+        state.notes = notes;
+        renderNotes();
+        setError("");
+      }
+    }
+
+    function addNote() {
+      const text = inputEl.value.trim();
+      if (!text) return;
+      request("tools/call", { name: "add_note", arguments: { text } });
+      inputEl.value = "";
+      inputEl.focus();
+    }
+
+    function askCuby() {
+      const summary = state.notes.length
+        ? state.notes.map((note) => `- ${note.text}`).join("\n")
+        : "(no notes yet)";
+      request("ui/open-chat", {
+        message: `Here are my notes:\n${summary}\n\nPlease suggest a short title for this list.`,
+      });
+    }
+
+    window.addEventListener("message", (event) => {
+      const message = event.data;
+      if (!message || typeof message !== "object" || message.jsonrpc !== "2.0") return;
+
+      if (message.method === "ui/notifications/tool-result") {
+        applyNotes(message.params);
+        return;
+      }
+      if (message.method === "ui/notifications/host-context-changed") {
+        applyHostStyles(message.params);
+        return;
+      }
+      if (message.method || message.id === undefined) return;
+
+      const method = pending.get(message.id);
+      if (!method) return;
+      pending.delete(message.id);
+      if (message.error) {
+        setError(message.error.message || "Request failed");
+        return;
+      }
+      if (method === "ui/initialize") {
+        setStatus("Connected");
+        applyHostStyles(message.result?.hostContext);
+        send({ jsonrpc: "2.0", method: "ui/notifications/initialized" });
+        request("tools/call", { name: "list_notes", arguments: {} });
+        return;
+      }
+      if (method === "ui/open-chat") {
+        setStatus("Chat opened");
+        return;
+      }
+      applyNotes(message.result);
+    });
+
+    document.getElementById("add").addEventListener("click", addNote);
+    inputEl.addEventListener("keydown", (event) => {
+      if (event.key === "Enter") addNote();
+    });
+    document.getElementById("refresh").addEventListener("click", () => {
+      request("tools/call", { name: "list_notes", arguments: {} });
+    });
+    document.getElementById("ask").addEventListener("click", askCuby);
+    notesEl.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!(target instanceof HTMLElement) || !target.dataset.id) return;
+      request("tools/call", { name: "delete_note", arguments: { id: target.dataset.id } });
+    });
+
+    request("ui/initialize", {
+      protocolVersion: "2026-01-26",
+      appCapabilities: {},
+      appInfo: { name: "example-notes", version: "0.1.0" },
+    });
+  </script>
+</body>
+</html>

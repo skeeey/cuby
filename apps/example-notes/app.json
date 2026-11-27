@@ -1,0 +1,42 @@
+{
+  "schemaVersion": 1,
+  "id": "example-notes",
+  "name": "Example Notes",
+  "version": "0.1.0",
+  "description": "A tiny notes app that shows how a Cuby app package is written, run, and configured.",
+  "engines": { "cuby": ">=0.0.1" },
+  "server": {
+    "scope": "global",
+    "transport": "stdio",
+    "command": "node",
+    "args": ["server.mjs"],
+    "cwd": "${APP_ROOT}",
+    "toolTimeout": 30
+  },
+  "ui": {
+    "resources": [
+      { "uri": "ui://example-notes/home", "entry": "ui/index.html" }
+    ],
+    "defaultResourceUri": "ui://example-notes/home",
+    "prefersBorder": true,
+    "csp": {}
+  },
+  "capabilities": {
+    "appToolCalls": ["list_notes", "add_note", "delete_note"],
+    "appMessages": "allow",
+    "openLinks": false,
+    "downloads": false,
+    "workspace": "none"
+  },
+  "entryPoints": [
+    {
+      "surface": "home",
+      "title": "Example Notes",
+      "description": "Open the notes app",
+      "action": { "kind": "tool", "tool": "list_notes", "arguments": {} }
+    }
+  ],
+  "build": {
+    "include": ["app.json", "server.mjs", "ui/**", "README.md"]
+  }
+}
