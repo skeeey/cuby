@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { Maximize2, Minimize2, RotateCw } from "lucide-react";
+import { ExternalLink, Maximize2, Minimize2, RotateCw } from "lucide-react";
 import { useTranslation } from "../i18n/use-translation.js";
 import type { AgentAppView } from "../state/agent-tool-traces.js";
 
@@ -26,6 +26,7 @@ export function AppViewFrame(props: {
   onToggleExpanded?: () => void;
   expanded: boolean;
   variant?: "inline" | "page";
+  onOpenPage?: () => void;
 }) {
   const { t } = useTranslation();
   useEffect(() => {
@@ -67,6 +68,17 @@ export function AppViewFrame(props: {
             {props.view.title}
           </span>
           <div className="flex items-center gap-1">
+            {props.onOpenPage ? (
+              <button
+                type="button"
+                aria-label={t("app.view.openPage")}
+                title={t("app.view.openPage")}
+                onClick={props.onOpenPage}
+                className="inline-flex h-7 w-7 items-center justify-center rounded-btn text-text-ink/55 hover:bg-canvas-oat"
+              >
+                <ExternalLink size={14} />
+              </button>
+            ) : null}
             {props.state === "error" && props.onRetry ? (
               <button
                 type="button"

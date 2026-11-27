@@ -44,6 +44,7 @@ export function AppViewHost(props: {
   chatId: string;
   client: AppBridgeTransport;
   layout?: "inline" | "page";
+  onOpenPage?: () => void;
 }) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<AppViewBridge | null>(null);
@@ -193,6 +194,7 @@ export function AppViewHost(props: {
         onToggleExpanded={page ? undefined : () => setDisplayMode(expanded ? "inline" : "fullscreen")}
         expanded={page ? false : expanded}
         variant={page ? "page" : "inline"}
+        onOpenPage={page ? undefined : props.onOpenPage}
       >
         {frame ? (
           <iframe

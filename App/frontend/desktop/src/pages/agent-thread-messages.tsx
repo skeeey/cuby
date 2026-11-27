@@ -58,6 +58,9 @@ import {
 } from "../state/agent-tool-traces.js";
 import { AppViewHost } from "../app/app-view-host.js";
 import type { AppBridgeTransport } from "../app/app-view-types.js";
+import { appActions } from "../state/app-actions.js";
+import type { AppPageTarget } from "../state/apps-slice.js";
+import { useAppState } from "../state/app-state.js";
 import { AgentAttachmentCard, splitAgentAttachmentName } from "./agent-file-attachment-chip.js";
 import { ErrorNoticeDetail } from "./error-notice-detail.js";
 import {
@@ -84,12 +87,17 @@ interface AgentThreadMessagesProps {
   chatId?: string | null;
 }
 
+export function buildChatAppPageTarget(view: AgentAppView, chatId: string): AppPageTarget {
+  return { appId: view.appId, bridgeChatId: chatId, origin: "chat", chatId, view };
+}
+
 function AppViewList(props: {
   messages: AgentChatMessage[];
   client?: AppBridgeTransport | null;
   chatId: string;
 }) {
   const { t } = useTranslation();
+  const { dispatch } = useAppState();
   const views = useMemo(() => {
     const byId = new Map<string, AgentAppView>();
     for (const message of props.messages) {
@@ -113,7 +121,13 @@ function AppViewList(props: {
   return (
     <>
       {views.map((view) => (
-        <AppViewHost key={view.viewId} view={view} chatId={props.chatId} client={props.client!} />
+        <AppViewHost
+          key={view.viewId}
+          view={view}
+          chatId={props.chatId}
+          client={props.client!}
+          onOpenPage={() => dispatch(appActions.openAppPage(buildChatAppPageTarget(view, props.chatId)))}
+        />
       ))}
     </>
   );
