@@ -198,7 +198,7 @@ describe("AppManager", () => {
     expect(closes[0]).toHaveBeenCalledTimes(1);
   });
 
-  it("marks a session app failed and unregisters its tools after a startup failure", async () => {
+  it("keeps a session app ready and its tools after one session's startup failure", async () => {
     let fail = false;
     const connect = vi.fn(async (name: string) => {
       if (fail) throw new Error("boom");
@@ -218,8 +218,14 @@ describe("AppManager", () => {
     expect(manager.getStatus("stateful")?.toolNames).toContain("mcp_stateful_hello");
     fail = true;
     await manager.ensureSessionTools({ sessionKey: "s", workspace: "/b" });
-    expect(manager.getStatus("stateful")?.state).toBe("failed");
-    expect(unregister).toHaveBeenCalledWith("mcp_stateful_hello");
+    expect(manager.getStatus("stateful")?.state).toBe("ready");
+    expect(manager.getStatus("stateful")?.toolNames).toContain("mcp_stateful_hello");
+    expect(unregister).not.toHaveBeenCalled();
+
+    fail = false;
+    await manager.ensureSessionTools({ sessionKey: "other", workspace: "/c" });
+    expect(connect).toHaveBeenCalledTimes(3);
+    expect(manager.getStatus("stateful")?.state).toBe("ready");
   });
 
   it("rejects view results for unknown apps and invalid view ids", async () => {

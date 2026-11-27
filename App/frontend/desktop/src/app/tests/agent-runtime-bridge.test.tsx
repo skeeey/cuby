@@ -64,6 +64,7 @@ describe("AgentRuntimeBridge", () => {
     expect(isAgentRuntimeBridgeRoute("/settings")).toBe(true);
     expect(isAgentRuntimeBridgeRoute("/memory")).toBe(true);
     expect(isAgentRuntimeBridgeRoute("/memory-sources")).toBe(true);
+    expect(isAgentRuntimeBridgeRoute("/apps")).toBe(true);
 
     expect(isAgentRuntimeBridgeRoute("/pet")).toBe(false);
     expect(isAgentRuntimeBridgeRoute("/welcome")).toBe(false);
@@ -82,6 +83,7 @@ describe("AgentRuntimeBridge", () => {
     expect(source).toContain("cleanupConnection();");
     expect(source).toContain("connectionRef.current?.close();");
     expect(source).toContain('path === "/memory-sources"');
+    expect(source).toContain('path === "/apps"');
     expect(source).not.toContain('path === "/pet"');
   });
 

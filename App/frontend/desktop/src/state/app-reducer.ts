@@ -6,7 +6,7 @@ import type { ModelProviderConfig } from "../api/config-client.js";
 import type { LegalDocumentKind } from "../legal/legal-content.js";
 import type { AgentSourceScanCompletion, AgentSourceScanProgress, AppAction, EventConnectionStatus } from "./app-actions.js";
 import { agentReducer, initialAgentState, type AgentAction, type AgentState } from "./agent-chat-slice.js";
-import { appsReducer, initialAppsState, type AppPageTarget, type AppsState } from "./apps-slice.js";
+import { appsReducer, initialAppsState, type AppPageError, type AppPageTarget, type AppsState } from "./apps-slice.js";
 import { initialToolsState, toolsReducer, type ToolsAction, type ToolsState } from "./tools-slice.js";
 import type { NavigationRequest } from "./navigation-requests.js";
 
@@ -24,6 +24,7 @@ export interface NavigationState {
   preferredMode: PreferredMode | null;
   pendingRequest: NavigationRequest | null;
   appPage: AppPageTarget | null;
+  appPageError: AppPageError | null;
 }
 
 /** Contract for agent sources state. */
@@ -132,7 +133,8 @@ export function createInitialAppState(): AppState {
       history: ["/welcome"],
       preferredMode: null,
       pendingRequest: null,
-      appPage: null
+      appPage: null,
+      appPageError: null
     },
     agentSources: {
       items: [],
@@ -224,6 +226,26 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         navigation: {
           ...state.navigation,
           appPage: action.target,
+          appPageError: null,
+          currentPath: "/apps",
+          history: state.navigation.currentPath === "/apps"
+            ? state.navigation.history
+            : [...state.navigation.history, "/apps"],
+          pendingRequest: null
+        },
+        agent: agentReducer(state.agent, { type: "agent/chatViewVisibilityChanged", visible: isAgentChatViewPath("/apps") })
+      };
+    case "navigation/appPageFailed":
+      return {
+        ...state,
+        navigation: {
+          ...state.navigation,
+          appPage: null,
+          appPageError: {
+            appId: action.appId,
+            ...(action.target ? { target: action.target } : {}),
+            error: action.error
+          },
           currentPath: "/apps",
           history: state.navigation.currentPath === "/apps"
             ? state.navigation.history
@@ -235,7 +257,7 @@ export function appReducer(state: AppState, action: AppAction): AppState {
     case "navigation/appPageCleared":
       return {
         ...state,
-        navigation: { ...state.navigation, appPage: null }
+        navigation: { ...state.navigation, appPage: null, appPageError: null }
       };
     case "apps/loadStarted":
     case "apps/loadSucceeded":

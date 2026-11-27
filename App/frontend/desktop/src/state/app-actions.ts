@@ -90,6 +90,7 @@ export type AppAction =
   | { type: "events/statusChanged"; status: EventConnectionStatus }
   | { type: "navigation/changed"; path: AppRoutePath }
   | { type: "navigation/appPageOpened"; target: AppPageTarget }
+  | { type: "navigation/appPageFailed"; appId: string; target?: WebuiSessionTarget; error: string }
   | { type: "navigation/appPageCleared" }
   | { type: "navigation/openMemoryReference"; id: string; fallbackPage: MemoryReferencePage; requestId: number }
   | { type: "navigation/openToolSkill"; skillId: string | null; requestId: number }
@@ -168,6 +169,15 @@ export const appActions = {
 
   openAppPage(target: AppPageTarget): AppAction {
     return { type: "navigation/appPageOpened", target };
+  },
+
+  openAppPageFailed(input: { appId: string; target?: WebuiSessionTarget; error: string }): AppAction {
+    return {
+      type: "navigation/appPageFailed",
+      appId: input.appId,
+      ...(input.target ? { target: input.target } : {}),
+      error: input.error
+    };
   },
 
   clearAppPage(): AppAction {
@@ -733,12 +743,17 @@ export const appsActions = {
         bridgeChatId: result.bridge_chat_id,
         origin: input.chatId ? "chat" : "entry",
         ...(input.chatId ? { chatId: input.chatId } : {}),
+        ...(input.target ? { target: input.target } : {}),
         view: result.view
       };
       dispatch(appActions.openAppPage(target));
       return target;
     } catch (error) {
-      dispatch(appActions.loadAppsFailed(toErrorMessage(error)));
+      dispatch(appActions.openAppPageFailed({
+        appId: input.appId,
+        ...(input.target ? { target: input.target } : {}),
+        error: toErrorMessage(error)
+      }));
       return null;
     }
   }

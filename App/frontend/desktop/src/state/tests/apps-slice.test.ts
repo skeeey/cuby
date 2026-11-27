@@ -62,20 +62,46 @@ describe("apps state", () => {
     expect(state.navigation.appPage).toBeNull();
   });
 
+  it("records an app page open failure and clears it when retried", () => {
+    let state = createInitialAppState();
+    state = appReducer(state, appActions.openAppPageFailed({
+      appId: "demo",
+      target: { kind: "project", projectId: "p1" },
+      error: "boom"
+    }));
+    expect(state.navigation.appPage).toBeNull();
+    expect(state.navigation.appPageError).toMatchObject({ appId: "demo", error: "boom" });
+    expect(state.navigation.currentPath).toBe("/apps");
+    state = appReducer(state, appActions.openAppPage({ appId: "demo", bridgeChatId: "app-1", origin: "entry", view }));
+    expect(state.navigation.appPageError).toBeNull();
+  });
+
   it("loads apps through the helper", async () => {
     const actions: any[] = [];
     await appsActions.loadApps({ listApps: async () => [summary] }, (action) => actions.push(action));
     expect(actions.map((action) => action.type)).toEqual(["apps/loadStarted", "apps/loadSucceeded"]);
   });
 
-  it("opens an app through the helper", async () => {
+  it("opens an app through the helper and preserves the workspace target", async () => {
     const actions: any[] = [];
-    const target = await appsActions.openApp(
+    const target = { kind: "project" as const, projectId: "p1" };
+    const opened = await appsActions.openApp(
       { openApp: async () => ({ bridge_chat_id: "app-1", view }) },
+      (action) => actions.push(action),
+      { appId: "demo", target }
+    );
+    expect(opened).toMatchObject({ appId: "demo", bridgeChatId: "app-1", origin: "entry", target });
+    expect(actions.at(-1)).toMatchObject({ type: "navigation/appPageOpened" });
+  });
+
+  it("reports an app open failure through navigation", async () => {
+    const actions: any[] = [];
+    const opened = await appsActions.openApp(
+      { openApp: async () => { throw new Error("boom"); } },
       (action) => actions.push(action),
       { appId: "demo" }
     );
-    expect(target).toMatchObject({ appId: "demo", bridgeChatId: "app-1", origin: "entry" });
-    expect(actions.at(-1)).toMatchObject({ type: "navigation/appPageOpened" });
+    expect(opened).toBeNull();
+    expect(actions.at(-1)).toMatchObject({ type: "navigation/appPageFailed", appId: "demo", error: "boom" });
   });
 });

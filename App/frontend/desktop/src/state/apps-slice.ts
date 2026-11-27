@@ -1,4 +1,5 @@
 import type { AppHostSummary } from "@memmy/local-api-contracts";
+import type { WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import type { AgentAppView } from "./agent-tool-traces.js";
 
 export type AppsStatus = "idle" | "loading" | "ready" | "error";
@@ -22,7 +23,14 @@ export interface AppPageTarget {
   bridgeChatId: string;
   origin: AppPageOrigin;
   chatId?: string;
+  target?: WebuiSessionTarget;
   view: AgentAppView;
+}
+
+export interface AppPageError {
+  appId: string;
+  target?: WebuiSessionTarget;
+  error: string;
 }
 
 export type AppsAction =

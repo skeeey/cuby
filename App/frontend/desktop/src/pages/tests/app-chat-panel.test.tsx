@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers.js";
-import { AppChatPanel, ensurePanelChat } from "../app-chat-panel.js";
+import { AppChatPanel, ensurePanelChat, panelMessageMeta } from "../app-chat-panel.js";
 
 describe("AppChatPanel", () => {
   let container: HTMLDivElement;
@@ -76,5 +76,39 @@ describe("AppChatPanel", () => {
     await expect(ensurePanelChat({ target: { origin: "chat", chatId: "chat-1" }, newChat }))
       .resolves.toBe("chat-1");
     expect(newChat).not.toHaveBeenCalled();
+  });
+
+  it("sends a pending app message only once across callback identity changes", async () => {
+    const onAppMessage = vi.fn(async () => undefined);
+    const renderPanel = async (onConsumed: () => void) => {
+      await act(async () => {
+        root.render(
+          <AppProviders>
+            <AppChatPanel
+              open
+              appName="Demo"
+              chatId="chat-1"
+              pendingAppMessage="hi"
+              onClose={vi.fn()}
+              onEnsureChat={async () => "chat-1"}
+              onAppMessage={onAppMessage}
+              onPendingAppMessageConsumed={onConsumed}
+            />
+          </AppProviders>
+        );
+      });
+    };
+
+    await renderPanel(vi.fn());
+    await vi.waitFor(() => expect(onAppMessage).toHaveBeenCalledTimes(1));
+    await renderPanel(vi.fn());
+    await act(async () => { await Promise.resolve(); });
+    expect(onAppMessage).toHaveBeenCalledTimes(1);
+  });
+
+  it("labels app-originated messages with the app id", () => {
+    expect(panelMessageMeta({ role: "user", appId: "demo", appControlled: true }))
+      .toBe("user · demo");
+    expect(panelMessageMeta({ role: "user" })).toBe("user");
   });
 });

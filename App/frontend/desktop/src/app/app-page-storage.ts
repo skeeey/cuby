@@ -9,6 +9,11 @@ function isAppPageTarget(value: unknown): value is AppPageTarget {
     && typeof record.bridgeChatId === "string"
     && (record.origin === "entry" || record.origin === "chat")
     && (record.chatId == null || typeof record.chatId === "string")
+    && (
+      record.target == null
+      || record.target.kind === "standalone"
+      || (record.target.kind === "project" && typeof record.target.projectId === "string")
+    )
     && Boolean(record.view)
     && typeof record.view === "object"
     && !Array.isArray(record.view)

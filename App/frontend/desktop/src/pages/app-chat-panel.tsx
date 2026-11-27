@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "../i18n/use-translation.js";
 import type { AppPageTarget } from "../state/apps-slice.js";
@@ -30,6 +30,10 @@ function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
+export function panelMessageMeta(message: { role: string; appId?: string; appControlled?: boolean }): string {
+  return `${message.role}${message.appId ? ` · ${message.appId}` : ""}`;
+}
+
 export function AppChatPanel(props: AppChatPanelProps) {
   const { state } = useAppState();
   const { t } = useTranslation();
@@ -37,6 +41,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
+  const sentPendingRef = useRef<string | null>(null);
   const currentChatId = props.chatId ?? resolvedChatId;
 
   useEffect(() => {
@@ -60,7 +65,15 @@ export function AppChatPanel(props: AppChatPanelProps) {
   }, [props.open, props.chatId, props.onEnsureChat]);
 
   useEffect(() => {
+    if (!props.pendingAppMessage) {
+      sentPendingRef.current = null;
+    }
+  }, [props.pendingAppMessage]);
+
+  useEffect(() => {
     if (!props.open || !props.pendingAppMessage || !currentChatId) return;
+    if (sentPendingRef.current === props.pendingAppMessage) return;
+    sentPendingRef.current = props.pendingAppMessage;
     let cancelled = false;
     setSending(true);
     void props.onAppMessage(currentChatId, props.pendingAppMessage)
@@ -130,7 +143,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
       <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
         {messages.length ? messages.map((message) => (
           <div key={message.id} className="cuby-app-chat-panel__message text-[13px]">
-            <div className="mb-0.5 text-[10px] uppercase tracking-wide text-text-ink/40">{message.role}</div>
+            <div className="mb-0.5 text-[10px] uppercase tracking-wide text-text-ink/40">{panelMessageMeta(message)}</div>
             <div className={`whitespace-pre-wrap break-words ${message.role === "user" ? "text-text-ink" : "text-text-ink/75"}`}>
               {message.content}
             </div>

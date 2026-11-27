@@ -57,6 +57,7 @@ type AppRuntime = {
   sessionStarts: Map<string, Promise<McpServerConnection>>;
   sessionWorkspaces: Map<string, string | null>;
   idleTimers: Map<string, NodeJS.Timeout>;
+  sessionFailures: Map<string, { failures: number; nextRetryAt: number }>;
   failures: number;
   nextRetryAt: number;
 };
@@ -257,6 +258,12 @@ export class AppManager {
     const runtime = this.requireRuntime(appId);
     const scope = runtime.entry.manifest.server.scope;
     if (scope === "global") {
+      if (
+        runtime.status.state === "failed"
+        && (runtime.failures >= 3 || this.now() < runtime.nextRetryAt)
+      ) {
+        throw new Error(runtime.status.error ?? `App ${appId} is not available`);
+      }
       if (!runtime.global) throw new Error(`App ${appId} is not running`);
       return runtime.global;
     }
@@ -264,12 +271,17 @@ export class AppManager {
     if (
       runtime.status.state === "missing_credentials"
       || runtime.status.state === "disabled"
-      || (runtime.status.state === "failed" && (runtime.failures >= 3 || this.now() < runtime.nextRetryAt))
     ) {
       throw new Error(runtime.status.error ?? `App ${appId} is not available`);
     }
 
     const key = context.sessionKey ?? "default";
+    if (scope === "session") {
+      const failure = runtime.sessionFailures.get(key);
+      if (failure && failure.failures >= 3 && this.now() < failure.nextRetryAt) {
+        throw new Error(runtime.status.error ?? `App ${appId} is not available`);
+      }
+    }
     const workspace = context.workspace ?? null;
     const existing = runtime.sessions.get(key);
     if (existing) {
@@ -291,28 +303,34 @@ export class AppManager {
     if (inFlight) return inFlight;
 
     const start = (async () => {
-      const appDataDir = path.join(this.roots.data, appId);
-      await mkdir(appDataDir, { recursive: true });
-      const connection = await this.connect(
-        appId,
-        this.buildServerConfig(runtime.entry, appDataDir, workspace),
-      );
-      const raced = runtime.sessions.get(key);
-      if (raced) {
-        await closeConnection(connection);
-        return raced;
+      try {
+        const appDataDir = path.join(this.roots.data, appId);
+        await mkdir(appDataDir, { recursive: true });
+        const connection = await this.connect(
+          appId,
+          this.buildServerConfig(runtime.entry, appDataDir, workspace),
+        );
+        const raced = runtime.sessions.get(key);
+        if (raced) {
+          await closeConnection(connection);
+          return raced;
+        }
+        runtime.sessions.set(key, connection);
+        runtime.sessionWorkspaces.set(key, workspace);
+        this.touchSession(runtime, key);
+        if (!runtime.status.toolNames.length) {
+          this.registerConnectionTools(runtime, connection);
+        }
+        runtime.sessionFailures.delete(key);
+        runtime.status.state = "ready";
+        runtime.status.error = null;
+        runtime.failures = 0;
+        runtime.nextRetryAt = 0;
+        return connection;
+      } catch (error) {
+        this.recordSessionFailure(runtime, key, error);
+        throw error;
       }
-      runtime.sessions.set(key, connection);
-      runtime.sessionWorkspaces.set(key, workspace);
-      this.touchSession(runtime, key);
-      if (!runtime.status.toolNames.length) {
-        this.registerConnectionTools(runtime, connection);
-      }
-      runtime.status.state = "ready";
-      runtime.status.error = null;
-      runtime.failures = 0;
-      runtime.nextRetryAt = 0;
-      return connection;
     })();
     runtime.sessionStarts.set(key, start);
     try {
@@ -328,20 +346,13 @@ export class AppManager {
       if (
         runtime.status.state === "missing_credentials"
         || runtime.status.state === "disabled"
-        || runtime.failures >= 3
-        || (runtime.status.state === "failed" && this.now() < runtime.nextRetryAt)
       ) {
         continue;
       }
       try {
         await this.sessionFor(runtime.entry.id, context);
       } catch (error) {
-        runtime.failures += 1;
-        runtime.nextRetryAt = this.now() + Math.min(60_000, 1000 * 2 ** runtime.failures);
-        runtime.status.state = "failed";
-        runtime.status.error = errorMessage(error);
-        this.unregisterRuntimeTools(runtime);
-        this.logger.warn(`[apps] ${runtime.entry.id} failed to start session: ${runtime.status.error}`);
+        this.logger.warn(`[apps] ${runtime.entry.id} failed to start session: ${errorMessage(error)}`);
       }
     }
   }
@@ -421,6 +432,14 @@ export class AppManager {
     return runtime;
   }
 
+  private recordSessionFailure(runtime: AppRuntime, key: string, error: unknown): void {
+    const failure = runtime.sessionFailures.get(key) ?? { failures: 0, nextRetryAt: 0 };
+    failure.failures += 1;
+    failure.nextRetryAt = this.now() + Math.min(60_000, 1000 * 2 ** failure.failures);
+    runtime.sessionFailures.set(key, failure);
+    this.logger.warn(`[apps] ${runtime.entry.id} session ${key} failed to start: ${errorMessage(error)}`);
+  }
+
   private async startEntry(entry: AppRegistryEntry): Promise<void> {
     const status: AppStatus = {
       id: entry.id,
@@ -440,6 +459,7 @@ export class AppManager {
       sessionStarts: new Map(),
       sessionWorkspaces: new Map(),
       idleTimers: new Map(),
+      sessionFailures: new Map(),
       failures: 0,
       nextRetryAt: 0,
     };

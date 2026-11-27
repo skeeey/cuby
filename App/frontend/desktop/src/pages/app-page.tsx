@@ -10,10 +10,11 @@ import {
 import { createAppBridgeTransport } from "../app/app-view-client.js";
 import { AppViewHost } from "../app/app-view-host.js";
 import { useTranslation } from "../i18n/use-translation.js";
-import { appActions, appsActions } from "../state/app-actions.js";
+import { agentActions, appActions, appsActions } from "../state/app-actions.js";
 import type { AppPageTarget } from "../state/apps-slice.js";
 import { useAppState } from "../state/app-state.js";
-import { AppChatPanel, ensurePanelChat } from "./app-chat-panel.js";
+import { AppChatPanel } from "./app-chat-panel.js";
+import { openPanelChat, sendPanelUserMessage } from "./app-page-chat.js";
 import { AppFrame } from "./app-frame.js";
 
 export interface AppPageViewProps {
@@ -52,11 +53,14 @@ export function AppPage() {
   const { t } = useTranslation();
   const bridge = useOptionalAgentRuntimeBridge();
   const target = state.navigation.appPage;
+  const pageError = state.navigation.appPageError;
   const [reloadKey, setReloadKey] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [panelChatId, setPanelChatId] = useState<string | null>(null);
   const [pendingAppMessage, setPendingAppMessage] = useState<string | null>(null);
+  const panelChatNeedsTargetRef = useRef(false);
   const connection = bridge?.connection ?? null;
+  const storage = typeof window === "undefined" ? undefined : window.sessionStorage;
   const client = useMemo(
     () => (target && connection ? createAppBridgeTransport(connection, target.bridgeChatId) : null),
     [target, connection]
@@ -66,20 +70,8 @@ export function AppPage() {
     setPanelOpen(false);
     setPanelChatId(null);
     setPendingAppMessage(null);
+    panelChatNeedsTargetRef.current = false;
   }, [target?.view.viewId]);
-
-  const storage = typeof window === "undefined" ? undefined : window.sessionStorage;
-  const restoredStorageRef = useRef(false);
-  useEffect(() => {
-    if (target) {
-      writeStoredAppPageTarget(storage, target);
-      return;
-    }
-    if (restoredStorageRef.current) return;
-    restoredStorageRef.current = true;
-    const stored = readStoredAppPageTarget(storage);
-    if (stored) dispatch(appActions.openAppPage(stored));
-  }, [target, dispatch, storage]);
 
   useEffect(() => {
     if (!target || state.apps.status !== "ready") return;
@@ -90,6 +82,35 @@ export function AppPage() {
     }
   }, [target, state.apps, dispatch, storage]);
 
+  const restoredTargetRef = useRef<AppPageTarget | null>(null);
+  useEffect(() => {
+    if (target) {
+      writeStoredAppPageTarget(storage, target);
+      return;
+    }
+    if (!restoredTargetRef.current) {
+      restoredTargetRef.current = readStoredAppPageTarget(storage);
+    }
+    const stored = restoredTargetRef.current;
+    if (!stored) return;
+    if (stored.origin === "chat") {
+      restoredTargetRef.current = null;
+      dispatch(appActions.openAppPage(stored));
+      return;
+    }
+    if (!connection) return;
+    restoredTargetRef.current = null;
+    void appsActions.openApp(connection, dispatch, {
+      appId: stored.appId,
+      target: stored.target ?? { kind: "standalone" }
+    });
+  }, [target, connection, dispatch, storage]);
+
+  useEffect(() => {
+    if (!target || !connection) return;
+    connection.attach(target.bridgeChatId);
+  }, [target?.bridgeChatId, connection]);
+
   const reload = useCallback(() => {
     if (!target) return;
     if (target.origin === "chat") {
@@ -97,7 +118,7 @@ export function AppPage() {
       return;
     }
     if (!connection) return;
-    const appTarget: WebuiSessionTarget = { kind: "standalone" };
+    const appTarget: WebuiSessionTarget = target.target ?? { kind: "standalone" };
     void appsActions.openApp(connection, dispatch, { appId: target.appId, target: appTarget });
   }, [target, connection, dispatch]);
 
@@ -105,21 +126,23 @@ export function AppPage() {
     if (panelChatId) return panelChatId;
     if (!target) throw new Error("No app selected");
     if (!connection) throw new Error("Agent gateway is not ready");
-    const generation = connection.getReadyGeneration();
-    if (generation === null) throw new Error("Agent gateway is not ready");
-    const chatId = await ensurePanelChat({
+    const result = await openPanelChat({
       target,
-      newChat: async () => (await connection.newChat(generation)).chatId
+      connection,
+      ensureChatSubscription: (chatId) => bridge?.ensureChatSubscription(chatId),
+      onNewChat: (chatId) => dispatch(agentActions.newChatCreated(chatId))
     });
-    connection.attach(chatId);
-    setPanelChatId(chatId);
-    return chatId;
-  }, [panelChatId, target, connection]);
+    panelChatNeedsTargetRef.current = result.isNewChat;
+    setPanelChatId(result.chatId);
+    return result.chatId;
+  }, [panelChatId, target, connection, bridge, dispatch]);
 
   const openChat = useCallback(async (input: { message?: string }): Promise<void> => {
     if (input.message) setPendingAppMessage(input.message);
     setPanelOpen(true);
   }, []);
+
+  const consumePendingAppMessage = useCallback(() => setPendingAppMessage(null), []);
 
   const sendAppMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection || !target) throw new Error("App host is unavailable");
@@ -133,16 +156,57 @@ export function AppPage() {
 
   const sendUserMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection) throw new Error("Agent gateway is not ready");
-    const generation = connection.getReadyGeneration();
-    if (generation === null) throw new Error("Agent gateway is not ready");
-    await connection.sendMessage({
+    const sendTarget = panelChatNeedsTargetRef.current;
+    const targetValue: WebuiSessionTarget | undefined = sendTarget
+      ? target?.target ?? { kind: "standalone" }
+      : undefined;
+    let clientRequestId: string;
+    try {
+      ({ clientRequestId } = await sendPanelUserMessage({
+        connection,
+        chatId,
+        content,
+        ...(targetValue ? { target: targetValue } : {}),
+        sendTarget
+      }));
+    } catch (error) {
+      dispatch(agentActions.transientSendFailed(chatId));
+      throw error;
+    }
+    if (sendTarget) panelChatNeedsTargetRef.current = false;
+    dispatch(agentActions.userMessageQueued({
       chatId,
       content,
-      target: { kind: "standalone" }
-    }, generation);
-  }, [connection]);
+      focus: true,
+      clientRequestId,
+      ...(targetValue ? { target: targetValue } : {})
+    }));
+  }, [connection, target, dispatch]);
 
   const panelChatIdForView = target?.origin === "chat" ? target.chatId ?? null : panelChatId;
+
+  if (!target && pageError) {
+    return (
+      <AppFrame title={t("nav.apps")}>
+        <div className="cuby-app-page flex h-full flex-col items-center justify-center gap-3 p-6 text-center">
+          <div className="max-w-md text-sm text-status-error">{pageError.error}</div>
+          <button
+            type="button"
+            onClick={() => {
+              if (!connection) return;
+              void appsActions.openApp(connection, dispatch, {
+                appId: pageError.appId,
+                ...(pageError.target ? { target: pageError.target } : {})
+              });
+            }}
+            className="rounded-btn bg-action-sky px-3 py-1.5 text-xs text-white"
+          >
+            {t("app.page.retry")}
+          </button>
+        </div>
+      </AppFrame>
+    );
+  }
 
   return (
     <AppFrame title={t("nav.apps")}>
@@ -166,7 +230,7 @@ export function AppPage() {
               onEnsureChat={resolvePanelChat}
               onAppMessage={sendAppMessage}
               onSendUserMessage={sendUserMessage}
-              onPendingAppMessageConsumed={() => setPendingAppMessage(null)}
+              onPendingAppMessageConsumed={consumePendingAppMessage}
             />
           </div>
         ) : target ? (
