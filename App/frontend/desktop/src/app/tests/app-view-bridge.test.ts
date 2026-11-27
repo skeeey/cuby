@@ -16,6 +16,29 @@ function makeBridge() {
   return { bridge, postMessage, callTool };
 }
 
+function makeChatBridge(capability: "allow" | "ask", onOpenChat = vi.fn(async () => undefined)) {
+  const postMessage = vi.fn();
+  const sendMessage = vi.fn(async () => ({ ok: true }));
+  const bridge = new AppViewBridge({
+    iframe: { contentWindow: { postMessage } },
+    view: {
+      viewId: "v1",
+      appId: "demo",
+      resourceUri: "ui://demo/x",
+      toolName: "hello",
+      title: "Hello",
+      displayMode: "inline",
+      protocol: "mcp-apps/2026-01-26",
+      capabilities: { appMessages: capability }
+    },
+    hostContext: () => ({}),
+    transport: { callTool: vi.fn(), readResource: vi.fn(), sendMessage, readViewResult: vi.fn() },
+    layout: "page",
+    onOpenChat
+  });
+  return { bridge, postMessage, sendMessage, onOpenChat };
+}
+
 describe("AppViewBridge", () => {
   it("answers ui/initialize with host capabilities and context", async () => {
     const { bridge, postMessage } = makeBridge();
@@ -91,5 +114,42 @@ describe("AppViewBridge", () => {
       data: { jsonrpc: "2.0", id: 5, method: "ui/open-link", params: { url: "https://example.com" } }
     });
     expect(postMessage).toHaveBeenCalledWith(expect.objectContaining({ id: 5, error: expect.anything() }), "*");
+  });
+
+  it("rejects ui/open-chat unless appMessages is allow", async () => {
+    const { bridge, postMessage, onOpenChat } = makeChatBridge("ask");
+    await bridge.handleMessage({
+      source: (bridge as any).iframeWindow,
+      data: { jsonrpc: "2.0", id: 1, method: "ui/open-chat", params: { message: "hi" } }
+    });
+    expect(onOpenChat).not.toHaveBeenCalled();
+    expect(postMessage).toHaveBeenCalledWith(
+      expect.objectContaining({ id: 1, error: expect.anything() }),
+      "*"
+    );
+  });
+
+  it("routes ui/open-chat when appMessages is allow", async () => {
+    const { bridge, onOpenChat } = makeChatBridge("allow");
+    await bridge.handleMessage({
+      source: (bridge as any).iframeWindow,
+      data: { jsonrpc: "2.0", id: 1, method: "ui/open-chat", params: { message: "hi" } }
+    });
+    expect(onOpenChat).toHaveBeenCalledWith({ message: "hi" });
+  });
+
+  it("routes page-mode ui/message to the chat panel", async () => {
+    const { bridge, sendMessage, onOpenChat } = makeChatBridge("allow");
+    await bridge.handleMessage({
+      source: (bridge as any).iframeWindow,
+      data: {
+        jsonrpc: "2.0",
+        id: 2,
+        method: "ui/message",
+        params: { content: [{ type: "text", text: "hi" }] }
+      }
+    });
+    expect(onOpenChat).toHaveBeenCalledWith({ message: "hi" });
+    expect(sendMessage).not.toHaveBeenCalled();
   });
 });

@@ -45,6 +45,7 @@ export function AppViewHost(props: {
   client: AppBridgeTransport;
   layout?: "inline" | "page";
   onOpenPage?: () => void;
+  onOpenChat?: (input: { message?: string }) => Promise<void>;
 }) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const bridgeRef = useRef<AppViewBridge | null>(null);
@@ -149,6 +150,7 @@ export function AppViewHost(props: {
       hostContext: () => hostContextFor(displayModeRef.current, props.layout ?? "inline"),
       transport: props.client,
       layout: props.layout ?? "inline",
+      onOpenChat: props.onOpenChat,
       onDisplayModeChange: (mode) => setDisplayMode(mode),
       onSizeChange: (size) => {
         if (typeof size.height === "number" && size.height > 0) setHeight(size.height);
@@ -163,7 +165,7 @@ export function AppViewHost(props: {
       bridgeRef.current = null;
       void bridge.teardown();
     };
-  }, [frame, props.client, props.view.appId, props.view.viewId, props.view.capabilities, props.layout]);
+  }, [frame, props.client, props.view.appId, props.view.viewId, props.view.capabilities, props.layout, props.onOpenChat]);
 
   useEffect(() => {
     if (!frame) return;

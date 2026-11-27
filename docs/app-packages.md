@@ -279,6 +279,7 @@ display mode, or size changes. The app can send
 | `tools/call` | forwarded to this app's MCP server; restricted to `appToolCalls` |
 | `resources/read` | forwarded to this app's MCP server |
 | `ui/message` | enters the chat when `appMessages: "allow"`; rate limited (10/min/view) |
+| `ui/open-chat` | Cuby extension: opens the host AI chat panel when `appMessages: "allow"`; an optional `message` is sent as an app message. The app does not receive the assistant reply. |
 | `ui/open-link` | requires `capabilities.openLinks`; asks for confirmation |
 | `ui/download-file` | requires `capabilities.downloads`; native save dialog |
 | `ui/request-display-mode` | `inline` / `fullscreen` |

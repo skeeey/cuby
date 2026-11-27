@@ -26,6 +26,7 @@
   <pre id="output"></pre>
   <button id="echo" type="button">Call echo</button>
   <button id="message" type="button">Send message</button>
+  <button id="chat" type="button">AI chat</button>
   <script>
     const statusEl = document.getElementById("status");
     const outputEl = document.getElementById("output");
@@ -96,6 +97,10 @@
         role: "user",
         content: [{ type: "text", text: "hello from fixture app" }]
       });
+    });
+
+    document.getElementById("chat").addEventListener("click", () => {
+      request("ui/open-chat", { message: "Explain the fixture app" });
     });
 
     request("ui/initialize", {

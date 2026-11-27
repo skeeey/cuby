@@ -3,6 +3,21 @@ import type { AgentAppView, AppBridgeTransport } from "./app-view-types.js";
 const PROTOCOL_VERSION = "2026-01-26";
 const INIT_TIMEOUT_MS = 5000;
 
+function textFromContent(content: unknown): string {
+  if (typeof content === "string") return content.trim();
+  if (!Array.isArray(content)) return "";
+  return content
+    .map((block) => (
+      block && typeof block === "object" && (block as any).type === "text"
+        && typeof (block as any).text === "string"
+        ? (block as any).text
+        : ""
+    ))
+    .filter(Boolean)
+    .join("\n")
+    .trim();
+}
+
 type JsonRpcMessage = {
   jsonrpc?: string;
   id?: unknown;
@@ -23,6 +38,7 @@ export class AppViewBridge {
   private readonly onSizeChange?: (size: { width?: number; height?: number }) => void;
   private readonly onError?: (message: string) => void;
   private readonly layout: "inline" | "page";
+  private readonly onOpenChat?: (input: { message?: string }) => Promise<void>;
   private listening = false;
   private initialized = false;
   private initTimer: ReturnType<typeof setTimeout> | null = null;
@@ -41,6 +57,7 @@ export class AppViewBridge {
     onSizeChange?: (size: { width?: number; height?: number }) => void;
     onError?: (message: string) => void;
     layout?: "inline" | "page";
+    onOpenChat?: (input: { message?: string }) => Promise<void>;
   }) {
     this.iframeWindow = input.iframe.contentWindow;
     this.view = input.view;
@@ -52,6 +69,7 @@ export class AppViewBridge {
     this.onSizeChange = input.onSizeChange;
     this.onError = input.onError;
     this.layout = input.layout ?? "inline";
+    this.onOpenChat = input.onOpenChat;
   }
 
   start(): void {
@@ -123,6 +141,7 @@ export class AppViewBridge {
             hostCapabilities: {
               ...(this.openLink ? { openLinks: {} } : {}),
               ...(this.downloadFile ? { downloadFile: {} } : {}),
+              ...(this.onOpenChat ? { chatPanel: {} } : {}),
               serverTools: {},
               serverResources: {},
             },
@@ -154,12 +173,35 @@ export class AppViewBridge {
         }
         case "ui/message": {
           const params = message.params ?? {};
+          if (this.layout === "page") {
+            if (this.view.capabilities?.appMessages !== "allow") {
+              throw new Error("chat panel is not allowed");
+            }
+            if (!this.onOpenChat) throw new Error("chat panel is unavailable");
+            const text = textFromContent(params.content);
+            if (!text) throw new Error("ui/message requires text content");
+            await this.onOpenChat({ message: text });
+            this.respond(message.id, {});
+            return;
+          }
           const result = await this.transport.sendMessage({
             appId: this.view.appId,
             viewId: this.view.viewId,
             content: Array.isArray(params.content) ? params.content : [],
           });
           this.respond(message.id, result ?? {});
+          return;
+        }
+        case "ui/open-chat": {
+          if (this.view.capabilities?.appMessages !== "allow") {
+            throw new Error("chat panel is not allowed");
+          }
+          if (!this.onOpenChat) throw new Error("chat panel is unavailable");
+          const messageText = typeof message.params?.message === "string"
+            ? message.params.message.trim()
+            : "";
+          await this.onOpenChat(messageText ? { message: messageText } : {});
+          this.respond(message.id, {});
           return;
         }
         case "ui/open-link": {
