@@ -20,6 +20,7 @@ import {
   OutboundMessage,
   RUNTIME_CONTROL_ACK,
   RUNTIME_CONTROL_APP_BRIDGE,
+  RUNTIME_CONTROL_APPS,
   parseTurnSource,
   type TurnSource,
 } from "../../core/runtime-messages/index.js";
@@ -1433,6 +1434,33 @@ export class WebSocketChannel extends BaseChannel {
     return httpJsonResponse(this.withSettingsRestartState(settingsPayload()));
   }
 
+  async handleAppsList(request: any): Promise<HttpLikeResponse> {
+    if (!this.checkApiToken(request)) return httpError(401, "Unauthorized");
+    const ack = createAppBridgeAck();
+    await this.bus.publishInbound(new InboundMessage({
+      channel: "system",
+      chatId: "runtime",
+      senderId: "app-host",
+      content: "apps",
+      metadata: {
+        [INBOUND_META_RUNTIME_CONTROL]: RUNTIME_CONTROL_APPS,
+        action: "list",
+        [RUNTIME_CONTROL_ACK]: ack,
+      },
+    }));
+    const result = await Promise.race([
+      ack.promise,
+      new Promise<Record<string, any>>((resolve) => {
+        const timer = setTimeout(() => resolve({ ok: false, error: "timeout" }), 5000);
+        timer.unref?.();
+      }),
+    ]);
+    if (!result?.ok) {
+      return httpError(503, String(result?.error ?? "app host unavailable"));
+    }
+    return httpJsonResponse(result.result as Record<string, any>);
+  }
+
   withSettingsRestartState(payload: Record<string, any>, { section = null }: { section?: string | null } = {}): Record<string, any> {
     const out = { ...payload };
     if (section && out.requires_restart) this.settingsRestartSections.add(section);
@@ -2803,6 +2831,7 @@ export class WebSocketChannel extends BaseChannel {
     if (got === "/api/settings/image-generation/update") return this.handleSettingsImageGenerationUpdate(request);
     if (got === "/api/settings/mcp-presets") return this.handleSettingsMcpPresets(request);
     if (MCP_PRESET_ACTIONS_BY_PATH[got]) return this.handleSettingsMcpPresets(request, MCP_PRESET_ACTIONS_BY_PATH[got]);
+    if (got === "/api/apps") return this.handleAppsList(request);
     let match = got.match(/^\/api\/sessions\/([^/]+)\/messages$/);
     if (match) return this.handleSessionMessages(request, match[1]);
     match = got.match(/^\/api\/sessions\/([^/]+)\/environment$/);

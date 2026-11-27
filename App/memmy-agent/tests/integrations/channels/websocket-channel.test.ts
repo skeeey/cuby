@@ -3028,4 +3028,28 @@ describe("WebSocketChannel memmy parity cases", () => {
       result: { content: [] },
     });
   });
+
+  it("lists apps over GET /api/apps", async () => {
+    const bus = new MessageBus();
+    const channel = webuiChannel(bus);
+    channel.apiTokens.set("api-token", Number.POSITIVE_INFINITY);
+
+    const pending = channel.dispatchHttp({}, {
+      path: "/api/apps",
+      headers: { authorization: "Bearer api-token" },
+    });
+    const inbound = await bus.nextInbound();
+    expect(inbound.metadata).toMatchObject({ runtimeControl: "apps", action: "list" });
+    (inbound.metadata.ack as any).resolve({ ok: true, result: { apps: [{ id: "demo" }] } });
+
+    const response = await pending;
+    expect(response?.status).toBe(200);
+    expect(JSON.parse(String(response?.body))).toEqual({ apps: [{ id: "demo" }] });
+  });
+
+  it("rejects unauthenticated app list requests", async () => {
+    const channel = webuiChannel(new MessageBus());
+    const response = await channel.dispatchHttp({}, { path: "/api/apps", headers: {} });
+    expect(response?.status).toBe(401);
+  });
 });
