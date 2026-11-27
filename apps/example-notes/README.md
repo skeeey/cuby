@@ -15,8 +15,12 @@
 在仓库根目录：
 
 ```sh
-CUBY_DEV_APPS=apps/example-notes npm run dev:desktop
+CUBY_DEV_APPS="$PWD/apps/example-notes" npm run dev:desktop
 ```
+
+> `CUBY_DEV_APPS` 的相对路径是从 agent 进程的 cwd 解析的（dev 时通常是
+> `App/shell/desktop`），所以这里用 `$PWD` 传绝对路径；直接写
+> `apps/example-notes` 会找不到。
 
 打开桌面端后：
 
@@ -150,7 +154,7 @@ function request(method, params) {
 开发时直接指向源码目录：
 
 ```sh
-CUBY_DEV_APPS=apps/example-notes npm run dev:desktop
+CUBY_DEV_APPS="$PWD/apps/example-notes" npm run dev:desktop
 ```
 
 构建到 `dist/apps/`：
@@ -175,7 +179,7 @@ CUBY_APPS=example-notes npm run apps:build
 ```sh
 npm run apps:list
 CUBY_APPS=example-notes npm run apps:build
-CUBY_DEV_APPS=apps/example-notes npm run dev:desktop
+CUBY_DEV_APPS="$PWD/apps/example-notes" npm run dev:desktop
 ```
 
 ## 继续改这个示例

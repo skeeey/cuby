@@ -31,7 +31,7 @@ cp -R apps/fixture apps/my-app
 4. Run Cuby in dev mode with the app source root:
 
 ```sh
-CUBY_DEV_APPS=apps/my-app npm run dev:desktop
+CUBY_DEV_APPS="$PWD/apps/my-app" npm run dev:desktop
 ```
 
 5. In a chat, ask the model to call `mcp_my_app_hello` with
@@ -40,6 +40,10 @@ CUBY_DEV_APPS=apps/my-app npm run dev:desktop
 
 `CUBY_DEV_APPS` accepts a comma-separated list of app directories. Dev entries
 override bundled/user apps with the same `id`; this is the fastest edit loop.
+Paths are resolved from the agent process's working directory (normally
+`App/shell/desktop` when launched with `npm run dev:desktop`), so pass absolute
+paths; the examples use `$PWD/apps/...` from the repository root. A bare
+relative path such as `apps/my-app` will not be found.
 
 ## Example app
 
@@ -56,7 +60,7 @@ dependency-free walkthrough of the same contract:
   configure/build it.
 
 ```sh
-CUBY_DEV_APPS=apps/example-notes npm run dev:desktop
+CUBY_DEV_APPS="$PWD/apps/example-notes" npm run dev:desktop
 CUBY_APPS=example-notes npm run apps:build
 ```
 
@@ -345,7 +349,7 @@ mounts, the host calls `view/result` to restore the full payload before sending
 ## Development and testing
 
 ```sh
-CUBY_DEV_APPS=apps/fixture npm run dev:desktop
+CUBY_DEV_APPS="$PWD/apps/fixture" npm run dev:desktop
 ```
 
 Manual checklist for a new app:
