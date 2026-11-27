@@ -101,7 +101,8 @@ describe("desktop route table", () => {
       "/memory",
       "/knowledge",
       "/memory-sources",
-      "/settings"
+      "/settings",
+      "/apps"
     ]);
   });
 

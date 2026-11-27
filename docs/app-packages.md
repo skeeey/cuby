@@ -146,6 +146,7 @@ The directory name must match `app.json.id`; the build rejects a mismatch.
 | `ui.displayModes` | no | `inline` / `fullscreen` / `pip`; v1 negotiates inline/fullscreen |
 | `ui.prefersBorder` | no | request host border/background; default `true` |
 | `ui.csp` | no | `connectDomains`, `resourceDomains`, `frameDomains`, `baseUriDomains` |
+| `entryPoints[]` | no | declared entries; v1 uses the first `surface: "home"` entry (tool + static arguments) for the sidebar. Without one, the sidebar opens `ui.defaultResourceUri`. |
 | `capabilities.appToolCalls` | yes | app reverse-call allowlist; `[]` disables reverse calls |
 | `capabilities.appMessages` | yes | `false` / `"ask"` / `"allow"`; v1 treats `"ask"` as denied |
 | `capabilities.downloads` | no | allow `ui/download-file` |
@@ -419,11 +420,39 @@ panel; a visible status surface is planned with entry points.
 - The UI should use `styles.variables` and host context rather than Cuby private
   CSS or React internals.
 
+## App pages and AI chat
+
+An app with `ui.resources` appears in the desktop's left sidebar. Clicking it
+runs the first `surface: "home"` entry point (or opens `ui.defaultResourceUri`)
+and renders the app as a **standalone full page**. This path does not start a
+model turn, does not create a visible chat, and does not write a chat
+transcript. The page uses a hidden bridge chat internally for
+`tools/call` / `resources/read`; the app does not see that chat.
+
+```json
+"entryPoints": [
+  {
+    "surface": "home",
+    "title": "Fixture",
+    "action": { "kind": "tool", "tool": "hello", "arguments": { "name": "Cuby" } }
+  }
+]
+```
+
+`ui/open-chat` is a Cuby host extension for the page's "AI chat" affordance.
+When the app declares `capabilities.appMessages: "allow"`, the app can call
+`ui/open-chat` (optionally with `{ message }`) to open the host's chat panel.
+`ui/message` in a full-page app also opens the panel and sends the message.
+The host creates a visible chat only when the panel opens; app messages are
+marked with provenance and rate limited. The app does not receive the
+assistant's reply, and v1 has no `chat/send` or `chat/subscribe` API.
+
 ## Not in v1
 
 - Runtime installation, signing, and updates
 - OS-level sandboxing of app servers
-- Skills, home/settings entry points, and a shared UI kit
+- Settings entry points, app skills, and a shared UI kit
+- An app-driven chat API (`chat/send` / `chat/subscribe`)
 - Manifest `dev` overrides (use `CUBY_DEV_APPS`)
 - A visible app-status panel
 - Python/Node runtime bundling inside app packages

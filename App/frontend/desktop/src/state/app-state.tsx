@@ -29,3 +29,7 @@ export function useAppState(): AppStateContextValue {
 
   return value;
 }
+
+export function useOptionalAppState(): AppStateContextValue | null {
+  return useContext(AppStateContext);
+}
