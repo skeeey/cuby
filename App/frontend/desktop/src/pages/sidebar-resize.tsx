@@ -12,6 +12,8 @@ export interface ResizableSidebarOptions {
   defaultWidth: number;
   minWidth: number;
   maxWidth: number;
+  /** A right-hand panel grows when the pointer moves left. */
+  invert?: boolean;
 }
 
 export interface ResizableSidebarState {
@@ -41,7 +43,8 @@ export function useResizableSidebar(options: ResizableSidebarOptions): Resizable
     storageKey,
     defaultWidth,
     minWidth,
-    maxWidth
+    maxWidth,
+    invert = false
   } = options;
   const [width, setWidth] = useState(() => readStoredSidebarWidth(storageKey, defaultWidth, minWidth, maxWidth));
   const [dragState, setDragState] = useState<SidebarDragState | null>(null);
@@ -61,8 +64,8 @@ export function useResizableSidebar(options: ResizableSidebarOptions): Resizable
     [width]
   );
   const resizeBy = useCallback(
-    (delta: number) => setClampedWidth(width + delta),
-    [setClampedWidth, width]
+    (delta: number) => setClampedWidth(width + (invert ? -delta : delta)),
+    [invert, setClampedWidth, width]
   );
   const sidebarStyle = useMemo<CSSProperties>(
     () => ({
@@ -95,7 +98,8 @@ export function useResizableSidebar(options: ResizableSidebarOptions): Resizable
     body.style.userSelect = "none";
 
     const handlePointerMove = (event: PointerEvent) => {
-      setClampedWidth(dragState.startWidth + event.clientX - dragState.startX);
+      const delta = event.clientX - dragState.startX;
+      setClampedWidth(dragState.startWidth + (invert ? -delta : delta));
     };
     const stopResize = () => setDragState(null);
 
@@ -110,7 +114,7 @@ export function useResizableSidebar(options: ResizableSidebarOptions): Resizable
       window.removeEventListener("pointerup", stopResize);
       window.removeEventListener("pointercancel", stopResize);
     };
-  }, [dragState, setClampedWidth]);
+  }, [dragState, invert, setClampedWidth]);
 
   return {
     width,

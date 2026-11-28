@@ -6,7 +6,7 @@ export async function openPanelChat(input: {
   connection: Pick<MemmyAgentWebSocketConnection, "getReadyGeneration" | "newChat" | "attach">;
   ensureChatSubscription: (chatId: string) => void;
   onNewChat: (chatId: string) => void;
-}): Promise<{ chatId: string; isNewChat: boolean }> {
+}): Promise<{ chatId: string; isNewChat: boolean; modelPreset?: string }> {
   if (input.target.origin === "chat" && input.target.chatId) {
     input.connection.attach(input.target.chatId);
     input.ensureChatSubscription(input.target.chatId);
@@ -20,7 +20,11 @@ export async function openPanelChat(input: {
   input.connection.attach(created.chatId);
   input.ensureChatSubscription(created.chatId);
   input.onNewChat(created.chatId);
-  return { chatId: created.chatId, isNewChat: true };
+  return {
+    chatId: created.chatId,
+    isNewChat: true,
+    ...(created.modelPreset ? { modelPreset: created.modelPreset } : {})
+  };
 }
 
 export async function sendPanelUserMessage(input: {
@@ -29,6 +33,7 @@ export async function sendPanelUserMessage(input: {
   content: string;
   target?: WebuiSessionTarget;
   sendTarget: boolean;
+  modelPreset?: string | null;
 }): Promise<{ clientRequestId: string }> {
   const generation = input.connection.getReadyGeneration();
   if (generation === null) {
@@ -39,7 +44,8 @@ export async function sendPanelUserMessage(input: {
     chatId: input.chatId,
     content: input.content,
     clientRequestId,
-    ...(input.sendTarget && input.target ? { target: input.target } : {})
+    ...(input.sendTarget && input.target ? { target: input.target } : {}),
+    ...(input.modelPreset ? { modelPreset: input.modelPreset } : {})
   }, generation);
   return { clientRequestId };
 }

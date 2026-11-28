@@ -35,7 +35,7 @@ describe("app page chat helpers", () => {
   it("creates, attaches, and subscribes a new panel chat", async () => {
     const connection = {
       getReadyGeneration: () => 7,
-      newChat: vi.fn(async () => ({ chatId: "chat-new" })),
+      newChat: vi.fn(async () => ({ chatId: "chat-new", modelPreset: "desktop-openai-gpt-5" })),
       attach: vi.fn()
     };
     const ensureChatSubscription = vi.fn();
@@ -48,7 +48,11 @@ describe("app page chat helpers", () => {
       onNewChat
     });
 
-    expect(result).toEqual({ chatId: "chat-new", isNewChat: true });
+    expect(result).toEqual({
+      chatId: "chat-new",
+      isNewChat: true,
+      modelPreset: "desktop-openai-gpt-5"
+    });
     expect(connection.newChat).toHaveBeenCalledWith(7);
     expect(connection.attach).toHaveBeenCalledWith("chat-new");
     expect(ensureChatSubscription).toHaveBeenCalledWith("chat-new");
@@ -87,14 +91,16 @@ describe("app page chat helpers", () => {
       chatId: "chat-1",
       content: "hi",
       target: { kind: "project", projectId: "p1" },
-      sendTarget: true
+      sendTarget: true,
+      modelPreset: "desktop-openai-gpt-5"
     });
     expect(first.clientRequestId).toEqual(expect.any(String));
     expect(submitMessage).toHaveBeenLastCalledWith({
       chatId: "chat-1",
       content: "hi",
       clientRequestId: first.clientRequestId,
-      target: { kind: "project", projectId: "p1" }
+      target: { kind: "project", projectId: "p1" },
+      modelPreset: "desktop-openai-gpt-5"
     }, 7);
 
     await sendPanelUserMessage({

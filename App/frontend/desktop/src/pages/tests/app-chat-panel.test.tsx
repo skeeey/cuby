@@ -4,7 +4,7 @@ import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { AppProviders } from "../../app/providers.js";
-import { AppChatPanel, ensurePanelChat, panelMessageMeta } from "../app-chat-panel.js";
+import { AppChatPanel, ensurePanelChat, panelErrorMessage, panelMessageMeta } from "../app-chat-panel.js";
 
 describe("AppChatPanel", () => {
   let container: HTMLDivElement;
@@ -110,5 +110,14 @@ describe("AppChatPanel", () => {
     expect(panelMessageMeta({ role: "user", appId: "demo", appControlled: true }))
       .toBe("user · demo");
     expect(panelMessageMeta({ role: "user" })).toBe("user");
+  });
+
+  it("surfaces the gateway rejection detail and reason", () => {
+    const rejected = Object.assign(new Error("Message was rejected"), {
+      detail: "session_binding_rejected",
+      reason: "session_target_invalid"
+    });
+    expect(panelErrorMessage(rejected)).toBe("session_binding_rejected: session_target_invalid");
+    expect(panelErrorMessage(new Error("boom"))).toBe("boom");
   });
 });

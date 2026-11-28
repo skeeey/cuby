@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Sparkles, RotateCw } from "lucide-react";
-import type { WebuiSessionTarget } from "../api/memmy-agent-client.js";
+import { MemmyAgentMessageRejectedError, type WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import { useOptionalAgentRuntimeBridge } from "../app/agent-runtime-bridge.js";
 import {
   clearStoredAppPageTarget,
@@ -15,6 +15,7 @@ import type { AppPageTarget } from "../state/apps-slice.js";
 import { useAppState } from "../state/app-state.js";
 import { AppChatPanel } from "./app-chat-panel.js";
 import { openPanelChat, sendPanelUserMessage } from "./app-page-chat.js";
+import { SidebarResizeHandle, useResizableSidebar } from "./sidebar-resize.js";
 import { AppFrame } from "./app-frame.js";
 
 export interface AppPageViewProps {
@@ -74,6 +75,14 @@ export function AppPage() {
   const [panelChatId, setPanelChatId] = useState<string | null>(null);
   const [pendingAppMessage, setPendingAppMessage] = useState<string | null>(null);
   const panelChatNeedsTargetRef = useRef(false);
+  const panelChatModelPresetRef = useRef<string | null>(null);
+  const panelResize = useResizableSidebar({
+    storageKey: "memmy.appChatPanel.width",
+    defaultWidth: 380,
+    minWidth: 300,
+    maxWidth: 640,
+    invert: true
+  });
   const connection = bridge?.connection ?? null;
   const storage = typeof window === "undefined" ? undefined : window.sessionStorage;
   const client = useMemo(
@@ -86,6 +95,7 @@ export function AppPage() {
     setPanelChatId(null);
     setPendingAppMessage(null);
     panelChatNeedsTargetRef.current = false;
+    panelChatModelPresetRef.current = null;
   }, [target?.view.viewId]);
 
   useEffect(() => {
@@ -148,6 +158,7 @@ export function AppPage() {
       onNewChat: (chatId) => dispatch(agentActions.newChatCreated(chatId))
     });
     panelChatNeedsTargetRef.current = result.isNewChat;
+    panelChatModelPresetRef.current = result.modelPreset ?? null;
     setPanelChatId(result.chatId);
     return result.chatId;
   }, [panelChatId, target, connection, bridge, dispatch]);
@@ -167,14 +178,19 @@ export function AppPage() {
       viewId: target.view.viewId,
       content: [{ type: "text", text: content }]
     });
+    // The app message materializes the panel chat's session; later user
+    // messages must not carry a target again.
+    panelChatNeedsTargetRef.current = false;
+    panelChatModelPresetRef.current = null;
   }, [connection, target]);
 
   const sendUserMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection) throw new Error("Agent gateway is not ready");
-    const sendTarget = panelChatNeedsTargetRef.current;
+    let sendTarget = panelChatNeedsTargetRef.current;
     const targetValue: WebuiSessionTarget | undefined = sendTarget
       ? target?.target ?? { kind: "standalone" }
       : undefined;
+    const modelPreset = sendTarget ? panelChatModelPresetRef.current : null;
     let clientRequestId: string;
     try {
       ({ clientRequestId } = await sendPanelUserMessage({
@@ -182,13 +198,41 @@ export function AppPage() {
         chatId,
         content,
         ...(targetValue ? { target: targetValue } : {}),
-        sendTarget
+        sendTarget,
+        modelPreset
       }));
     } catch (error) {
-      dispatch(agentActions.transientSendFailed(chatId));
-      throw error;
+      // The panel chat may already have a session (for example after an app
+      // message). Retry once without the one-shot target, which the gateway
+      // rejects on an existing session.
+      if (
+        sendTarget
+        && error instanceof MemmyAgentMessageRejectedError
+        && error.detail === "session_binding_rejected"
+      ) {
+        try {
+          ({ clientRequestId } = await sendPanelUserMessage({
+            connection,
+            chatId,
+            content,
+            sendTarget: false
+          }));
+          sendTarget = false;
+          panelChatNeedsTargetRef.current = false;
+          panelChatModelPresetRef.current = null;
+        } catch (retryError) {
+          dispatch(agentActions.transientSendFailed(chatId));
+          throw retryError;
+        }
+      } else {
+        dispatch(agentActions.transientSendFailed(chatId));
+        throw error;
+      }
     }
-    if (sendTarget) panelChatNeedsTargetRef.current = false;
+    if (sendTarget) {
+      panelChatNeedsTargetRef.current = false;
+      panelChatModelPresetRef.current = null;
+    }
     dispatch(agentActions.userMessageQueued({
       chatId,
       content,
@@ -238,17 +282,30 @@ export function AppPage() {
                 onOpenChat={openChat}
               />
             </div>
-            <AppChatPanel
-              open={panelOpen}
-              appName={target.view.title || target.appId}
-              chatId={panelChatIdForView}
-              pendingAppMessage={pendingAppMessage}
-              onClose={() => setPanelOpen(false)}
-              onEnsureChat={resolvePanelChat}
-              onAppMessage={sendAppMessage}
-              onSendUserMessage={sendUserMessage}
-              onPendingAppMessageConsumed={consumePendingAppMessage}
-            />
+            {panelOpen ? (
+              <div className="flex h-full min-h-0 shrink-0" style={panelResize.sidebarStyle}>
+                <SidebarResizeHandle
+                  label={t("app.chat.resize")}
+                  width={panelResize.width}
+                  minWidth={panelResize.minWidth}
+                  maxWidth={panelResize.maxWidth}
+                  isResizing={panelResize.isResizing}
+                  onResizeStart={panelResize.beginResize}
+                  onResizeBy={panelResize.resizeBy}
+                />
+                <AppChatPanel
+                  open={panelOpen}
+                  appName={target.view.title || target.appId}
+                  chatId={panelChatIdForView}
+                  pendingAppMessage={pendingAppMessage}
+                  onClose={() => setPanelOpen(false)}
+                  onEnsureChat={resolvePanelChat}
+                  onAppMessage={sendAppMessage}
+                  onSendUserMessage={sendUserMessage}
+                  onPendingAppMessageConsumed={consumePendingAppMessage}
+                />
+              </div>
+            ) : null}
           </div>
         ) : target ? (
           <div className="flex h-full items-center justify-center p-6 text-sm text-text-ink/55">

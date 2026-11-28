@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
-import { X } from "lucide-react";
+import { Send, X } from "lucide-react";
 import { useTranslation } from "../i18n/use-translation.js";
 import type { AppPageTarget } from "../state/apps-slice.js";
 import { useAppState } from "../state/app-state.js";
+import { AgentThreadMessages } from "./agent-thread-messages.js";
 
 export interface AppChatPanelProps {
   open: boolean;
@@ -26,8 +27,16 @@ export async function ensurePanelChat(input: {
   return input.newChat();
 }
 
-function errorMessage(error: unknown): string {
-  return error instanceof Error ? error.message : String(error);
+export function panelErrorMessage(error: unknown): string {
+  if (error instanceof Error) {
+    const detail = (error as { detail?: unknown }).detail;
+    const reason = (error as { reason?: unknown }).reason;
+    if (typeof detail === "string" && detail) {
+      return typeof reason === "string" && reason ? `${detail}: ${reason}` : detail;
+    }
+    return error.message;
+  }
+  return String(error);
 }
 
 export function panelMessageMeta(message: { role: string; appId?: string; appControlled?: boolean }): string {
@@ -57,7 +66,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
         if (!cancelled) setResolvedChatId(chatId);
       })
       .catch((ensureError) => {
-        if (!cancelled) setError(errorMessage(ensureError));
+        if (!cancelled) setError(panelErrorMessage(ensureError));
       });
     return () => {
       cancelled = true;
@@ -81,7 +90,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
         if (!cancelled) props.onPendingAppMessageConsumed?.();
       })
       .catch((sendError) => {
-        if (!cancelled) setError(errorMessage(sendError));
+        if (!cancelled) setError(panelErrorMessage(sendError));
       })
       .finally(() => {
         if (!cancelled) setSending(false);
@@ -114,7 +123,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
     try {
       await props.onSendUserMessage(currentChatId, content);
     } catch (sendError) {
-      setError(errorMessage(sendError));
+      setError(panelErrorMessage(sendError));
     } finally {
       setSending(false);
     }
@@ -122,7 +131,7 @@ export function AppChatPanel(props: AppChatPanelProps) {
 
   return (
     <aside
-      className="cuby-app-chat-panel flex h-full w-[380px] max-w-[48%] min-w-0 shrink-0 flex-col border-l border-border-stone bg-background-paper"
+      className="cuby-app-chat-panel flex h-full w-full min-w-0 flex-col bg-background-paper"
       aria-label={`${props.appName} ${t("app.chat.panelTitle")}`}
     >
       <header className="flex items-center gap-2 border-b border-border-stone px-3 py-2">
@@ -140,34 +149,49 @@ export function AppChatPanel(props: AppChatPanelProps) {
         </button>
       </header>
       {error ? <div className="px-3 py-2 text-xs text-status-error">{error}</div> : null}
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto px-3 py-3">
-        {messages.length ? messages.map((message) => (
-          <div key={message.id} className="cuby-app-chat-panel__message text-[13px]">
-            <div className="mb-0.5 text-[10px] uppercase tracking-wide text-text-ink/40">{panelMessageMeta(message)}</div>
-            <div className={`whitespace-pre-wrap break-words ${message.role === "user" ? "text-text-ink" : "text-text-ink/75"}`}>
-              {message.content}
+      <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+        <div className="agent-conversation-content space-y-3">
+          {messages.length ? (
+            <AgentThreadMessages
+              chatScopeKey={currentChatId ?? "app-chat"}
+              chatId={currentChatId}
+              messages={messages}
+              isSending={state.agent.isSending}
+            />
+          ) : (
+            <div className="py-8 text-center text-xs text-text-ink/45">{t("app.chat.empty")}</div>
+          )}
+        </div>
+      </div>
+      <div className="border-t border-border-stone p-2">
+        <div className="agent-composer-shell agent-composer-shell--expanded rounded-card-lg">
+          <textarea
+            value={draft}
+            onChange={(event) => setDraft(event.target.value)}
+            rows={1}
+            placeholder={t("app.chat.placeholder")}
+            className="agent-composer-input--conversation block w-full resize-none rounded-card-lg bg-background-paper py-3 pl-4 pr-3 text-sm focus:outline-none placeholder:text-text-ink/40"
+          />
+          <div className="agent-composer-toolbar">
+            <div className="agent-composer-toolbar__leading" />
+            <div className="composer-actions">
+              <button
+                type="button"
+                disabled={!draft.trim() || !props.onSendUserMessage || !currentChatId || sending}
+                onClick={() => void submit()}
+                aria-label={t("app.chat.send")}
+                title={t("app.chat.send")}
+                className={`composer-action-submit ${
+                  !draft.trim() || !props.onSendUserMessage || !currentChatId || sending
+                    ? "bg-text-ink/25 text-white cursor-not-allowed"
+                    : "bg-action-sky text-white hover:bg-action-sky-hover shadow-sm cursor-pointer"
+                }`}
+              >
+                <Send size={14} className="translate-y-[1px]" />
+              </button>
             </div>
           </div>
-        )) : (
-          <div className="text-xs text-text-ink/45">{t("app.chat.empty")}</div>
-        )}
-      </div>
-      <div className="flex items-end gap-2 border-t border-border-stone p-2">
-        <textarea
-          value={draft}
-          onChange={(event) => setDraft(event.target.value)}
-          rows={2}
-          placeholder={t("app.chat.placeholder")}
-          className="min-h-[38px] flex-1 resize-none rounded-btn border border-border-stone bg-canvas-oat/40 px-2 py-1.5 text-[13px] text-text-ink outline-none"
-        />
-        <button
-          type="button"
-          disabled={!draft.trim() || !props.onSendUserMessage || sending}
-          onClick={() => void submit()}
-          className="rounded-btn bg-action-sky px-3 py-1.5 text-xs text-white disabled:opacity-50"
-        >
-          {t("app.chat.send")}
-        </button>
+        </div>
       </div>
     </aside>
   );
