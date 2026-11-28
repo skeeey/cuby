@@ -100,6 +100,8 @@ export interface AgentTaskView {
   groupProjectId: string | null;
   cwd: string;
   missingProject: boolean;
+  appId?: string;
+  appName?: string;
 }
 
 interface OptimisticAgentTask {
@@ -1418,7 +1420,9 @@ function buildAgentTasksForState(state: AgentState): AgentTaskView[] {
       session.projectId,
       session.cwd,
       missingProject,
-      state.projectRegistryState === "ready" && !missingProject ? session.projectId : null
+      state.projectRegistryState === "ready" && !missingProject ? session.projectId : null,
+      session.appId,
+      session.appName
     );
   });
 
@@ -1466,7 +1470,9 @@ function buildTaskView(
   projectId: string | null,
   cwd: string,
   missingProject: boolean,
-  groupProjectId: string | null
+  groupProjectId: string | null,
+  appId?: string,
+  appName?: string
 ): AgentTaskView {
   const titleOverride = sidebarState.title_overrides[sessionKey];
   return {
@@ -1483,7 +1489,9 @@ function buildTaskView(
     projectId,
     groupProjectId,
     cwd,
-    missingProject
+    missingProject,
+    ...(appId ? { appId } : {}),
+    ...(appName ? { appName } : {})
   };
 }
 

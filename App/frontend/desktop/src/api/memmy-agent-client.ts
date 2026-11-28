@@ -324,6 +324,8 @@ const SessionSummarySchema = z.object({
   run_started_at: z.number().optional(),
   projectId: z.string().nullable(),
   cwd: z.string(),
+  appId: z.string().optional(),
+  appName: z.string().optional(),
   model_preset: z.string().nullable().optional(),
   model_selection: ModelSelectionSchema.nullable().optional()
 }).passthrough();

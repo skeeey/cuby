@@ -5682,3 +5682,28 @@ function sidebar(overrides: Partial<MemmyAgentSidebarState>): MemmyAgentSidebarS
     }
   };
 }
+
+describe("agent task app origin", () => {
+  it("maps app origin from session summaries onto tasks", () => {
+    const state = agentReducer(initialAgentState, {
+      type: "agent/sessionsLoaded",
+      sessions: [
+        {
+          key: "websocket:chat-app",
+          title: "Notes chat",
+          preview: "hi",
+          projectId: null,
+          cwd: "/tmp",
+          appId: "example-notes",
+          appName: "Example Notes"
+        }
+      ]
+    });
+
+    expect(state.tasks).toContainEqual(expect.objectContaining({
+      chatId: "chat-app",
+      appId: "example-notes",
+      appName: "Example Notes"
+    }));
+  });
+});
