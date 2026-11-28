@@ -36,6 +36,7 @@ import { maskAccountIdentifier } from "../utils/mask-account-identifier.js";
 import { isComposingKeyboardEvent } from "../utils/keyboard.js";
 import { ImChannelTitleIcon, imChannelTitleDisplay } from "../integrations/integration-meta.js";
 import { ImprovementProgramModal } from "./improvement-program-modal.js";
+import { loadTaskChatForPanel, resolveTaskAppDisplayName, taskOpenInAppRequest } from "./open-task-in-app.js";
 import { writeMemorySubPage } from "./memory-page.js";
 import { SearchPalette } from "../components/search-palette.js";
 import { AppsSidebarSection } from "./apps-sidebar-section.js";
@@ -647,6 +648,18 @@ export function AppFrame(props: AppFrameProps) {
         chatId
       })));
     }
+  }
+
+  function resolveTaskAppDisplayNameForTask(task: AgentTaskView): string | null {
+    return resolveTaskAppDisplayName(state.apps.items, task);
+  }
+
+  function openTaskInApp(task: AgentTaskView): void {
+    const request = taskOpenInAppRequest(task);
+    const connection = agentRuntimeBridge?.connection;
+    if (!request || !connection) return;
+    loadTaskChatForPanel(clients?.memmyAgent ?? null, dispatch, task);
+    void appsActions.openApp(connection, dispatch, request);
   }
 
   async function saveSidebarStateForTask(task: AgentTaskView, patch: SidebarTaskPatch) {
@@ -1269,6 +1282,8 @@ export function AppFrame(props: AppFrameProps) {
                 onDeleteArchivedTask={requestDeleteArchivedTask}
                 onProjectContextMenu={openProjectMenu}
                 onNewProjectTask={(projectId) => openNewAgent({ kind: "project", projectId })}
+                resolveAppDisplayName={resolveTaskAppDisplayNameForTask}
+                onOpenInApp={openTaskInApp}
               />
             ) : null}
 
@@ -1305,6 +1320,8 @@ export function AppFrame(props: AppFrameProps) {
               onDeleteArchivedTask={requestDeleteArchivedTask}
               onProjectContextMenu={openProjectMenu}
               onNewProjectTask={(projectId) => openNewAgent({ kind: "project", projectId })}
+              resolveAppDisplayName={resolveTaskAppDisplayNameForTask}
+              onOpenInApp={openTaskInApp}
               headerLeadingAction={(
                 <div className="relative flex items-center">
                   <button
@@ -1369,6 +1386,8 @@ export function AppFrame(props: AppFrameProps) {
               onDeleteArchivedTask={requestDeleteArchivedTask}
               onProjectContextMenu={openProjectMenu}
               onNewProjectTask={(projectId) => openNewAgent({ kind: "project", projectId })}
+              resolveAppDisplayName={resolveTaskAppDisplayNameForTask}
+              onOpenInApp={openTaskInApp}
               headerAction={(
                 <div className="app-frame-task-section-header__actions-inner">
                   <button
