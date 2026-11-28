@@ -78,9 +78,9 @@ export function AppPage() {
   const panelChatModelPresetRef = useRef<string | null>(null);
   const panelResize = useResizableSidebar({
     storageKey: "memmy.appChatPanel.width",
-    defaultWidth: 380,
-    minWidth: 300,
-    maxWidth: 640,
+    defaultWidth: 420,
+    minWidth: 260,
+    maxWidth: 900,
     invert: true
   });
   const connection = bridge?.connection ?? null;

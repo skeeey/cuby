@@ -3361,14 +3361,29 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .app-frame-main--windows
   background: var(--codex-scrollbar-thumb);
 }
 
+.cuby-app-chat-panel__scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--codex-scrollbar-thumb) transparent;
+  scrollbar-gutter: stable;
+}
+
+.cuby-app-chat-panel__scroll::-webkit-scrollbar {
+  display: block;
+  width: var(--codex-scrollbar-size, 8px);
+}
+
+.cuby-app-chat-panel__scroll::-webkit-scrollbar-thumb {
+  background: var(--codex-scrollbar-thumb);
+  border-radius: 999px;
+}
+
 .agent-message-content__pre {
   margin: 0;
   padding: 8px 12px;
   color: color-mix(in srgb, var(--color-text-ink) 75%, transparent);
   font-family: var(--font-mono);
   font-size: 12px;
-  line-height: 1.625;
-}
+  line-height: 1.625;}
 
 .agent-message-content__pre code {
   font-size: inherit;
