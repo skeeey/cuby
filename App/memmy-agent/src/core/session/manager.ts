@@ -112,6 +112,16 @@ function sessionSummary(session: Session, filePath: string, options: { repairPre
     summary.projectId = binding.projectId;
     summary.cwd = binding.cwd;
   }
+  const firstUser = visibleMessages.find((message) => message.role === "user") ?? visibleMessages[0] ?? null;
+  const appContext = firstUser?.webui_app_context;
+  const appId = typeof firstUser?.appId === "string" && firstUser.appId.trim()
+    ? firstUser.appId.trim()
+    : typeof appContext?.appId === "string" && appContext.appId.trim()
+      ? appContext.appId.trim()
+      : "";
+  const appName = typeof appContext?.name === "string" ? appContext.name.trim() : "";
+  if (appId) summary.appId = appId;
+  if (appName) summary.appName = appName;
   return summary;
 }
 

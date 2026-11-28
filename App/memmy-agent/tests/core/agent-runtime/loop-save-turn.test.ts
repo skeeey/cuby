@@ -377,6 +377,26 @@ describe("AgentLoop turn persistence", () => {
     expect(session.metadata.pendingUserTurn).toBe(true);
   });
 
+  it("persists the app context of a panel message on the session message", () => {
+    const loop = makeLoop();
+    const session = new Session({ key: "websocket:app-context" });
+    const msg = new InboundMessage({
+      channel: "websocket",
+      chatId: "app-context",
+      senderId: "u",
+      content: "hi",
+      metadata: {
+        webui_app_context: { appId: "example-notes", name: "Example Notes" },
+      },
+    });
+
+    expect(loop.persistUserMessageEarly(msg, session)).toBe(true);
+    expect(session.messages[0].webui_app_context).toEqual({
+      appId: "example-notes",
+      name: "Example Notes",
+    });
+  });
+
   it("restores runtime checkpoints with pending tool-call errors and deduped overlap", () => {
     const loop = makeLoop();
     const session = new Session({ key: "s" });

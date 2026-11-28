@@ -111,7 +111,7 @@ import { FileStateStore } from "./tools/file-state.js";
 import { connectMissingServers, handleRuntimeControl, reloadLock, runtimeLines as mcpRuntimeLines, sessionExtra as mcpSessionExtra } from "./tools/mcp.js";
 import { handleAppRuntimeControl } from "../../apps/bridge.js";
 import { handleAppHostRuntimeControl } from "../../apps/host-control.js";
-import { appContextRuntimeLines } from "../../apps/context.js";
+import { appContextRuntimeLines, normalizeWebuiAppContext } from "../../apps/context.js";
 import { AppManager } from "../../apps/manager.js";
 import { loadAppRegistry } from "../../apps/registry.js";
 import { resolveAppRoots } from "../../apps/roots.js";
@@ -2734,9 +2734,11 @@ export class AgentLoop {
     ) {
       this.clearQueueSteerTransferMetadata(session, msg.metadata.client_request_id);
     }
+    const appContext = normalizeWebuiAppContext(msg.metadata?.webui_app_context);
     const metadataExtra = {
       ...(mediaPaths.length ? { media: [...mediaPaths] } : {}),
       ...mcpSessionExtra(msg.metadata),
+      ...(appContext ? { webui_app_context: appContext } : {}),
       ...(typeof msg.metadata?.client_request_id === "string"
         ? {
             client_request_id: msg.metadata.client_request_id,
