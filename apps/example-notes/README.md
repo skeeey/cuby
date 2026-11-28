@@ -26,7 +26,7 @@ CUBY_DEV_APPS="$PWD/apps/example-notes" npm run dev:desktop
 
 1. 左侧栏的 **Apps** 分区会出现 **Example Notes**；
 2. 点击后打开整页，输入一条 note 并点 **Add**；
-3. 点 **Ask Cuby**（app 里的按钮，或 app 页右上角的宿主按钮），右侧会并排打开 Cuby 的 AI 对话面板，并带上当前 notes 的上下文；
+3. 点 app 里的 **Ask Cuby**，右侧会并排打开 Cuby 的 AI 对话面板，并带上当前 notes 的上下文；
 4. 在聊天里让模型调用 `mcp_example_notes_list_notes`，也能得到同一个 UI 的内嵌卡片；卡片右上角的“在整页打开”会跳到整页。
 
 > 这个 app 的 server 没有第三方依赖，所以 `CUBY_DEV_APPS` 和 `apps:build` 都不需要额外安装。如果你在自己的 app 里 import npm 包，需要把依赖一并放进 app 包或它声明的 runtime（v1 不会自动打包 `node_modules`）。

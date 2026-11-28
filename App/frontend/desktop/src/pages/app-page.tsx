@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Sparkles, RotateCw } from "lucide-react";
+import { RotateCw } from "lucide-react";
 import { MemmyAgentMessageRejectedError, type WebuiSessionTarget } from "../api/memmy-agent-client.js";
 import { useOptionalAgentRuntimeBridge } from "../app/agent-runtime-bridge.js";
 import {
@@ -21,7 +21,6 @@ import { AppFrame } from "./app-frame.js";
 export interface AppPageViewProps {
   target: AppPageTarget | null;
   onReload: () => void;
-  onOpenChat?: () => void;
   children?: ReactNode;
 }
 
@@ -37,18 +36,6 @@ export function AppPageView(props: AppPageViewProps) {
   return (
     <div className="cuby-app-page relative flex h-full min-h-0 w-full flex-col">
       <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
-        {props.onOpenChat ? (
-          <button
-            type="button"
-            aria-label={t("app.chat.ask")}
-            title={t("app.chat.ask")}
-            onClick={props.onOpenChat}
-            className="inline-flex h-7 items-center gap-1 rounded-btn bg-background-paper/90 px-2 text-[11px] text-text-ink/65 shadow-sm hover:bg-canvas-oat"
-          >
-            <Sparkles size={13} />
-            <span>{t("app.chat.ask")}</span>
-          </button>
-        ) : null}
         <button
           type="button"
           aria-label={t("app.page.reload")}
@@ -321,7 +308,7 @@ export function AppPage() {
 
   return (
     <AppFrame title={t("nav.apps")}>
-      <AppPageView target={target} onReload={reload} onOpenChat={() => { void openChat({}); }}>
+      <AppPageView target={target} onReload={reload}>
         {target && client ? (
           <div className="flex h-full min-h-0 w-full">
             <div className="relative min-h-0 min-w-0 flex-1">

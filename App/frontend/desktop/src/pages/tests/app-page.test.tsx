@@ -41,13 +41,4 @@ describe("AppPage", () => {
     );
     expect(html).toContain(zhCNMessages["app.page.empty"]);
   });
-
-  it("shows the host Ask Cuby action when available", () => {
-    const html = renderToString(
-      <I18nProvider>
-        <AppPageView target={target} onReload={vi.fn()} onOpenChat={vi.fn()} />
-      </I18nProvider>
-    );
-    expect(html).toContain(zhCNMessages["app.chat.ask"]);
-  });
 });
