@@ -480,7 +480,7 @@ export const agentActions = {
     return { type: "agent/transientSendFailed", chatId };
   },
 
-  userMessageQueued(input: { chatId: string; content: string; media?: AgentChatMediaAttachment[]; focus?: boolean; deliveryUncertain?: boolean; target?: WebuiSessionTarget; clientRequestId?: string }): AppAction {
+  userMessageQueued(input: { chatId: string; content: string; media?: AgentChatMediaAttachment[]; focus?: boolean; deliveryUncertain?: boolean; target?: WebuiSessionTarget; clientRequestId?: string; appId?: string; appControlled?: boolean }): AppAction {
     return { type: "agent/userMessageQueued", ...input };
   },
 

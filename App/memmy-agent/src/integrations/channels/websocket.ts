@@ -3539,6 +3539,12 @@ export class WebSocketChannel extends BaseChannel {
     }
     if (queueSurface) metadata.webui_queue_surface = queueSurface;
     if (language) metadata.webui_language = language;
+    if (envelope.source === "mcp-app") {
+      metadata.source = "mcp-app";
+      metadata.appControlled = envelope.app_controlled === true;
+      if (typeof envelope.app_id === "string") metadata.appId = envelope.app_id;
+      if (typeof envelope.view_id === "string") metadata.viewId = envelope.view_id;
+    }
     const mcpPresets: any[] = normalizeMcpPresetMentions(envelope.mcp_presets);
     if (!mcpPresets.length) mcpPresets.push(...normalizeMentionList(envelope.mcp_presets));
     if (mcpPresets.length) metadata.mcp_presets = mcpPresets;

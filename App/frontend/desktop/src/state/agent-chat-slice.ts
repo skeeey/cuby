@@ -294,7 +294,7 @@ export type AgentAction =
   | { type: "agent/blankDraftReopened" }
   | { type: "agent/newChatCreated"; chatId: string }
   | { type: "agent/transientSendFailed"; chatId: string }
-  | { type: "agent/userMessageQueued"; chatId: string; content: string; media?: AgentChatMediaAttachment[]; focus?: boolean; deliveryUncertain?: boolean; target?: WebuiSessionTarget; clientRequestId?: string }
+  | { type: "agent/userMessageQueued"; chatId: string; content: string; media?: AgentChatMediaAttachment[]; focus?: boolean; deliveryUncertain?: boolean; target?: WebuiSessionTarget; clientRequestId?: string; appId?: string; appControlled?: boolean }
   | { type: "agent/queueItemRemoveStarted"; chatId: string; clientRequestId: string }
   | { type: "agent/queueItemRemoveFailed"; chatId: string; clientRequestId: string; error: AgentOperationError }
   | { type: "agent/queueItemSteerStarted"; chatId: string; clientRequestId: string }
@@ -1006,7 +1006,9 @@ function queueOptimisticUserMessage(
     content: action.content,
     createdAt: now,
     ...(action.clientRequestId ? { clientRequestId: action.clientRequestId } : {}),
-    ...(action.media?.length ? { media: action.media } : {})
+    ...(action.media?.length ? { media: action.media } : {}),
+    ...(action.appId ? { appId: action.appId } : {}),
+    ...(action.appControlled ? { appControlled: true } : {})
   };
   const messages = [...existingMessages, message];
   const messagesByChatId = { ...nextState.messagesByChatId, [action.chatId]: messages };

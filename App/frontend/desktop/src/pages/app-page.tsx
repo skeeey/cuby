@@ -172,17 +172,63 @@ export function AppPage() {
 
   const sendAppMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection || !target) throw new Error("App host is unavailable");
-    const transport = createAppBridgeTransport(connection, chatId);
-    await transport.sendMessage({
-      appId: target.appId,
-      viewId: target.view.viewId,
-      content: [{ type: "text", text: content }]
-    });
-    // The app message materializes the panel chat's session; later user
-    // messages must not carry a target again.
+    const sendTarget = panelChatNeedsTargetRef.current;
+    const targetValue: WebuiSessionTarget | undefined = sendTarget
+      ? target.target ?? { kind: "standalone" }
+      : undefined;
+    const modelPreset = sendTarget ? panelChatModelPresetRef.current : null;
+    let clientRequestId: string;
+    try {
+      ({ clientRequestId } = await sendPanelUserMessage({
+        connection,
+        chatId,
+        content,
+        ...(targetValue ? { target: targetValue } : {}),
+        sendTarget,
+        modelPreset,
+        source: "mcp-app",
+        appId: target.appId,
+        viewId: target.view.viewId,
+        appControlled: true
+      }));
+    } catch (error) {
+      if (
+        sendTarget
+        && error instanceof MemmyAgentMessageRejectedError
+        && error.detail === "session_binding_rejected"
+      ) {
+        try {
+          ({ clientRequestId } = await sendPanelUserMessage({
+            connection,
+            chatId,
+            content,
+            sendTarget: false,
+            source: "mcp-app",
+            appId: target.appId,
+            viewId: target.view.viewId,
+            appControlled: true
+          }));
+        } catch (retryError) {
+          dispatch(agentActions.transientSendFailed(chatId));
+          throw retryError;
+        }
+      } else {
+        dispatch(agentActions.transientSendFailed(chatId));
+        throw error;
+      }
+    }
     panelChatNeedsTargetRef.current = false;
     panelChatModelPresetRef.current = null;
-  }, [connection, target]);
+    dispatch(agentActions.userMessageQueued({
+      chatId,
+      content,
+      focus: true,
+      clientRequestId,
+      appId: target.appId,
+      appControlled: true,
+      ...(targetValue ? { target: targetValue } : {})
+    }));
+  }, [connection, target, dispatch]);
 
   const sendUserMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection) throw new Error("Agent gateway is not ready");

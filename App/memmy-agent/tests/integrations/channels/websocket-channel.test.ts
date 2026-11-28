@@ -293,8 +293,33 @@ describe("WebSocket channel", () => {
     expect(channel.subscriptions.size).toBe(0);
   });
 
-  it("coalesces a first-message retry after its empty session binding has been persisted", async () => {
+  it("carries app provenance on a host-panel message", async () => {
     const bus = new MessageBus();
+    const channel = webuiChannel(bus);
+    const ws = connection();
+    await channel.dispatchEnvelope(ws, "owner", {
+      type: "message",
+      chat_id: "app-panel-chat",
+      content: "here are my notes",
+      webui: true,
+      client_request_id: "abababab-abab-4bab-8bab-abababababab",
+      target: { kind: "standalone" },
+      source: "mcp-app",
+      app_id: "example-notes",
+      view_id: "view-1",
+      app_controlled: true,
+    });
+
+    const inbound = await bus.nextInbound();
+    expect(inbound.metadata).toMatchObject({
+      source: "mcp-app",
+      appId: "example-notes",
+      viewId: "view-1",
+      appControlled: true,
+    });
+  });
+
+  it("coalesces a first-message retry after its empty session binding has been persisted", async () => {    const bus = new MessageBus();
     const channel = webuiChannel(bus);
     const first = connection();
     const duplicate = connection();

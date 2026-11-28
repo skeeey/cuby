@@ -34,6 +34,10 @@ export async function sendPanelUserMessage(input: {
   target?: WebuiSessionTarget;
   sendTarget: boolean;
   modelPreset?: string | null;
+  source?: "mcp-app";
+  appId?: string;
+  viewId?: string;
+  appControlled?: boolean;
 }): Promise<{ clientRequestId: string }> {
   const generation = input.connection.getReadyGeneration();
   if (generation === null) {
@@ -45,7 +49,11 @@ export async function sendPanelUserMessage(input: {
     content: input.content,
     clientRequestId,
     ...(input.sendTarget && input.target ? { target: input.target } : {}),
-    ...(input.modelPreset ? { modelPreset: input.modelPreset } : {})
+    ...(input.modelPreset ? { modelPreset: input.modelPreset } : {}),
+    ...(input.source ? { source: input.source } : {}),
+    ...(input.appId ? { appId: input.appId } : {}),
+    ...(input.viewId ? { viewId: input.viewId } : {}),
+    ...(input.appControlled ? { appControlled: true } : {})
   }, generation);
   return { clientRequestId };
 }

@@ -111,5 +111,24 @@ describe("app page chat helpers", () => {
       sendTarget: false
     });
     expect(submitMessage.mock.calls[1][0].target).toBeUndefined();
+
+    await sendPanelUserMessage({
+      connection: connection as any,
+      chatId: "chat-1",
+      content: "from app",
+      sendTarget: false,
+      source: "mcp-app",
+      appId: "demo",
+      viewId: "v1",
+      appControlled: true
+    });
+    expect(submitMessage.mock.calls[2][0]).toMatchObject({
+      chatId: "chat-1",
+      content: "from app",
+      source: "mcp-app",
+      appId: "demo",
+      viewId: "v1",
+      appControlled: true
+    });
   });
 });

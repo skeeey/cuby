@@ -764,6 +764,11 @@ export type MemmyAgentSendMessageInput = {
   language?: MemmyAgentUiLanguage;
   media?: MemmyAgentMediaInput[];
   modelPreset?: string | null;
+  /** Marks a message that originated from an integrated app rather than the user. */
+  source?: "mcp-app";
+  appId?: string;
+  viewId?: string;
+  appControlled?: boolean;
 };
 
 export interface MemmyAgentNewChatResult {
@@ -2601,6 +2606,10 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
       ...(input.target ? { target: input.target } : {}),
       ...(input.language ? { language: input.language } : {}),
       ...(input.modelPreset !== undefined ? { model_preset: input.modelPreset } : {}),
+      ...(input.source ? { source: input.source } : {}),
+      ...(input.appId ? { app_id: input.appId } : {}),
+      ...(input.viewId ? { view_id: input.viewId } : {}),
+      ...(input.appControlled ? { app_controlled: true } : {}),
       ...(input.media?.length ? { media_paths: input.media.map((item) => item.path) } : {})
     }, expectedGeneration);
     this.knownChats.add(input.chatId);
