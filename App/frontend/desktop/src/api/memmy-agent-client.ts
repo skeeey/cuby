@@ -769,6 +769,8 @@ export type MemmyAgentSendMessageInput = {
   appId?: string;
   viewId?: string;
   appControlled?: boolean;
+  /** Tells the agent which app page the user is viewing without marking the message as app-originated. */
+  appContext?: { appId: string; name?: string };
 };
 
 export interface MemmyAgentNewChatResult {
@@ -2610,6 +2612,7 @@ class MemmyAgentWebSocketSession implements MemmyAgentWebSocketConnection {
       ...(input.appId ? { app_id: input.appId } : {}),
       ...(input.viewId ? { view_id: input.viewId } : {}),
       ...(input.appControlled ? { app_controlled: true } : {}),
+      ...(input.appContext ? { app_context: input.appContext } : {}),
       ...(input.media?.length ? { media_paths: input.media.map((item) => item.path) } : {})
     }, expectedGeneration);
     this.knownChats.add(input.chatId);

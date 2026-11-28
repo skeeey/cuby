@@ -120,7 +120,8 @@ describe("app page chat helpers", () => {
       source: "mcp-app",
       appId: "demo",
       viewId: "v1",
-      appControlled: true
+      appControlled: true,
+      appContext: { appId: "demo", name: "Demo" }
     });
     expect(submitMessage.mock.calls[2][0]).toMatchObject({
       chatId: "chat-1",
@@ -128,7 +129,8 @@ describe("app page chat helpers", () => {
       source: "mcp-app",
       appId: "demo",
       viewId: "v1",
-      appControlled: true
+      appControlled: true,
+      appContext: { appId: "demo", name: "Demo" }
     });
   });
 });

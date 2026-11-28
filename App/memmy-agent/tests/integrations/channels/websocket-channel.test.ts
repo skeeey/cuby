@@ -308,6 +308,7 @@ describe("WebSocket channel", () => {
       app_id: "example-notes",
       view_id: "view-1",
       app_controlled: true,
+      app_context: { appId: "example-notes", name: "Example Notes" },
     });
 
     const inbound = await bus.nextInbound();
@@ -316,6 +317,7 @@ describe("WebSocket channel", () => {
       appId: "example-notes",
       viewId: "view-1",
       appControlled: true,
+      webui_app_context: { appId: "example-notes", name: "Example Notes" },
     });
   });
 

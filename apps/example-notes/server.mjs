@@ -22,7 +22,7 @@ const tools = [
   },
   {
     name: "add_note",
-    description: "Add a note",
+    description: "Add a note to the Example Notes app. Use this for note-taking requests, not reminders.",
     inputSchema: {
       type: "object",
       properties: { text: { type: "string" } },

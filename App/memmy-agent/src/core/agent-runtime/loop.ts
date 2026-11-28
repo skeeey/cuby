@@ -111,6 +111,7 @@ import { FileStateStore } from "./tools/file-state.js";
 import { connectMissingServers, handleRuntimeControl, reloadLock, runtimeLines as mcpRuntimeLines, sessionExtra as mcpSessionExtra } from "./tools/mcp.js";
 import { handleAppRuntimeControl } from "../../apps/bridge.js";
 import { handleAppHostRuntimeControl } from "../../apps/host-control.js";
+import { appContextRuntimeLines } from "../../apps/context.js";
 import { AppManager } from "../../apps/manager.js";
 import { loadAppRegistry } from "../../apps/registry.js";
 import { resolveAppRoots } from "../../apps/roots.js";
@@ -3035,6 +3036,7 @@ export class AgentLoop {
         ...mcpRuntimeLines(msg, {
           availableServerNames: new Set(Object.keys(this.mcpServers ?? {})),
         }),
+        ...appContextRuntimeLines(msg.metadata),
       ],
       hook: this.lifecycleHook(),
       sessionWorkspace,
@@ -4016,6 +4018,7 @@ export class AgentLoop {
           ...mcpRuntimeLines(ctx.msg, {
             availableServerNames: new Set(Object.keys(this.mcpServers ?? {})),
           }),
+          ...appContextRuntimeLines(ctx.msg.metadata),
         ],
         hook: this.lifecycleHook(),
         sessionWorkspace,

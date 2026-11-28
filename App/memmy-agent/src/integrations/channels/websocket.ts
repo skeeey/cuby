@@ -3545,6 +3545,18 @@ export class WebSocketChannel extends BaseChannel {
       if (typeof envelope.app_id === "string") metadata.appId = envelope.app_id;
       if (typeof envelope.view_id === "string") metadata.viewId = envelope.view_id;
     }
+    const appContext = envelope.app_context;
+    if (appContext && typeof appContext === "object" && !Array.isArray(appContext)) {
+      const appContextId = typeof appContext.appId === "string" ? appContext.appId.trim() : "";
+      if (appContextId) {
+        metadata.webui_app_context = {
+          appId: appContextId,
+          ...(typeof appContext.name === "string" && appContext.name.trim()
+            ? { name: appContext.name.trim() }
+            : {}),
+        };
+      }
+    }
     const mcpPresets: any[] = normalizeMcpPresetMentions(envelope.mcp_presets);
     if (!mcpPresets.length) mcpPresets.push(...normalizeMentionList(envelope.mcp_presets));
     if (mcpPresets.length) metadata.mcp_presets = mcpPresets;

@@ -38,6 +38,7 @@ export async function sendPanelUserMessage(input: {
   appId?: string;
   viewId?: string;
   appControlled?: boolean;
+  appContext?: { appId: string; name?: string };
 }): Promise<{ clientRequestId: string }> {
   const generation = input.connection.getReadyGeneration();
   if (generation === null) {
@@ -53,7 +54,8 @@ export async function sendPanelUserMessage(input: {
     ...(input.source ? { source: input.source } : {}),
     ...(input.appId ? { appId: input.appId } : {}),
     ...(input.viewId ? { viewId: input.viewId } : {}),
-    ...(input.appControlled ? { appControlled: true } : {})
+    ...(input.appControlled ? { appControlled: true } : {}),
+    ...(input.appContext ? { appContext: input.appContext } : {})
   }, generation);
   return { clientRequestId };
 }

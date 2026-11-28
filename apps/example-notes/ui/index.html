@@ -81,6 +81,7 @@
   <script>
     const state = { notes: [], nextId: 1 };
     const pending = new Map();
+    let listInFlight = false;
     const statusEl = document.getElementById("status");
     const errorEl = document.getElementById("error");
     const notesEl = document.getElementById("notes");
@@ -171,6 +172,12 @@
       inputEl.focus();
     }
 
+    function refreshNotes() {
+      if (listInFlight) return;
+      listInFlight = true;
+      request("tools/call", { name: "list_notes", arguments: {} });
+    }
+
     function askCuby() {
       const summary = state.notes.length
         ? state.notes.map((note) => `- ${note.text}`).join("\n")
@@ -197,6 +204,7 @@
       const method = pending.get(message.id);
       if (!method) return;
       pending.delete(message.id);
+      if (method === "tools/call") listInFlight = false;
       if (message.error) {
         setError(message.error.message || "Request failed");
         return;
@@ -205,7 +213,7 @@
         setStatus("Connected");
         applyHostStyles(message.result?.hostContext);
         send({ jsonrpc: "2.0", method: "ui/notifications/initialized" });
-        request("tools/call", { name: "list_notes", arguments: {} });
+        refreshNotes();
         return;
       }
       if (method === "ui/open-chat") {
@@ -220,7 +228,7 @@
       if (event.key === "Enter") addNote();
     });
     document.getElementById("refresh").addEventListener("click", () => {
-      request("tools/call", { name: "list_notes", arguments: {} });
+      refreshNotes();
     });
     document.getElementById("ask").addEventListener("click", askCuby);
     notesEl.addEventListener("click", (event) => {
@@ -228,6 +236,10 @@
       if (!(target instanceof HTMLElement) || !target.dataset.id) return;
       request("tools/call", { name: "delete_note", arguments: { id: target.dataset.id } });
     });
+
+    window.setInterval(() => {
+      if (document.visibilityState === "visible") refreshNotes();
+    }, 3000);
 
     request("ui/initialize", {
       protocolVersion: "2026-01-26",

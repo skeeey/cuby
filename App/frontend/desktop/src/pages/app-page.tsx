@@ -172,6 +172,7 @@ export function AppPage() {
 
   const sendAppMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection || !target) throw new Error("App host is unavailable");
+    const appContext = { appId: target.appId, name: target.view.title || target.appId };
     const sendTarget = panelChatNeedsTargetRef.current;
     const targetValue: WebuiSessionTarget | undefined = sendTarget
       ? target.target ?? { kind: "standalone" }
@@ -189,7 +190,8 @@ export function AppPage() {
         source: "mcp-app",
         appId: target.appId,
         viewId: target.view.viewId,
-        appControlled: true
+        appControlled: true,
+        appContext
       }));
     } catch (error) {
       if (
@@ -206,7 +208,8 @@ export function AppPage() {
             source: "mcp-app",
             appId: target.appId,
             viewId: target.view.viewId,
-            appControlled: true
+            appControlled: true,
+            appContext
           }));
         } catch (retryError) {
           dispatch(agentActions.transientSendFailed(chatId));
@@ -232,6 +235,7 @@ export function AppPage() {
 
   const sendUserMessage = useCallback(async (chatId: string, content: string): Promise<void> => {
     if (!connection) throw new Error("Agent gateway is not ready");
+    const appContext = target ? { appId: target.appId, name: target.view.title || target.appId } : undefined;
     let sendTarget = panelChatNeedsTargetRef.current;
     const targetValue: WebuiSessionTarget | undefined = sendTarget
       ? target?.target ?? { kind: "standalone" }
@@ -245,7 +249,8 @@ export function AppPage() {
         content,
         ...(targetValue ? { target: targetValue } : {}),
         sendTarget,
-        modelPreset
+        modelPreset,
+        ...(appContext ? { appContext } : {})
       }));
     } catch (error) {
       // The panel chat may already have a session (for example after an app
@@ -261,7 +266,8 @@ export function AppPage() {
             connection,
             chatId,
             content,
-            sendTarget: false
+            sendTarget: false,
+            ...(appContext ? { appContext } : {})
           }));
           sendTarget = false;
           panelChatNeedsTargetRef.current = false;
