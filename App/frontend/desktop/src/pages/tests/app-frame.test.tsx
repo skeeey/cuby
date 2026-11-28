@@ -1359,10 +1359,9 @@ describe("TaskRow app origin", () => {
 describe("AppFrame open-in-app wiring", () => {
   it("wires open-in-app through the sidebar task sections", () => {
     const source = readFileSync(resolve(__dirname, "..", "app-frame.tsx"), "utf8");
-    expect(source).toContain("function openTaskInApp(task: AgentTaskView)");
-    expect(source).toContain("loadTaskChatForPanel(clients?.memmyAgent ?? null, dispatch, task)");
-    expect(source).toContain("appsActions.openApp(connection, dispatch, request)");
-    expect(source).toContain("onOpenInApp={openTaskInApp}");
+    expect(source).toContain("function openTaskInAppFromSidebar(task: AgentTaskView)");
+    expect(source).toContain("runOpenTaskInApp(task, { client: clients?.memmyAgent ?? null, connection, dispatch })");
+    expect(source).toContain("onOpenInApp={openTaskInAppFromSidebar}");
     expect(source).toContain("resolveAppDisplayName={resolveTaskAppDisplayNameForTask}");
   });
 });

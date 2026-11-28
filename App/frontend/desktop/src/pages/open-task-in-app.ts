@@ -1,5 +1,10 @@
-import { MemmyAgentRequestError, type MemmyAgentClient, type WebuiSessionTarget } from "../api/memmy-agent-client.js";
-import { agentActions, createAgentOperationError, type AppAction } from "../state/app-actions.js";
+import {
+  MemmyAgentRequestError,
+  type MemmyAgentClient,
+  type MemmyAgentWebSocketConnection,
+  type WebuiSessionTarget
+} from "../api/memmy-agent-client.js";
+import { agentActions, appsActions, createAgentOperationError, type AppAction } from "../state/app-actions.js";
 import type { AgentTaskView } from "../state/agent-chat-slice.js";
 
 export interface TaskOpenInAppRequest {
@@ -7,6 +12,12 @@ export interface TaskOpenInAppRequest {
   chatId: string;
   target: WebuiSessionTarget;
   openPanel: true;
+}
+
+export interface OpenTaskInAppDeps {
+  client: Pick<MemmyAgentClient, "readWebuiThread"> | null;
+  connection: Pick<MemmyAgentWebSocketConnection, "openApp">;
+  dispatch: (action: AppAction) => void;
 }
 
 let historyRequestCounter = 0;
@@ -61,4 +72,15 @@ export function loadTaskChatForPanel(
         chatId: task.chatId
       })));
     });
+}
+
+/**
+ * Selects/hydrates the chat and opens the app page with the panel intent.
+ * History loading is fire-and-forget: its failure must never block the open.
+ */
+export function openTaskInApp(task: AgentTaskView, deps: OpenTaskInAppDeps): void {
+  const request = taskOpenInAppRequest(task);
+  if (!request) return;
+  loadTaskChatForPanel(deps.client, deps.dispatch, task);
+  void appsActions.openApp(deps.connection, deps.dispatch, request);
 }
