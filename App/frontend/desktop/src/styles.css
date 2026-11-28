@@ -10584,6 +10584,26 @@ body.cuby-platform-windows:not(.cuby-window-fullscreen) .cuby-notification-stack
   gap: 6px;
 }
 
+.app-frame-task-app-badge {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  max-width: 8rem;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--color-canvas-oat);
+  color: color-mix(in srgb, var(--color-text-ink) 55%, transparent);
+  font-size: 11px;
+  line-height: 18px;
+}
+
+.app-frame-task-app-badge > span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .app-frame-task-row__archive-icon {
   flex-shrink: 0;
   color: color-mix(in srgb, var(--color-text-ink) 42%, transparent);

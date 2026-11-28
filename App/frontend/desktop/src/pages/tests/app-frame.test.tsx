@@ -1308,3 +1308,50 @@ function newAgentDraftState(overrides: Partial<NewAgentDraftTestState> = {}): Ne
     ...overrides
   };
 }
+
+describe("TaskRow app origin", () => {
+  it("shows the app badge only for app-origin tasks", () => {
+    const appTask = task("app-chat", { appId: "example-notes", appName: "Example Notes" });
+    const html = renderToString(
+      <I18nProvider language="zh-CN">
+        <TaskRow
+          task={appTask}
+          appDisplayName="Example Notes"
+          isCurrent={false}
+          showPreview={false}
+          onOpen={() => undefined}
+          onContextMenu={() => undefined}
+          onPin={() => undefined}
+          archiveConfirming={false}
+          onRequestArchive={() => undefined}
+          onConfirmArchive={() => undefined}
+          onUnarchive={() => undefined}
+          onDeleteArchived={() => undefined}
+          onOpenInApp={() => undefined}
+        />
+      </I18nProvider>
+    );
+
+    expect(html).toContain('data-app-id="example-notes"');
+    expect(html).toContain("Example Notes");
+
+    const plain = renderToString(
+      <I18nProvider language="zh-CN">
+        <TaskRow
+          task={task("plain")}
+          isCurrent={false}
+          showPreview={false}
+          onOpen={() => undefined}
+          onContextMenu={() => undefined}
+          onPin={() => undefined}
+          archiveConfirming={false}
+          onRequestArchive={() => undefined}
+          onConfirmArchive={() => undefined}
+          onUnarchive={() => undefined}
+          onDeleteArchived={() => undefined}
+        />
+      </I18nProvider>
+    );
+    expect(plain).not.toContain("data-app-id");
+  });
+});

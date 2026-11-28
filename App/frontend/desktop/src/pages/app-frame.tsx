@@ -63,7 +63,7 @@ import {
 } from "./memory/memory-prototype-icons.js";
 import { AppContentTopbar } from "./app-content-topbar.js";
 import { SETTINGS_NAV_ITEMS, writeSettingsMemoryBudgetFocus, type SettingsTabId } from "./settings-nav.js";
-import { ArrowDown, Check, CheckCheck, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Folder, FolderOpen, FolderPlus, ListFilter, MoreHorizontal, Plus, RotateCcw } from "lucide-react";
+import { AppWindow, ArrowDown, Check, CheckCheck, ChevronDown, ChevronRight, ChevronsDownUp, ChevronsUpDown, Folder, FolderOpen, FolderPlus, ListFilter, MoreHorizontal, Plus, RotateCcw } from "lucide-react";
 
 export interface SettingsSidebarNav {
   activeTab: SettingsTabId;
@@ -1954,6 +1954,8 @@ function ProjectTreeSection(props: {
   onDeleteArchivedTask: (task: AgentTaskView) => void;
   onProjectContextMenu: (event: MouseEvent, projectId: string) => void;
   onNewProjectTask: (projectId: string) => void;
+  resolveAppDisplayName?: (task: AgentTaskView) => string | null;
+  onOpenInApp?: (task: AgentTaskView) => void;
 }) {
   const { t } = useTranslation();
   const [expandedProjectTaskIds, setExpandedProjectTaskIds] = useState<Record<string, boolean>>({});
@@ -1981,6 +1983,8 @@ function ProjectTreeSection(props: {
       onCancelArchive={props.onCancelArchiveConfirm}
       onUnarchive={() => props.onUnarchiveTask(task)}
       onDeleteArchived={() => props.onDeleteArchivedTask(task)}
+      appDisplayName={props.resolveAppDisplayName?.(task) ?? null}
+      onOpenInApp={props.onOpenInApp ? () => props.onOpenInApp?.(task) : undefined}
     />
   );
 
@@ -2350,6 +2354,8 @@ export function TaskRow(props: {
   onCancelArchive?: () => void;
   onUnarchive: () => void;
   onDeleteArchived: () => void;
+  appDisplayName?: string | null;
+  onOpenInApp?: () => void;
 }) {
   const { t } = useTranslation();
   const [isTaskRowHovered, setIsTaskRowHovered] = useState(false);
@@ -2411,20 +2417,24 @@ export function TaskRow(props: {
           }}
           className="app-frame-task-row__main"
         >
-          {archived ? (
-            <span className="app-frame-task-row__title-row">
+          <span className="app-frame-task-row__title-row">
+            {archived ? (
               <Archive size={14} className="app-frame-task-row__archive-icon" aria-hidden="true" />
-              {imTitleDisplay ? <ImChannelTitleIcon slug={imTitleDisplay.slug} name={imTitleDisplay.channelName} /> : null}
-              <SidebarMarqueeText text={imTitleDisplay?.title ?? props.task.title} className="app-frame-task-title" />
-            </span>
-          ) : imTitleDisplay ? (
-            <span className="app-frame-task-row__title-row">
+            ) : null}
+            {imTitleDisplay ? (
               <ImChannelTitleIcon slug={imTitleDisplay.slug} name={imTitleDisplay.channelName} />
-              <SidebarMarqueeText text={imTitleDisplay.title} className="app-frame-task-title" />
-            </span>
-          ) : (
-            <SidebarMarqueeText text={props.task.title} className="app-frame-task-title" />
-          )}
+            ) : null}
+            {props.task.appId && props.appDisplayName ? (
+              <span className="app-frame-task-app-badge" title={props.appDisplayName} data-app-id={props.task.appId}>
+                <AppWindow size={12} aria-hidden="true" />
+                <span className="truncate">{props.appDisplayName}</span>
+              </span>
+            ) : null}
+            <SidebarMarqueeText
+              text={imTitleDisplay?.title ?? props.task.title}
+              className="app-frame-task-title"
+            />
+          </span>
           {props.showPreview && props.task.preview ? (
             <span className="app-frame-task-preview truncate">{props.task.preview}</span>
           ) : null}
@@ -2458,6 +2468,11 @@ export function TaskRow(props: {
           />
         ) : showHoverActions ? (
           <>
+            {props.task.appId && props.onOpenInApp ? (
+              <TaskIconButton label={t("appFrame.task.openInApp")} tooltip onClick={props.onOpenInApp}>
+                <AppWindow size={14} />
+              </TaskIconButton>
+            ) : null}
             <TaskIconButton label={props.task.pinned ? t("appFrame.task.unpin") : t("appFrame.task.pin")} active={props.task.pinned} onClick={props.onPin}>
               <Pin size={14} />
             </TaskIconButton>
