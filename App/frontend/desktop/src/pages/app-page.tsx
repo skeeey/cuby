@@ -11,7 +11,7 @@ import { createAppBridgeTransport } from "../app/app-view-client.js";
 import { AppViewHost } from "../app/app-view-host.js";
 import { useTranslation } from "../i18n/use-translation.js";
 import { agentActions, appActions, appsActions } from "../state/app-actions.js";
-import type { AppPageTarget } from "../state/apps-slice.js";
+import type { AppPageError, AppPageTarget } from "../state/apps-slice.js";
 import { useAppState } from "../state/app-state.js";
 import { AppChatPanel } from "./app-chat-panel.js";
 import { openPanelChat, sendPanelUserMessage } from "./app-page-chat.js";
@@ -22,6 +22,8 @@ export interface AppPageViewProps {
   target: AppPageTarget | null;
   onReload: () => void;
   children?: ReactNode;
+  /** Docked host UI (the app chat panel) rendered beside, never over, the page. */
+  aside?: ReactNode;
 }
 
 export function AppPageView(props: AppPageViewProps) {
@@ -34,21 +36,32 @@ export function AppPageView(props: AppPageViewProps) {
     );
   }
   return (
-    <div className="cuby-app-page relative flex h-full min-h-0 w-full flex-col">
-      <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
-        <button
-          type="button"
-          aria-label={t("app.page.reload")}
-          title={t("app.page.reload")}
-          onClick={props.onReload}
-          className="inline-flex h-7 w-7 items-center justify-center rounded-btn bg-background-paper/90 text-text-ink/55 shadow-sm hover:bg-canvas-oat"
-        >
-          <RotateCw size={14} />
-        </button>
+    <div className="cuby-app-page flex h-full min-h-0 w-full">
+      <div className="cuby-app-page__main relative min-h-0 min-w-0 flex-1">
+        <div className="absolute right-3 top-3 z-10 flex items-center gap-1">
+          <button
+            type="button"
+            aria-label={t("app.page.reload")}
+            title={t("app.page.reload")}
+            onClick={props.onReload}
+            className="inline-flex h-7 w-7 items-center justify-center rounded-btn bg-background-paper/90 text-text-ink/55 shadow-sm hover:bg-canvas-oat"
+          >
+            <RotateCw size={14} />
+          </button>
+        </div>
+        <div className="cuby-app-page__content h-full min-h-0">{props.children}</div>
       </div>
-      <div className="min-h-0 flex-1">{props.children}</div>
+      {props.aside ?? null}
     </div>
   );
+}
+
+export function panelOpenForTarget(target: AppPageTarget | null): boolean {
+  return target?.openPanel === true;
+}
+
+export function canRestoreAppPageTarget(target: AppPageTarget | null, pageError: AppPageError | null): boolean {
+  return target == null && pageError == null;
 }
 
 export function AppPage() {
@@ -78,11 +91,14 @@ export function AppPage() {
   );
 
   useEffect(() => {
-    setPanelOpen(false);
+    setPanelOpen(panelOpenForTarget(target));
     setPanelChatId(null);
     setPendingAppMessage(null);
     panelChatNeedsTargetRef.current = false;
     panelChatModelPresetRef.current = null;
+    if (target?.openPanel) dispatch(appActions.consumeAppPageOpenPanel());
+    // Consuming the intent changes the target object; only a new view resets the panel.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [target?.view.viewId]);
 
   useEffect(() => {
@@ -100,6 +116,7 @@ export function AppPage() {
       writeStoredAppPageTarget(storage, target);
       return;
     }
+    if (!canRestoreAppPageTarget(target, pageError)) return;
     if (!restoredTargetRef.current) {
       restoredTargetRef.current = readStoredAppPageTarget(storage);
     }
@@ -116,7 +133,7 @@ export function AppPage() {
       appId: stored.appId,
       target: stored.target ?? { kind: "standalone" }
     });
-  }, [target, connection, dispatch, storage]);
+  }, [target, pageError, connection, dispatch, storage]);
 
   useEffect(() => {
     if (!target || !connection) return;
@@ -294,7 +311,9 @@ export function AppPage() {
               if (!connection) return;
               void appsActions.openApp(connection, dispatch, {
                 appId: pageError.appId,
-                ...(pageError.target ? { target: pageError.target } : {})
+                ...(pageError.target ? { target: pageError.target } : {}),
+                ...(pageError.chatId ? { chatId: pageError.chatId } : {}),
+                ...(pageError.openPanel ? { openPanel: true } : {})
               });
             }}
             className="rounded-btn bg-action-sky px-3 py-1.5 text-xs text-white"
@@ -308,44 +327,43 @@ export function AppPage() {
 
   return (
     <AppFrame title={t("nav.apps")}>
-      <AppPageView target={target} onReload={reload}>
-        {target && client ? (
-          <div className="flex h-full min-h-0 w-full">
-            <div className="relative min-h-0 min-w-0 flex-1">
-              <AppViewHost
-                key={`${target.view.viewId}:${reloadKey}`}
-                view={target.view}
-                chatId={target.bridgeChatId}
-                client={client}
-                layout="page"
-                onOpenChat={openChat}
-              />
-            </div>
-            {panelOpen ? (
-              <div className="flex h-full min-h-0 shrink-0" style={panelResize.sidebarStyle}>
-                <SidebarResizeHandle
-                  label={t("app.chat.resize")}
-                  width={panelResize.width}
-                  minWidth={panelResize.minWidth}
-                  maxWidth={panelResize.maxWidth}
-                  isResizing={panelResize.isResizing}
-                  onResizeStart={panelResize.beginResize}
-                  onResizeBy={panelResize.resizeBy}
-                />
-                <AppChatPanel
-                  open={panelOpen}
-                  appName={target.view.title || target.appId}
-                  chatId={panelChatIdForView}
-                  pendingAppMessage={pendingAppMessage}
-                  onClose={() => setPanelOpen(false)}
-                  onEnsureChat={resolvePanelChat}
-                  onAppMessage={sendAppMessage}
-                  onSendUserMessage={sendUserMessage}
-                  onPendingAppMessageConsumed={consumePendingAppMessage}
-                />
-              </div>
-            ) : null}
+      <AppPageView
+        target={target}
+        onReload={reload}
+        aside={target && client && panelOpen ? (
+          <div className="flex h-full min-h-0 shrink-0" style={panelResize.sidebarStyle}>
+            <SidebarResizeHandle
+              label={t("app.chat.resize")}
+              width={panelResize.width}
+              minWidth={panelResize.minWidth}
+              maxWidth={panelResize.maxWidth}
+              isResizing={panelResize.isResizing}
+              onResizeStart={panelResize.beginResize}
+              onResizeBy={panelResize.resizeBy}
+            />
+            <AppChatPanel
+              open={panelOpen}
+              appName={target.view.title || target.appId}
+              chatId={panelChatIdForView}
+              pendingAppMessage={pendingAppMessage}
+              onClose={() => setPanelOpen(false)}
+              onEnsureChat={resolvePanelChat}
+              onAppMessage={sendAppMessage}
+              onSendUserMessage={sendUserMessage}
+              onPendingAppMessageConsumed={consumePendingAppMessage}
+            />
           </div>
+        ) : null}
+      >
+        {target && client ? (
+          <AppViewHost
+            key={`${target.view.viewId}:${reloadKey}`}
+            view={target.view}
+            chatId={target.bridgeChatId}
+            client={client}
+            layout="page"
+            onOpenChat={openChat}
+          />
         ) : target ? (
           <div className="flex h-full items-center justify-center p-6 text-sm text-text-ink/55">
             {t("app.view.hostUnavailable")}
