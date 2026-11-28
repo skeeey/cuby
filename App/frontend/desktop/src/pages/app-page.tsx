@@ -97,8 +97,7 @@ export function AppPage() {
     panelChatNeedsTargetRef.current = false;
     panelChatModelPresetRef.current = null;
     if (target?.openPanel) dispatch(appActions.consumeAppPageOpenPanel());
-    // Consuming the intent changes the target object; only a new view resets the panel.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Only a new view resets the panel; consuming the intent must not re-run this.
   }, [target?.view.viewId]);
 
   useEffect(() => {
