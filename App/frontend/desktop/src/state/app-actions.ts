@@ -90,8 +90,9 @@ export type AppAction =
   | { type: "events/statusChanged"; status: EventConnectionStatus }
   | { type: "navigation/changed"; path: AppRoutePath }
   | { type: "navigation/appPageOpened"; target: AppPageTarget }
-  | { type: "navigation/appPageFailed"; appId: string; target?: WebuiSessionTarget; error: string }
+  | { type: "navigation/appPageFailed"; appId: string; target?: WebuiSessionTarget; chatId?: string; openPanel?: boolean; error: string }
   | { type: "navigation/appPageCleared" }
+  | { type: "navigation/appPagePanelConsumed" }
   | { type: "navigation/openMemoryReference"; id: string; fallbackPage: MemoryReferencePage; requestId: number }
   | { type: "navigation/openToolSkill"; skillId: string | null; requestId: number }
   | { type: "navigation/requestHandled"; requestId: number }
@@ -171,17 +172,23 @@ export const appActions = {
     return { type: "navigation/appPageOpened", target };
   },
 
-  openAppPageFailed(input: { appId: string; target?: WebuiSessionTarget; error: string }): AppAction {
+  openAppPageFailed(input: { appId: string; target?: WebuiSessionTarget; chatId?: string; openPanel?: boolean; error: string }): AppAction {
     return {
       type: "navigation/appPageFailed",
       appId: input.appId,
       ...(input.target ? { target: input.target } : {}),
+      ...(input.chatId ? { chatId: input.chatId } : {}),
+      ...(input.openPanel ? { openPanel: true } : {}),
       error: input.error
     };
   },
 
   clearAppPage(): AppAction {
     return { type: "navigation/appPageCleared" };
+  },
+
+  consumeAppPageOpenPanel(): AppAction {
+    return { type: "navigation/appPagePanelConsumed" };
   },
 
   /** Navigates to the memory page and asks it to open a referenced memory. */
@@ -734,7 +741,7 @@ export const appsActions = {
   async openApp(
     connection: Pick<MemmyAgentWebSocketConnection, "openApp">,
     dispatch: (action: AppAction) => void,
-    input: { appId: string; chatId?: string; target?: WebuiSessionTarget }
+    input: { appId: string; chatId?: string; target?: WebuiSessionTarget; openPanel?: boolean }
   ): Promise<AppPageTarget | null> {
     try {
       const result = await connection.openApp(input);
@@ -744,6 +751,7 @@ export const appsActions = {
         origin: input.chatId ? "chat" : "entry",
         ...(input.chatId ? { chatId: input.chatId } : {}),
         ...(input.target ? { target: input.target } : {}),
+        ...(input.openPanel ? { openPanel: true } : {}),
         view: result.view
       };
       dispatch(appActions.openAppPage(target));
@@ -752,6 +760,8 @@ export const appsActions = {
       dispatch(appActions.openAppPageFailed({
         appId: input.appId,
         ...(input.target ? { target: input.target } : {}),
+        ...(input.chatId ? { chatId: input.chatId } : {}),
+        ...(input.openPanel ? { openPanel: true } : {}),
         error: toErrorMessage(error)
       }));
       return null;

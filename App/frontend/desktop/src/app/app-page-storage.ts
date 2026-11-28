@@ -35,7 +35,8 @@ export function readStoredAppPageTarget(storage: Storage | undefined): AppPageTa
 export function writeStoredAppPageTarget(storage: Storage | undefined, target: AppPageTarget): boolean {
   if (!storage) return false;
   try {
-    storage.setItem(APP_PAGE_TARGET_STORAGE_KEY, JSON.stringify(target));
+    const { openPanel: _openPanel, ...persisted } = target;
+    storage.setItem(APP_PAGE_TARGET_STORAGE_KEY, JSON.stringify(persisted));
     return true;
   } catch {
     return false;

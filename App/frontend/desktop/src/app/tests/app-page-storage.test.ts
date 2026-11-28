@@ -65,3 +65,11 @@ describe("app page storage", () => {
     expect(writeStoredAppPageTarget(storage, target)).toBe(false);
   });
 });
+
+describe("app page storage panel intent", () => {
+  it("does not persist the one-shot openPanel intent", () => {
+    const storage = memoryStorage();
+    writeStoredAppPageTarget(storage, { ...target, openPanel: true });
+    expect(readStoredAppPageTarget(storage)?.openPanel).toBeUndefined();
+  });
+});

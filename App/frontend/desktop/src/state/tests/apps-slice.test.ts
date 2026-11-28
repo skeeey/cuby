@@ -105,3 +105,46 @@ describe("apps state", () => {
     expect(actions.at(-1)).toMatchObject({ type: "navigation/appPageFailed", appId: "demo", error: "boom" });
   });
 });
+
+describe("app page panel intent", () => {
+  it("carries chat and open-panel intent into the app page target", async () => {
+    const opened = await appsActions.openApp(
+      { openApp: async () => ({ bridge_chat_id: "chat-1", view }) },
+      () => undefined,
+      { appId: "demo", chatId: "chat-1", openPanel: true }
+    );
+    expect(opened).toMatchObject({
+      origin: "chat",
+      chatId: "chat-1",
+      openPanel: true
+    });
+  });
+
+  it("keeps chat and panel intent on open failure", async () => {
+    const actions: any[] = [];
+    await appsActions.openApp(
+      { openApp: async () => { throw new Error("boom"); } },
+      (action) => actions.push(action),
+      { appId: "demo", chatId: "chat-1", openPanel: true }
+    );
+    expect(actions.at(-1)).toMatchObject({
+      type: "navigation/appPageFailed",
+      chatId: "chat-1",
+      openPanel: true
+    });
+  });
+
+  it("consumes the one-shot openPanel intent", () => {
+    let state = createInitialAppState();
+    state = appReducer(state, appActions.openAppPage({
+      appId: "demo",
+      bridgeChatId: "chat-1",
+      origin: "chat",
+      chatId: "chat-1",
+      openPanel: true,
+      view
+    }));
+    state = appReducer(state, appActions.consumeAppPageOpenPanel());
+    expect(state.navigation.appPage?.openPanel).toBeUndefined();
+  });
+});

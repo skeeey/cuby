@@ -24,12 +24,15 @@ export interface AppPageTarget {
   origin: AppPageOrigin;
   chatId?: string;
   target?: WebuiSessionTarget;
+  openPanel?: boolean;
   view: AgentAppView;
 }
 
 export interface AppPageError {
   appId: string;
   target?: WebuiSessionTarget;
+  chatId?: string;
+  openPanel?: boolean;
   error: string;
 }
 

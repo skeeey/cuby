@@ -244,6 +244,8 @@ export function appReducer(state: AppState, action: AppAction): AppState {
           appPageError: {
             appId: action.appId,
             ...(action.target ? { target: action.target } : {}),
+            ...(action.chatId ? { chatId: action.chatId } : {}),
+            ...(action.openPanel ? { openPanel: true } : {}),
             error: action.error
           },
           currentPath: "/apps",
@@ -259,6 +261,16 @@ export function appReducer(state: AppState, action: AppAction): AppState {
         ...state,
         navigation: { ...state.navigation, appPage: null, appPageError: null }
       };
+    case "navigation/appPagePanelConsumed":
+      return state.navigation.appPage
+        ? {
+            ...state,
+            navigation: {
+              ...state.navigation,
+              appPage: { ...state.navigation.appPage, openPanel: undefined }
+            }
+          }
+        : state;
     case "apps/loadStarted":
     case "apps/loadSucceeded":
     case "apps/loadFailed":
